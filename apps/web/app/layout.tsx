@@ -5,6 +5,7 @@ import { ThemeScript } from "@gooutside/ui";
 import AppBackground from "../components/layout/AppBackground";
 import AppChrome from "../components/layout/AppChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
+import Footer from "../components/layout/Footer";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <AppBackground />
           <AppChrome />
           <div className="app-content">{children}</div>
+          <Footer />
         </AppShellProvider>
       </body>
     </html>

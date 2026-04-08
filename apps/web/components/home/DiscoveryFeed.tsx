@@ -1,17 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowClockwise,
-  Bell,
-  Keyboard,
-  Lightning,
-  MapPin,
+  ArrowUp,
+  ArrowDown,
   Sparkle,
-  TrendUp,
 } from "@phosphor-icons/react";
-import { demoData, type Category, type EventItem, type Organizer } from "@gooutside/demo-data";
+import { getEventImage, type Category, type EventItem, type Organizer } from "@gooutside/demo-data";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import EventPeekPanel from "./EventPeekPanel";
 import HomeEventCard, { type EventSignal } from "./HomeEventCard";
@@ -56,20 +54,14 @@ const friendGroups = [
 function toUniqueEntries(entries: FeedEntry[]) {
   const seen = new Set<string>();
   return entries.filter((entry) => {
-    if (seen.has(entry.event.id)) {
-      return false;
-    }
-
+    if (seen.has(entry.event.id)) return false;
     seen.add(entry.event.id);
     return true;
   });
 }
 
 function rotateEntries(entries: FeedEntry[], offset: number) {
-  if (entries.length === 0) {
-    return [];
-  }
-
+  if (entries.length === 0) return [];
   const safeOffset = offset % entries.length;
   return [...entries.slice(safeOffset), ...entries.slice(0, safeOffset)];
 }
@@ -83,16 +75,14 @@ function getTimeContext(hour: number) {
       vibe: "Morning bias: calmer picks, faster decisions.",
     };
   }
-
   if (hour < 18) {
     return {
       laneTitle: "This afternoon around the city",
       laneDescription: "Networking, founders, and after-work options take priority before nightlife climbs.",
-      streak: "You are first among your friends to spot 3 of today’s top picks.",
+      streak: "You are first among your friends to spot 3 of today's top picks.",
       vibe: "Afternoon bias: product talks, food, and social planning.",
     };
   }
-
   return {
     laneTitle: "Tonight in Accra",
     laneDescription: "Nightlife, music, and high-social-pressure events rise above slower daytime listings.",
@@ -124,40 +114,26 @@ function takeLaneEntries(preferred: FeedEntry[], fallback: FeedEntry[], count = 
   const merged = [...preferred, ...fallback];
   const seen = new Set<string>();
   const result: FeedEntry[] = [];
-
   for (const entry of merged) {
-    if (seen.has(entry.event.id)) {
-      continue;
-    }
-
+    if (seen.has(entry.event.id)) continue;
     seen.add(entry.event.id);
     result.push(entry);
-
-    if (result.length === count) {
-      break;
-    }
+    if (result.length === count) break;
   }
-
   return result;
 }
 
 function buildSections(entries: FeedEntry[], refreshCount: number, hour: number) {
   const rotated = rotateEntries(entries, refreshCount);
   const context = getTimeContext(hour);
-  const nightlifeEntries = rotated.filter((entry) =>
-    ["music", "networking", "food"].includes(entry.event.categorySlug),
+  const nightlifeEntries = rotated.filter((e) => ["music", "networking", "food"].includes(e.event.categorySlug));
+  const builderEntries = rotated.filter((e) => ["tech", "networking"].includes(e.event.categorySlug));
+  const creativeEntries = rotated.filter((e) => ["music", "arts", "food"].includes(e.event.categorySlug));
+  const nearbyEntries = rotated.filter((e) =>
+    /(Osu|Labone|Airport|Accra)/i.test(`${e.event.locationLine} ${e.event.venue}`),
   );
-  const builderEntries = rotated.filter((entry) =>
-    ["tech", "networking"].includes(entry.event.categorySlug),
-  );
-  const creativeEntries = rotated.filter((entry) =>
-    ["music", "arts", "food"].includes(entry.event.categorySlug),
-  );
-  const nearbyEntries = rotated.filter((entry) =>
-    /(Osu|Labone|Airport|Accra)/i.test(`${entry.event.locationLine} ${entry.event.venue}`),
-  );
-  const socialEntries = rotated.filter((entry) => entry.event.saved || entry.event.featured);
-  const fastMovingEntries = rotated.filter((entry) => entry.event.trending || entry.event.status === "live");
+  const socialEntries = rotated.filter((e) => e.event.saved || e.event.featured);
+  const fastMovingEntries = rotated.filter((e) => e.event.trending || e.event.status === "live");
 
   const sections: LaneSection[] = [
     {
@@ -201,6 +177,215 @@ function buildSections(entries: FeedEntry[], refreshCount: number, hour: number)
   return sections.filter((section) => section.entries.length > 0);
 }
 
+// ── Split-Pane Explore ────────────────────────────────────────────────────────
+
+type SplitPaneProps = {
+  entries: FeedEntry[];
+  signalById: Record<string, EventSignal>;
+  onPreview: (id: string) => void;
+};
+
+function getBanner(event: EventItem): { label: string; color: "green" | "amber" | "red" } | null {
+  if (event.status === "live") return { label: "Happening now", color: "green" };
+  if (event.trending) return { label: "Selling fast", color: "amber" };
+  if ((event.ticketTypes[0]?.remainingLabel ?? "").toLowerCase().includes("left"))
+    return { label: event.ticketTypes[0]!.remainingLabel, color: "amber" };
+  return null;
+}
+
+function SplitPaneExplore({ entries, signalById, onPreview }: SplitPaneProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const visibleEntries = entries.slice(0, 8);
+  const activeEntry = hoveredId
+    ? visibleEntries.find((e) => e.event.id === hoveredId) ?? visibleEntries[activeIndex]
+    : visibleEntries[activeIndex];
+
+  const prev = () => setActiveIndex((i) => (i - 1 + visibleEntries.length) % visibleEntries.length);
+  const next = () => setActiveIndex((i) => (i + 1) % visibleEntries.length);
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+      {/* Left 40%: event list with banners */}
+      <div className="space-y-2 lg:max-h-[580px] lg:overflow-y-auto no-scrollbar">
+        {visibleEntries.map((entry, i) => {
+          const banner = getBanner(entry.event);
+          const isHovered = hoveredId === entry.event.id;
+          const isActive = !hoveredId && i === activeIndex;
+
+          return (
+            <div key={entry.key}>
+              {banner ? (
+                <div
+                  className={`mb-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
+                    banner.color === "green"
+                      ? "bg-[color:var(--status-live-bg)] text-[color:var(--status-live-text)]"
+                      : "bg-amber-500/14 text-amber-400"
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {banner.label}
+                </div>
+              ) : null}
+              <button
+                className={`group w-full rounded-[20px] border p-3 text-left transition-all duration-200 ${
+                  isHovered || isActive
+                    ? "border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)]"
+                    : "border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] hover:border-[color:var(--home-highlight-border)] hover:bg-[color:var(--home-highlight-bg)]"
+                }`}
+                onClick={() => onPreview(entry.event.id)}
+                onMouseEnter={() => setHoveredId(entry.event.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                type="button"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[14px]">
+                    <Image
+                      alt={entry.event.title}
+                      className="object-cover"
+                      fill
+                      sizes="56px"
+                      src={getEventImage(undefined, entry.event.categorySlug)}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-display text-base italic text-[var(--text-primary)]">
+                      {entry.event.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+                      {entry.event.dateLabel} · {entry.event.timeLabel}
+                    </p>
+                    <p className="mt-0.5 text-xs font-semibold text-[var(--brand)]">
+                      {entry.event.priceLabel}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Right 60%: Reels-style portrait preview */}
+      <div className="group/preview relative overflow-hidden rounded-[24px] lg:h-[580px]" style={{ aspectRatio: "9 / 14" }}>
+        <AnimatePresence mode="wait">
+          {activeEntry ? (
+            <motion.div
+              key={activeEntry.event.id}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute inset-0"
+              exit={{ opacity: 0, scale: 1.04 }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image
+                alt={activeEntry.event.title}
+                className="object-cover"
+                fill
+                sizes="640px"
+                src={getEventImage(undefined, activeEntry.event.categorySlug)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/18 via-transparent to-black/94" />
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/48 to-transparent" />
+              {/* Hover dark overlay */}
+              <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover/preview:bg-black/30" />
+
+              {/* Top badge */}
+              <div className="absolute left-4 top-4">
+                <span className="rounded-full border border-white/14 bg-black/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
+                  {activeEntry.event.eyebrow ?? activeEntry.category.name}
+                </span>
+              </div>
+
+              {/* Nav buttons */}
+              <div className="absolute right-4 top-4 flex flex-col gap-2">
+                <button
+                  aria-label="Previous event"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                  onClick={prev}
+                  type="button"
+                >
+                  <ArrowUp size={18} />
+                </button>
+                <button
+                  aria-label="Next event"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/18 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+                  onClick={next}
+                  type="button"
+                >
+                  <ArrowDown size={18} />
+                </button>
+              </div>
+
+              {/* Bottom content overlay */}
+              <div className="absolute inset-x-0 bottom-0 p-6">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
+                  {activeEntry.event.eyebrow}
+                </p>
+                <h3 className="mt-1.5 font-display text-3xl italic leading-tight tracking-[-0.02em] text-white">
+                  {activeEntry.event.title}
+                </h3>
+                <p className="mt-2 text-sm text-white/65 line-clamp-2">
+                  {activeEntry.event.shortDescription}
+                </p>
+
+                {/* Social proof */}
+                <div className="mt-3 flex items-center gap-2 text-xs text-white/60">
+                  <div className="flex items-center">
+                    {(signalById[activeEntry.event.id]?.friends ?? []).slice(0, 2).map((f, i) => (
+                      <span
+                        key={f.name}
+                        className={`flex h-6 w-6 items-center justify-center rounded-full border border-black/40 bg-[color:var(--home-avatar-bg)] text-[9px] font-bold text-white ${i > 0 ? "-ml-1.5" : ""}`}
+                      >
+                        {f.initials}
+                      </span>
+                    ))}
+                  </div>
+                  <span>{signalById[activeEntry.event.id]?.ticker}</span>
+                </div>
+
+                {/* CTA */}
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    className="flex-1 rounded-full bg-[var(--brand)] py-3 text-sm font-semibold text-white shadow-[var(--brand-shadow)] transition hover:brightness-110"
+                    onClick={() => onPreview(activeEntry.event.id)}
+                    type="button"
+                  >
+                    Get Tickets
+                  </button>
+                  <span className="rounded-full border border-white/16 bg-black/44 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm">
+                    {activeEntry.event.priceLabel}
+                  </span>
+                </div>
+
+                {/* Dots */}
+                <div className="mt-4 flex items-center justify-center gap-1.5">
+                  {visibleEntries.map((e, i) => (
+                    <button
+                      key={e.event.id}
+                      aria-label={`Go to ${e.event.title}`}
+                      className={`rounded-full transition-all duration-200 ${
+                        e.event.id === activeEntry.event.id
+                          ? "h-2 w-6 bg-[var(--brand)]"
+                          : "h-2 w-2 bg-white/36"
+                      }`}
+                      onClick={() => setActiveIndex(i)}
+                      type="button"
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+// ── Main DiscoveryFeed ────────────────────────────────────────────────────────
+
 export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -211,7 +396,6 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const hour = useMemo(() => new Date().getHours(), []);
-  const context = useMemo(() => getTimeContext(hour), [hour]);
   const uniqueEntries = useMemo(() => toUniqueEntries(entries), [entries]);
   const activeEntries = useMemo(
     () => uniqueEntries.filter((entry) => !dismissedIds.includes(entry.event.id)),
@@ -224,18 +408,19 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
 
   const allEntryIds = useMemo(
     () =>
-      sections.flatMap((section) => section.entries.map((entry) => entry.event.id)).filter((id, index, source) => {
-        return source.indexOf(id) === index;
-      }),
+      sections
+        .flatMap((s) => s.entries.map((e) => e.event.id))
+        .filter((id, i, src) => src.indexOf(id) === i),
     [sections],
   );
 
-  const signalById = useMemo(() => {
-    return Object.fromEntries(activeEntries.map((entry, index) => [entry.event.id, buildSignal(entry, index)]));
-  }, [activeEntries]);
+  const signalById = useMemo(
+    () => Object.fromEntries(activeEntries.map((entry, i) => [entry.event.id, buildSignal(entry, i)])),
+    [activeEntries],
+  );
 
   const previewEntry = useMemo(
-    () => activeEntries.find((entry) => entry.event.id === previewEventId) ?? null,
+    () => activeEntries.find((e) => e.event.id === previewEventId) ?? null,
     [activeEntries, previewEventId],
   );
 
@@ -245,42 +430,29 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
       setPreviewEventId(null);
       return;
     }
-
-    if (!activeId || !allEntryIds.includes(activeId)) {
-      setActiveId(allEntryIds[0] ?? null);
-    }
-
-    if (previewEventId && !allEntryIds.includes(previewEventId)) {
-      setPreviewEventId(null);
-    }
+    if (!activeId || !allEntryIds.includes(activeId)) setActiveId(allEntryIds[0] ?? null);
+    if (previewEventId && !allEntryIds.includes(previewEventId)) setPreviewEventId(null);
   }, [activeId, allEntryIds, previewEventId]);
 
   useEffect(() => {
-    if (!isDesktop) {
-      return;
-    }
+    if (!isDesktop) return;
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const isTyping =
-        target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
-
-      if (isTyping || event.metaKey || event.ctrlKey || event.altKey || !allEntryIds.length) {
-        return;
-      }
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+      if (isTyping || e.metaKey || e.ctrlKey || e.altKey || !allEntryIds.length) return;
 
       const currentIndex = activeId ? allEntryIds.indexOf(activeId) : -1;
 
-      if (event.key === "ArrowDown" || event.key.toLowerCase() === "j") {
-        event.preventDefault();
+      if (e.key === "ArrowDown" || e.key.toLowerCase() === "j") {
+        e.preventDefault();
         const nextId = allEntryIds[(currentIndex + 1 + allEntryIds.length) % allEntryIds.length] ?? allEntryIds[0];
         setActiveId(nextId);
         cardRefs.current[nextId]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
         return;
       }
-
-      if (event.key === "ArrowUp" || event.key.toLowerCase() === "k") {
-        event.preventDefault();
+      if (e.key === "ArrowUp" || e.key.toLowerCase() === "k") {
+        e.preventDefault();
         const nextId =
           allEntryIds[(currentIndex - 1 + allEntryIds.length) % allEntryIds.length] ??
           allEntryIds[allEntryIds.length - 1];
@@ -288,24 +460,13 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
         cardRefs.current[nextId]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
         return;
       }
-
-      if (event.key === "Enter" && activeId) {
-        event.preventDefault();
-        setPreviewEventId(activeId);
+      if (e.key === "Enter" && activeId) { e.preventDefault(); setPreviewEventId(activeId); return; }
+      if (e.key.toLowerCase() === "s" && activeId) {
+        e.preventDefault();
+        setSavedIds((cur) => cur.includes(activeId) ? cur.filter((id) => id !== activeId) : [...cur, activeId]);
         return;
       }
-
-      if (event.key.toLowerCase() === "s" && activeId) {
-        event.preventDefault();
-        setSavedIds((current) => {
-          return current.includes(activeId) ? current.filter((id) => id !== activeId) : [...current, activeId];
-        });
-        return;
-      }
-
-      if (event.key === "Escape") {
-        setPreviewEventId(null);
-      }
+      if (e.key === "Escape") setPreviewEventId(null);
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -317,7 +478,7 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
       <div className="rounded-[32px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-6 py-10 text-center">
         <p className="font-display text-3xl italic text-[var(--text-primary)]">No events match that mix.</p>
         <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[var(--text-secondary)]">
-          Clear the current search or category filters and the feed will refill with the city’s strongest signals.
+          Clear the current filters and the feed will refill with the city's strongest signals.
         </p>
         <button
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)]"
@@ -333,132 +494,40 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
 
   return (
     <>
-      <section className="py-8">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-[32px] border border-[color:var(--home-border)] bg-[color:var(--home-surface)] p-6 shadow-[var(--home-shadow)]">
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand)]">
-              Discovery feed
-            </p>
-            <h2 className="mt-3 max-w-3xl font-display text-4xl italic text-[var(--text-primary)] md:text-5xl">
-              Your algorithm, not a directory
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-              Desktop now optimizes for speed, context, and keyboard control. Mobile shifts to faster micro-decisions,
-              stronger urgency, and social proof.
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <div className="rounded-full border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] px-4 py-2 text-sm font-semibold text-[var(--brand)]">
-                {context.vibe}
-              </div>
-              <div className="rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm text-[var(--text-secondary)]">
-                {context.streak}
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {[
-                { icon: TrendUp, label: "Live signal", value: "2 people booked this in the last hour" },
-                { icon: Lightning, label: "Momentum loop", value: "Save one event and similar picks rise next" },
-                { icon: MapPin, label: "Proximity", value: "Rows bias toward Osu, Labone, and last-seen neighborhoods" },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.label}
-                    className="rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4"
-                  >
-                    <div className="flex items-center gap-2 text-[var(--brand)]">
-                      <Icon size={16} weight="bold" />
-                      <span className="text-[11px] font-bold uppercase tracking-[0.18em]">{item.label}</span>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{item.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-[28px] border border-[color:var(--home-border)] bg-[color:var(--home-surface)] p-5 shadow-[var(--home-shadow)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-[var(--brand)]">
-                  <Bell size={18} weight="bold" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Activity feed</p>
-                </div>
-                <span className="rounded-full bg-[color:var(--home-highlight-bg)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
-                  Live
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {demoData.attendee.notifications.slice(0, 3).map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-[20px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-3"
-                  >
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">{item.title}</p>
-                    <p className="mt-1 text-xs text-[var(--text-secondary)]">{item.meta}</p>
-                    <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                      {item.timeLabel}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-[color:var(--home-border)] bg-[color:var(--home-surface)] p-5 shadow-[var(--home-shadow)]">
-              <div className="flex items-center gap-2 text-[var(--brand)]">
-                <Keyboard size={18} weight="bold" />
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Quick controls</p>
-              </div>
-              <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
-                <p>
-                  <span className="font-semibold text-[var(--text-primary)]">J / K</span> move through cards
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--text-primary)]">Enter</span> opens the peek panel
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--text-primary)]">S</span> saves the selected event
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 space-y-8">
+      {/* ── Section 2: Horizontal Content Lanes ── */}
+      <section className="py-2">
+        <div className="space-y-10">
           {sections.map((section, sectionIndex) => (
             <div key={section.id}>
+              {/* Section header */}
               <div className="mb-4 flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand)]">
                     {section.id.replaceAll("-", " ")}
                   </p>
-                  <h3 className="mt-2 font-display text-3xl italic text-[var(--text-primary)]">{section.title}</h3>
-                  <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">{section.description}</p>
+                  <h3 className="mt-1.5 font-display text-2xl italic text-[var(--text-primary)]">
+                    {section.title}
+                  </h3>
                 </div>
-
                 {sectionIndex === 0 ? (
                   <button
-                    className="hidden rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[color:var(--home-highlight-border)] hover:text-[var(--text-primary)] lg:inline-flex"
-                    onClick={() => setRefreshCount((value) => value + 1)}
+                    className="hidden shrink-0 rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[color:var(--home-highlight-border)] hover:text-[var(--text-primary)] lg:inline-flex"
+                    onClick={() => setRefreshCount((v) => v + 1)}
                     type="button"
                   >
-                    <ArrowClockwise size={16} className="mr-2" />
-                    Refresh your feed
+                    <ArrowClockwise size={15} className="mr-1.5" />
+                    Refresh
                   </button>
                 ) : null}
               </div>
 
-              <div className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 md:-mx-0 md:px-0">
+              {/* Horizontal scroll row */}
+              <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 md:-mx-0 md:px-0">
                 {section.entries.map((entry) => (
                   <div
                     key={`${section.id}-${entry.event.id}`}
-                    ref={(node) => {
-                      cardRefs.current[entry.event.id] = node;
-                    }}
-                    className={`shrink-0 snap-start ${isDesktop ? "" : "w-full"}`}
+                    ref={(node) => { cardRefs.current[entry.event.id] = node; }}
+                    className={`shrink-0 snap-start ${isDesktop ? "" : "w-[85vw]"}`}
                     onMouseEnter={() => setActiveId(entry.event.id)}
                   >
                     <HomeEventCard
@@ -468,47 +537,45 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
                       isSaved={savedIds.includes(entry.event.id) || entry.event.saved}
                       mode={isDesktop ? "desktop" : "mobile"}
                       onDismiss={() => {
-                        setDismissedIds((current) =>
-                          current.includes(entry.event.id) ? current : [...current, entry.event.id],
+                        setDismissedIds((cur) =>
+                          cur.includes(entry.event.id) ? cur : [...cur, entry.event.id],
                         );
-                        if (previewEventId === entry.event.id) {
-                          setPreviewEventId(null);
-                        }
+                        if (previewEventId === entry.event.id) setPreviewEventId(null);
                       }}
                       onPreview={() => setPreviewEventId(entry.event.id)}
                       onSave={() => {
-                        setSavedIds((current) =>
-                          current.includes(entry.event.id)
-                            ? current.filter((id) => id !== entry.event.id)
-                            : [...current, entry.event.id],
+                        setSavedIds((cur) =>
+                          cur.includes(entry.event.id)
+                            ? cur.filter((id) => id !== entry.event.id)
+                            : [...cur, entry.event.id],
                         );
                       }}
                       organizer={entry.organizer}
                       signal={signalById[entry.event.id] as EventSignal}
+                      variant="lane"
                     />
                   </div>
                 ))}
                 <div className="w-8 shrink-0" />
               </div>
 
+              {/* Mid-feed refresh nudge */}
               {sectionIndex === 2 ? (
-                <div className="mt-4 rounded-[28px] border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] p-5">
+                <div className="mt-4 rounded-[24px] border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] p-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
-                        Smart refresh
-                      </p>
-                      <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                        You have seen three sections. Refresh to pull a new ordering, new social pressure, and a sharper tonight bias.
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">Smart refresh</p>
+                      <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+                        You have seen three sections. Refresh for a new ordering and sharper tonight bias.
                       </p>
                     </div>
                     <button
-                      className="inline-flex items-center justify-center rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)]"
-                      onClick={() => setRefreshCount((value) => value + 1)}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)]"
+                      onClick={() => setRefreshCount((v) => v + 1)}
                       type="button"
                     >
-                      <Sparkle size={16} className="mr-2" />
-                      Refresh your feed
+                      <Sparkle size={15} />
+                      Refresh feed
                     </button>
                   </div>
                 </div>
@@ -518,6 +585,25 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
         </div>
       </section>
 
+      {/* ── Section 3: Split-Pane Explore ── */}
+      <section className="py-10">
+        <div className="mb-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand)]">Explore</p>
+          <h2 className="mt-1.5 font-display text-3xl italic text-[var(--text-primary)]">
+            What's happening right now
+          </h2>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            Hover a card to preview. Scroll up and down for more.
+          </p>
+        </div>
+        <SplitPaneExplore
+          entries={activeEntries.slice(0, 8)}
+          signalById={signalById}
+          onPreview={(id) => setPreviewEventId(id)}
+        />
+      </section>
+
+      {/* Peek Panel */}
       <EventPeekPanel
         category={previewEntry?.category as Category}
         event={previewEntry?.event ?? null}
@@ -525,29 +611,45 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
         isSaved={previewEntry ? savedIds.includes(previewEntry.event.id) || previewEntry.event.saved : false}
         onClose={() => setPreviewEventId(null)}
         onDismiss={() => {
-          if (!previewEntry) {
-            return;
-          }
-
-          setDismissedIds((current) =>
-            current.includes(previewEntry.event.id) ? current : [...current, previewEntry.event.id],
+          if (!previewEntry) return;
+          setDismissedIds((cur) =>
+            cur.includes(previewEntry.event.id) ? cur : [...cur, previewEntry.event.id],
           );
           setPreviewEventId(null);
         }}
         onSave={() => {
-          if (!previewEntry) {
-            return;
-          }
-
-          setSavedIds((current) =>
-            current.includes(previewEntry.event.id)
-              ? current.filter((id) => id !== previewEntry.event.id)
-              : [...current, previewEntry.event.id],
+          if (!previewEntry) return;
+          setSavedIds((cur) =>
+            cur.includes(previewEntry.event.id)
+              ? cur.filter((id) => id !== previewEntry.event.id)
+              : [...cur, previewEntry.event.id],
           );
         }}
         organizer={previewEntry?.organizer ?? null}
         signal={previewEntry ? (signalById[previewEntry.event.id] as EventSignal) : null}
       />
+
+      {/* Sticky Decision Bar */}
+      {savedIds.length > 0 ? (
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-3 rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] px-5 py-3 shadow-[var(--home-shadow-strong)] backdrop-blur-md">
+          <span className="text-sm font-semibold text-[var(--text-primary)]">
+            Saved: {savedIds.length} event{savedIds.length !== 1 ? "s" : ""}
+          </span>
+          <div className="h-4 w-px bg-[color:var(--home-border)]" />
+          <button
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[color:var(--home-highlight-border)] hover:text-[var(--text-primary)]"
+            type="button"
+          >
+            Compare
+          </button>
+          <button
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand)] px-4 py-1.5 text-sm font-semibold text-[var(--brand-contrast)] transition hover:brightness-110"
+            type="button"
+          >
+            Plan weekend
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }
