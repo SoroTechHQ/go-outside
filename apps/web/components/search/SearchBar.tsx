@@ -84,6 +84,23 @@ export function SearchBar({
     router.push(nextUrl, { scroll: false });
   };
 
+  const isSmallState = isCompact || isMini;
+  const showCenteredCollapsedPlaceholder = isSmallState && !query && !isFocused;
+  const showExpandedBlankState = isFocused && !query;
+  const shellBackground = isFocused
+    ? "bg-[color:rgba(var(--bg-card-rgb),0.95)]"
+    : isSmallState
+      ? "bg-[color:rgba(var(--bg-card-rgb),0.82)]"
+      : "bg-[var(--bg-muted)]";
+  const shellBorder = isFocused
+    ? "border-[rgba(var(--brand-rgb),0.25)]"
+    : isSmallState
+      ? "border-[rgba(var(--brand-rgb),0.14)]"
+      : "border-[var(--border-subtle)]";
+  const shellHover = isSmallState
+    ? "hover:border-[rgba(var(--brand-rgb),0.22)] hover:bg-[color:rgba(var(--bg-card-rgb),0.88)]"
+    : "hover:border-[var(--border-default)] hover:bg-[var(--bg-card-alt)]";
+
   return (
     <div
       className={`relative mx-auto w-full ${isFocused ? "z-50" : ""}`}
@@ -91,35 +108,45 @@ export function SearchBar({
     >
       <motion.div
         animate={{
-          height: isMini ? 42 : isFocused ? 64 : isCompact ? 54 : 58,
-          maxWidth: isMini ? 240 : isFocused ? 820 : isCompact ? 640 : 760,
+          height: isFocused ? 64 : isMini ? 50 : isCompact ? 58 : 58,
+          maxWidth: isFocused ? 820 : isMini ? 340 : isCompact ? 680 : 760,
         }}
-        className={`relative flex w-full items-center rounded-full border transition-colors ${
-          isFocused
-            ? "search-focused border-[rgba(var(--brand-rgb),0.25)] bg-[color:rgba(var(--bg-card-rgb),0.95)]"
-            : "border-[var(--border-subtle)] bg-[var(--bg-muted)] hover:border-[var(--border-default)] hover:bg-[var(--bg-card-alt)]"
+        className={`relative mx-auto flex w-full items-center rounded-full border backdrop-blur-xl transition-colors ${shellBackground} ${shellBorder} ${shellHover} ${
+          isFocused ? "search-focused" : ""
         }`}
         style={{
           boxShadow: isFocused
             ? "0 0 0 4px rgba(var(--brand-rgb),0.10), 0 8px 32px rgba(0,0,0,0.24)"
-            : "0 10px 28px rgba(0,0,0,0.24)",
+            : isSmallState
+              ? "0 16px 36px rgba(0,0,0,0.28), 0 0 0 1px rgba(var(--brand-rgb),0.1), 0 0 28px rgba(var(--brand-rgb),0.12)"
+              : "0 10px 28px rgba(0,0,0,0.24)",
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       >
-        <MagnifyingGlass
-          className={`shrink-0 ${isFocused ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"} ${
-            isMini ? "ml-3" : "ml-5"
+        <div
+          className={`flex shrink-0 items-center justify-center rounded-full transition-all ${
+            isMini ? "ml-4 h-9 w-9" : "ml-4 h-9 w-9"
+          } ${
+            isFocused || isSmallState
+              ? "bg-[rgba(var(--brand-rgb),0.12)] text-[var(--brand)]"
+              : "bg-[var(--bg-muted)] text-[var(--text-tertiary)]"
           }`}
-          size={isMini ? 16 : 20}
-          weight="bold"
-        />
+          style={{
+            boxShadow:
+              isFocused || isSmallState
+                ? "0 0 0 1px rgba(var(--brand-rgb),0.24), 0 0 30px rgba(var(--brand-rgb),0.22), inset 0 0 18px rgba(var(--brand-rgb),0.12)"
+                : "none",
+          }}
+        >
+          <MagnifyingGlass size={isMini ? 16 : 18} weight="bold" />
+        </div>
 
         <div className="relative mx-4 flex-1">
           <input
             ref={inputRef}
             className={`w-full bg-transparent text-[var(--text-primary)] outline-none caret-[var(--brand)] placeholder:text-transparent ${
               isMini ? "text-sm" : "text-[15px]"
-            }`}
+            } ${showCenteredCollapsedPlaceholder ? "opacity-0" : ""}`}
             onBlur={() => {
               if (!isFocused) {
                 applyQuery(query);
@@ -133,6 +160,7 @@ export function SearchBar({
                 onFocusChange(false);
               }
             }}
+            placeholder=""
             type="text"
             value={query}
           />
@@ -143,7 +171,19 @@ export function SearchBar({
             </div>
           ) : null}
 
-          {!query && isMini ? (
+          {showCenteredCollapsedPlaceholder ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center pl-12 pr-12">
+              <span className="truncate text-center text-[15px] font-medium text-[var(--text-tertiary)]">
+                Search events...
+              </span>
+            </div>
+          ) : null}
+
+          {showExpandedBlankState ? (
+            <div className="pointer-events-none absolute inset-0 bg-transparent" />
+          ) : null}
+
+          {!query && isMini && !showCenteredCollapsedPlaceholder ? (
             <span className="pointer-events-none text-sm text-[var(--text-tertiary)]">Search events...</span>
           ) : null}
         </div>

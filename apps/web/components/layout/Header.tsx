@@ -6,7 +6,6 @@ import { MagnifyingGlass } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
 import SearchBar from "../search/SearchBar";
 import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
-import { useAppShell } from "./AppShellContext";
 
 type HeaderProps = {
   appShell?: boolean;
@@ -25,7 +24,7 @@ function getInitials(name: string) {
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
   const { isCompact, isMini } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
-  const { sidebarWidth } = useAppShell();
+  const stableSidebarOffset = 72;
 
   if (appShell) {
     return (
@@ -34,16 +33,16 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
           <div
             className="flex justify-center px-4 md:px-6"
             style={{
-              width: `calc(100vw - ${sidebarWidth}px)`,
-              marginLeft: `${sidebarWidth}px`,
+              width: `calc(100vw - ${stableSidebarOffset}px)`,
+              marginLeft: `${stableSidebarOffset}px`,
             }}
           >
             <div
               className="flex w-full items-center justify-center transition-all duration-300"
               style={{
-                height: isFocused ? 104 : isCompact ? 56 : 72,
-                paddingTop: isFocused ? 24 : 12,
-                paddingBottom: isFocused ? 20 : 12,
+                height: isFocused ? 110 : isCompact ? 72 : 84,
+                paddingTop: isFocused ? 26 : isCompact ? 16 : 18,
+                paddingBottom: isFocused ? 20 : isCompact ? 10 : 14,
               }}
             >
               <SearchBar

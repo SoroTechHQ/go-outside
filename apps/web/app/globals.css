@@ -3,6 +3,7 @@
 @source "../components/**/*.{tsx,ts}";
 
 :root {
+  --app-shell-offset: 72px;
   --brand: #1fa764;
   --brand-rgb: 31 167 100;
   --brand-hover: #159b58;
@@ -140,7 +141,7 @@ a {
 
 @media (min-width: 768px) {
   .page-grid {
-    padding-left: 72px;
+    padding-left: var(--app-shell-offset);
   }
 }
 

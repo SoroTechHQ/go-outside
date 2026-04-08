@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 type AppShellContextValue = {
   sidebarWidth: number;
@@ -10,7 +10,15 @@ type AppShellContextValue = {
 const AppShellContext = createContext<AppShellContextValue | null>(null);
 
 export function AppShellProvider({ children }: { children: ReactNode }) {
-  const [sidebarWidth, setSidebarWidth] = useState(0);
+  const [sidebarWidth, setSidebarWidth] = useState(72);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--app-shell-offset", `${sidebarWidth}px`);
+
+    return () => {
+      document.documentElement.style.removeProperty("--app-shell-offset");
+    };
+  }, [sidebarWidth]);
 
   const value = useMemo(
     () => ({
