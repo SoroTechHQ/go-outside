@@ -73,7 +73,7 @@ export function BarStripes({ values }: { values: number[] }) {
         <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
           <div className="relative w-full overflow-hidden rounded-full bg-[var(--bg-muted)]">
             <div
-              className="w-full rounded-full bg-[linear-gradient(180deg,var(--neon),rgba(184,255,60,0.24))]"
+              className="w-full rounded-full bg-[linear-gradient(180deg,var(--brand),rgba(95,191,42,0.24))]"
               style={{ height: `${Math.max((value / max) * 144, 24)}px` }}
             />
           </div>

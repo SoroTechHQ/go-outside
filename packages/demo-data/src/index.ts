@@ -77,6 +77,30 @@ export type AttendeeTicket = {
   shareLabel: string;
 };
 
+export const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
+  music: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f",
+  "food-drink": "https://images.unsplash.com/photo-1555244162-803834f70033",
+  food: "https://images.unsplash.com/photo-1555244162-803834f70033",
+  tech: "https://images.unsplash.com/photo-1540575467063-178a50c2df87",
+  arts: "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7",
+  sports: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211",
+  networking: "https://images.unsplash.com/photo-1540575467063-178a50c2df87",
+  community: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67",
+  default: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec",
+};
+
+export const CATEGORY_EMOJIS: Record<string, string> = {
+  music: "🎵",
+  tech: "💻",
+  food: "🍽️",
+  "food-drink": "🍽️",
+  arts: "🎨",
+  sports: "⚽",
+  networking: "🤝",
+  community: "🌃",
+  default: "✨",
+};
+
 export const demoData = rawDemo;
 
 export const categories = demoData.categories as Category[];
@@ -113,6 +137,28 @@ export function getRecommendedEvents() {
   return events.filter((event) =>
     demoData.attendee.recommendedEventSlugs.includes(event.slug),
   );
+}
+
+export function getCategoryEmoji(slug?: string) {
+  if (!slug) {
+    return CATEGORY_EMOJIS.default;
+  }
+
+  return CATEGORY_EMOJIS[slug] ?? CATEGORY_EMOJIS.default;
+}
+
+export function getCategoryEventCount(slug: string) {
+  return events.filter((event) => event.categorySlug === slug).length;
+}
+
+export function getEventImage(bannerUrl?: string, categorySlug?: string) {
+  if (bannerUrl) {
+    return bannerUrl;
+  }
+
+  const image =
+    CATEGORY_FALLBACK_IMAGES[categorySlug ?? "default"] ?? CATEGORY_FALLBACK_IMAGES.default;
+  return `${image}?auto=format&fit=crop&w=800&q=80`;
 }
 
 export function filterEvents(filters: {

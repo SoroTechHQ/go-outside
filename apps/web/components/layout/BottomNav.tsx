@@ -1,0 +1,75 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { House, MagnifyingGlass, Plus, Ticket, UserCircle } from "@phosphor-icons/react";
+
+type BottomNavRole = "attendee" | "organizer" | "admin";
+
+type BottomNavProps = {
+  role?: BottomNavRole;
+};
+
+type BottomNavItem = {
+  href: string;
+  icon: typeof House;
+  label: string;
+  fab?: boolean;
+};
+
+export function BottomNav({ role = "attendee" }: BottomNavProps) {
+  const pathname = usePathname();
+  const items: BottomNavItem[] = [
+    { href: "/", icon: House, label: "Home" },
+    { href: "/search", icon: MagnifyingGlass, label: "Explore" },
+    {
+      href: role === "organizer" || role === "admin" ? "/organizer/events/new" : "/search",
+      icon: Plus,
+      label: "New",
+      fab: true,
+    },
+    { href: "/dashboard/tickets", icon: Ticket, label: "Tickets" },
+    { href: "/dashboard/profile", icon: UserCircle, label: "Me" },
+  ];
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.95)] backdrop-blur-md lg:hidden">
+      <div className="flex h-16 items-center justify-around px-3 pb-[env(safe-area-inset-bottom)]">
+        {items.map((item) => {
+          const active =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
+
+          if (item.fab) {
+            return (
+              <Link
+                key={item.href}
+                className="flex h-[52px] w-[52px] -translate-y-4 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-[0_4px_16px_rgba(var(--brand-rgb),0.35)]"
+                href={item.href}
+              >
+                <Icon size={22} weight="bold" />
+              </Link>
+            );
+          }
+
+          return (
+            <Link
+              key={item.href}
+              className={`flex min-w-[64px] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium transition ${
+                active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
+              }`}
+              href={item.href}
+            >
+              <Icon size={20} weight={active ? "fill" : "regular"} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+export default BottomNav;

@@ -13,7 +13,7 @@ export function UsersChart({ values }: { values: number[] }) {
       toolbar: { show: false },
       background: "transparent",
     },
-    colors: ["#B8FF3C"],
+    colors: ["#5FBF2A"],
     plotOptions: {
       bar: {
         columnWidth: "45%",
@@ -23,7 +23,7 @@ export function UsersChart({ values }: { values: number[] }) {
     },
     dataLabels: { enabled: false },
     grid: {
-      borderColor: "rgba(184,255,60,0.06)",
+      borderColor: "rgba(95,191,42,0.06)",
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
     },
@@ -45,7 +45,7 @@ export function UsersChart({ values }: { values: number[] }) {
       gradient: {
         shade: "dark",
         type: "vertical",
-        gradientToColors: ["rgba(184,255,60,0.3)"],
+        gradientToColors: ["rgba(95,191,42,0.3)"],
         stops: [0, 100],
       },
     },

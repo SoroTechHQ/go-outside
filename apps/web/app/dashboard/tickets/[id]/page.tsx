@@ -19,9 +19,9 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <main className="min-h-screen bg-[#020702] text-[var(--text-primary)]">
+    <main className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
       <div className="container-shell py-8">
-        <div className="mx-auto max-w-xl rounded-[32px] border border-white/8 bg-[#081008] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+        <div className="mx-auto max-w-xl rounded-[32px] border border-[var(--border-card)] bg-[var(--bg-card)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
           <div className={`rounded-[24px] bg-gradient-to-br ${event.bannerTone} p-5`}>
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/60">{event.dateLabel}</p>
             <h1 className="mt-3 font-display text-4xl italic text-white">{event.title}</h1>

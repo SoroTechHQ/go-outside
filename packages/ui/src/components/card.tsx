@@ -11,7 +11,7 @@ export function ShellCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-5 shadow-[0_8px_24px_rgba(26,58,26,0.07),0_0_16px_rgba(184,255,60,0.06)]",
+        "relative overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-5 shadow-[0_8px_24px_rgba(26,58,26,0.09)]",
         className,
       )}
     >

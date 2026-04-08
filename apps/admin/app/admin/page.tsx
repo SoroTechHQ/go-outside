@@ -12,7 +12,7 @@ const toneClasses: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  live: "bg-[rgba(184,255,60,0.1)] text-[var(--neon)] border border-[rgba(184,255,60,0.2)]",
+  live: "bg-[var(--status-live-bg)] text-[var(--status-live-text)] border border-[var(--status-live-border)]",
   pending: "bg-[rgba(255,180,50,0.1)] text-[#FFB432] border border-[rgba(255,180,50,0.2)]",
   review: "bg-[rgba(232,93,138,0.1)] text-[var(--pink)] border border-[rgba(232,93,138,0.2)]",
   draft: "bg-[var(--bg-muted)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]",
@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
                 key={a.title}
                 className="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4"
               >
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(184,255,60,0.1)] text-[var(--neon)]">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--status-live-bg)] text-[var(--status-live-text)]">
                   <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
                 <div className="flex-1 min-w-0">

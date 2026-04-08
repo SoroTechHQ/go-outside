@@ -1,9 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
-import { MapPin, CalendarDots, HeartStraight } from "@phosphor-icons/react/dist/ssr";
-import type { Category, EventItem, Organizer } from "@gooutside/demo-data";
-import { AppIcon } from "./icon";
-import { ShellCard } from "./card";
-import { StatusPill } from "./badge";
+import { CalendarDots, HeartStraight, MapPin } from "@phosphor-icons/react/dist/ssr";
+import { getEventImage, type Category, type EventItem, type Organizer } from "@gooutside/demo-data";
 
 export function EventCard({
   event,
@@ -14,57 +12,87 @@ export function EventCard({
   category: Category;
   organizer: Organizer;
 }) {
-  const priceTone = event.priceValue === 0 ? "free" : "paid";
-  const statusTone = event.status === "pending" ? "pending" : event.status === "review" ? "review" : "live";
+  const primaryChip = event.trending ? "Trending" : event.status;
 
   return (
-    <ShellCard className="p-0">
-      <Link href={`/events/${event.slug}`} className="block">
-        <div className={`relative h-32 bg-gradient-to-br ${event.bannerTone}`}>
-          <div className="absolute left-4 top-4 flex items-center gap-2">
-            <StatusPill tone={statusTone}>{event.status}</StatusPill>
-            {event.trending ? <StatusPill tone="paid">Trending</StatusPill> : null}
+    <article className="group h-full rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[0_12px_30px_rgba(18,32,19,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(18,32,19,0.12)]">
+      <Link className="flex h-full flex-col" href={`/events/${event.slug}`}>
+        <div className="relative overflow-hidden rounded-t-[12px]">
+          <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/20 bg-black/35 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
+                {primaryChip}
+              </span>
+              <span className="rounded-full border border-white/12 bg-white/18 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/92 backdrop-blur">
+                {category.name}
+              </span>
+            </div>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/28 text-white backdrop-blur">
+              <HeartStraight size={17} weight={event.saved ? "fill" : "regular"} />
+            </span>
           </div>
-          <button
-            aria-label="Save event"
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/20 text-[var(--text-primary)] backdrop-blur"
-            type="button"
-          >
-            <HeartStraight size={18} weight={event.saved ? "fill" : "regular"} />
-          </button>
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80 backdrop-blur">
-            <AppIcon name={category.iconKey} size={14} />
-            {category.name}
+
+          <div className="relative h-48 overflow-hidden rounded-t-[12px] bg-[var(--bg-card-alt)]">
+            <Image
+              alt={event.title}
+              className="object-cover transition duration-500 group-hover:scale-[1.02]"
+              fill
+              sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              src={getEventImage(undefined, event.categorySlug)}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,12,8,0.12),rgba(7,12,8,0.38))]" />
           </div>
         </div>
-        <div className="space-y-4 p-5">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--neon)]">{event.eyebrow}</p>
-            <h3 className="mt-2 font-display text-2xl italic text-[var(--text-primary)]">{event.title}</h3>
+
+        <div className="flex flex-1 flex-col gap-4 px-1 pb-1 pt-4">
+          <div className="flex flex-wrap gap-2">
+            {event.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-secondary)]"
+              >
+                {tag.replaceAll("-", " ")}
+              </span>
+            ))}
           </div>
 
-          <p className="text-sm leading-6 text-[var(--text-secondary)]">{event.shortDescription}</p>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
+              {event.eyebrow}
+            </p>
+            <h3 className="mt-2 font-display text-[1.65rem] italic leading-tight text-[var(--text-primary)]">
+              {event.title}
+            </h3>
+          </div>
 
-          <div className="space-y-2 text-sm text-[var(--text-secondary)]">
-            <div className="flex items-center gap-2">
-              <CalendarDots size={18} />
-              <span>{event.dateLabel} · {event.timeLabel}</span>
+          <p className="line-clamp-3 text-sm leading-6 text-[var(--text-secondary)]">
+            {event.shortDescription}
+          </p>
+
+          <div className="space-y-2.5 text-sm text-[var(--text-secondary)]">
+            <div className="flex items-center gap-2.5">
+              <CalendarDots size={16} />
+              <span>
+                {event.dateLabel} · {event.timeLabel}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin size={18} />
+            <div className="flex items-center gap-2.5">
+              <MapPin size={16} />
               <span>{event.locationLine}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-4">
+          <div className="mt-auto flex items-center justify-between border-t border-[var(--border-subtle)] pt-4">
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">{organizer.name}</p>
               <p className="text-xs text-[var(--text-tertiary)]">{organizer.tag}</p>
             </div>
-            <StatusPill tone={priceTone}>{event.priceLabel}</StatusPill>
+            <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)]">
+              {event.priceLabel}
+            </span>
           </div>
         </div>
       </Link>
-    </ShellCard>
+    </article>
   );
 }

@@ -17,7 +17,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     <main className="pb-20">
       <PublicHeader />
 
-      <div className="h-48 bg-gradient-to-br from-[#0D140D] to-[#020702] flex items-center">
+      <div className="h-48 bg-gradient-to-br from-[#1a2418] to-[#0e1410] flex items-center">
         <div className="container-shell flex items-center gap-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bg-muted)] text-[var(--neon)]">
             <AppIcon name={category.iconKey} size={26} weight="bold" />

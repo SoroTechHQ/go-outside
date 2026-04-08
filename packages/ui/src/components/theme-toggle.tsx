@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "@phosphor-icons/react";
+import { MoonStars, SunDim } from "@phosphor-icons/react";
+import { cn } from "../lib/cn";
 
 const storageKey = "gooutside-theme";
 
@@ -9,7 +10,13 @@ function applyTheme(theme: "light" | "dark") {
   document.documentElement.dataset.theme = theme;
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({
+  className,
+  size = 18,
+}: {
+  className?: string;
+  size?: number;
+}) {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
@@ -31,11 +38,19 @@ export function ThemeToggle() {
 
   return (
     <button
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-primary)]"
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      className={cn(
+        "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] text-[var(--text-primary)] transition hover:border-[var(--border)] hover:bg-[var(--bg-card-hover)]",
+        className,
+      )}
       onClick={toggle}
       type="button"
     >
-      {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+      {theme === "dark" ? (
+        <SunDim size={size} weight="regular" />
+      ) : (
+        <MoonStars size={size} weight="regular" />
+      )}
     </button>
   );
 }

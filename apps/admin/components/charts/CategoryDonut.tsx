@@ -5,7 +5,7 @@ import type { ApexOptions } from "apexcharts";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-const palette = ["#B8FF3C", "#4A7AE8", "#E85D8A", "#D7F96D", "#91B67E", "#688A64"];
+const palette = ["#5FBF2A", "#4A7AE8", "#E85D8A", "#D7F96D", "#91B67E", "#688A64"];
 
 export function CategoryDonut({ items }: { items: { label: string; value: number }[] }) {
   const options: ApexOptions = {
@@ -28,7 +28,7 @@ export function CategoryDonut({ items }: { items: { label: string; value: number
               fontSize: "11px",
               formatter: () => `${items.reduce((a, b) => a + b.value, 0)}%`,
             },
-            value: { color: "#F5FFF0", fontSize: "22px", fontWeight: "600" },
+            value: { color: "#EDF5E8", fontSize: "22px", fontWeight: "600" },
           },
         },
       },

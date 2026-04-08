@@ -15,7 +15,7 @@ export default function CheckinPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-5">
           <ShellCard>
-            <div className="relative h-64 rounded-[24px] bg-[#020702] border-2 border-[var(--neon)]/30 flex items-center justify-center overflow-hidden">
+            <div className="relative h-64 rounded-[24px] bg-[#0e1410] border-2 border-[var(--brand)]/30 flex items-center justify-center overflow-hidden">
               <div className="absolute left-3 top-3 h-5 w-5 rounded-tl-[6px] border-l-2 border-t-2 border-[var(--neon)]" />
               <div className="absolute right-3 top-3 h-5 w-5 rounded-tr-[6px] border-r-2 border-t-2 border-[var(--neon)]" />
               <div className="absolute bottom-3 left-3 h-5 w-5 rounded-bl-[6px] border-b-2 border-l-2 border-[var(--neon)]" />

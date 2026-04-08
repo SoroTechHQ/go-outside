@@ -19,7 +19,7 @@ export function TextInput({
   return (
     <input
       className={cn(
-        "w-full rounded-2xl border border-[color:rgba(184,255,60,0.20)] bg-[var(--bg-muted)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none",
+        "w-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-muted)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none",
         className,
       )}
       readOnly
@@ -38,7 +38,7 @@ export function TextArea({
   return (
     <textarea
       className={cn(
-        "min-h-32 w-full rounded-3xl border border-[color:rgba(184,255,60,0.20)] bg-[var(--bg-muted)] px-4 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none",
+        "min-h-32 w-full rounded-3xl border border-[var(--border-card)] bg-[var(--bg-muted)] px-4 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none",
         className,
       )}
       readOnly
@@ -49,7 +49,7 @@ export function TextArea({
 
 export function FauxSelect({ value }: { value: string }) {
   return (
-    <div className="rounded-2xl border border-[color:rgba(184,255,60,0.20)] bg-[var(--bg-muted)] px-4 py-3 text-sm text-[var(--text-primary)]">
+    <div className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-muted)] px-4 py-3 text-sm text-[var(--text-primary)]">
       {value}
     </div>
   );

@@ -27,7 +27,7 @@ export default function NewEventPage() {
                 index === draft.steps.length - 1
                   ? "border-[var(--border-card)] bg-[var(--bg-muted)] text-[var(--text-secondary)]"
                   : index === 0
-                    ? "border-[var(--border-card)] bg-[var(--neon)] text-[#020702]"
+                    ? "border-[var(--border-card)] bg-[var(--brand)] text-[#0e1410]"
                     : "border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)]"
               }`}
             >

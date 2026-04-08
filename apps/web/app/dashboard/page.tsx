@@ -1,15 +1,18 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   demoData,
   getAttendeeTicketById,
   getCategoryBySlug,
+  getCategoryEmoji,
   getEventBySlug,
   getOrganizerById,
   getRecommendedEvents,
   getSavedEvents,
 } from "@gooutside/demo-data";
-import { Button, EventCard, MobileBottomNav, SectionHeader, ShellCard, StatusPill } from "@gooutside/ui";
-import { PublicHeader } from "../../components/public-header";
+import { Button, EventCard } from "@gooutside/ui";
+import Header from "../../components/layout/Header";
+import NavSwitch from "../../components/layout/NavSwitch";
 
 export default function DashboardPage() {
   const ticket = getAttendeeTicketById(demoData.attendee.upcomingTicketId);
@@ -17,96 +20,172 @@ export default function DashboardPage() {
   const organizer = upcomingEvent ? getOrganizerById(upcomingEvent.organizerId) : undefined;
   const savedEvents = getSavedEvents();
   const recommendedEvents = getRecommendedEvents();
+  const interests = Array.from(
+    new Set([...savedEvents, ...recommendedEvents].map((event) => event.categorySlug)),
+  )
+    .map((slug) => getCategoryBySlug(slug))
+    .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
   return (
-    <main className="pb-24">
-      <PublicHeader />
+    <main className="page-grid min-h-screen pb-24">
+      <NavSwitch role="attendee" userName={demoData.attendee.name} />
+      <Suspense fallback={null}>
+        <Header role="attendee" userName={demoData.attendee.name} />
+      </Suspense>
+
       <div className="container-shell py-10">
-        <SectionHeader
-          description={demoData.attendee.homeHeading}
-          eyebrow={demoData.attendee.roleLabel}
-          index="07"
-          title={`Hey, ${demoData.attendee.name}`}
-        />
+        <div className="mx-auto max-w-[720px] text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[var(--brand)]">
+            {demoData.attendee.roleLabel}
+          </p>
+          <h1 className="mt-4 font-display text-[2.35rem] italic text-[var(--text-primary)] md:text-[2.8rem]">
+            Hey, {demoData.attendee.name}
+          </h1>
+          <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            {demoData.attendee.homeHeading}
+          </p>
+        </div>
 
-        {ticket && upcomingEvent && organizer ? (
-          <ShellCard className="mt-10 grid gap-6 lg:grid-cols-[1.1fr,0.9fr] lg:items-center">
+        <div className="mx-auto mt-10 max-w-[720px]">
+          <section className="relative overflow-hidden rounded-[32px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-7 py-8 shadow-[0_18px_48px_rgba(12,18,12,0.1)] md:px-8">
+            <div className="pointer-events-none absolute left-10 right-10 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--brand),transparent)] opacity-30" />
+
+            {ticket && upcomingEvent && organizer ? (
+              <>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand)]">
+                  Upcoming ticket
+                </p>
+                <h2 className="mt-4 text-center font-display text-[2rem] italic text-[var(--text-primary)] md:text-[2.25rem]">
+                  {upcomingEvent.title}
+                </h2>
+                <p className="mx-auto mt-3 max-w-[540px] text-center text-sm leading-7 text-[var(--text-secondary)]">
+                  {upcomingEvent.shortDescription}
+                </p>
+
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  {[ticket.status, ticket.typeLabel, ticket.reference].map((pill) => (
+                    <span
+                      key={pill}
+                      className="rounded-full border border-[var(--border-subtle)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]"
+                    >
+                      {pill}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-8 flex flex-wrap justify-center gap-3">
+                  <Button href={`/dashboard/tickets/${ticket.id}`}>Open Ticket</Button>
+                  <Button href="/" variant="ghost">
+                    Keep Exploring
+                  </Button>
+                </div>
+
+                <div className="mt-8 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+                    {upcomingEvent.dateLabel} · {upcomingEvent.timeLabel}
+                  </p>
+                  <p className="mt-3 font-display text-2xl italic text-[var(--text-primary)]">
+                    {upcomingEvent.venue}
+                  </p>
+                  <p className="mt-2 text-sm text-[var(--text-secondary)]">{organizer.name}</p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center">
+                <p className="font-display text-3xl italic text-[var(--text-primary)]">
+                  No upcoming events
+                </p>
+                <p className="mt-3 text-sm text-[var(--text-secondary)]">
+                  Your next night out will show up here once you book.
+                </p>
+                <div className="mt-6">
+                  <Button href="/">Explore events</Button>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <section className="mx-auto mt-14 max-w-[920px]">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--neon)]">Upcoming ticket</p>
-              <h2 className="mt-4 font-display text-4xl italic text-[var(--text-primary)]">{upcomingEvent.title}</h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">{upcomingEvent.shortDescription}</p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <StatusPill tone="live">{ticket.status}</StatusPill>
-                <StatusPill tone="free">{ticket.typeLabel}</StatusPill>
-                <StatusPill tone="draft">{ticket.reference}</StatusPill>
-              </div>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button href={`/dashboard/tickets/${ticket.id}`}>Open Ticket</Button>
-                <Button href="/events" variant="ghost">Keep Exploring</Button>
-              </div>
+              <h2 className="font-display text-3xl italic text-[var(--text-primary)]">Your interests</h2>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                The feed uses these first when it decides what rises.
+              </p>
             </div>
-            <div className={`rounded-[24px] border border-[var(--border-subtle)] bg-gradient-to-br ${upcomingEvent.bannerTone} p-6`}>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">{upcomingEvent.dateLabel}</p>
-              <div className="mt-4 font-display text-3xl italic text-white">{upcomingEvent.venue}</div>
-              <p className="mt-3 text-sm text-white/70">{organizer.name}</p>
-            </div>
-          </ShellCard>
-        ) : null}
+            <Link
+              className="text-sm font-semibold text-[var(--brand)]"
+              href="/dashboard/profile#interests"
+            >
+              Edit interests →
+            </Link>
+          </div>
 
-        <section className="mt-14">
+          <div className="no-scrollbar mt-5 flex gap-3 overflow-x-auto pb-1">
+            {interests.map((interest) => (
+              <span
+                key={interest.slug}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+              >
+                <span>{getCategoryEmoji(interest.slug)}</span>
+                {interest.name}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto mt-14 max-w-[1080px]">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-3xl italic text-[var(--text-primary)]">Saved events</h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">Events you may want to revisit before they sell out.</p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Events you may want to revisit before they sell out.
+              </p>
             </div>
-            <Link className="text-sm font-semibold text-[var(--neon)]" href="/events?saved=true">Open feed</Link>
+            <Link className="text-sm font-semibold text-[var(--brand)]" href="/events?saved=true">
+              Open feed →
+            </Link>
           </div>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {savedEvents.map((event) => {
               const category = getCategoryBySlug(event.categorySlug);
               const savedOrganizer = getOrganizerById(event.organizerId);
               return category && savedOrganizer ? (
-                <EventCard key={event.id} category={category} event={event} organizer={savedOrganizer} />
+                <EventCard
+                  key={event.id}
+                  category={category}
+                  event={event}
+                  organizer={savedOrganizer}
+                />
               ) : null;
             })}
           </div>
         </section>
 
-        <section className="mt-14">
+        <section className="mx-auto mt-14 max-w-[1080px]">
           <div className="mb-6">
-            <h2 className="font-display text-3xl italic text-[var(--text-primary)]">Recommended for you</h2>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">Based on your saved scenes and recent ticket behavior.</p>
+            <h2 className="font-display text-3xl italic text-[var(--text-primary)]">Based on your vibe</h2>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              A tighter recommendation shelf driven by recent saves and your active ticket.
+            </p>
           </div>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {recommendedEvents.map((event) => {
+          <div className="grid gap-6 md:grid-cols-2">
+            {recommendedEvents.slice(0, 4).map((event) => {
               const category = getCategoryBySlug(event.categorySlug);
               const recommendedOrganizer = getOrganizerById(event.organizerId);
               return category && recommendedOrganizer ? (
-                <EventCard key={event.id} category={category} event={event} organizer={recommendedOrganizer} />
+                <EventCard
+                  key={event.id}
+                  category={category}
+                  event={event}
+                  organizer={recommendedOrganizer}
+                />
               ) : null;
             })}
           </div>
         </section>
-
-        <section className="mt-14">
-          <div className="mb-6">
-            <h2 className="font-display text-3xl italic text-[var(--text-primary)]">Recent activity</h2>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">Notification previews from your attendee inbox.</p>
-          </div>
-          <div className="grid gap-4">
-            {demoData.attendee.notifications.map((item) => (
-              <ShellCard key={item.title} className="flex items-center justify-between gap-4 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{item.title}</p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{item.meta}</p>
-                </div>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-tertiary)]">{item.timeLabel}</p>
-              </ShellCard>
-            ))}
-          </div>
-        </section>
       </div>
-      <MobileBottomNav links={demoData.navigation.attendeeTabs} />
     </main>
   );
 }

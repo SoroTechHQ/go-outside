@@ -72,7 +72,7 @@ export function AppHeader({
         </button>
 
         {/* Avatar */}
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--neon)] text-[11px] font-bold text-[#020702]">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--neon)] text-[11px] font-bold text-[#0e1410]">
           AD
         </div>
       </div>

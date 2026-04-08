@@ -5,7 +5,7 @@ import { UsersChart } from "../../components/charts/UsersChart";
 import { DashboardShell } from "../../components/dashboard-shell";
 
 const statusColors: Record<string, string> = {
-  live: "bg-[rgba(184,255,60,0.1)] text-[var(--neon)] border border-[rgba(184,255,60,0.2)]",
+  live: "bg-[var(--status-live-bg)] text-[var(--status-live-text)] border border-[var(--status-live-border)]",
   pending: "bg-[rgba(255,180,50,0.1)] text-[#FFB432] border border-[rgba(255,180,50,0.2)]",
   review: "bg-[rgba(232,93,138,0.1)] text-[var(--pink)] border border-[rgba(232,93,138,0.2)]",
 };
@@ -107,7 +107,7 @@ export default function OrganizerDashboardPage() {
             <div className="mt-4 grid gap-3">
               <Link
                 href="/organizer/events/new"
-                className="flex items-center justify-center rounded-full bg-[var(--neon)] px-4 py-2.5 text-sm font-bold text-[#020702] shadow-[0_0_18px_rgba(184,255,60,0.25)] hover:shadow-[0_0_24px_rgba(184,255,60,0.35)]"
+                className="flex items-center justify-center rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-[#0e1410] shadow-[0_4px_14px_rgba(95,191,42,0.20)] hover:brightness-[1.04]"
               >
                 + New Event
               </Link>

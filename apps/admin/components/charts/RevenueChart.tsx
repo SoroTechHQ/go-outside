@@ -16,7 +16,7 @@ export function RevenueChart({ values }: { values: number[] }) {
       background: "transparent",
       sparkline: { enabled: false },
     },
-    colors: ["#B8FF3C"],
+    colors: ["#5FBF2A"],
     fill: {
       type: "gradient",
       gradient: {
@@ -29,7 +29,7 @@ export function RevenueChart({ values }: { values: number[] }) {
     stroke: { curve: "smooth", width: 2.5 },
     dataLabels: { enabled: false },
     grid: {
-      borderColor: "rgba(184,255,60,0.06)",
+      borderColor: "rgba(95,191,42,0.06)",
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
     },

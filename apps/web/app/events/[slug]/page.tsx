@@ -104,7 +104,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
 
           <ShellCard>
             <h3 className="font-display text-3xl italic text-[var(--text-primary)]">Location</h3>
-            <div className="mt-5 h-48 rounded-[18px] bg-gradient-to-br from-[#0D140D] to-[#020702] border border-[var(--border-subtle)] flex items-center justify-center gap-3 text-[var(--text-tertiary)]">
+            <div className="mt-5 h-48 rounded-[18px] bg-gradient-to-br from-[#1a2418] to-[#0e1410] border border-[var(--border-subtle)] flex items-center justify-center gap-3 text-[var(--text-tertiary)]">
               <MapPin size={20} />
               <span className="text-sm">{event.locationLine}</span>
             </div>

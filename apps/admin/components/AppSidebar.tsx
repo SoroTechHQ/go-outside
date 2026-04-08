@@ -173,7 +173,7 @@ export function AppSidebar({ mode }: { mode: "admin" | "organizer" }) {
         {wide && (
           <div className="shrink-0 border-t border-[var(--border-subtle)] p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--neon)] text-[11px] font-bold text-[#020702]">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--neon)] text-[11px] font-bold text-[#0e1410]">
                 {mode === "admin" ? "AD" : "SS"}
               </div>
               <div>
