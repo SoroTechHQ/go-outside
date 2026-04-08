@@ -3,9 +3,16 @@
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "build": "pnpm --filter @gooutside/api build",
-    "dev": "pnpm --filter @gooutside/api dev",
+    "build": "pnpm --filter @gooutside/api build && pnpm --filter @gooutside/demo-data build && pnpm --filter @gooutside/ui build && pnpm --filter @gooutside/web build && pnpm --filter @gooutside/admin build",
+    "build:api": "pnpm --filter @gooutside/api build",
+    "build:demo": "pnpm --filter @gooutside/demo-data build",
+    "build:ui": "pnpm --filter @gooutside/ui build",
+    "build:web": "pnpm --filter @gooutside/web build",
+    "build:admin": "pnpm --filter @gooutside/admin build",
+    "dev:api": "pnpm --filter @gooutside/api dev",
+    "dev:web": "pnpm --filter @gooutside/web dev",
+    "dev:admin": "pnpm --filter @gooutside/admin dev",
     "test": "pnpm --filter @gooutside/api test",
-    "typecheck": "pnpm --filter @gooutside/api typecheck"
+    "typecheck": "pnpm --filter @gooutside/api typecheck && pnpm --filter @gooutside/demo-data typecheck && pnpm --filter @gooutside/ui typecheck && pnpm --filter @gooutside/web typecheck && pnpm --filter @gooutside/admin typecheck"
   }
 }

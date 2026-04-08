@@ -1,0 +1,26 @@
+{
+  "name": "@gooutside/admin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3001",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gooutside/demo-data": "workspace:*",
+    "@gooutside/ui": "workspace:*",
+    "next": "^15.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@tailwindcss/postcss": "^4.1.17",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.7.2"
+  }
+}

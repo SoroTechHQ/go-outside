@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --neon: #5fbf2a;
+  --neon-glow: rgba(184, 255, 60, 0.22);
+  --neon-glow-soft: rgba(184, 255, 60, 0.1);
+  --bg-base: #ffffff;
+  --bg-elevated: #e9f5e4;
+  --bg-card: #e3f2dc;
+  --bg-card-alt: #d6ead0;
+  --bg-muted: rgba(28, 47, 26, 0.04);
+  --text-primary: #1c2f1a;
+  --text-secondary: #4e7249;
+  --text-tertiary: #7a9c76;
+  --pink: #e85d8a;
+  --blue: #4a7ae8;
+  --border-default: rgba(30, 80, 26, 0.14);
+  --border-subtle: rgba(30, 80, 26, 0.08);
+  --border-card: rgba(30, 80, 26, 0.16);
+  --status-live-bg: rgba(30, 80, 26, 0.1);
+  --status-live-text: #1a5218;
+  --status-live-border: rgba(30, 80, 26, 0.22);
+  --status-pending-text: #7a4800;
+  --status-review-text: #7a1840;
+  --section-number: rgba(30, 80, 26, 0.08);
+}
+
+:root[data-theme="dark"] {
+  --neon: #b8ff3c;
+  --neon-glow: rgba(184, 255, 60, 0.18);
+  --neon-glow-soft: rgba(184, 255, 60, 0.08);
+  --bg-base: #020702;
+  --bg-elevated: #080d08;
+  --bg-card: #0d140d;
+  --bg-card-alt: #131a13;
+  --bg-muted: rgba(255, 255, 255, 0.04);
+  --text-primary: #f5fff0;
+  --text-secondary: #6b8c6b;
+  --text-tertiary: #4a6a4a;
+  --pink: #e85d8a;
+  --blue: #4a7ae8;
+  --border-default: rgba(184, 255, 60, 0.08);
+  --border-subtle: rgba(184, 255, 60, 0.05);
+  --border-card: rgba(184, 255, 60, 0.1);
+  --status-live-bg: rgba(184, 255, 60, 0.1);
+  --status-live-text: #b8ff3c;
+  --status-live-border: rgba(184, 255, 60, 0.14);
+  --status-pending-text: #ffb432;
+  --status-review-text: #e85d8a;
+  --section-number: rgba(184, 255, 60, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-base);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(184, 255, 60, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(74, 122, 232, 0.06), transparent 24%),
+    var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.font-display {
+  font-family: var(--font-display), serif;
+}
+
+.font-body {
+  font-family: var(--font-body), sans-serif;
+}
+
+.container-shell {
+  margin: 0 auto;
+  width: min(100% - 2rem, 1280px);
+}
+
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
+}

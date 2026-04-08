@@ -1,0 +1,41 @@
+HOW TO BUILD AND TEST LOCALLY
+  - pnpm install
+  - pnpm --filter @gooutside/demo-data typecheck
+  - pnpm --filter @gooutside/ui typecheck
+  - pnpm --filter @gooutside/web typecheck
+  - pnpm --filter @gooutside/admin typecheck
+  - pnpm --filter @gooutside/demo-data build
+  - pnpm --filter @gooutside/ui build
+  - pnpm --filter @gooutside/web build
+  - pnpm --filter @gooutside/admin build
+
+HOW TO START THE DEV SERVERS
+  - This repo does not have a root `pnpm run dev` script.
+  - Start each app with its named script from the repo root.
+
+  - Public frontend:
+    `pnpm run dev:web`
+    Opens the attendee/public app, usually at `http://localhost:3000`
+
+  - Admin frontend:
+    `pnpm run dev:admin`
+    Opens the admin/organizer app at `http://localhost:3001`
+
+  - API:
+    `PORT=3002 pnpm run dev:api`
+    Use port `3002` because the admin app already uses `3001`
+
+START EVERYTHING
+  - Terminal 1:
+    `pnpm run dev:web`
+  - Terminal 2:
+    `pnpm run dev:admin`
+  - Terminal 3:
+    `PORT=3002 pnpm run dev:api`
+
+QUICK NOTES
+  - Install dependencies first:
+    `pnpm install`
+  - Stop a server with `Ctrl + C`
+  - If a port is busy, change it inline, for example:
+    `PORT=3003 pnpm run dev:api`

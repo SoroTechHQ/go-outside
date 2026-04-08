@@ -4,6 +4,8 @@ node_modules/
 dist/
 .turbo/
 coverage/
+.next/
+.vercel/
 .env
 .env.*
 .DS_Store

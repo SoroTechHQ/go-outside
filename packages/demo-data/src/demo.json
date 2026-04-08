@@ -1,0 +1,349 @@
+{
+  "platform": {
+    "name": "GoOutside",
+    "tagline": "Events in Ghana, made social and bookable.",
+    "stats": {
+      "usersLabel": "89K users",
+      "eventsLabel": "340 events",
+      "citiesLabel": "28 cities"
+    },
+    "cities": ["Accra", "Kumasi", "Takoradi", "Cape Coast", "Tamale", "Ho"]
+  },
+  "navigation": {
+    "publicLinks": [
+      { "label": "Explore", "href": "/events" },
+      { "label": "Categories", "href": "/events?view=categories" },
+      { "label": "Organizers", "href": "/events?view=organizers" }
+    ],
+    "attendeeTabs": [
+      { "label": "Home", "href": "/dashboard", "iconKey": "house" },
+      { "label": "Tickets", "href": "/dashboard/tickets/ticket-ga-rooftop-after-hours", "iconKey": "ticket" },
+      { "label": "Saved", "href": "/events?saved=true", "iconKey": "bookmark" },
+      { "label": "Profile", "href": "/dashboard", "iconKey": "user" }
+    ],
+    "organizerLinks": [
+      { "label": "Overview", "href": "/organizer", "iconKey": "gauge" },
+      { "label": "Events", "href": "/organizer", "iconKey": "calendar" },
+      { "label": "Create Event", "href": "/organizer/events/new", "iconKey": "plus-circle" },
+      { "label": "Analytics", "href": "/organizer", "iconKey": "chart-line" },
+      { "label": "Payouts", "href": "/organizer", "iconKey": "wallet" }
+    ],
+    "adminLinks": [
+      { "label": "Overview", "href": "/admin", "iconKey": "squares-four" },
+      { "label": "Events", "href": "/admin", "iconKey": "calendar" },
+      { "label": "Users", "href": "/admin", "iconKey": "users" },
+      { "label": "Organizers", "href": "/admin", "iconKey": "buildings" },
+      { "label": "Reports", "href": "/admin", "iconKey": "warning-circle" },
+      { "label": "Payments", "href": "/admin", "iconKey": "bank" },
+      { "label": "Categories", "href": "/admin", "iconKey": "tag" }
+    ]
+  },
+  "categories": [
+    { "slug": "music", "name": "Music", "iconKey": "music-notes", "description": "Live sets, rooftop sessions, and community listening parties." },
+    { "slug": "tech", "name": "Tech", "iconKey": "cpu", "description": "Product launches, hack nights, and founder circles." },
+    { "slug": "food", "name": "Food", "iconKey": "fork-knife", "description": "Chef tables, tasting menus, and street food weekends." },
+    { "slug": "arts", "name": "Arts", "iconKey": "paint-brush", "description": "Gallery evenings, design salons, and creative workshops." },
+    { "slug": "sports", "name": "Sports", "iconKey": "basketball", "description": "Runs, pickup tournaments, and wellness collectives." },
+    { "slug": "networking", "name": "Networking", "iconKey": "handshake", "description": "Career mixers, investor sessions, and industry dinners." }
+  ],
+  "organizers": [
+    {
+      "id": "org-sankofa-sessions",
+      "name": "Sankofa Sessions",
+      "tag": "Curated city culture",
+      "city": "Accra",
+      "verified": true,
+      "followersLabel": "14.2K followers",
+      "eventsLabel": "26 live events"
+    },
+    {
+      "id": "org-build-ghana",
+      "name": "Build Ghana Labs",
+      "tag": "Founder and product community",
+      "city": "Accra",
+      "verified": true,
+      "followersLabel": "9.8K followers",
+      "eventsLabel": "18 live events"
+    },
+    {
+      "id": "org-lakefront-social",
+      "name": "Lakefront Social Club",
+      "tag": "Destination hospitality",
+      "city": "Akosombo",
+      "verified": false,
+      "followersLabel": "6.3K followers",
+      "eventsLabel": "11 live events"
+    }
+  ],
+  "events": [
+    {
+      "id": "evt-ga-rooftop-after-hours",
+      "slug": "ga-rooftop-after-hours",
+      "title": "Ga Rooftop After Hours",
+      "eyebrow": "Friday in Osu",
+      "city": "Accra",
+      "venue": "Skyline House, Osu",
+      "locationLine": "Osu, Accra",
+      "dateLabel": "Friday, April 18",
+      "timeLabel": "7:00 PM",
+      "priceLabel": "GHS 180",
+      "priceValue": 180,
+      "capacityLabel": "212 / 320 seats claimed",
+      "shortDescription": "A late-night rooftop session with live alt-pop, local cocktails, and a city-view dining set.",
+      "description": "Ga Rooftop After Hours blends live music, plated small bites, and a social terrace built for conversation. The crowd is creator-heavy, the pacing feels like a well-curated house gathering, and the venue opens with sunset lounge sets before shifting into a full live performance block.",
+      "categorySlug": "music",
+      "organizerId": "org-sankofa-sessions",
+      "status": "live",
+      "featured": true,
+      "trending": true,
+      "saved": true,
+      "rating": "4.9",
+      "bannerTone": "from-[#18321a] via-[#0a130b] to-[#020702]",
+      "ticketTypes": [
+        { "name": "General Access", "priceLabel": "GHS 180", "remainingLabel": "68 left" },
+        { "name": "Table for Two", "priceLabel": "GHS 480", "remainingLabel": "9 left" }
+      ],
+      "gallery": ["City terrace lighting", "Stage view", "Dining corner"],
+      "tags": ["nightlife", "live-set", "rooftop"]
+    },
+    {
+      "id": "evt-product-market-accra",
+      "slug": "product-market-accra",
+      "title": "Product Market Accra",
+      "eyebrow": "Builders and operators",
+      "city": "Accra",
+      "venue": "The Mix Design Hub",
+      "locationLine": "Labone, Accra",
+      "dateLabel": "Saturday, April 26",
+      "timeLabel": "10:00 AM",
+      "priceLabel": "Free",
+      "priceValue": 0,
+      "capacityLabel": "410 / 500 passes reserved",
+      "shortDescription": "A fast-moving community day for product teams, founders, and operators building in West Africa.",
+      "description": "Product Market Accra is designed like a social-first conference floor: short talks, compact demo pods, and intentional networking sessions layered through the day. Expect founders, operators, and engineers moving between strategy rooms, product breakdowns, and practical workshops.",
+      "categorySlug": "tech",
+      "organizerId": "org-build-ghana",
+      "status": "live",
+      "featured": true,
+      "trending": false,
+      "saved": false,
+      "rating": "4.7",
+      "bannerTone": "from-[#112417] via-[#0a140d] to-[#03100a]",
+      "ticketTypes": [
+        { "name": "Community Pass", "priceLabel": "Free", "remainingLabel": "90 left" },
+        { "name": "Operator Dinner", "priceLabel": "GHS 250", "remainingLabel": "24 left" }
+      ],
+      "gallery": ["Forum room", "Community booths", "Founder circle"],
+      "tags": ["founders", "product", "community"]
+    },
+    {
+      "id": "evt-kwahu-easter-house",
+      "slug": "kwahu-easter-house",
+      "title": "Kwahu Easter House",
+      "eyebrow": "Destination weekend",
+      "city": "Kwahu",
+      "venue": "Ridgeview Estate",
+      "locationLine": "Kwahu Ridge",
+      "dateLabel": "Sunday, April 20",
+      "timeLabel": "2:00 PM",
+      "priceLabel": "GHS 240",
+      "priceValue": 240,
+      "capacityLabel": "120 / 150 seats claimed",
+      "shortDescription": "A hillside social with long-table dining, music programming, and a sunset hospitality set.",
+      "description": "Kwahu Easter House brings a hospitality-forward atmosphere to the ridge with layered programming: arrival cocktails, poolside conversation, a design-led dinner setup, and a late sunset music block. The experience is paced to feel premium without losing warmth or cultural texture.",
+      "categorySlug": "networking",
+      "organizerId": "org-lakefront-social",
+      "status": "pending",
+      "featured": false,
+      "trending": true,
+      "saved": false,
+      "rating": "4.8",
+      "bannerTone": "from-[#324025] via-[#10170f] to-[#020702]",
+      "ticketTypes": [
+        { "name": "House Pass", "priceLabel": "GHS 240", "remainingLabel": "30 left" }
+      ],
+      "gallery": ["Pool deck", "Dining tablescape", "Sunset deck"],
+      "tags": ["weekend", "destination", "hospitality"]
+    },
+    {
+      "id": "evt-accra-chef-table",
+      "slug": "accra-chef-table",
+      "title": "Accra Chef Table Vol. 4",
+      "eyebrow": "Chef residency",
+      "city": "Accra",
+      "venue": "Maison Verde",
+      "locationLine": "Airport Residential",
+      "dateLabel": "Thursday, May 1",
+      "timeLabel": "6:30 PM",
+      "priceLabel": "GHS 320",
+      "priceValue": 320,
+      "capacityLabel": "42 / 56 seats claimed",
+      "shortDescription": "A six-course city dinner pairing Ghanaian produce with experimental plating and storytelling.",
+      "description": "Accra Chef Table is a small-format dining experience for guests who want food as both event and performance. Courses are explained live, pairings evolve through the night, and the room is intimate enough to feel like a private residency rather than a restaurant seating.",
+      "categorySlug": "food",
+      "organizerId": "org-sankofa-sessions",
+      "status": "review",
+      "featured": false,
+      "trending": false,
+      "saved": true,
+      "rating": "4.9",
+      "bannerTone": "from-[#28451d] via-[#102010] to-[#030903]",
+      "ticketTypes": [
+        { "name": "Tasting Seat", "priceLabel": "GHS 320", "remainingLabel": "14 left" }
+      ],
+      "gallery": ["Open kitchen", "Course plating", "Dining room"],
+      "tags": ["chef", "dining", "culture"]
+    },
+    {
+      "id": "evt-kumasi-creative-club",
+      "slug": "kumasi-creative-club",
+      "title": "Kumasi Creative Club",
+      "eyebrow": "Workshop and salon",
+      "city": "Kumasi",
+      "venue": "Nhyira House",
+      "locationLine": "Nhyiaeso, Kumasi",
+      "dateLabel": "Saturday, May 10",
+      "timeLabel": "4:00 PM",
+      "priceLabel": "GHS 95",
+      "priceValue": 95,
+      "capacityLabel": "88 / 120 seats claimed",
+      "shortDescription": "A design and visual culture gathering for illustrators, photographers, and independent studios.",
+      "description": "Kumasi Creative Club is equal parts workshop and city salon. The agenda alternates between practical sessions, peer review moments, and a relaxed social hour where creative teams trade process notes and build new collaborations.",
+      "categorySlug": "arts",
+      "organizerId": "org-build-ghana",
+      "status": "live",
+      "featured": false,
+      "trending": true,
+      "saved": false,
+      "rating": "4.6",
+      "bannerTone": "from-[#213b1e] via-[#0f180f] to-[#020702]",
+      "ticketTypes": [
+        { "name": "Studio Pass", "priceLabel": "GHS 95", "remainingLabel": "32 left" }
+      ],
+      "gallery": ["Workshop tables", "Print wall", "Conversation pit"],
+      "tags": ["design", "visual-culture", "networking"]
+    }
+  ],
+  "reviews": [
+    {
+      "eventSlug": "ga-rooftop-after-hours",
+      "author": "Esi Badu",
+      "title": "Cinematic without feeling staged",
+      "body": "The event felt curated, but still social. It was easy to meet people, the music pacing was strong, and the venue flow made sense.",
+      "rating": "5.0"
+    },
+    {
+      "eventSlug": "ga-rooftop-after-hours",
+      "author": "Nii Ofori",
+      "title": "The city-night version of a good house party",
+      "body": "The production value was high, but the atmosphere stayed warm. I would book the table tier next time.",
+      "rating": "4.8"
+    }
+  ],
+  "attendee": {
+    "name": "Kofi Mensah",
+    "roleLabel": "Attendee",
+    "homeHeading": "Your city plan is shaping up.",
+    "upcomingTicketId": "ticket-ga-rooftop-after-hours",
+    "savedEventSlugs": ["ga-rooftop-after-hours", "accra-chef-table"],
+    "recommendedEventSlugs": ["product-market-accra", "kumasi-creative-club", "kwahu-easter-house"],
+    "notifications": [
+      { "title": "Gate opens in 2 hours", "meta": "Ga Rooftop After Hours", "timeLabel": "Today · 5:02 PM", "iconKey": "bell" },
+      { "title": "A new tech event matches your interests", "meta": "Product Market Accra", "timeLabel": "Yesterday", "iconKey": "sparkle" },
+      { "title": "Your saved event changed tiers", "meta": "Accra Chef Table Vol. 4", "timeLabel": "Monday", "iconKey": "ticket" }
+    ],
+    "tickets": [
+      {
+        "id": "ticket-ga-rooftop-after-hours",
+        "eventSlug": "ga-rooftop-after-hours",
+        "status": "active",
+        "typeLabel": "Table for Two",
+        "reference": "GO-2A9X1",
+        "seatLabel": "Table B4",
+        "holderName": "Kofi Mensah",
+        "calendarLabel": "Add to Calendar",
+        "shareLabel": "Share Ticket"
+      }
+    ]
+  },
+  "organizerDashboard": {
+    "name": "Sankofa Sessions",
+    "roleLabel": "Organizer",
+    "stats": [
+      { "label": "Total Events", "value": "26", "trend": "+3 this month", "tone": "neon" },
+      { "label": "Tickets Sold", "value": "8,420", "trend": "+11.8%", "tone": "neon" },
+      { "label": "Revenue", "value": "GHS 412K", "trend": "+7.2%", "tone": "neon" },
+      { "label": "Avg Rating", "value": "4.8", "trend": "Based on 612 reviews", "tone": "blue" }
+    ],
+    "revenueSeries": [44, 52, 49, 70, 82, 96],
+    "salesSeries": [18, 22, 25, 31, 37, 42],
+    "recentReviews": [
+      { "author": "Ama Quartey", "body": "The pacing and hospitality felt premium from start to finish." },
+      { "author": "Yaw Sarpong", "body": "The venue choice was strong and check-in moved quickly." },
+      { "author": "Efua Dankwa", "body": "GoOutside made the whole flow easy to manage for our group." }
+    ],
+    "countdown": {
+      "title": "Next live event",
+      "value": "18h 42m",
+      "meta": "Ga Rooftop After Hours opens tomorrow evening."
+    }
+  },
+  "adminDashboard": {
+    "name": "GoOutside Control",
+    "roleLabel": "Platform Admin",
+    "stats": [
+      { "label": "Total Users", "value": "89,240", "trend": "+8.4%", "tone": "neon" },
+      { "label": "Events This Month", "value": "128", "trend": "+12 new", "tone": "neon" },
+      { "label": "Gross Revenue", "value": "GHS 1.24M", "trend": "+6.2%", "tone": "neon" },
+      { "label": "Pending Reviews", "value": "14", "trend": "Needs action", "tone": "pink" }
+    ],
+    "revenueTrend": [180, 220, 210, 250, 310, 360],
+    "userGrowth": [22, 31, 27, 40, 44, 53],
+    "categoryMix": [
+      { "label": "Music", "value": 32 },
+      { "label": "Tech", "value": 21 },
+      { "label": "Food", "value": 16 },
+      { "label": "Arts", "value": 14 },
+      { "label": "Sports", "value": 9 },
+      { "label": "Networking", "value": 8 }
+    ],
+    "activities": [
+      { "title": "Organizer approved", "meta": "Lakefront Social Club is now live", "timeLabel": "2 min ago", "iconKey": "check-circle" },
+      { "title": "Broadcast delivered", "meta": "Weekend picks sent to 8,200 attendees", "timeLabel": "24 min ago", "iconKey": "megaphone" },
+      { "title": "New event under review", "meta": "Accra Chef Table Vol. 4", "timeLabel": "1 hour ago", "iconKey": "sparkle" }
+    ]
+  },
+  "createEventDraft": {
+    "steps": [
+      "Basics",
+      "Schedule and Location",
+      "Media",
+      "Tickets",
+      "Review and Publish"
+    ],
+    "basics": {
+      "title": "Sunset Courtyard Social",
+      "shortDescription": "A social-first evening with live selectors, plated sharing dishes, and a calm city-house atmosphere.",
+      "description": "This draft is designed as a modular evening that starts intimate and scales into a more energetic social floor after sunset. The goal is a high-quality host experience, clean hospitality flow, and strong visual identity on every touchpoint.",
+      "categorySlug": "networking",
+      "tags": ["hospitality", "city-social", "design-led"]
+    },
+    "schedule": {
+      "date": "Friday, May 16",
+      "startTime": "6:30 PM",
+      "endTime": "11:30 PM",
+      "venue": "The Courtyard House",
+      "address": "Cantonments, Accra",
+      "timezone": "Africa/Accra"
+    },
+    "media": {
+      "bannerLabel": "Main banner uploaded",
+      "galleryCountLabel": "3 gallery images selected",
+      "videoUrl": "https://example.com/preview"
+    },
+    "ticketTypes": [
+      { "name": "Early Access", "priceLabel": "GHS 120", "quantity": "80", "limit": "2 per user" },
+      { "name": "General Access", "priceLabel": "GHS 180", "quantity": "160", "limit": "4 per user" }
+    ]
+  }
+}
