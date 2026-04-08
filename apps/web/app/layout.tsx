@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ThemeScript } from "@gooutside/ui";
 import AppBackground from "../components/layout/AppBackground";
+import { AppShellProvider } from "../components/layout/AppShellContext";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -28,8 +29,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${dmSerif.variable} font-body lab-bg relative`}>
         <ThemeScript />
-        <AppBackground />
-        <div className="app-content">{children}</div>
+        <AppShellProvider>
+          <AppBackground />
+          <div className="app-content">{children}</div>
+        </AppShellProvider>
       </body>
     </html>
   );

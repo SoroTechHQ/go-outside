@@ -139,12 +139,6 @@ a {
   }
 }
 
-@media (min-width: 1280px) {
-  .page-grid {
-    padding-left: 240px;
-  }
-}
-
 .app-content {
   position: relative;
   z-index: 10;

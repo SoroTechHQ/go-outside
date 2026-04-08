@@ -8,13 +8,13 @@ import {
   HeartStraight,
   HouseLine,
   MoonStars,
-  PlusCircle,
   SunDim,
   Ticket,
 } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useAppShell } from "./AppShellContext";
 
 type SidebarRole = "attendee" | "organizer" | "admin";
 
@@ -43,28 +43,21 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   const pathname = usePathname();
   const isTabletUp = useMediaQuery("(min-width: 768px)");
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const isWideDesktop = useMediaQuery("(min-width: 1280px)");
   const [hovered, setHovered] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const { setSidebarWidth } = useAppShell();
 
   useEffect(() => {
     const currentTheme = document.documentElement.dataset.theme;
     setTheme(currentTheme === "light" ? "light" : "dark");
   }, []);
 
-  if (!isTabletUp) {
-    return null;
-  }
-
-  const allowHoverExpand = isDesktop && !isWideDesktop;
-  const isExpanded = isWideDesktop || (allowHoverExpand && hovered);
+  const isExpanded = isDesktop && hovered;
   const navItems: NavItem[] =
     role === "organizer" || role === "admin"
       ? [
           { href: "/", label: "Home", icon: HouseLine },
           { href: "/search", label: "Explore", icon: Compass },
-          { href: "/organizer", label: "My Events", icon: Ticket },
-          { href: "/organizer/events/new", label: "Create Event", icon: PlusCircle },
           { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
           { href: "/dashboard/saved", label: "Saved", icon: HeartStraight },
           { href: "/dashboard/notifications", label: "Notifications", icon: Bell, unread: true },
@@ -77,20 +70,32 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
           { href: "/dashboard/notifications", label: "Notifications", icon: Bell, unread: true },
         ];
 
+  useEffect(() => {
+    if (!isTabletUp) {
+      setSidebarWidth(0);
+      return;
+    }
+
+    setSidebarWidth(isExpanded ? 240 : 72);
+  }, [isExpanded, isTabletUp, setSidebarWidth]);
+
+  if (!isTabletUp) {
+    return null;
+  }
+
   return (
     <motion.aside
       animate={{ width: isExpanded ? 240 : 72 }}
-      className="glass-card fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none border-r border-l-0 border-t-0 border-b-0 md:flex md:flex-col"
+      className="fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none bg-[rgba(0,0,0,0.92)] backdrop-blur-xl md:flex md:flex-col"
+      style={{
+        left: "max(1rem, calc((100vw - 1280px) / 2))",
+      }}
       onMouseEnter={() => {
-        if (allowHoverExpand) {
+        if (isDesktop) {
           setHovered(true);
         }
       }}
-      onMouseLeave={() => {
-        if (allowHoverExpand) {
-          setHovered(false);
-        }
-      }}
+      onMouseLeave={() => setHovered(false)}
       transition={{ duration: isExpanded ? 0.25 : 0.2, ease: [0.4, 0, 0.2, 1] }}
     >
       <div className={`flex items-center ${isExpanded ? "gap-3 px-4 py-5" : "justify-center px-0 py-5"}`}>
@@ -102,7 +107,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
           {isExpanded ? (
             <motion.span
               animate={{ opacity: 1, width: "auto", x: 0 }}
-              className="font-display whitespace-nowrap text-base italic text-white/90"
+              className="whitespace-nowrap text-[1rem] font-semibold tracking-[-0.02em] text-white/90"
               exit={{ opacity: 0, width: 0, x: -8 }}
               initial={{ opacity: 0, width: 0, x: -8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
@@ -175,7 +180,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
         })}
       </nav>
 
-      <div className="mt-auto border-t border-white/5 px-2 py-4">
+      <div className="mt-auto px-2 py-4">
         <button
           className={`flex h-[52px] w-full items-center rounded-xl text-white/40 transition hover:bg-white/[0.04] hover:text-white/80 ${
             isExpanded ? "gap-3.5 px-5" : "justify-center"

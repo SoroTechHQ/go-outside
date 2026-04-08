@@ -91,18 +91,18 @@ export function SearchBar({
     >
       <motion.div
         animate={{
-          height: isMini ? 40 : isFocused ? 60 : isCompact ? 48 : 52,
-          maxWidth: isMini ? 220 : isFocused ? 680 : isCompact ? 400 : 560,
+          height: isMini ? 42 : isFocused ? 64 : isCompact ? 54 : 58,
+          maxWidth: isMini ? 240 : isFocused ? 820 : isCompact ? 640 : 760,
         }}
         className={`relative flex w-full items-center rounded-full border ${
           isFocused
-            ? "search-focused border-[rgba(var(--brand-rgb),0.25)] bg-white/8"
-            : "border-white/8 bg-white/6 hover:border-white/12 hover:bg-white/8"
+            ? "search-focused border-[rgba(var(--brand-rgb),0.25)] bg-white/10"
+            : "border-white/8 bg-white/7 hover:border-white/12 hover:bg-white/9"
         }`}
         style={{
           boxShadow: isFocused
             ? "0 0 0 4px rgba(95,191,42,0.10), 0 8px 32px rgba(0,0,0,0.3)"
-            : "0 4px 16px rgba(0,0,0,0.2)",
+            : "0 10px 28px rgba(0,0,0,0.24)",
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       >
@@ -118,7 +118,7 @@ export function SearchBar({
           <input
             ref={inputRef}
             className={`w-full bg-transparent text-white/90 outline-none caret-[var(--brand)] placeholder:text-transparent ${
-              isMini ? "text-sm" : "text-base"
+              isMini ? "text-sm" : "text-[15px]"
             }`}
             onBlur={() => {
               if (!isFocused) {

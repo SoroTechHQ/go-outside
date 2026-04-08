@@ -6,6 +6,7 @@ import { MagnifyingGlass } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
 import SearchBar from "../search/SearchBar";
 import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
+import { useAppShell } from "./AppShellContext";
 
 type HeaderProps = {
   appShell?: boolean;
@@ -24,12 +25,21 @@ function getInitials(name: string) {
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
   const { isCompact, isMini } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
+  const { sidebarWidth } = useAppShell();
+  const shellLeft = "max(1rem, calc((100vw - 1280px) / 2))";
+  const shellWidth = "min(calc(100vw - 2rem), 1280px)";
 
   if (appShell) {
     return (
       <>
         <header className="sticky top-0 z-40 hidden md:flex">
-          <div className="w-full px-4 md:px-6">
+          <div
+            className="px-4 md:px-6"
+            style={{
+              width: `calc(${shellWidth} - ${sidebarWidth}px)`,
+              marginLeft: `calc(${shellLeft} + ${sidebarWidth}px)`,
+            }}
+          >
             <div
               className="flex items-center justify-center transition-all duration-300"
               style={{
@@ -50,7 +60,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
 
         <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,15,10,0.82)] px-4 py-4 backdrop-blur-xl md:hidden">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="font-display text-[1.7rem] italic text-white/90">
+            <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-white/90">
               GoOutside
             </Link>
             <div className="flex items-center gap-2">
@@ -75,7 +85,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
     <>
       <header className="sticky top-0 z-40 hidden border-b border-white/5 bg-[rgba(10,15,10,0.78)] md:flex">
         <div className="container-shell flex w-full items-center justify-between gap-6 py-4">
-          <Link href="/" className="font-display text-[1.7rem] italic text-white/90">
+          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-white/90">
             GoOutside
           </Link>
           <div className="flex-1">
@@ -97,7 +107,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
 
       <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,15,10,0.82)] px-4 py-4 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="font-display text-[1.7rem] italic text-white/90">
+          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-white/90">
             GoOutside
           </Link>
           <div className="flex items-center gap-2">
