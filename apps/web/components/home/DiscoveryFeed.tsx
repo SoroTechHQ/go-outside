@@ -288,8 +288,8 @@ function SplitPaneExplore({ entries, signalById, onPreview }: SplitPaneProps) {
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/18 via-transparent to-black/94" />
               <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/48 to-transparent" />
-              {/* Hover dark overlay */}
-              <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover/preview:bg-black/30" />
+              {/* Hover dark overlay — tightened */}
+              <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover/preview:bg-black/50" />
 
               {/* Top badge */}
               <div className="absolute left-4 top-4">

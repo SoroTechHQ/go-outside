@@ -65,8 +65,8 @@ function ReelSlide({
       {/* Gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/94" />
       <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/50 to-transparent" />
-      {/* Hover dark overlay */}
-      <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover/reel:bg-black/32" />
+      {/* Hover dark overlay — tightened */}
+      <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover/reel:bg-black/50" />
 
       {/* Top: category + save */}
       <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-5">
