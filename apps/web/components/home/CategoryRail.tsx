@@ -19,14 +19,14 @@ export function CategoryRail({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.82)] backdrop-blur">
+    <div className="relative border-b border-[color:var(--home-border)] bg-[color:var(--home-surface)] backdrop-blur">
       <div className="container-shell relative py-4">
         <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
           <button
             className={`h-9 rounded-full px-4 text-sm font-semibold transition ${
               selected.length === 0
-                ? "bg-[var(--brand)] text-white"
-                : "border border-[var(--border)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:scale-[1.04] hover:bg-[var(--bg-card-hover)]"
+                ? "bg-[var(--brand)] text-[var(--brand-contrast)]"
+                : "border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)] hover:scale-[1.04] hover:border-[color:var(--home-highlight-border)] hover:bg-[color:var(--bg-card-hover)]"
             }`}
             onClick={onClear}
             type="button"
@@ -41,8 +41,8 @@ export function CategoryRail({
                 key={category.id}
                 className={`h-9 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition ${
                   active
-                    ? "scale-[1.04] bg-[var(--brand)] text-white"
-                    : "border border-[var(--border)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:scale-[1.04] hover:bg-[var(--bg-card-hover)]"
+                    ? "scale-[1.04] bg-[var(--brand)] text-[var(--brand-contrast)]"
+                    : "border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)] hover:scale-[1.04] hover:border-[color:var(--home-highlight-border)] hover:bg-[color:var(--bg-card-hover)]"
                 }`}
                 onClick={() => onToggle(category.slug)}
                 type="button"
@@ -54,7 +54,7 @@ export function CategoryRail({
 
           <button
             aria-label="Browse all categories"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:scale-[1.04] hover:bg-[var(--bg-card-hover)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)] transition hover:scale-[1.04] hover:border-[color:var(--home-highlight-border)] hover:bg-[color:var(--bg-card-hover)]"
             onClick={() => setOpen(true)}
             type="button"
           >
@@ -63,7 +63,7 @@ export function CategoryRail({
         </div>
 
         {open ? (
-          <div className="absolute right-0 top-[calc(100%+0.75rem)] z-30 hidden w-[360px] rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 shadow-[0_20px_40px_rgba(12,18,12,0.14)] md:block">
+          <div className="absolute right-0 top-[calc(100%+0.75rem)] z-30 hidden w-[360px] rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] p-4 shadow-[var(--home-shadow)] md:block">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="font-display text-2xl italic text-[var(--text-primary)]">
@@ -74,7 +74,7 @@ export function CategoryRail({
                 </p>
               </div>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)]"
                 onClick={() => setOpen(false)}
                 type="button"
               >
@@ -89,8 +89,8 @@ export function CategoryRail({
                     key={category.slug}
                     className={`rounded-[20px] border px-4 py-4 text-left transition ${
                       active
-                        ? "border-transparent bg-[rgba(var(--brand-rgb),0.12)] text-[var(--brand)]"
-                        : "border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+                        ? "border-transparent bg-[color:var(--home-highlight-bg)] text-[var(--brand)]"
+                        : "border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)]"
                     }`}
                     onClick={() => onToggle(category.slug)}
                     type="button"
@@ -109,14 +109,14 @@ export function CategoryRail({
       </div>
 
       {open ? (
-        <div className="fixed inset-0 z-40 bg-[rgba(10,14,11,0.45)] md:hidden">
+        <div className="fixed inset-0 z-40 bg-[color:var(--home-overlay)] md:hidden">
           <button
             aria-label="Close categories"
             className="absolute inset-0"
             onClick={() => setOpen(false)}
             type="button"
           />
-          <div className="absolute bottom-0 left-0 right-0 rounded-t-[32px] bg-[var(--bg-card)] p-5 shadow-[0_-20px_50px_rgba(12,18,12,0.2)]">
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-[32px] bg-[color:var(--home-surface-strong)] p-5 shadow-[var(--home-shadow-strong)]">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="font-display text-2xl italic text-[var(--text-primary)]">
@@ -127,7 +127,7 @@ export function CategoryRail({
                 </p>
               </div>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)]"
                 onClick={() => setOpen(false)}
                 type="button"
               >
@@ -140,8 +140,8 @@ export function CategoryRail({
                   key={category.slug}
                   className={`rounded-[20px] border px-4 py-4 text-left transition ${
                     selected.includes(category.slug)
-                      ? "border-transparent bg-[rgba(var(--brand-rgb),0.12)] text-[var(--brand)]"
-                      : "border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+                      ? "border-transparent bg-[color:var(--home-highlight-bg)] text-[var(--brand)]"
+                      : "border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)]"
                   }`}
                   onClick={() => onToggle(category.slug)}
                   type="button"

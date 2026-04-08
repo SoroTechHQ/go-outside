@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   categories,
-  demoData,
   events,
   getCategoryBySlug,
   getCategoryEmoji,
@@ -25,36 +24,39 @@ type FeedEntry = {
 };
 
 function buildFeedEntries(sourceEvents: typeof events): FeedEntry[] {
-  if (sourceEvents.length === 0) {
-    return [];
-  }
-
-  const buckets = [
-    sourceEvents.filter((event) => event.saved || event.featured),
-    sourceEvents.filter((event) => event.trending),
-    sourceEvents.filter((event) => event.city === "Accra"),
-    sourceEvents.filter((event) => event.priceValue === 0 || event.priceValue <= 180),
-    sourceEvents,
-  ].filter((bucket) => bucket.length > 0);
-
-  const repeated = Array.from({ length: 4 }, (_, round) =>
-    buckets.flatMap((bucket, bucketIndex) =>
-      bucket.map((event, eventIndex) => ({ event, key: `${event.id}-${bucketIndex}-${round}-${eventIndex}` })),
-    ),
-  ).flat();
-
-  return repeated.flatMap(({ event, key }) => {
+  return sourceEvents.flatMap((event) => {
     const category = getCategoryBySlug(event.categorySlug);
     const organizer = getOrganizerById(event.organizerId);
-    return category && organizer ? [{ key, event, category, organizer }] : [];
+    return category && organizer ? [{ key: event.id, event, category, organizer }] : [];
   });
 }
 
-function toHeroSlides(): HeroSlide[] {
-  const featuredEvents = [
-    ...events.filter((event) => event.featured),
-    ...events.filter((event) => event.trending && !event.featured),
-  ].slice(0, 3);
+function toHeroSlides(hour: number): HeroSlide[] {
+  const prioritizedCategories =
+    hour < 12
+      ? ["food", "arts", "tech"]
+      : hour < 18
+        ? ["tech", "networking", "food"]
+        : ["music", "networking", "food"];
+
+  const featuredEvents = events
+    .slice()
+    .sort((left, right) => {
+      const leftPriority = prioritizedCategories.indexOf(left.categorySlug);
+      const rightPriority = prioritizedCategories.indexOf(right.categorySlug);
+      const leftScore = leftPriority === -1 ? prioritizedCategories.length : leftPriority;
+      const rightScore = rightPriority === -1 ? prioritizedCategories.length : rightPriority;
+
+      if (leftScore !== rightScore) {
+        return leftScore - rightScore;
+      }
+
+      return Number(right.featured || right.trending) - Number(left.featured || left.trending);
+    })
+    .filter((event, index, source) => {
+      return source.findIndex((item) => item.id === event.id) === index;
+    })
+    .slice(0, 3);
 
   return featuredEvents.flatMap((event, index) => {
     const category = getCategoryBySlug(event.categorySlug);
@@ -87,6 +89,7 @@ export function HomeClient() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentHour = useMemo(() => new Date().getHours(), []);
 
   const selectedCategories = useMemo(
     () => searchParams.get("category")?.split(",").filter(Boolean) ?? [],
@@ -121,8 +124,8 @@ export function HomeClient() {
 
   const feedEntries = useMemo(() => buildFeedEntries(filteredEvents), [filteredEvents]);
   const heroSlides = useMemo(() => {
-    return toHeroSlides();
-  }, []);
+    return toHeroSlides(currentHour);
+  }, [currentHour]);
 
   const updateCategory = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -152,7 +155,19 @@ export function HomeClient() {
   return (
     <main className="page-grid min-h-screen pb-24">
       <div className="container-shell px-0 md:px-6">
-        <HeroCarousel slides={heroSlides} />
+        <HeroCarousel
+          contextLabel={
+            currentHour < 12 ? "Morning bias" : currentHour < 18 ? "Afternoon bias" : "Tonight in Accra"
+          }
+          contextSummary={
+            currentHour < 12
+              ? "Workshops, brunch energy, and lighter cultural plans lead the hero."
+              : currentHour < 18
+                ? "Operators, dinners, and after-work events move up before nightlife takes over."
+                : "Nightlife and socially magnetic rooms now lead the page."
+          }
+          slides={heroSlides}
+        />
       </div>
       <CategoryRail
         categories={categoryItems}
@@ -161,7 +176,7 @@ export function HomeClient() {
         selected={selectedCategories}
       />
       <div className="container-shell">
-        <DiscoveryFeed entries={feedEntries} onReset={clearFilters} sponsoredSlides={heroSlides} />
+        <DiscoveryFeed entries={feedEntries} onReset={clearFilters} />
       </div>
       <MessagesFAB />
     </main>

@@ -1,14 +1,20 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowClockwise, CalendarDots, TrendUp } from "@phosphor-icons/react";
-import { EventCard } from "@gooutside/ui";
-import type { Category, EventItem, Organizer } from "@gooutside/demo-data";
-import { getEventImage } from "@gooutside/demo-data";
-import type { HeroSlide } from "./HeroCarousel";
+import {
+  ArrowClockwise,
+  Bell,
+  Keyboard,
+  Lightning,
+  MapPin,
+  Sparkle,
+  TrendUp,
+} from "@phosphor-icons/react";
+import { demoData, type Category, type EventItem, type Organizer } from "@gooutside/demo-data";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
+import EventPeekPanel from "./EventPeekPanel";
+import HomeEventCard, { type EventSignal } from "./HomeEventCard";
 
 type FeedEntry = {
   key: string;
@@ -20,123 +26,301 @@ type FeedEntry = {
 type DiscoveryFeedProps = {
   entries: FeedEntry[];
   onReset: () => void;
-  sponsoredSlides: HeroSlide[];
 };
 
-function SkeletonCard() {
-  return (
-    <div className="h-[420px] animate-pulse rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
-      <div className="h-48 rounded-t-[12px] bg-[var(--bg-muted)]" />
-      <div className="mt-4 h-3 w-24 rounded-full bg-[var(--bg-muted)]" />
-      <div className="mt-3 h-8 w-2/3 rounded-full bg-[var(--bg-muted)]" />
-      <div className="mt-4 h-3 w-full rounded-full bg-[var(--bg-muted)]" />
-      <div className="mt-2 h-3 w-5/6 rounded-full bg-[var(--bg-muted)]" />
-      <div className="mt-6 h-3 w-1/2 rounded-full bg-[var(--bg-muted)]" />
-      <div className="mt-2 h-3 w-2/3 rounded-full bg-[var(--bg-muted)]" />
-    </div>
-  );
+type LaneSection = {
+  description: string;
+  entries: FeedEntry[];
+  id: string;
+  title: string;
+};
+
+const friendGroups = [
+  [
+    { initials: "AM", name: "Ama" },
+    { initials: "KO", name: "Kofi" },
+    { initials: "ES", name: "Esi" },
+  ],
+  [
+    { initials: "EK", name: "Ekow" },
+    { initials: "NA", name: "Naa" },
+    { initials: "YA", name: "Yaa" },
+  ],
+  [
+    { initials: "NI", name: "Nii" },
+    { initials: "AF", name: "Afua" },
+    { initials: "JO", name: "Jojo" },
+  ],
+];
+
+function toUniqueEntries(entries: FeedEntry[]) {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.event.id)) {
+      return false;
+    }
+
+    seen.add(entry.event.id);
+    return true;
+  });
 }
 
-function SectionMarker({ label }: { label: string }) {
-  return (
-    <div className="col-span-full flex items-center gap-3 py-2">
-      <span className="h-2.5 w-2.5 rounded-full bg-[var(--brand)] shadow-[0_0_0_6px_rgba(var(--brand-rgb),0.12)]" />
-      <p className="font-display text-sm italic text-[var(--text-secondary)]">{label}</p>
-      <span className="h-px flex-1 bg-[var(--border-subtle)]" />
-    </div>
-  );
+function rotateEntries(entries: FeedEntry[], offset: number) {
+  if (entries.length === 0) {
+    return [];
+  }
+
+  const safeOffset = offset % entries.length;
+  return [...entries.slice(safeOffset), ...entries.slice(0, safeOffset)];
 }
 
-export function DiscoveryFeed({ entries, onReset, sponsoredSlides }: DiscoveryFeedProps) {
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [visibleCount, setVisibleCount] = useState(12);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+function getTimeContext(hour: number) {
+  if (hour < 12) {
+    return {
+      laneTitle: "This morning in Accra",
+      laneDescription: "Lighter workshops, brunch energy, and daytime events move to the top.",
+      streak: "You have explored 8 events this week.",
+      vibe: "Morning bias: calmer picks, faster decisions.",
+    };
+  }
+
+  if (hour < 18) {
+    return {
+      laneTitle: "This afternoon around the city",
+      laneDescription: "Networking, founders, and after-work options take priority before nightlife climbs.",
+      streak: "You are first among your friends to spot 3 of today’s top picks.",
+      vibe: "Afternoon bias: product talks, food, and social planning.",
+    };
+  }
+
+  return {
+    laneTitle: "Tonight in Accra",
+    laneDescription: "Nightlife, music, and high-social-pressure events rise above slower daytime listings.",
+    streak: "You are in the top 10% of nightlife explorers in Accra.",
+    vibe: "Night bias: high-energy, high-urgency events first.",
+  };
+}
+
+function buildSignal(entry: FeedEntry, index: number): EventSignal {
+  const friends = friendGroups[index % friendGroups.length] ?? friendGroups[0];
+  const urgency = entry.event.ticketTypes[0]?.remainingLabel ?? entry.event.capacityLabel;
+  const location =
+    entry.event.locationLine.includes("Accra") || entry.event.locationLine.includes("Kwahu")
+      ? `Near ${entry.event.locationLine}`
+      : entry.event.locationLine;
+
+  return {
+    ticker: entry.event.trending
+      ? `${friends[0]?.name} just saved this`
+      : `${friends.length} people booked this in the last hour`,
+    urgency,
+    momentum: `${friends[1]?.name ?? "Kofi"} is already considering this with their group`,
+    distance: location,
+    friends,
+  };
+}
+
+function takeLaneEntries(preferred: FeedEntry[], fallback: FeedEntry[], count = 4) {
+  const merged = [...preferred, ...fallback];
+  const seen = new Set<string>();
+  const result: FeedEntry[] = [];
+
+  for (const entry of merged) {
+    if (seen.has(entry.event.id)) {
+      continue;
+    }
+
+    seen.add(entry.event.id);
+    result.push(entry);
+
+    if (result.length === count) {
+      break;
+    }
+  }
+
+  return result;
+}
+
+function buildSections(entries: FeedEntry[], refreshCount: number, hour: number) {
+  const rotated = rotateEntries(entries, refreshCount);
+  const context = getTimeContext(hour);
+  const nightlifeEntries = rotated.filter((entry) =>
+    ["music", "networking", "food"].includes(entry.event.categorySlug),
+  );
+  const builderEntries = rotated.filter((entry) =>
+    ["tech", "networking"].includes(entry.event.categorySlug),
+  );
+  const creativeEntries = rotated.filter((entry) =>
+    ["music", "arts", "food"].includes(entry.event.categorySlug),
+  );
+  const nearbyEntries = rotated.filter((entry) =>
+    /(Osu|Labone|Airport|Accra)/i.test(`${entry.event.locationLine} ${entry.event.venue}`),
+  );
+  const socialEntries = rotated.filter((entry) => entry.event.saved || entry.event.featured);
+  const fastMovingEntries = rotated.filter((entry) => entry.event.trending || entry.event.status === "live");
+
+  const sections: LaneSection[] = [
+    {
+      id: "time-aware",
+      title: context.laneTitle,
+      description: context.laneDescription,
+      entries: takeLaneEntries(hour >= 18 ? nightlifeEntries : builderEntries, rotated),
+    },
+    {
+      id: "starting-soon",
+      title: "Starting in the next 3 hours",
+      description: "Compact, fast-moving picks that are easiest to decide on right now.",
+      entries: takeLaneEntries(fastMovingEntries, rotated),
+    },
+    {
+      id: "social",
+      title: "Because Kofi is going",
+      description: "Friend energy, repeat organizers, and socially magnetic rooms rise here.",
+      entries: takeLaneEntries(socialEntries, rotated),
+    },
+    {
+      id: "nearby",
+      title: hour >= 18 ? "Near Osu tonight" : "Near your last event",
+      description: "Distance and familiar neighborhoods keep this row easy to act on.",
+      entries: takeLaneEntries(nearbyEntries, rotated),
+    },
+    {
+      id: "creatives",
+      title: "For creatives in Accra",
+      description: "A tighter lane for design-forward, cultural, and hospitality-heavy picks.",
+      entries: takeLaneEntries(creativeEntries, rotated),
+    },
+    {
+      id: "builders",
+      title: "For builders and founders",
+      description: "Operator-heavy events, product rooms, and founder circles stay grouped.",
+      entries: takeLaneEntries(builderEntries, rotated),
+    },
+  ];
+
+  return sections.filter((section) => section.entries.length > 0);
+}
+
+export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const [previewEventId, setPreviewEventId] = useState<string | null>(null);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const hour = useMemo(() => new Date().getHours(), []);
+  const context = useMemo(() => getTimeContext(hour), [hour]);
+  const uniqueEntries = useMemo(() => toUniqueEntries(entries), [entries]);
+  const activeEntries = useMemo(
+    () => uniqueEntries.filter((entry) => !dismissedIds.includes(entry.event.id)),
+    [dismissedIds, uniqueEntries],
+  );
+  const sections = useMemo(
+    () => buildSections(activeEntries, refreshCount, hour),
+    [activeEntries, hour, refreshCount],
+  );
+
+  const allEntryIds = useMemo(
+    () =>
+      sections.flatMap((section) => section.entries.map((entry) => entry.event.id)).filter((id, index, source) => {
+        return source.indexOf(id) === index;
+      }),
+    [sections],
+  );
+
+  const signalById = useMemo(() => {
+    return Object.fromEntries(activeEntries.map((entry, index) => [entry.event.id, buildSignal(entry, index)]));
+  }, [activeEntries]);
+
+  const previewEntry = useMemo(
+    () => activeEntries.find((entry) => entry.event.id === previewEventId) ?? null,
+    [activeEntries, previewEventId],
+  );
 
   useEffect(() => {
-    setVisibleCount(12);
-    setInitialLoading(true);
-    const timeout = window.setTimeout(() => setInitialLoading(false), 300);
-    return () => window.clearTimeout(timeout);
-  }, [entries]);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || initialLoading) {
+    if (!allEntryIds.length) {
+      setActiveId(null);
+      setPreviewEventId(null);
       return;
     }
 
-    const observer = new IntersectionObserver(
-      (observerEntries) => {
-        const entry = observerEntries[0];
-        if (!entry?.isIntersecting || loadingMore || visibleCount >= entries.length) {
-          return;
-        }
+    if (!activeId || !allEntryIds.includes(activeId)) {
+      setActiveId(allEntryIds[0] ?? null);
+    }
 
-        setLoadingMore(true);
-        window.setTimeout(() => {
-          setVisibleCount((value) => Math.min(value + 12, entries.length));
-          setLoadingMore(false);
-        }, 450);
-      },
-      { rootMargin: "400px 0px" },
-    );
+    if (previewEventId && !allEntryIds.includes(previewEventId)) {
+      setPreviewEventId(null);
+    }
+  }, [activeId, allEntryIds, previewEventId]);
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [entries.length, initialLoading, loadingMore, visibleCount]);
+  useEffect(() => {
+    if (!isDesktop) {
+      return;
+    }
 
-  const visibleEntries = entries.slice(0, visibleCount);
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping =
+        target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
 
-  const gridItems = useMemo(() => {
-    const sectionLabels = [
-      "For you",
-      "Trending in Accra",
-      "This weekend",
-      "Based on your vibe",
-      "Happening near you",
-      "Followed organizers",
-    ];
-
-    const items: Array<
-      | { type: "label"; key: string; label: string }
-      | { type: "card"; key: string; entry: FeedEntry }
-      | { type: "ad"; key: string; slide: HeroSlide }
-    > = [];
-
-    visibleEntries.forEach((entry, index) => {
-      if (index % 4 === 0) {
-        items.push({
-          type: "label",
-          key: `label-${index}`,
-          label: sectionLabels[Math.floor(index / 4) % sectionLabels.length] ?? "For you",
-        });
+      if (isTyping || event.metaKey || event.ctrlKey || event.altKey || !allEntryIds.length) {
+        return;
       }
 
-      if (index > 0 && index % 6 === 0 && sponsoredSlides.length > 0) {
-        items.push({
-          type: "ad",
-          key: `ad-${index}`,
-          slide: sponsoredSlides[Math.floor(index / 6 - 1) % sponsoredSlides.length] ?? sponsoredSlides[0],
-        });
+      const currentIndex = activeId ? allEntryIds.indexOf(activeId) : -1;
+
+      if (event.key === "ArrowDown" || event.key.toLowerCase() === "j") {
+        event.preventDefault();
+        const nextId = allEntryIds[(currentIndex + 1 + allEntryIds.length) % allEntryIds.length] ?? allEntryIds[0];
+        setActiveId(nextId);
+        cardRefs.current[nextId]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        return;
       }
 
-      items.push({ type: "card", key: entry.key, entry });
-    });
+      if (event.key === "ArrowUp" || event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        const nextId =
+          allEntryIds[(currentIndex - 1 + allEntryIds.length) % allEntryIds.length] ??
+          allEntryIds[allEntryIds.length - 1];
+        setActiveId(nextId);
+        cardRefs.current[nextId]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        return;
+      }
 
-    return items;
-  }, [sponsoredSlides, visibleEntries]);
+      if (event.key === "Enter" && activeId) {
+        event.preventDefault();
+        setPreviewEventId(activeId);
+        return;
+      }
 
-  if (!initialLoading && entries.length === 0) {
+      if (event.key.toLowerCase() === "s" && activeId) {
+        event.preventDefault();
+        setSavedIds((current) => {
+          return current.includes(activeId) ? current.filter((id) => id !== activeId) : [...current, activeId];
+        });
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setPreviewEventId(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeId, allEntryIds, isDesktop]);
+
+  if (entries.length === 0) {
     return (
       <div className="rounded-[32px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-6 py-10 text-center">
         <p className="font-display text-3xl italic text-[var(--text-primary)]">No events match that mix.</p>
         <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[var(--text-secondary)]">
-          Clear the current search or category filters and the feed will refill with the city’s
-          strongest signals.
+          Clear the current search or category filters and the feed will refill with the city’s strongest signals.
         </p>
         <button
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)]"
           onClick={onReset}
           type="button"
         >
@@ -148,107 +332,261 @@ export function DiscoveryFeed({ entries, onReset, sponsoredSlides }: DiscoveryFe
   }
 
   return (
-    <section className="py-8">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
-            Discovery feed
-          </p>
-          <h2 className="mt-2 font-display text-4xl italic text-[var(--text-primary)]">
-            Your algorithm, not a directory
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-            Cards reorder by scene, timing, and repeat behaviour so the home screen feels alive.
-          </p>
-        </div>
-        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm text-[var(--text-secondary)] md:flex">
-          <TrendUp size={16} />
-          12 cards per page · inline ad slots · infinite scroll
-        </div>
-      </div>
+    <>
+      <section className="py-8">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="rounded-[32px] border border-[color:var(--home-border)] bg-[color:var(--home-surface)] p-6 shadow-[var(--home-shadow)]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand)]">
+              Discovery feed
+            </p>
+            <h2 className="mt-3 max-w-3xl font-display text-4xl italic text-[var(--text-primary)] md:text-5xl">
+              Your algorithm, not a directory
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
+              Desktop now optimizes for speed, context, and keyboard control. Mobile shifts to faster micro-decisions,
+              stronger urgency, and social proof.
+            </p>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {initialLoading
-          ? Array.from({ length: 6 }, (_, index) => <SkeletonCard key={`skeleton-${index}`} />)
-          : gridItems.map((item, index) => {
-              if (item.type === "label") {
-                return <SectionMarker key={item.key} label={item.label} />;
-              }
+            <div className="mt-5 flex flex-wrap gap-3">
+              <div className="rounded-full border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] px-4 py-2 text-sm font-semibold text-[var(--brand)]">
+                {context.vibe}
+              </div>
+              <div className="rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm text-[var(--text-secondary)]">
+                {context.streak}
+              </div>
+            </div>
 
-              if (item.type === "ad") {
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              {[
+                { icon: TrendUp, label: "Live signal", value: "2 people booked this in the last hour" },
+                { icon: Lightning, label: "Momentum loop", value: "Save one event and similar picks rise next" },
+                { icon: MapPin, label: "Proximity", value: "Rows bias toward Osu, Labone, and last-seen neighborhoods" },
+              ].map((item) => {
+                const Icon = item.icon;
                 return (
-                  <motion.div
-                    key={item.key}
-                    className="col-span-full overflow-hidden rounded-[32px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_16px_40px_rgba(12,18,12,0.1)] lg:col-span-2"
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.015, duration: 0.28 }}
+                  <div
+                    key={item.label}
+                    className="rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4"
                   >
-                    <Link className="grid h-full md:grid-cols-[1.05fr,0.95fr]" href={`/events/${item.slide.slug}`}>
-                      <div className="relative min-h-[240px]">
-                        <Image
-                          alt={item.slide.title}
-                          className="object-cover"
-                          fill
-                          sizes="(max-width: 1023px) 100vw, 50vw"
-                          src={getEventImage(item.slide.banner_url)}
-                        />
-                      </div>
-                      <div className="flex flex-col justify-between p-6">
-                        <div>
-                          <span className="rounded-full border border-[rgba(var(--brand-rgb),0.2)] bg-[rgba(var(--brand-rgb),0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-                            Sponsored event
-                          </span>
-                          <h3 className="mt-4 text-[1.9rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-                            {item.slide.title}
-                          </h3>
-                          <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                            {item.slide.short_description}
-                          </p>
-                        </div>
-                        <div className="mt-6 space-y-4">
-                          <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                            <CalendarDots size={16} />
-                            <span>{item.slide.start_datetime}</span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)]">
-                              {item.slide.is_free ? "Free" : `GHS ${item.slide.lowest_price}`}
-                            </span>
-                            <span className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white">
-                              View listing →
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
+                    <div className="flex items-center gap-2 text-[var(--brand)]">
+                      <Icon size={16} weight="bold" />
+                      <span className="text-[11px] font-bold uppercase tracking-[0.18em]">{item.label}</span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{item.value}</p>
+                  </div>
                 );
-              }
+              })}
+            </div>
+          </div>
 
-              return (
-                <motion.div
-                  key={item.key}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.015, duration: 0.24 }}
-                >
-                  <EventCard
-                    category={item.entry.category}
-                    event={item.entry.event}
-                    organizer={item.entry.organizer}
-                  />
-                </motion.div>
-              );
-            })}
+          <div className="space-y-4">
+            <div className="rounded-[28px] border border-[color:var(--home-border)] bg-[color:var(--home-surface)] p-5 shadow-[var(--home-shadow)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[var(--brand)]">
+                  <Bell size={18} weight="bold" />
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Activity feed</p>
+                </div>
+                <span className="rounded-full bg-[color:var(--home-highlight-bg)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+                  Live
+                </span>
+              </div>
 
-        {loadingMore
-          ? Array.from({ length: 6 }, (_, index) => <SkeletonCard key={`loading-${index}`} />)
-          : null}
-      </div>
+              <div className="mt-4 space-y-3">
+                {demoData.attendee.notifications.slice(0, 3).map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-[20px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-3"
+                  >
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">{item.title}</p>
+                    <p className="mt-1 text-xs text-[var(--text-secondary)]">{item.meta}</p>
+                    <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                      {item.timeLabel}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-      <div ref={sentinelRef} />
-    </section>
+            <div className="rounded-[28px] border border-[color:var(--home-border)] bg-[color:var(--home-surface)] p-5 shadow-[var(--home-shadow)]">
+              <div className="flex items-center gap-2 text-[var(--brand)]">
+                <Keyboard size={18} weight="bold" />
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Quick controls</p>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
+                <p>
+                  <span className="font-semibold text-[var(--text-primary)]">J / K</span> move through cards
+                </p>
+                <p>
+                  <span className="font-semibold text-[var(--text-primary)]">Enter</span> opens the peek panel
+                </p>
+                <p>
+                  <span className="font-semibold text-[var(--text-primary)]">S</span> saves the selected event
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 space-y-8">
+          {sections.map((section, sectionIndex) => (
+            <div key={section.id}>
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
+                    {section.id.replaceAll("-", " ")}
+                  </p>
+                  <h3 className="mt-2 font-display text-3xl italic text-[var(--text-primary)]">{section.title}</h3>
+                  <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">{section.description}</p>
+                </div>
+
+                {sectionIndex === 0 ? (
+                  <button
+                    className="hidden rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[color:var(--home-highlight-border)] hover:text-[var(--text-primary)] lg:inline-flex"
+                    onClick={() => setRefreshCount((value) => value + 1)}
+                    type="button"
+                  >
+                    <ArrowClockwise size={16} className="mr-2" />
+                    Refresh your feed
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 md:-mx-0 md:px-0">
+                {section.entries.map((entry) => (
+                  <div
+                    key={`${section.id}-${entry.event.id}`}
+                    ref={(node) => {
+                      cardRefs.current[entry.event.id] = node;
+                    }}
+                    className={`shrink-0 snap-start ${isDesktop ? "" : "w-full"}`}
+                    onMouseEnter={() => setActiveId(entry.event.id)}
+                  >
+                    <HomeEventCard
+                      category={entry.category}
+                      event={entry.event}
+                      isActive={entry.event.id === activeId}
+                      isSaved={savedIds.includes(entry.event.id) || entry.event.saved}
+                      mode={isDesktop ? "desktop" : "mobile"}
+                      onDismiss={() => {
+                        setDismissedIds((current) =>
+                          current.includes(entry.event.id) ? current : [...current, entry.event.id],
+                        );
+                        if (previewEventId === entry.event.id) {
+                          setPreviewEventId(null);
+                        }
+                      }}
+                      onPreview={() => setPreviewEventId(entry.event.id)}
+                      onSave={() => {
+                        setSavedIds((current) =>
+                          current.includes(entry.event.id)
+                            ? current.filter((id) => id !== entry.event.id)
+                            : [...current, entry.event.id],
+                        );
+                      }}
+                      organizer={entry.organizer}
+                      signal={signalById[entry.event.id] as EventSignal}
+                    />
+                  </div>
+                ))}
+                <div className="w-8 shrink-0" />
+              </div>
+
+              {sectionIndex === 2 ? (
+                <div className="mt-4 rounded-[28px] border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
+                        Smart refresh
+                      </p>
+                      <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                        You have seen three sections. Refresh to pull a new ordering, new social pressure, and a sharper tonight bias.
+                      </p>
+                    </div>
+                    <button
+                      className="inline-flex items-center justify-center rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)]"
+                      onClick={() => setRefreshCount((value) => value + 1)}
+                      type="button"
+                    >
+                      <Sparkle size={16} className="mr-2" />
+                      Refresh your feed
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <EventPeekPanel
+        category={previewEntry?.category ?? activeEntries[0]?.category ?? entries[0]?.category}
+        event={previewEntry?.event ?? null}
+        isDesktop={isDesktop}
+        isSaved={previewEntry ? savedIds.includes(previewEntry.event.id) || previewEntry.event.saved : false}
+        onClose={() => setPreviewEventId(null)}
+        onDismiss={() => {
+          if (!previewEntry) {
+            return;
+          }
+
+          setDismissedIds((current) =>
+            current.includes(previewEntry.event.id) ? current : [...current, previewEntry.event.id],
+          );
+          setPreviewEventId(null);
+        }}
+        onSave={() => {
+          if (!previewEntry) {
+            return;
+          }
+
+          setSavedIds((current) =>
+            current.includes(previewEntry.event.id)
+              ? current.filter((id) => id !== previewEntry.event.id)
+              : [...current, previewEntry.event.id],
+          );
+        }}
+        organizer={previewEntry?.organizer ?? null}
+        signal={previewEntry ? (signalById[previewEntry.event.id] as EventSignal) : null}
+      />
+
+      {savedIds.length + dismissedIds.length > 0 ? (
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-4 left-1/2 z-40 w-[min(92vw,720px)] -translate-x-1/2 rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] px-4 py-3 shadow-[var(--home-shadow-strong)] backdrop-blur"
+          initial={{ opacity: 0, y: 18 }}
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
+              <span className="rounded-full bg-[color:var(--home-highlight-bg)] px-3 py-1 font-semibold text-[var(--brand)]">
+                Saved: {savedIds.length}
+              </span>
+              <span>Passed: {dismissedIds.length}</span>
+              <span>{savedIds.length > 0 ? "Three more like this are ready tonight." : "Your feed is already adapting."}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"
+                onClick={() => {
+                  if (savedIds[0]) {
+                    setPreviewEventId(savedIds[0]);
+                  }
+                }}
+                type="button"
+              >
+                Compare
+              </button>
+              <button
+                className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-[var(--brand-contrast)]"
+                onClick={() => setRefreshCount((value) => value + 1)}
+                type="button"
+              >
+                Plan weekend
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      ) : null}
+    </>
   );
 }
 
