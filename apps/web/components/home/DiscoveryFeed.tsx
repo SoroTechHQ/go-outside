@@ -519,7 +519,7 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
       </section>
 
       <EventPeekPanel
-        category={previewEntry?.category ?? activeEntries[0]?.category ?? entries[0]?.category}
+        category={previewEntry?.category as Category}
         event={previewEntry?.event ?? null}
         isDesktop={isDesktop}
         isSaved={previewEntry ? savedIds.includes(previewEntry.event.id) || previewEntry.event.saved : false}
@@ -548,44 +548,6 @@ export function DiscoveryFeed({ entries, onReset }: DiscoveryFeedProps) {
         organizer={previewEntry?.organizer ?? null}
         signal={previewEntry ? (signalById[previewEntry.event.id] as EventSignal) : null}
       />
-
-      {savedIds.length + dismissedIds.length > 0 ? (
-        <motion.div
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-4 left-1/2 z-40 w-[min(92vw,720px)] -translate-x-1/2 rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] px-4 py-3 shadow-[var(--home-shadow-strong)] backdrop-blur"
-          initial={{ opacity: 0, y: 18 }}
-        >
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
-              <span className="rounded-full bg-[color:var(--home-highlight-bg)] px-3 py-1 font-semibold text-[var(--brand)]">
-                Saved: {savedIds.length}
-              </span>
-              <span>Passed: {dismissedIds.length}</span>
-              <span>{savedIds.length > 0 ? "Three more like this are ready tonight." : "Your feed is already adapting."}</span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"
-                onClick={() => {
-                  if (savedIds[0]) {
-                    setPreviewEventId(savedIds[0]);
-                  }
-                }}
-                type="button"
-              >
-                Compare
-              </button>
-              <button
-                className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-[var(--brand-contrast)]"
-                onClick={() => setRefreshCount((value) => value + 1)}
-                type="button"
-              >
-                Plan weekend
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      ) : null}
     </>
   );
 }

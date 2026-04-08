@@ -6,6 +6,7 @@
   --app-shell-offset: 72px;
   --brand: #1fa764;
   --brand-rgb: 31 167 100;
+  --hover-outline: #9c9c9c;
   --brand-hover: #159b58;
   --brand-dim: rgba(31, 167, 100, 0.15);
   --brand-glow: rgba(31, 167, 100, 0.18);
@@ -58,9 +59,10 @@
   --home-chip-text: #112018;
   --home-border: rgba(15, 23, 42, 0.08);
   --home-border-strong: rgba(15, 23, 42, 0.14);
-  --home-shadow: 0 18px 42px rgba(24, 38, 30, 0.08);
-  --home-shadow-strong: 0 28px 64px rgba(24, 38, 30, 0.12);
-  --home-active-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.18), 0 28px 64px rgba(24, 38, 30, 0.12);
+  --home-highlight-border-strong: rgba(var(--brand-rgb), 0.42);
+  --home-shadow: none;
+  --home-shadow-strong: none;
+  --home-active-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.26), 0 0 0 4px rgba(var(--brand-rgb), 0.08);
   --home-overlay: rgba(16, 24, 20, 0.26);
   --home-image-scrim: linear-gradient(180deg, rgba(6, 10, 8, 0.06), rgba(6, 10, 8, 0.06) 35%, rgba(6, 10, 8, 0.72) 100%);
   --home-action-bg: rgba(255, 255, 255, 0.8);
@@ -89,11 +91,14 @@
   --radius-input: 12px;
   --radius-image: 12px;
   --radius-tag: 8px;
+  --card-shadow: none;
+  --card-shadow-hover: 0 0 0 1px var(--hover-outline);
 }
 
 :root[data-theme="dark"] {
   --brand: #3ddc97;
   --brand-rgb: 61 220 151;
+  --hover-outline: #9c9c9c;
   --brand-hover: #2ec985;
   --brand-dim: rgba(61, 220, 151, 0.15);
   --brand-glow: rgba(61, 220, 151, 0.18);
@@ -134,21 +139,22 @@
   --brand-contrast: #08110b;
   --danger-dim: rgba(232, 93, 138, 0.16);
   --danger-border: rgba(232, 93, 138, 0.3);
-  --page-body-top: rgba(var(--bg-card-rgb), 0.42);
-  --page-body-accent: rgba(var(--brand-rgb), 0.06);
+  --page-body-top: rgba(34, 70, 52, 0.72);
+  --page-body-accent: rgba(var(--brand-rgb), 0.045);
   --page-grid-line: rgba(255, 255, 255, 0.025);
   --page-grid-mask: rgba(0, 0, 0, 0.42);
-  --home-surface: rgba(9, 16, 13, 0.94);
-  --home-surface-strong: rgba(9, 14, 11, 0.98);
-  --home-surface-soft: rgba(255, 255, 255, 0.03);
-  --home-chip-surface: rgba(0, 0, 0, 0.34);
-  --home-chip-border: rgba(255, 255, 255, 0.1);
+  --home-surface: rgba(18, 20, 20, 0.92);
+  --home-surface-strong: rgba(14, 16, 16, 0.98);
+  --home-surface-soft: rgba(255, 255, 255, 0.04);
+  --home-chip-surface: rgba(18, 20, 20, 0.74);
+  --home-chip-border: rgba(255, 255, 255, 0.08);
   --home-chip-text: rgba(255, 255, 255, 0.92);
-  --home-border: rgba(255, 255, 255, 0.06);
-  --home-border-strong: rgba(255, 255, 255, 0.1);
-  --home-shadow: 0 20px 48px rgba(0, 0, 0, 0.22);
-  --home-shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.4);
-  --home-active-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.22), 0 30px 80px rgba(0, 0, 0, 0.4);
+  --home-border: rgba(255, 255, 255, 0.07);
+  --home-border-strong: rgba(255, 255, 255, 0.12);
+  --home-highlight-border-strong: rgba(var(--brand-rgb), 0.34);
+  --home-shadow: 0 20px 48px rgba(0, 0, 0, 0.24);
+  --home-shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.44);
+  --home-active-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.18), 0 30px 80px rgba(0, 0, 0, 0.44);
   --home-overlay: rgba(0, 0, 0, 0.56);
   --home-image-scrim: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.08) 35%, rgba(5, 9, 7, 0.88) 100%);
   --home-action-bg: rgba(0, 0, 0, 0.34);
@@ -159,8 +165,8 @@
   --home-avatar-bg: rgba(var(--brand-rgb), 0.18);
   --home-highlight-bg: rgba(var(--brand-rgb), 0.12);
   --home-highlight-border: rgba(var(--brand-rgb), 0.18);
-  --hero-empty-bg: linear-gradient(135deg, #1a3a18, #0e1410);
-  --hero-empty-accent: radial-gradient(circle at top left, rgba(95, 191, 42, 0.18), transparent 34%);
+  --hero-empty-bg: linear-gradient(135deg, #163024, #121313 68%, #0d0e0e);
+  --hero-empty-accent: radial-gradient(circle at top left, rgba(95, 191, 42, 0.12), transparent 34%);
   --hero-image-overlay: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.3) 50%, rgba(14, 20, 16, 0.88) 100%);
   --hero-fg: #ffffff;
   --hero-fg-muted: rgba(255, 255, 255, 0.76);
@@ -170,6 +176,8 @@
   --hero-nav-bg: rgba(0, 0, 0, 0.24);
   --hero-nav-border: rgba(255, 255, 255, 0.12);
   --hero-dot-muted: rgba(255, 255, 255, 0.4);
+  --card-shadow: 0 12px 30px rgba(18, 32, 19, 0.24);
+  --card-shadow-hover: 0 0 0 1px var(--hover-outline), 0 18px 40px rgba(18, 32, 19, 0.34);
 }
 
 * {
@@ -190,9 +198,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top center, rgba(var(--brand-rgb), 0.08), transparent 26%),
-    radial-gradient(circle at 12% 18%, var(--page-body-accent), transparent 22%),
-    linear-gradient(180deg, var(--page-body-top) 0%, var(--bg-app) 24%, var(--bg-app) 100%);
+    radial-gradient(circle at 50% -4%, rgba(var(--brand-rgb), 0.16), transparent 24%),
+    radial-gradient(circle at 18% 10%, var(--page-body-accent), transparent 20%),
+    linear-gradient(180deg, var(--page-body-top) 0%, #131716 22%, var(--bg-app) 52%, var(--bg-app) 100%);
   color: var(--text-primary);
   font-family: var(--font-body), sans-serif;
 }

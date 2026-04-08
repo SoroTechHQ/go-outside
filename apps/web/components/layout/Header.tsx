@@ -24,7 +24,7 @@ function getInitials(name: string) {
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
   const { isCompact, isMini } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
-  const stableSidebarOffset = 72;
+  const stableSidebarOffset = 88;
 
   if (appShell) {
     return (

@@ -15,7 +15,7 @@ export function EventCard({
   const primaryChip = event.trending ? "Trending" : event.status;
 
   return (
-    <article className="group h-full rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[0_12px_30px_rgba(18,32,19,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(18,32,19,0.12)]">
+    <article className="group h-full rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--hover-outline)] hover:shadow-[var(--card-shadow-hover)]">
       <Link className="flex h-full flex-col" href={`/events/${event.slug}`}>
         <div className="relative overflow-hidden rounded-t-[12px]">
           <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3">
