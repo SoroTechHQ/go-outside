@@ -19,7 +19,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-24 text-[var(--text-primary)]">
       <div className="container-shell py-8">
         <div className="mx-auto max-w-xl rounded-[32px] border border-[var(--border-card)] bg-[var(--bg-card)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
           <div className={`rounded-[24px] bg-gradient-to-br ${event.bannerTone} p-5`}>

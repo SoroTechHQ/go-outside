@@ -1,13 +1,10 @@
 import { organizers } from "@gooutside/demo-data";
 import { Button, SectionHeader, ShellCard } from "@gooutside/ui";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
-import { PublicHeader } from "../../components/public-header";
 
 export default function OrganizersPage() {
   return (
-    <main className="pb-20">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <section className="container-shell py-10">
         <SectionHeader
           eyebrow="Community"

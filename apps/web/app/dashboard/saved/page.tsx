@@ -1,14 +1,11 @@
 import { demoData, getCategoryBySlug, getOrganizerById, getSavedEvents } from "@gooutside/demo-data";
-import { Button, EventCard, MobileBottomNav, SectionHeader, ShellCard } from "@gooutside/ui";
-import { PublicHeader } from "../../../components/public-header";
+import { Button, EventCard, SectionHeader, ShellCard } from "@gooutside/ui";
 
 export default function SavedEventsPage() {
   const savedEvents = getSavedEvents();
 
   return (
-    <main className="pb-24">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <div className="container-shell py-10">
         <SectionHeader
           eyebrow="Saved"
@@ -41,8 +38,6 @@ export default function SavedEventsPage() {
           )}
         </div>
       </div>
-
-      <MobileBottomNav links={demoData.navigation.attendeeTabs} />
     </main>
   );
 }

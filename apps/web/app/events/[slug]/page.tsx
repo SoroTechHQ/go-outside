@@ -9,7 +9,6 @@ import {
   getReviewsByEvent,
 } from "@gooutside/demo-data";
 import { Button, EventCard, SectionHeader, ShellCard, StatusPill } from "@gooutside/ui";
-import { PublicHeader } from "../../../components/public-header";
 
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -29,9 +28,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   }
 
   return (
-    <main>
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <section className={`relative h-[420px] bg-gradient-to-br ${event.bannerTone}`}>
         <div className="container-shell flex h-full flex-col justify-between py-8">
           <div className="flex items-center justify-between">

@@ -6,7 +6,6 @@ import {
   filterEvents,
 } from "@gooutside/demo-data";
 import { Button, EventCard, SectionHeader, ShellCard, StatusPill } from "@gooutside/ui";
-import { PublicHeader } from "../../components/public-header";
 
 export default async function EventsPage({
   searchParams,
@@ -27,9 +26,7 @@ export default async function EventsPage({
   });
 
   return (
-    <main className="pb-20">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <section className="container-shell py-10">
         <SectionHeader
           description="This discovery page is intentionally feed-shaped: filters stay lightweight, the card stack stays visual, and the route supports dummy query-state from static demo data."

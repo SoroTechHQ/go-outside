@@ -6,7 +6,6 @@ import {
   getOrganizerById,
 } from "@gooutside/demo-data";
 import { Button, EventCard, ShellCard, StatusPill } from "@gooutside/ui";
-import { PublicHeader } from "../../components/public-header";
 
 export default async function SearchPage({
   searchParams,
@@ -20,9 +19,7 @@ export default async function SearchPage({
   const filteredEvents = filterEvents({ query: q, category });
 
   return (
-    <main className="pb-20">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <section className="container-shell py-10">
         <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--neon)]">Search</div>
         <h1 className="font-display text-5xl italic text-[var(--text-primary)]">

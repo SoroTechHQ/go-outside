@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ThemeScript } from "@gooutside/ui";
 import AppBackground from "../components/layout/AppBackground";
+import AppChrome from "../components/layout/AppChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
 import "./globals.css";
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeScript />
         <AppShellProvider>
           <AppBackground />
+          <AppChrome />
           <div className="app-content">{children}</div>
         </AppShellProvider>
       </body>

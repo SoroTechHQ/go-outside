@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { events, getCategoryBySlug, getOrganizerById } from "@gooutside/demo-data";
 import { EventCard, ShellCard } from "@gooutside/ui";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
-import { PublicHeader } from "../../../components/public-header";
 
 export default async function OrganizerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,9 +14,7 @@ export default async function OrganizerProfilePage({ params }: { params: Promise
   const organizerEvents = events.filter((e) => e.organizerId === id);
 
   return (
-    <main className="pb-20">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <section className="container-shell py-10">
         <ShellCard className="mb-8">
           <div className="flex flex-wrap items-start gap-6">

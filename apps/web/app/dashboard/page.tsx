@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import {
   demoData,
   getAttendeeTicketById,
@@ -11,8 +10,6 @@ import {
   getSavedEvents,
 } from "@gooutside/demo-data";
 import { Button, EventCard } from "@gooutside/ui";
-import Header from "../../components/layout/Header";
-import NavSwitch from "../../components/layout/NavSwitch";
 import MessagesFAB from "../../components/messages/MessagesFAB";
 
 export default function DashboardPage() {
@@ -29,11 +26,6 @@ export default function DashboardPage() {
 
   return (
     <main className="page-grid min-h-screen pb-24">
-      <NavSwitch role="attendee" userName={demoData.attendee.name} />
-      <Suspense fallback={null}>
-        <Header appShell userName={demoData.attendee.name} />
-      </Suspense>
-
       <div className="container-shell py-10">
         <div className="mx-auto max-w-[720px] text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[var(--brand)]">

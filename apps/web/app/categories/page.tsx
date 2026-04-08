@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { categories, events } from "@gooutside/demo-data";
 import { AppIcon, SectionHeader, ShellCard } from "@gooutside/ui";
-import { PublicHeader } from "../../components/public-header";
 
 export default function CategoriesPage() {
   return (
-    <main className="pb-20">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <section className="container-shell py-10">
         <SectionHeader
           eyebrow="Browse"

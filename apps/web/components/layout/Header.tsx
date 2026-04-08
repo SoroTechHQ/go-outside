@@ -26,22 +26,20 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   const { isCompact, isMini } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
   const { sidebarWidth } = useAppShell();
-  const shellLeft = "max(1rem, calc((100vw - 1280px) / 2))";
-  const shellWidth = "min(calc(100vw - 2rem), 1280px)";
 
   if (appShell) {
     return (
       <>
         <header className="sticky top-0 z-40 hidden md:flex">
           <div
-            className="px-4 md:px-6"
+            className="flex justify-center px-4 md:px-6"
             style={{
-              width: `calc(${shellWidth} - ${sidebarWidth}px)`,
-              marginLeft: `calc(${shellLeft} + ${sidebarWidth}px)`,
+              width: `calc(100vw - ${sidebarWidth}px)`,
+              marginLeft: `${sidebarWidth}px`,
             }}
           >
             <div
-              className="flex items-center justify-center transition-all duration-300"
+              className="flex w-full items-center justify-center transition-all duration-300"
               style={{
                 height: isFocused ? 104 : isCompact ? 56 : 72,
                 paddingTop: isFocused ? 24 : 12,

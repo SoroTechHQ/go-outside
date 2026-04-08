@@ -1,14 +1,11 @@
 import { demoData, getEventBySlug } from "@gooutside/demo-data";
-import { Button, MobileBottomNav, SectionHeader, ShellCard, StatusPill } from "@gooutside/ui";
-import { PublicHeader } from "../../../components/public-header";
+import { Button, SectionHeader, ShellCard, StatusPill } from "@gooutside/ui";
 
 export default function TicketsPage() {
   const tickets = demoData.attendee.tickets;
 
   return (
-    <main className="pb-24">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <div className="container-shell py-10">
         <SectionHeader
           eyebrow="Attendee"
@@ -41,8 +38,6 @@ export default function TicketsPage() {
           })}
         </div>
       </div>
-
-      <MobileBottomNav links={demoData.navigation.attendeeTabs} />
     </main>
   );
 }

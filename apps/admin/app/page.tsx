@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { PlatformDashboardPage } from "../components/pages/platform-dashboard-page";
 
 export default function RootPage() {
-  redirect("/admin");
+  return <PlatformDashboardPage />;
 }

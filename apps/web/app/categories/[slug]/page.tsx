@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { events, getCategoryBySlug, getOrganizerById } from "@gooutside/demo-data";
 import { AppIcon, Button, EventCard, ShellCard } from "@gooutside/ui";
-import { PublicHeader } from "../../../components/public-header";
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -14,9 +13,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const categoryEvents = events.filter((e) => e.categorySlug === slug);
 
   return (
-    <main className="pb-20">
-      <PublicHeader />
-
+    <main className="page-grid min-h-screen pb-24">
       <div className="h-48 bg-gradient-to-br from-[#1a2418] to-[#0e1410] flex items-center">
         <div className="container-shell flex items-center gap-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bg-muted)] text-[var(--neon)]">

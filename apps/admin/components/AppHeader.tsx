@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { useSidebar } from "../context/SidebarContext";
+import { ThemeIconButton, ThemeToggleSwitch } from "./theme-controls";
 
 export function AppHeader({
   title,
@@ -30,7 +31,7 @@ export function AppHeader({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90 px-5 backdrop-blur">
+    <header className="sticky top-0 z-30 flex min-h-16 w-full items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/90 px-5 py-3 backdrop-blur">
       {/* Left: toggle + title */}
       <div className="flex items-center gap-4">
         <button
@@ -64,6 +65,12 @@ export function AppHeader({
             className="h-9 w-64 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--neon)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/10"
           />
         </div>
+
+        <div className="hidden xl:flex">
+          <ThemeToggleSwitch compact />
+        </div>
+
+        <ThemeIconButton />
 
         {/* Notification bell */}
         <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]">
