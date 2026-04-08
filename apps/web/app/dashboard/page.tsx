@@ -13,6 +13,7 @@ import {
 import { Button, EventCard } from "@gooutside/ui";
 import Header from "../../components/layout/Header";
 import NavSwitch from "../../components/layout/NavSwitch";
+import MessagesFAB from "../../components/messages/MessagesFAB";
 
 export default function DashboardPage() {
   const ticket = getAttendeeTicketById(demoData.attendee.upcomingTicketId);
@@ -30,7 +31,7 @@ export default function DashboardPage() {
     <main className="page-grid min-h-screen pb-24">
       <NavSwitch role="attendee" userName={demoData.attendee.name} />
       <Suspense fallback={null}>
-        <Header role="attendee" userName={demoData.attendee.name} />
+        <Header appShell userName={demoData.attendee.name} />
       </Suspense>
 
       <div className="container-shell py-10">
@@ -186,6 +187,7 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+      <MessagesFAB />
     </main>
   );
 }

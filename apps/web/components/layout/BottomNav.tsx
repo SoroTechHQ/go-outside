@@ -33,8 +33,8 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.95)] backdrop-blur-md lg:hidden">
-      <div className="flex h-16 items-center justify-around px-3 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-4 left-4 right-4 z-50 rounded-[28px] border border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.95)] px-3 py-2 shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-md lg:hidden">
+      <div className="flex min-h-[56px] items-center justify-around pb-[env(safe-area-inset-bottom)]">
         {items.map((item) => {
           const active =
             item.href === "/"

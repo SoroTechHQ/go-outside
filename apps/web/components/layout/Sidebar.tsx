@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
-  CalendarBlank,
-  GearSix,
+  Compass,
   HeartStraight,
-  House,
-  Plus,
+  HouseLine,
+  MoonStars,
+  PlusCircle,
+  SunDim,
   Ticket,
-  UserCircle,
 } from "@phosphor-icons/react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 
 type SidebarRole = "attendee" | "organizer" | "admin";
 
@@ -22,8 +25,9 @@ type SidebarProps = {
 
 type NavItem = {
   href: string;
+  icon: typeof HouseLine;
   label: string;
-  icon: typeof House;
+  unread?: boolean;
 };
 
 function getInitials(name: string) {
@@ -37,78 +41,192 @@ function getInitials(name: string) {
 
 export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: SidebarProps) {
   const pathname = usePathname();
-  const mainItems: NavItem[] =
+  const isTabletUp = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isWideDesktop = useMediaQuery("(min-width: 1280px)");
+  const [hovered, setHovered] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    const currentTheme = document.documentElement.dataset.theme;
+    setTheme(currentTheme === "light" ? "light" : "dark");
+  }, []);
+
+  if (!isTabletUp) {
+    return null;
+  }
+
+  const allowHoverExpand = isDesktop && !isWideDesktop;
+  const isExpanded = isWideDesktop || (allowHoverExpand && hovered);
+  const navItems: NavItem[] =
     role === "organizer" || role === "admin"
       ? [
-          { href: "/", label: "Home", icon: House },
-          { href: "/organizer", label: "My Events", icon: CalendarBlank },
-          { href: "/organizer/events/new", label: "Create Event", icon: Plus },
+          { href: "/", label: "Home", icon: HouseLine },
+          { href: "/search", label: "Explore", icon: Compass },
+          { href: "/organizer", label: "My Events", icon: Ticket },
+          { href: "/organizer/events/new", label: "Create Event", icon: PlusCircle },
           { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
           { href: "/dashboard/saved", label: "Saved", icon: HeartStraight },
+          { href: "/dashboard/notifications", label: "Notifications", icon: Bell, unread: true },
         ]
       : [
-          { href: "/", label: "Home", icon: House },
+          { href: "/", label: "Home", icon: HouseLine },
+          { href: "/search", label: "Explore", icon: Compass },
           { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
           { href: "/dashboard/saved", label: "Saved", icon: HeartStraight },
-          { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
+          { href: "/dashboard/notifications", label: "Notifications", icon: Bell, unread: true },
         ];
 
-  const utilityItems: NavItem[] = [
-    { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-    { href: "/dashboard/profile", label: "Settings", icon: GearSix },
-  ];
-
-  const renderItem = (item: NavItem) => {
-    const active =
-      item.href === "/"
-        ? pathname === "/"
-        : pathname === item.href || pathname.startsWith(`${item.href}/`);
-    const Icon = item.icon;
-
-    return (
-      <Link
-        key={item.href}
-        className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-sm font-medium transition ${
-          active
-            ? "bg-[rgba(var(--brand-rgb),0.12)] text-[var(--brand)]"
-            : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
-        }`}
-        href={item.href}
-      >
-        <Icon size={22} weight={active ? "bold" : "regular"} />
-        <span className="truncate lg:block xl:w-0 xl:overflow-hidden xl:opacity-0 xl:transition-all xl:duration-200 xl:group-hover:w-auto xl:group-hover:opacity-100">
-          {item.label}
-        </span>
-      </Link>
-    );
-  };
-
   return (
-    <aside className="group fixed left-0 top-0 z-40 hidden h-screen overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 pb-6 pt-20 backdrop-blur lg:block lg:w-60 xl:w-[72px] xl:hover:w-60">
-      <div className="flex h-full flex-col gap-6">
-        <nav className="no-scrollbar flex-1 space-y-2 overflow-y-auto">
-          {mainItems.map(renderItem)}
+    <motion.aside
+      animate={{ width: isExpanded ? 240 : 72 }}
+      className="glass-card fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none border-r border-l-0 border-t-0 border-b-0 md:flex md:flex-col"
+      onMouseEnter={() => {
+        if (allowHoverExpand) {
+          setHovered(true);
+        }
+      }}
+      onMouseLeave={() => {
+        if (allowHoverExpand) {
+          setHovered(false);
+        }
+      }}
+      transition={{ duration: isExpanded ? 0.25 : 0.2, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <div className={`flex items-center ${isExpanded ? "gap-3 px-4 py-5" : "justify-center px-0 py-5"}`}>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--brand)]/30 bg-[var(--brand)]/20">
+          <span className="font-display text-lg font-bold italic text-[var(--brand)]">G</span>
+        </div>
 
-          <div className="my-5 border-t border-[var(--border-subtle)]" />
+        <AnimatePresence>
+          {isExpanded ? (
+            <motion.span
+              animate={{ opacity: 1, width: "auto", x: 0 }}
+              className="font-display whitespace-nowrap text-base italic text-white/90"
+              exit={{ opacity: 0, width: 0, x: -8 }}
+              initial={{ opacity: 0, width: 0, x: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              GoOutside
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
+      </div>
 
-          {utilityItems.map(renderItem)}
-        </nav>
+      <nav className="flex flex-1 flex-col gap-1 px-2 py-4">
+        {navItems.map((item) => {
+          const active =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
 
-        <div className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-white">
-              {getInitials(userName)}
-            </div>
-            <div className="min-w-0 lg:block xl:w-0 xl:overflow-hidden xl:opacity-0 xl:transition-all xl:duration-200 xl:group-hover:w-auto xl:group-hover:opacity-100">
-              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{userName}</p>
-              <span className="mt-1 inline-flex rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                {role}
-              </span>
-            </div>
+          return (
+            <Link key={item.href} href={item.href}>
+              <motion.div
+                className={`relative flex h-[52px] items-center rounded-xl ${
+                  isExpanded ? "gap-3.5 px-5" : "justify-center"
+                } ${
+                  active
+                    ? "bg-[var(--brand)]/12 text-[var(--brand)]"
+                    : "text-white/40 hover:bg-white/[0.04] hover:text-white/80"
+                }`}
+                transition={{ duration: 0.15 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {active ? (
+                  <motion.div
+                    className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-[var(--brand)]"
+                    layoutId="nav-active-bar"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                ) : null}
+
+                <Icon
+                  size={active ? 26 : 24}
+                  weight="bold"
+                  className={active ? "text-[var(--brand)]" : "text-current"}
+                />
+
+                <AnimatePresence>
+                  {isExpanded ? (
+                    <motion.span
+                      animate={{ opacity: 1, width: "auto" }}
+                      className="overflow-hidden whitespace-nowrap text-sm font-medium"
+                      exit={{ opacity: 0, width: 0 }}
+                      initial={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {item.label}
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
+
+                {item.unread ? (
+                  <div
+                    className={`absolute h-1.5 w-1.5 rounded-full bg-[var(--brand)] ${
+                      isExpanded ? "right-3 top-3" : "right-4 top-3"
+                    }`}
+                  />
+                ) : null}
+              </motion.div>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto border-t border-white/5 px-2 py-4">
+        <button
+          className={`flex h-[52px] w-full items-center rounded-xl text-white/40 transition hover:bg-white/[0.04] hover:text-white/80 ${
+            isExpanded ? "gap-3.5 px-5" : "justify-center"
+          }`}
+          onClick={() => {
+            const nextTheme = theme === "dark" ? "light" : "dark";
+            document.documentElement.dataset.theme = nextTheme;
+            window.localStorage.setItem("gooutside-theme", nextTheme);
+            setTheme(nextTheme);
+          }}
+          type="button"
+        >
+          {theme === "dark" ? <SunDim size={24} weight="bold" /> : <MoonStars size={24} weight="bold" />}
+          <AnimatePresence>
+            {isExpanded ? (
+              <motion.span
+                animate={{ opacity: 1, width: "auto" }}
+                className="overflow-hidden whitespace-nowrap text-sm font-medium"
+                exit={{ opacity: 0, width: 0 }}
+                initial={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
+        </button>
+
+        <div className={`mt-2 flex h-[52px] items-center rounded-xl ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-xs font-semibold text-black">
+            {getInitials(userName)}
           </div>
+          <AnimatePresence>
+            {isExpanded ? (
+              <motion.div
+                animate={{ opacity: 1, width: "auto" }}
+                className="min-w-0 overflow-hidden"
+                exit={{ opacity: 0, width: 0 }}
+                initial={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <p className="truncate text-sm font-medium text-white/85">{userName}</p>
+                <span className="mt-1 inline-flex rounded-full bg-[var(--brand)]/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+                  Pulse
+                </span>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
 

@@ -12,6 +12,7 @@ import {
   getEventImage,
   getOrganizerById,
 } from "@gooutside/demo-data";
+import MessagesFAB from "../messages/MessagesFAB";
 import Header from "../layout/Header";
 import NavSwitch from "../layout/NavSwitch";
 import CategoryRail from "./CategoryRail";
@@ -153,8 +154,10 @@ export function HomeClient() {
   return (
     <main className="page-grid min-h-screen pb-24">
       <NavSwitch role="attendee" userName={demoData.attendee.name} />
-      <Header floating cityLabel="Accra" role="attendee" userName={demoData.attendee.name} />
-      <HeroCarousel slides={heroSlides} />
+      <Header appShell userName={demoData.attendee.name} />
+      <div className="container-shell px-0 md:px-6">
+        <HeroCarousel slides={heroSlides} />
+      </div>
       <CategoryRail
         categories={categoryItems}
         onClear={clearFilters}
@@ -164,6 +167,7 @@ export function HomeClient() {
       <div className="container-shell">
         <DiscoveryFeed entries={feedEntries} onReset={clearFilters} sponsoredSlides={heroSlides} />
       </div>
+      <MessagesFAB />
     </main>
   );
 }

@@ -47,7 +47,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
 
   if (safeSlides.length === 0) {
     return (
-      <section className="relative h-[50vw] min-h-[240px] max-h-[480px] overflow-hidden bg-[linear-gradient(135deg,#1A3A18,#0E1410)] sm:h-[45vh] lg:h-[38vh]">
+      <section className="relative h-[200px] overflow-hidden rounded-[20px] border border-white/5 bg-[linear-gradient(135deg,#1A3A18,#0E1410)] md:h-[220px] xl:h-[260px]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(95,191,42,0.18),transparent_34%)]" />
         <div className="container-shell relative flex h-full items-end pb-12">
           <div className="max-w-xl">
@@ -72,7 +72,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
 
   return (
     <section
-      className="relative h-[50vw] min-h-[240px] max-h-[480px] overflow-hidden rounded-none sm:h-[45vh] lg:h-[38vh]"
+      className="relative h-[200px] overflow-hidden rounded-[20px] border border-white/5 md:h-[220px] xl:h-[260px]"
       onKeyDown={(event) => {
         if (event.key === "ArrowLeft") {
           goTo(activeIndex - 1);
@@ -124,7 +124,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
         ))}
       </div>
 
-      <div className="container-shell relative flex h-full items-end pb-10">
+      <div className="relative flex h-full items-end px-5 pb-5 md:px-7">
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             {currentSlide.is_sponsored ? (
@@ -137,19 +137,19 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
             </span>
           </div>
 
-          <h2 className="mt-4 max-w-xl font-display text-[2rem] italic leading-tight text-white md:text-[2.5rem]">
+          <h2 className="mt-3 max-w-xl font-display text-[1.55rem] italic leading-tight text-white md:text-[1.85rem]">
             {currentSlide.title}
           </h2>
-          <p className="mt-2 text-sm text-white/72">
+          <p className="mt-2 text-xs text-white/72 md:text-sm">
             {currentSlide.start_datetime}
             {currentSlide.venue ? ` · ${currentSlide.venue.name}, ${currentSlide.venue.city}` : ""}
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-white/14 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-white/14 bg-white/10 px-4 py-2 text-xs font-semibold text-white backdrop-blur md:text-sm">
               {currentSlide.is_free ? "Free" : `GHS ${currentSlide.lowest_price}`}
             </span>
             <Link
-              className="rounded-full bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(var(--brand-rgb),0.3)] transition hover:brightness-105"
+              className="rounded-full bg-[var(--brand)] px-5 py-2.5 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(var(--brand-rgb),0.3)] transition hover:brightness-105 md:text-sm"
               href={`/events/${currentSlide.slug}`}
             >
               Get Tickets →
@@ -178,7 +178,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
         <>
           <button
             aria-label="Previous slide"
-            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/24 text-white backdrop-blur transition hover:bg-black/38 md:flex"
+            className="absolute right-20 top-4 hidden h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-black/24 text-white backdrop-blur transition hover:bg-black/38 md:flex"
             onClick={() => goTo(activeIndex - 1)}
             type="button"
           >
@@ -186,7 +186,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
           </button>
           <button
             aria-label="Next slide"
-            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-black/24 text-white backdrop-blur transition hover:bg-black/38 md:flex"
+            className="absolute right-8 top-4 hidden h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-black/24 text-white backdrop-blur transition hover:bg-black/38 md:flex"
             onClick={() => goTo(activeIndex + 1)}
             type="button"
           >

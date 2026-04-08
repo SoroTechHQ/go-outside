@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ThemeScript } from "@gooutside/ui";
+import AppBackground from "../components/layout/AppBackground";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -25,9 +26,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${dmSerif.variable} font-body`}>
+      <body className={`${dmSans.variable} ${dmSerif.variable} font-body lab-bg relative`}>
         <ThemeScript />
-        {children}
+        <AppBackground />
+        <div className="app-content">{children}</div>
       </body>
     </html>
   );

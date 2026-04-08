@@ -12,10 +12,10 @@ export function NavSwitch({
 }) {
   return (
     <>
-      <div className="hidden lg:block">
+      <div className="hidden md:block">
         <Sidebar role={role} userName={userName} />
       </div>
-      <div className="lg:hidden">
+      <div className="md:hidden">
         <BottomNav role={role} />
       </div>
     </>

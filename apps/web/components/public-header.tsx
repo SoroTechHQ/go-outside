@@ -4,7 +4,7 @@ import Header from "./layout/Header";
 export function PublicHeader() {
   return (
     <Suspense fallback={null}>
-      <Header />
+      <Header userName="Guest User" />
     </Suspense>
   );
 }
