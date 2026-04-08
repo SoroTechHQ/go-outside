@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../../../packages/ui/src/**/*.{tsx,ts}";
+@source "../components/**/*.{tsx,ts}";
 
 :root {
   --neon: #5fbf2a;

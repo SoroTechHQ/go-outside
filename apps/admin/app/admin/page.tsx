@@ -1,100 +1,172 @@
-import {
-  demoData,
-  events,
-  getCategoryBySlug,
-} from "@gooutside/demo-data";
-import {
-  BarStripes,
-  ChartCard,
-  DataTable,
-  DonutLegend,
-  LineSpark,
-  ShellCard,
-  StatCard,
-  StatusPill,
-} from "@gooutside/ui";
+import Link from "next/link";
+import { demoData, events, getCategoryBySlug } from "@gooutside/demo-data";
+import { RevenueChart } from "../../components/charts/RevenueChart";
+import { UsersChart } from "../../components/charts/UsersChart";
+import { CategoryDonut } from "../../components/charts/CategoryDonut";
 import { DashboardShell } from "../../components/dashboard-shell";
 
+const toneClasses: Record<string, string> = {
+  neon: "text-[var(--neon)]",
+  pink: "text-[var(--pink)]",
+  blue: "text-[var(--blue)]",
+};
+
+const statusColors: Record<string, string> = {
+  live: "bg-[rgba(184,255,60,0.1)] text-[var(--neon)] border border-[rgba(184,255,60,0.2)]",
+  pending: "bg-[rgba(255,180,50,0.1)] text-[#FFB432] border border-[rgba(255,180,50,0.2)]",
+  review: "bg-[rgba(232,93,138,0.1)] text-[var(--pink)] border border-[rgba(232,93,138,0.2)]",
+  draft: "bg-[var(--bg-muted)] text-[var(--text-tertiary)] border border-[var(--border-subtle)]",
+};
+
 export default function AdminDashboardPage() {
-  const stats = demoData.adminDashboard.stats;
-  const recentEvents = events.slice(0, 4);
+  const { stats, revenueTrend, userGrowth, categoryMix, activities } = demoData.adminDashboard;
+  const recentEvents = events.slice(0, 5);
 
   return (
     <DashboardShell
       mode="admin"
-      subtitle="Platform overview, moderation load, and live commercial health."
       title="Platform Dashboard"
+      subtitle="Overview, moderation load, and live commercial health"
     >
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stat cards */}
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} tone={stat.tone as "neon" | "pink" | "blue"} trend={stat.trend} value={stat.value} />
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-5 shadow-[0_8px_24px_rgba(26,58,26,0.07)]"
+          >
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{stat.label}</p>
+            <p className="mt-3 font-display text-3xl italic text-[var(--text-primary)]">{stat.value}</p>
+            <p className={`mt-2 text-xs font-semibold ${toneClasses[stat.tone] ?? "text-[var(--neon)]"}`}>{stat.trend}</p>
+          </div>
         ))}
       </div>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[1.2fr,0.8fr]">
-        <ChartCard subtitle="Gross revenue across the active operating window." title="Monthly revenue">
-          <LineSpark values={demoData.adminDashboard.revenueTrend} />
-        </ChartCard>
-        <ChartCard subtitle="Weekly signup velocity, useful for demand pacing." title="New users">
-          <BarStripes values={demoData.adminDashboard.userGrowth} />
-        </ChartCard>
+      {/* Charts row */}
+      <div className="mt-6 grid gap-5 xl:grid-cols-[1.4fr,1fr,0.8fr]">
+        {/* Revenue area chart */}
+        <div className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-xl italic text-[var(--text-primary)]">Monthly Revenue</h3>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Gross revenue — last 6 months</p>
+            </div>
+            <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+              6 mo
+            </span>
+          </div>
+          <RevenueChart values={revenueTrend} />
+        </div>
+
+        {/* New users bar chart */}
+        <div className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-5">
+          <div className="mb-2">
+            <h3 className="font-display text-xl italic text-[var(--text-primary)]">New Users</h3>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">Weekly signup velocity</p>
+          </div>
+          <UsersChart values={userGrowth} />
+        </div>
+
+        {/* Category donut */}
+        <div className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-5">
+          <div className="mb-2">
+            <h3 className="font-display text-xl italic text-[var(--text-primary)]">Event Mix</h3>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">By category</p>
+          </div>
+          <CategoryDonut items={categoryMix} />
+        </div>
       </div>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[1.2fr,0.8fr]">
-        <DataTable
-          columns={["Event", "Category", "Date", "Status", "Actions"]}
-          rows={recentEvents.map((event) => {
-            const category = getCategoryBySlug(event.categorySlug);
-            return [
-              <div key={`${event.slug}-title`}>
-                <div className="font-semibold text-[var(--text-primary)]">{event.title}</div>
-                <div className="text-xs text-[var(--text-tertiary)]">{event.locationLine}</div>
-              </div>,
-              category?.name ?? "Category",
-              `${event.dateLabel} · ${event.timeLabel}`,
-              <StatusPill key={`${event.slug}-status`} tone={event.status === "review" ? "review" : "live"}>{event.status}</StatusPill>,
-              <div key={`${event.slug}-action`} className="flex gap-2">
-                <StatusPill tone="draft">Feature</StatusPill>
-                <StatusPill tone="pending">Review</StatusPill>
-              </div>,
-            ];
-          })}
-        />
-        <ChartCard subtitle="Category spread across active demand." title="Events by category">
-          <DonutLegend items={demoData.adminDashboard.categoryMix} />
-        </ChartCard>
-      </div>
+      {/* Events table + activity feed */}
+      <div className="mt-6 grid gap-5 xl:grid-cols-[1.4fr,1fr]">
+        {/* Events table */}
+        <div className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-5">
+          <div className="mb-5 flex items-center justify-between">
+            <h3 className="font-display text-xl italic text-[var(--text-primary)]">Recent Events</h3>
+            <Link href="/admin/events" className="text-xs font-semibold text-[var(--neon)] hover:underline">
+              See all →
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border-subtle)]">
+                  {["Event", "Category", "Date", "Status", "Actions"].map((col) => (
+                    <th key={col} className="pb-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)]">
+                {recentEvents.map((event) => {
+                  const cat = getCategoryBySlug(event.categorySlug);
+                  const statusKey = event.status in statusColors ? event.status : "draft";
+                  return (
+                    <tr key={event.id} className="group">
+                      <td className="py-3.5 pr-4">
+                        <div className="font-medium text-[var(--text-primary)]">{event.title}</div>
+                        <div className="text-xs text-[var(--text-tertiary)]">{event.locationLine}</div>
+                      </td>
+                      <td className="py-3.5 pr-4 text-[var(--text-secondary)]">{cat?.name}</td>
+                      <td className="py-3.5 pr-4 text-[var(--text-secondary)]">{event.dateLabel}</td>
+                      <td className="py-3.5 pr-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusColors[statusKey]}`}>
+                          {event.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5">
+                        <div className="flex gap-2">
+                          <button className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-2.5 py-1 text-[11px] font-semibold text-[var(--neon)] hover:bg-[var(--bg-card-alt)]">
+                            Feature
+                          </button>
+                          <button className="rounded-lg border border-[rgba(232,93,138,0.2)] bg-[rgba(232,93,138,0.08)] px-2.5 py-1 text-[11px] font-semibold text-[var(--pink)] hover:bg-[rgba(232,93,138,0.14)]">
+                            Review
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[1fr,360px]">
-        <ShellCard>
-          <h3 className="font-display text-3xl italic text-[var(--text-primary)]">Recent platform events</h3>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            This table is a static frontend implementation of the platform moderation queue and feature controls.
-          </p>
-          <div className="mt-5 grid gap-4">
-            {recentEvents.map((event) => (
-              <div key={event.slug} className="flex items-center justify-between rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-4 py-4">
-                <div>
-                  <p className="font-semibold text-[var(--text-primary)]">{event.title}</p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{event.city} · {event.capacityLabel}</p>
+        {/* Live activity */}
+        <div className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-5">
+          <h3 className="mb-5 font-display text-xl italic text-[var(--text-primary)]">Live Activity</h3>
+          <div className="space-y-3">
+            {activities.map((a) => (
+              <div
+                key={a.title}
+                className="flex items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4"
+              >
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(184,255,60,0.1)] text-[var(--neon)]">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
-                <StatusPill tone={event.trending ? "paid" : "draft"}>{event.trending ? "hot" : "stable"}</StatusPill>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[var(--text-primary)]">{a.title}</p>
+                  <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{a.meta}</p>
+                  <p className="mt-1.5 text-[11px] uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{a.timeLabel}</p>
+                </div>
               </div>
             ))}
           </div>
-        </ShellCard>
-        <ShellCard>
-          <h3 className="font-display text-3xl italic text-[var(--text-primary)]">Live activity</h3>
-          <div className="mt-5 space-y-4">
-            {demoData.adminDashboard.activities.map((activity) => (
-              <div key={activity.title} className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4">
-                <p className="font-semibold text-[var(--text-primary)]">{activity.title}</p>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">{activity.meta}</p>
-                <p className="mt-3 text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">{activity.timeLabel}</p>
-              </div>
-            ))}
+
+          {/* Pending reviews callout */}
+          <div className="mt-4 rounded-xl border border-[rgba(232,93,138,0.2)] bg-[rgba(232,93,138,0.06)] p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--pink)]">Action needed</p>
+            <p className="mt-2 font-display text-2xl italic text-[var(--text-primary)]">14 pending reviews</p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">Events awaiting moderation approval.</p>
+            <Link
+              href="/admin/events"
+              className="mt-3 inline-block rounded-full bg-[var(--pink)] px-4 py-2 text-xs font-bold text-white"
+            >
+              Review queue →
+            </Link>
           </div>
-        </ShellCard>
+        </div>
       </div>
     </DashboardShell>
   );

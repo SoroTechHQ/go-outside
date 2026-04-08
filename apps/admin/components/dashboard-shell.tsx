@@ -1,6 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
-import { demoData } from "@gooutside/demo-data";
-import { DashboardTopbar, SidebarNav } from "@gooutside/ui";
+import { useSidebar } from "../context/SidebarContext";
+import { AppSidebar } from "./AppSidebar";
+import { AppHeader } from "./AppHeader";
 
 export function DashboardShell({
   mode,
@@ -13,23 +16,17 @@ export function DashboardShell({
   subtitle: string;
   children: ReactNode;
 }) {
-  const links =
-    mode === "admin" ? demoData.navigation.adminLinks : demoData.navigation.organizerLinks;
+  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+
+  const sidebarWidth =
+    isMobileOpen || isExpanded || isHovered ? "lg:ml-[290px]" : "lg:ml-[90px]";
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] lg:grid lg:grid-cols-[290px,1fr]">
-      <SidebarNav
-        links={links}
-        subtitle={mode === "admin" ? demoData.adminDashboard.roleLabel : demoData.organizerDashboard.roleLabel}
-        title="GoOutside"
-      />
-      <div>
-        <DashboardTopbar
-          searchLabel={mode === "admin" ? "Search platform activity" : "Search events and attendees"}
-          subtitle={subtitle}
-          title={title}
-        />
-        <div className="mx-auto max-w-[1500px] p-5 md:p-8">{children}</div>
+    <div className="min-h-screen bg-[var(--bg-base)]">
+      <AppSidebar mode={mode} />
+      <div className={`transition-all duration-300 ease-in-out ${sidebarWidth}`}>
+        <AppHeader title={title} subtitle={subtitle} />
+        <main className="mx-auto max-w-[1500px] p-5 md:p-8">{children}</main>
       </div>
     </div>
   );

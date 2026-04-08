@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { ThemeScript } from "@gooutside/ui";
+import { SidebarProvider } from "../context/SidebarContext";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -18,8 +19,8 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "GoOutside Admin Demo",
-  description: "Organizer and platform admin frontend mock for GoOutside.",
+  title: "GoOutside Admin",
+  description: "Organizer and platform admin frontend for GoOutside.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${dmSerif.variable} font-body`}>
         <ThemeScript />
-        {children}
+        <SidebarProvider>{children}</SidebarProvider>
       </body>
     </html>
   );
