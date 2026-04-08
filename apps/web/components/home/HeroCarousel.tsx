@@ -137,7 +137,7 @@ export function HeroCarousel({ slides }: HeroCarouselProps) {
             </span>
           </div>
 
-          <h2 className="mt-3 max-w-xl font-display text-[1.55rem] italic leading-tight text-white md:text-[1.85rem]">
+          <h2 className="mt-3 max-w-xl text-[1.55rem] font-semibold leading-tight tracking-[-0.02em] text-white md:text-[1.85rem]">
             {currentSlide.title}
           </h2>
           <p className="mt-2 text-xs text-white/72 md:text-sm">

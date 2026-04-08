@@ -60,7 +60,7 @@ export function EventCard({
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
               {event.eyebrow}
             </p>
-            <h3 className="mt-2 font-display text-[1.65rem] italic leading-tight text-[var(--text-primary)]">
+            <h3 className="mt-2 text-[1.4rem] font-semibold leading-tight tracking-[-0.02em] text-[var(--text-primary)]">
               {event.title}
             </h3>
           </div>

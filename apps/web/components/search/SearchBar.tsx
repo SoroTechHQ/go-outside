@@ -94,20 +94,20 @@ export function SearchBar({
           height: isMini ? 42 : isFocused ? 64 : isCompact ? 54 : 58,
           maxWidth: isMini ? 240 : isFocused ? 820 : isCompact ? 640 : 760,
         }}
-        className={`relative flex w-full items-center rounded-full border ${
+        className={`relative flex w-full items-center rounded-full border transition-colors ${
           isFocused
-            ? "search-focused border-[rgba(var(--brand-rgb),0.25)] bg-white/10"
-            : "border-white/8 bg-white/7 hover:border-white/12 hover:bg-white/9"
+            ? "search-focused border-[rgba(var(--brand-rgb),0.25)] bg-[color:rgba(var(--bg-card-rgb),0.95)]"
+            : "border-[var(--border-subtle)] bg-[var(--bg-muted)] hover:border-[var(--border-default)] hover:bg-[var(--bg-card-alt)]"
         }`}
         style={{
           boxShadow: isFocused
-            ? "0 0 0 4px rgba(95,191,42,0.10), 0 8px 32px rgba(0,0,0,0.3)"
+            ? "0 0 0 4px rgba(var(--brand-rgb),0.10), 0 8px 32px rgba(0,0,0,0.24)"
             : "0 10px 28px rgba(0,0,0,0.24)",
         }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       >
         <MagnifyingGlass
-          className={`shrink-0 ${isFocused ? "text-[var(--brand)]" : "text-white/40"} ${
+          className={`shrink-0 ${isFocused ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"} ${
             isMini ? "ml-3" : "ml-5"
           }`}
           size={isMini ? 16 : 20}
@@ -117,7 +117,7 @@ export function SearchBar({
         <div className="relative mx-4 flex-1">
           <input
             ref={inputRef}
-            className={`w-full bg-transparent text-white/90 outline-none caret-[var(--brand)] placeholder:text-transparent ${
+            className={`w-full bg-transparent text-[var(--text-primary)] outline-none caret-[var(--brand)] placeholder:text-transparent ${
               isMini ? "text-sm" : "text-[15px]"
             }`}
             onBlur={() => {
@@ -144,13 +144,13 @@ export function SearchBar({
           ) : null}
 
           {!query && isMini ? (
-            <span className="pointer-events-none text-sm text-white/30">Search events...</span>
+            <span className="pointer-events-none text-sm text-[var(--text-tertiary)]">Search events...</span>
           ) : null}
         </div>
 
         {!isMini ? (
           <button
-            className="mr-3 rounded-full p-2 text-white/40 transition-colors hover:bg-white/8 hover:text-white/80"
+            className="mr-3 rounded-full p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
             type="button"
           >
             <SlidersHorizontal size={16} weight="bold" />
@@ -163,7 +163,7 @@ export function SearchBar({
           <>
             <motion.div
               animate={{ opacity: 1 }}
-              className="fixed inset-0 z-[-1] bg-black/60"
+              className="fixed inset-0 z-[-1] bg-black/45"
               exit={{ opacity: 0 }}
               initial={{ opacity: 0 }}
               onClick={() => onFocusChange(false)}
@@ -185,7 +185,7 @@ export function SearchBar({
                     suggestions.map((event) => (
                       <button
                         key={event.id}
-                        className="flex w-full items-start justify-between rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.04]"
+                        className="flex w-full items-start justify-between rounded-2xl px-3 py-3 text-left transition hover:bg-[var(--bg-muted)]"
                         onClick={() => {
                           router.push(`/events/${event.slug}`);
                           onFocusChange(false);
@@ -193,8 +193,8 @@ export function SearchBar({
                         type="button"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-white/90">{event.title}</p>
-                          <p className="mt-1 text-xs text-white/50">
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">{event.title}</p>
+                          <p className="mt-1 text-xs text-[var(--text-secondary)]">
                             {event.dateLabel} · {event.venue}
                           </p>
                         </div>
@@ -204,7 +204,7 @@ export function SearchBar({
                       </button>
                     ))
                   ) : (
-                    <p className="rounded-2xl bg-white/[0.03] px-3 py-4 text-sm text-white/55">
+                    <p className="rounded-2xl bg-[var(--bg-muted)] px-3 py-4 text-sm text-[var(--text-secondary)]">
                       No close matches yet. Try a venue, organizer, or category.
                     </p>
                   )}
@@ -219,7 +219,7 @@ export function SearchBar({
                       {RECENT_SEARCHES.map((item) => (
                         <button
                           key={item}
-                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-white/72 transition hover:bg-white/[0.04]"
+                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                           onClick={() => {
                             setQuery(item);
                             applyQuery(item);
@@ -227,7 +227,7 @@ export function SearchBar({
                           }}
                           type="button"
                         >
-                          <ClockCounterClockwise size={16} className="text-white/35" />
+                          <ClockCounterClockwise size={16} className="text-[var(--text-tertiary)]" />
                           {item}
                         </button>
                       ))}
@@ -242,7 +242,7 @@ export function SearchBar({
                       {TRENDING_SEARCHES.map((item) => (
                         <button
                           key={item}
-                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-white/72 transition hover:bg-white/[0.04]"
+                          className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                           onClick={() => {
                             setQuery(item);
                             applyQuery(item);
@@ -265,7 +265,7 @@ export function SearchBar({
                       {categories.map((category) => (
                         <button
                           key={category.slug}
-                          className="rounded-full border border-white/8 bg-white/[0.03] px-3.5 py-2 text-sm text-white/72 transition hover:border-[var(--brand)]/30 hover:text-white"
+                          className="rounded-full border border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.72)] px-3.5 py-2 text-sm text-[var(--text-secondary)] transition hover:border-[var(--brand)]/30 hover:text-[var(--text-primary)]"
                           onClick={() => {
                             const params = new URLSearchParams(searchParams.toString());
                             params.set("category", category.slug);

@@ -56,14 +56,14 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
           </div>
         </header>
 
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,15,10,0.82)] px-4 py-4 backdrop-blur-xl md:hidden">
+        <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] px-4 py-4 backdrop-blur-xl md:hidden">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-white/90">
+            <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
               GoOutside
             </Link>
             <div className="flex items-center gap-2">
               <Link
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/6 text-white/70"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
                 href="/search"
               >
                 <MagnifyingGlass size={18} weight="bold" />
@@ -81,9 +81,9 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
 
   return (
     <>
-      <header className="sticky top-0 z-40 hidden border-b border-white/5 bg-[rgba(10,15,10,0.78)] md:flex">
+      <header className="sticky top-0 z-40 hidden border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.82)] backdrop-blur-xl md:flex">
         <div className="container-shell flex w-full items-center justify-between gap-6 py-4">
-          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-white/90">
+          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
             GoOutside
           </Link>
           <div className="flex-1">
@@ -103,14 +103,14 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
         </div>
       </header>
 
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[rgba(10,15,10,0.82)] px-4 py-4 backdrop-blur-xl md:hidden">
+      <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] px-4 py-4 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-white/90">
+          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
             GoOutside
           </Link>
           <div className="flex items-center gap-2">
             <Link
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/6 text-white/70"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
               href="/search"
             >
               <MagnifyingGlass size={18} weight="bold" />

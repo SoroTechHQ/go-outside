@@ -48,8 +48,20 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   const { setSidebarWidth } = useAppShell();
 
   useEffect(() => {
-    const currentTheme = document.documentElement.dataset.theme;
-    setTheme(currentTheme === "light" ? "light" : "dark");
+    const syncTheme = () => {
+      const currentTheme = document.documentElement.dataset.theme;
+      setTheme(currentTheme === "light" ? "light" : "dark");
+    };
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   const isExpanded = isDesktop && hovered;
@@ -86,7 +98,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   return (
     <motion.aside
       animate={{ width: isExpanded ? 240 : 72 }}
-      className="fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none bg-[rgba(0,0,0,0.92)] backdrop-blur-xl md:flex md:flex-col"
+      className="fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none border-r border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%),var(--bg-elevated)] backdrop-blur-xl md:flex md:flex-col"
       onMouseEnter={() => {
         if (isDesktop) {
           setHovered(true);
@@ -105,7 +117,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
             {isExpanded ? (
               <motion.span
                 animate={{ opacity: 1, width: "auto", x: 0 }}
-                className="whitespace-nowrap text-[1rem] font-semibold tracking-[-0.02em] text-white/90"
+                className="whitespace-nowrap text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]"
                 exit={{ opacity: 0, width: 0, x: -8 }}
                 initial={{ opacity: 0, width: 0, x: -8 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
@@ -133,7 +145,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                     } ${
                       active
                         ? "bg-[var(--brand)]/12 text-[var(--brand)]"
-                        : "text-white/40 hover:bg-white/[0.04] hover:text-white/80"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                     }`}
                     transition={{ duration: 0.15 }}
                     whileTap={{ scale: 0.97 }}
@@ -182,7 +194,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
 
         <div className="px-2 pt-4">
           <button
-            className={`flex h-[52px] w-full items-center rounded-xl text-white/40 transition hover:bg-white/[0.04] hover:text-white/80 ${
+            className={`flex h-[52px] w-full items-center rounded-xl text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] ${
               isExpanded ? "gap-3.5 px-5" : "justify-center"
             }`}
             onClick={() => {
@@ -222,7 +234,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   initial={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <p className="truncate text-sm font-medium text-white/85">{userName}</p>
+                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">{userName}</p>
                   <span className="mt-1 inline-flex rounded-full bg-[var(--brand)]/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
                     Pulse
                   </span>

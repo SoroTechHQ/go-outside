@@ -199,7 +199,7 @@ export function DiscoveryFeed({ entries, onReset, sponsoredSlides }: DiscoveryFe
                           <span className="rounded-full border border-[rgba(var(--brand-rgb),0.2)] bg-[rgba(var(--brand-rgb),0.1)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
                             Sponsored event
                           </span>
-                          <h3 className="mt-4 font-display text-3xl italic text-[var(--text-primary)]">
+                          <h3 className="mt-4 text-[1.9rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
                             {item.slide.title}
                           </h3>
                           <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">

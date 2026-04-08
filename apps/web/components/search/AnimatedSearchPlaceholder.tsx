@@ -61,7 +61,7 @@ export function AnimatedSearchPlaceholder({ isVisible }: { isVisible: boolean })
   }, [currentIndex, displayText, isDeleting, isPaused, isVisible]);
 
   return (
-    <span className="select-none text-white/30">
+    <span className="select-none text-[var(--text-tertiary)]">
       {displayText}
       <motion.span
         animate={{ opacity: [1, 0, 1] }}
