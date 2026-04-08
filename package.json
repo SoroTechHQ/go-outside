@@ -1,0 +1,11 @@
+{
+  "name": "go-outside",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "build": "pnpm --filter @gooutside/api build",
+    "dev": "pnpm --filter @gooutside/api dev",
+    "test": "pnpm --filter @gooutside/api test",
+    "typecheck": "pnpm --filter @gooutside/api typecheck"
+  }
+}
