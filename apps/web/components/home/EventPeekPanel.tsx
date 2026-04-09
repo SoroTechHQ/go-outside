@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BellSimple,
@@ -13,8 +14,17 @@ import {
   UsersThree,
   X,
 } from "@phosphor-icons/react";
-import { getEventImage, type Category, type EventItem, type Organizer, type TicketType } from "@gooutside/demo-data";
+import {
+  getEventImage,
+  type Category,
+  type EventItem,
+  type Organizer,
+  type TicketType,
+} from "@gooutside/demo-data";
+import { useAppShell } from "../layout/AppShellContext";
 import type { EventSignal } from "./HomeEventCard";
+
+const PANEL_WIDTH = 440;
 
 type EventPeekPanelProps = {
   category: Category;
@@ -30,13 +40,13 @@ type EventPeekPanelProps = {
 
 function TicketRow({ ticketType }: { ticketType: TicketType }) {
   return (
-    <div className="rounded-[20px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4">
+    <div className="border-b border-[color:var(--home-border)] py-4 last:border-0">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">{ticketType.name}</p>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{ticketType.remainingLabel}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{ticketType.remainingLabel}</p>
         </div>
-        <span className="rounded-full border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
+        <span className="rounded-full border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] px-3 py-1 text-sm font-semibold text-[var(--brand)]">
           {ticketType.priceLabel}
         </span>
       </div>
@@ -55,184 +65,210 @@ export function EventPeekPanel({
   organizer,
   signal,
 }: EventPeekPanelProps) {
+  const { setPeekPanelWidth } = useAppShell();
+  const isOpen = Boolean(event && organizer && signal);
+
+  // Push page content when panel opens on desktop
+  useEffect(() => {
+    if (isDesktop && isOpen) {
+      setPeekPanelWidth(PANEL_WIDTH);
+    } else {
+      setPeekPanelWidth(0);
+    }
+    return () => setPeekPanelWidth(0);
+  }, [isDesktop, isOpen, setPeekPanelWidth]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
-      {event && organizer && signal ? (
+      {isOpen && event && organizer && signal ? (
         <>
-          <motion.button
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 z-50 bg-[color:var(--home-overlay)]"
-            exit={{ opacity: 0 }}
-            initial={{ opacity: 0 }}
-            onClick={onClose}
-            type="button"
-          />
+          {/* Mobile backdrop only — desktop has no overlay (content pushes instead) */}
+          {!isDesktop ? (
+            <motion.button
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 z-50 bg-[color:var(--home-overlay)]"
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
+              onClick={onClose}
+              type="button"
+            />
+          ) : null}
 
           <motion.aside
-            animate={isDesktop ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }}
-            className={`fixed z-[60] overflow-hidden border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] shadow-[var(--home-shadow-strong)] ${
+            animate={isDesktop ? { x: 0 } : { y: 0 }}
+            className={
               isDesktop
-                ? "inset-y-4 right-4 w-[440px] rounded-[32px]"
-                : "inset-x-0 bottom-0 max-h-[88vh] rounded-t-[32px]"
-            }`}
-            exit={isDesktop ? { opacity: 0, x: 36 } : { opacity: 0, y: 36 }}
-            initial={isDesktop ? { opacity: 0, x: 36 } : { opacity: 0, y: 36 }}
-            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                ? // Desktop: flush right edge, full height, no border radius, pushes content
+                  "fixed inset-y-0 right-0 z-[60] flex flex-col border-l border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[-12px_0_40px_rgba(0,0,0,0.18)]"
+                : // Mobile: bottom sheet with top radius only
+                  "fixed inset-x-0 bottom-0 z-[60] flex max-h-[90vh] flex-col overflow-hidden rounded-t-[28px] border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[0_-8px_32px_rgba(0,0,0,0.24)]"
+            }
+            exit={isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
+            initial={isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
+            style={isDesktop ? { width: PANEL_WIDTH } : undefined}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex h-full flex-col">
-              <div className="relative h-[220px] shrink-0">
-                <Image
-                  alt={event.title}
-                  className="object-cover"
-                  fill
-                  sizes={isDesktop ? "440px" : "100vw"}
-                  src={getEventImage(undefined, event.categorySlug)}
-                />
-                <div className="absolute inset-0 bg-[image:var(--home-image-scrim)]" />
+            {/* Header image */}
+            <div className="relative h-[200px] shrink-0">
+              <Image
+                alt={event.title}
+                className="object-cover"
+                fill
+                sizes={`${PANEL_WIDTH}px`}
+                src={getEventImage(undefined, event.categorySlug)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/82" />
 
-                <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-[color:var(--home-chip-border)] bg-[color:var(--home-chip-surface)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--home-chip-text)] backdrop-blur">
-                      Peek panel
-                    </span>
-                    <span className="rounded-full border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)] backdrop-blur">
-                      {category.name}
-                    </span>
+              {/* Top bar */}
+              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+                <span className="rounded-full border border-white/14 bg-black/40 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm">
+                  {category.name}
+                </span>
+                <button
+                  aria-label="Close panel"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/18 bg-black/44 text-white backdrop-blur-sm transition hover:bg-black/64"
+                  onClick={onClose}
+                  type="button"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              {/* Title over image */}
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
+                  {event.eyebrow}
+                </p>
+                <h2 className="mt-1 font-display text-3xl italic leading-tight tracking-[-0.02em] text-white">
+                  {event.title}
+                </h2>
+              </div>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Description */}
+              <div className="border-b border-[color:var(--border-subtle)] p-5">
+                <p className="text-sm leading-7 text-[var(--text-secondary)]">{event.shortDescription}</p>
+              </div>
+
+              {/* Date + Location */}
+              <div className="grid grid-cols-2 border-b border-[color:var(--border-subtle)]">
+                <div className="border-r border-[color:var(--border-subtle)] p-5">
+                  <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                    <CalendarDots size={15} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em]">When</span>
                   </div>
-
-                  <button
-                    aria-label="Close preview"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--home-action-border)] bg-[color:var(--home-action-bg)] text-[color:var(--home-action-text)] backdrop-blur transition hover:bg-[color:var(--home-action-bg-hover)]"
-                    onClick={onClose}
-                    type="button"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
-                    {event.eyebrow}
+                  <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">
+                    {event.dateLabel}
                   </p>
-                  <h3 className="mt-2 font-display text-4xl italic leading-none tracking-[-0.03em] text-[color:var(--hero-fg)]">
-                    {event.title}
-                  </h3>
-                  <p className="mt-3 max-w-[36ch] text-sm leading-6 text-[color:var(--hero-fg-muted)]">{event.shortDescription}</p>
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{event.timeLabel}</p>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                    <MapPin size={15} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em]">Where</span>
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">{event.venue}</p>
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{event.city}</p>
                 </div>
               </div>
 
-              <div className="flex-1 space-y-6 overflow-y-auto p-5">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[20px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4">
-                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                      <CalendarDots size={16} />
-                      <span>
-                        {event.dateLabel} · {event.timeLabel}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                      <MapPin size={16} />
-                      <span>{event.venue}</span>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[20px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4">
-                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                      <UsersThree size={16} />
-                      <span>{signal.ticker}</span>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                      <BellSimple size={16} />
-                      <span>{signal.urgency}</span>
-                    </div>
-                  </div>
+              {/* Social proof */}
+              <div className="border-b border-[color:var(--border-subtle)] p-5">
+                <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                  <UsersThree size={15} />
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em]">Friends going</span>
                 </div>
-
-                <section>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
-                    Why it is moving
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">{event.description}</p>
-                </section>
-
-                <section className="rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">Friends going</p>
-                      <p className="mt-1 text-xs text-[var(--text-tertiary)]">{signal.momentum}</p>
-                    </div>
-                    <div className="flex items-center">
-                      {signal.friends.map((friend, index) => (
-                        <span
-                          key={friend.name}
-                          className={`flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--home-avatar-border)] bg-[color:var(--home-avatar-bg)] text-xs font-semibold text-[var(--text-primary)] ${
-                            index === 0 ? "" : "-ml-2"
-                          }`}
-                          title={friend.name}
-                        >
-                          {friend.initials}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                <section>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
-                    Ticket options
-                  </p>
-                  <div className="mt-3 space-y-3">
-                    {event.ticketTypes.map((ticketType) => (
-                      <TicketRow key={ticketType.name} ticketType={ticketType} />
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex items-center">
+                    {signal.friends.map((friend, i) => (
+                      <span
+                        key={friend.name}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-[color:var(--bg-elevated)] bg-[color:var(--home-avatar-bg)] text-xs font-bold text-[var(--text-primary)] ${i > 0 ? "-ml-2.5" : ""}`}
+                        title={friend.name}
+                      >
+                        {friend.initials}
+                      </span>
                     ))}
                   </div>
-                </section>
-
-                <section className="rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] p-4">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{organizer.name}</p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{organizer.tag}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                    {organizer.followersLabel} · {organizer.eventsLabel}
-                  </p>
-                </section>
-              </div>
-
-              <div className="border-t border-[color:var(--home-border)] p-5">
-                <div className="flex gap-3">
-                  <button
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)]"
-                    onClick={onSave}
-                    type="button"
-                  >
-                    <HeartStraight size={18} weight={isSaved ? "fill" : "regular"} />
-                    {isSaved ? "Saved for later" : "Save event"}
-                  </button>
-                  <button
-                    className="inline-flex items-center justify-center rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]"
-                    onClick={onDismiss}
-                    type="button"
-                  >
-                    Pass
-                  </button>
-                </div>
-
-                <div className="mt-3 flex gap-3">
-                  <Link
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] px-5 py-3 text-sm font-semibold text-[var(--text-primary)]"
-                    href={`/events/${event.slug}`}
-                  >
-                    View details
-                    <CaretRight size={16} />
-                  </Link>
-                  <Link
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] px-5 py-3 text-sm font-semibold text-[var(--brand)]"
-                    href={`/events/${event.slug}`}
-                  >
-                    <Ticket size={16} />
-                    Get ticket
-                  </Link>
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
+                      {signal.friends.map((f) => f.name).join(", ")}
+                    </p>
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{signal.ticker}</p>
+                  </div>
                 </div>
               </div>
+
+              {/* Urgency */}
+              {signal.urgency ? (
+                <div className="border-b border-[color:var(--border-subtle)] p-5">
+                  <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                    <BellSimple size={15} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em]">Availability</span>
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-amber-400">{signal.urgency}</p>
+                </div>
+              ) : null}
+
+              {/* Ticket options */}
+              <div className="p-5">
+                <div className="flex items-center gap-2 text-[var(--text-tertiary)]">
+                  <Ticket size={15} />
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em]">Ticket options</span>
+                </div>
+                <div className="mt-3">
+                  {event.ticketTypes.map((ticketType) => (
+                    <TicketRow key={ticketType.name} ticketType={ticketType} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Organizer */}
+              <div className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-muted)] p-5">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{organizer.name}</p>
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{organizer.tag}</p>
+                <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                  {organizer.followersLabel} · {organizer.eventsLabel}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer CTA */}
+            <div className="shrink-0 border-t border-[color:var(--border-subtle)] p-4">
+              <div className="flex gap-3">
+                <button
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-[var(--brand-contrast)] transition hover:brightness-110 active:scale-[0.98]"
+                  onClick={onSave}
+                  type="button"
+                >
+                  <HeartStraight size={17} weight={isSaved ? "fill" : "regular"} />
+                  {isSaved ? "Saved" : "Save event"}
+                </button>
+                <button
+                  className="inline-flex items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-muted)] px-5 py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+                  onClick={onDismiss}
+                  type="button"
+                >
+                  Pass
+                </button>
+              </div>
+              <Link
+                className="mt-3 flex items-center justify-center gap-2 rounded-full border border-[color:var(--border-subtle)] py-3 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[color:var(--bg-muted)]"
+                href={`/events/${event.slug}`}
+              >
+                Full event page
+                <CaretRight size={15} />
+              </Link>
             </div>
           </motion.aside>
         </>

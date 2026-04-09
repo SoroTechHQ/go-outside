@@ -227,7 +227,10 @@ a {
   position: relative;
   z-index: 10;
   padding-left: 0;
-  transition: padding-left 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  padding-right: var(--peek-panel-width, 0px);
+  transition:
+    padding-left 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    padding-right 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .page-grid::before {
