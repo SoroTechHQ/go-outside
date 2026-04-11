@@ -17,7 +17,7 @@ export function ThemeToggle({
   className?: string;
   size?: number;
 }) {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(storageKey);
@@ -26,7 +26,7 @@ export function ThemeToggle({
       applyTheme(stored);
       return;
     }
-    applyTheme("dark");
+    applyTheme("light");
   }, []);
 
   const toggle = () => {

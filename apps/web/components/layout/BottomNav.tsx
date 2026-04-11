@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, MagnifyingGlass, Ticket, UserCircle } from "@phosphor-icons/react";
+import { ChatCircleDots, House, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react";
 
 type BottomNavRole = "attendee" | "organizer" | "admin";
 
@@ -14,15 +14,17 @@ type BottomNavItem = {
   href: string;
   icon: typeof House;
   label: string;
+  unread?: boolean;
 };
 
 export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const pathname = usePathname();
   const items: BottomNavItem[] = [
     { href: "/", icon: House, label: "Home" },
-    { href: "/search", icon: MagnifyingGlass, label: "Explore" },
-    { href: "/dashboard/tickets", icon: Ticket, label: "Tickets" },
-    { href: "/dashboard/profile", icon: UserCircle, label: "Me" },
+    { href: "/dashboard/notifications", icon: ChatCircleDots, label: "Messages", unread: true },
+    { href: "/dashboard/tickets", icon: Wallet, label: "Wallets" },
+    { href: "/dashboard/saved", icon: TrendUp, label: "Activity" },
+    { href: "/dashboard/profile", icon: UserCircle, label: "Profile" },
   ];
 
   return (
@@ -38,13 +40,14 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
           return (
             <Link
               key={item.href}
-              className={`flex min-w-[72px] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-medium transition ${
+              className={`relative flex min-w-[60px] flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition ${
                 active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
               }`}
               href={item.href}
             >
               <Icon size={20} weight={active ? "fill" : "regular"} />
               <span>{item.label}</span>
+              {item.unread ? <span className="absolute right-3 top-2 h-1.5 w-1.5 rounded-full bg-[#22c55e]" /> : null}
             </Link>
           );
         })}

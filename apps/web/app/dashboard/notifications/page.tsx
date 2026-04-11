@@ -8,17 +8,17 @@ export default function NotificationsPage() {
     <main className="page-grid min-h-screen pb-24">
       <div className="container-shell py-10">
         <SectionHeader
-          eyebrow="Inbox"
+          eyebrow="Messages"
           index="01"
-          title="Notifications"
-          description="Updates on your tickets, saves, and events."
+          title="Messages"
+          description="Unread updates, plan nudges, and event activity from your circle."
         />
 
         <div className="mt-8 space-y-4">
           {notifications.length === 0 ? (
             <ShellCard className="py-12 text-center">
               <h3 className="font-display text-3xl italic text-[var(--text-primary)]">All caught up</h3>
-              <p className="mt-3 text-sm text-[var(--text-secondary)]">No new notifications.</p>
+              <p className="mt-3 text-sm text-[var(--text-secondary)]">No new messages right now.</p>
             </ShellCard>
           ) : (
             notifications.map((item) => (

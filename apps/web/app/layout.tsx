@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { DM_Sans, DM_Serif_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import { ThemeScript } from "@gooutside/ui";
 import AppBackground from "../components/layout/AppBackground";
 import AppChrome from "../components/layout/AppChrome";
@@ -8,16 +8,15 @@ import { AppShellProvider } from "../components/layout/AppShellContext";
 import Footer from "../components/layout/Footer";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const interBody = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-body",
 });
 
-const dmSerif = DM_Serif_Display({
+const interDisplay = Inter({
   subsets: ["latin"],
-  weight: ["400"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
 });
 
@@ -29,7 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${dmSerif.variable} font-body lab-bg relative`}>
+      <body className={`${interBody.variable} ${interDisplay.variable} font-body lab-bg relative`}>
         <ThemeScript />
         <AppShellProvider>
           <AppBackground />

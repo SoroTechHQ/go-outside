@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
+import { usePathname } from "next/navigation";
+import HomeSearchHero from "../search/HomeSearchHero";
 import SearchBar from "../search/SearchBar";
 import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
 
@@ -22,9 +24,11 @@ function getInitials(name: string) {
 }
 
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
+  const pathname = usePathname();
   const { isCompact, isMini } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
   const stableSidebarOffset = 88;
+  const isHome = pathname === "/";
 
   if (appShell) {
     return (
@@ -38,19 +42,23 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             }}
           >
             <div
-              className="flex w-full items-center justify-center transition-all duration-300"
+              className={`flex w-full justify-center transition-all duration-300 ${isHome ? "items-start" : "items-center"}`}
               style={{
-                height: isFocused ? 110 : isCompact ? 72 : 84,
-                paddingTop: isFocused ? 26 : isCompact ? 16 : 18,
-                paddingBottom: isFocused ? 20 : isCompact ? 10 : 14,
+                height: isHome ? (isMini ? 108 : isCompact ? 136 : 156) : isFocused ? 110 : isCompact ? 72 : 84,
+                paddingTop: isHome ? (isMini ? 14 : isCompact ? 18 : 26) : isFocused ? 26 : isCompact ? 16 : 18,
+                paddingBottom: isHome ? (isMini ? 10 : isCompact ? 16 : 20) : isFocused ? 20 : isCompact ? 10 : 14,
               }}
             >
-              <SearchBar
-                isCompact={isCompact}
-                isFocused={isFocused}
-                isMini={isMini}
-                onFocusChange={setIsFocused}
-              />
+              {isHome ? (
+                <HomeSearchHero mode={isMini ? "mini" : isCompact ? "compact" : "expanded"} />
+              ) : (
+                <SearchBar
+                  isCompact={isCompact}
+                  isFocused={isFocused}
+                  isMini={isMini}
+                  onFocusChange={setIsFocused}
+                />
+              )}
             </div>
           </div>
         </header>

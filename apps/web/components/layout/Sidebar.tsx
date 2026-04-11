@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Bell,
-  Compass,
-  HeartStraight,
-  HouseLine,
+  ChatCircleDots,
+  House,
   MoonStars,
   SunDim,
-  Ticket,
+  TrendUp,
+  UserCircle,
+  Wallet,
 } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,7 +25,7 @@ type SidebarProps = {
 
 type NavItem = {
   href: string;
-  icon: typeof HouseLine;
+  icon: typeof House;
   label: string;
   unread?: boolean;
 };
@@ -44,7 +44,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   const isTabletUp = useMediaQuery("(min-width: 768px)");
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [hovered, setHovered] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const { setSidebarWidth } = useAppShell();
 
   useEffect(() => {
@@ -68,18 +68,16 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   const navItems: NavItem[] =
     role === "organizer" || role === "admin"
       ? [
-          { href: "/", label: "Home", icon: HouseLine },
-          { href: "/search", label: "Explore", icon: Compass },
-          { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
-          { href: "/dashboard/saved", label: "Saved", icon: HeartStraight },
-          { href: "/dashboard/notifications", label: "Notifications", icon: Bell, unread: true },
+          { href: "/", label: "Home", icon: House },
+          { href: "/dashboard/notifications", label: "Messages", icon: ChatCircleDots, unread: true },
+          { href: "/dashboard/tickets", label: "Wallets", icon: Wallet },
+          { href: "/dashboard/saved", label: "Activity", icon: TrendUp },
         ]
       : [
-          { href: "/", label: "Home", icon: HouseLine },
-          { href: "/search", label: "Explore", icon: Compass },
-          { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
-          { href: "/dashboard/saved", label: "Saved", icon: HeartStraight },
-          { href: "/dashboard/notifications", label: "Notifications", icon: Bell, unread: true },
+          { href: "/", label: "Home", icon: House },
+          { href: "/dashboard/notifications", label: "Messages", icon: ChatCircleDots, unread: true },
+          { href: "/dashboard/tickets", label: "Wallets", icon: Wallet },
+          { href: "/dashboard/saved", label: "Activity", icon: TrendUp },
         ];
 
   useEffect(() => {
@@ -159,8 +157,8 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                     ) : null}
 
                     <Icon
-                      size={active ? 26 : 24}
-                      weight="bold"
+                      size={24}
+                      weight={active ? "fill" : "regular"}
                       className={active ? "text-[var(--brand)]" : "text-current"}
                     />
 
@@ -180,7 +178,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
 
                     {item.unread ? (
                       <div
-                        className={`absolute h-1.5 w-1.5 rounded-full bg-[var(--brand)] ${
+                        className={`absolute h-1.5 w-1.5 rounded-full bg-[#22c55e] ${
                           isExpanded ? "right-3 top-3" : "right-4 top-3"
                         }`}
                       />
@@ -221,9 +219,16 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
             </AnimatePresence>
           </button>
 
-          <div className={`mt-2 flex h-[52px] items-center rounded-xl ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-xs font-semibold text-black">
-              {getInitials(userName)}
+          <Link
+            className={`mt-2 flex h-[56px] items-center rounded-xl border transition ${
+              pathname.startsWith("/dashboard/profile")
+                ? "border-[var(--brand)]/25 bg-[var(--brand)]/10 text-[var(--text-primary)]"
+                : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+            } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
+            href="/dashboard/profile"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/14 text-[var(--brand)]">
+              {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/dashboard/profile") ? "fill" : "regular"} />}
             </div>
             <AnimatePresence>
               {isExpanded ? (
@@ -234,14 +239,14 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   initial={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">{userName}</p>
+                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">Profile</p>
                   <span className="mt-1 inline-flex rounded-full bg-[var(--brand)]/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
-                    Pulse
+                    {userName}
                   </span>
                 </motion.div>
               ) : null}
             </AnimatePresence>
-          </div>
+          </Link>
         </div>
       </div>
     </motion.aside>

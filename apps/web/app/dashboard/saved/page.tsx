@@ -8,10 +8,10 @@ export default function SavedEventsPage() {
     <main className="page-grid min-h-screen pb-24">
       <div className="container-shell py-10">
         <SectionHeader
-          eyebrow="Saved"
+          eyebrow="Activity"
           index="01"
-          title="Your saved events"
-          description="Events you've bookmarked before they sell out."
+          title="Activity"
+          description="The events you have been tracking before you turn them into a plan."
         />
 
         <div className="mt-8">

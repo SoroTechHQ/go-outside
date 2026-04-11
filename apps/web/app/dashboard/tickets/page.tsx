@@ -8,10 +8,10 @@ export default function TicketsPage() {
     <main className="page-grid min-h-screen pb-24">
       <div className="container-shell py-10">
         <SectionHeader
-          eyebrow="Attendee"
+          eyebrow="Wallets"
           index="01"
-          title="My Tickets"
-          description="Your confirmed bookings and entry passes."
+          title="Your wallets"
+          description="Entry passes, booking references, and what you can open quickly."
         />
 
         <div className="mt-8 grid gap-5">
