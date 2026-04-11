@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { ThemeScript } from "@gooutside/ui";
-import AppBackground from "../components/layout/AppBackground";
-import AppChrome from "../components/layout/AppChrome";
+import { ConditionalChrome } from "../components/layout/ConditionalChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
-import Footer from "../components/layout/Footer";
 import "./globals.css";
 
 const interBody = Inter({
@@ -31,10 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${interBody.variable} ${interDisplay.variable} font-body lab-bg relative`}>
         <ThemeScript />
         <AppShellProvider>
-          <AppBackground />
-          <AppChrome />
-          <div className="app-content">{children}</div>
-          <Footer />
+          <ConditionalChrome>{children}</ConditionalChrome>
         </AppShellProvider>
       </body>
     </html>
