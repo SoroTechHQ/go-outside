@@ -59,19 +59,15 @@ function CardHoverActions() {
 
 function ImageCard({
   event,
-  compact = false,
-  featured = false,
 }: {
   event: (typeof events)[number];
-  compact?: boolean;
-  featured?: boolean;
 }) {
   const imageUrl = getEventImage(undefined, event.categorySlug);
 
   return (
     <div className={`group self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
       <Link className="block" href={`/events/${event.slug}`}>
-        <div className={`relative overflow-hidden ${featured ? "aspect-[1.55/1]" : compact ? "aspect-[1.04/1]" : "aspect-[1.2/1]"}`}>
+        <div className="relative aspect-[3/2] overflow-hidden">
           <div
             aria-label={event.title}
             className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
@@ -83,11 +79,11 @@ function ImageCard({
             {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
           </div>
           <CardHoverActions />
-          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-            <p className={`font-semibold tracking-[-0.03em] ${compact ? "text-[1rem]" : "text-[1.3rem]"}`}>
+          <div className="absolute bottom-0 left-0 right-0 p-5 text-white md:p-6">
+            <p className="max-w-[75%] text-[1.45rem] font-semibold tracking-[-0.035em] md:text-[1.75rem]">
               {event.title}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.78rem] text-white/88">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.8rem] text-white/88">
               <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2.5 py-1 backdrop-blur-sm">
                 <CalendarBlank size={12} weight="regular" />
                 {event.dateLabel}
@@ -253,6 +249,7 @@ export function HomeClient() {
       : events.filter((event) => event.trending),
     2,
   );
+  const forYouEvents = forYouLead ? [forYouLead, ...forYouCards] : forYouCards;
 
   const updateCategory = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -347,27 +344,21 @@ export function HomeClient() {
           {socialEvents.length > 0 ? (
             <section className="mt-8">
               <SectionHeading eyebrow="Friends" linkHref="/dashboard/notifications" title="Where your people are going" />
-              <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-[1.25fr_0.75fr]">
-                <ImageCard featured event={socialEvents[0] as (typeof events)[number]} />
-                <div className="grid content-start gap-4">
-                  {socialEvents.slice(1).map((event) => (
-                    <ImageCard key={event.id} compact event={event} />
-                  ))}
-                </div>
+              <div className="space-y-5">
+                {socialEvents.map((event) => (
+                  <ImageCard key={event.id} event={event} />
+                ))}
               </div>
             </section>
           ) : null}
 
-          {forYouLead ? (
+          {forYouEvents.length > 0 ? (
             <section className="mt-8">
               <SectionHeading eyebrow="For you" linkHref="/events" title="Next best plan" />
-              <div className="grid items-start gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                <ImageCard featured event={forYouLead} />
-                <div className="grid content-start gap-4">
-                  {forYouCards.map((event) => (
-                    <ImageCard key={event.id} compact event={event} />
-                  ))}
-                </div>
+              <div className="space-y-5">
+                {forYouEvents.map((event) => (
+                  <ImageCard key={event.id} event={event} />
+                ))}
               </div>
             </section>
           ) : null}
@@ -375,9 +366,9 @@ export function HomeClient() {
           {trendingCards.length > 0 ? (
             <section className="mt-8">
               <SectionHeading eyebrow="Trending" linkHref="/events" title="Moving across Accra" />
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-5">
                 {trendingCards.map((event) => (
-                  <ImageCard key={event.id} compact event={event} />
+                  <ImageCard key={event.id} event={event} />
                 ))}
               </div>
             </section>
