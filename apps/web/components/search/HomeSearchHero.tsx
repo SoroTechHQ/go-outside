@@ -102,8 +102,8 @@ export function HomeSearchHero({
         style={{
           maxWidth: dynamicMaxWidth,
           backgroundColor: "var(--bg-card)",
-          borderColor: `rgba(var(--brand-rgb), ${lerp(0.14, 0.24, totalProgress)})`,
-          boxShadow: `0 ${Math.round(lerp(14, 10, totalProgress))}px ${Math.round(lerp(34, 26, totalProgress))}px rgba(15,17,15,${lerp(0.08, 0.12, totalProgress)})`,
+          borderColor: `rgba(15,17,15, ${lerp(0.08, 0.12, totalProgress)})`,
+          boxShadow: `0 ${Math.round(lerp(12, 10, totalProgress))}px ${Math.round(lerp(28, 24, totalProgress))}px rgba(15,17,15,${lerp(0.06, 0.09, totalProgress)})`,
         }}
       >
         <div
@@ -203,7 +203,7 @@ export function HomeSearchHero({
 
             <button
               aria-label="Search events"
-              className="inline-flex items-center justify-center rounded-full bg-[var(--text-primary)] text-white transition-[height,width,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[var(--brand-hover)]"
+              className="inline-flex items-center justify-center rounded-full bg-[var(--brand)] text-white transition-[height,width,background-color,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[var(--brand-hover)] active:scale-[0.96] active:bg-[#1f5f2d]"
               style={{ height: dynamicButtonSize, width: dynamicButtonSize }}
               onClick={applySearch}
               type="button"

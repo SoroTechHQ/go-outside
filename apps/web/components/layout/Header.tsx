@@ -38,46 +38,47 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
       <>
         <header className="sticky top-0 z-40 hidden md:flex">
           {isHome ? (
-            <>
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0"
-                style={{
-                  height: `${176 - easedHomeProgress * 30}px`,
-                  background: `linear-gradient(180deg,
-                    rgba(var(--brand-rgb),${0.16 + easedHomeProgress * 0.08}),
-                    rgba(var(--brand-rgb),${0.05 + easedHomeProgress * 0.06}) 38%,
-                    rgba(255,255,255,0) 100%)`,
-                }}
-              />
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0"
-                style={{
-                  height: `${128 + easedHomeProgress * 26}px`,
-                  opacity: 0.5 + easedHomeProgress * 0.48,
-                  background: `linear-gradient(180deg,
-                    rgba(var(--bg-card-rgb),${0.98 - easedHomeProgress * 0.01}) 0%,
-                    rgba(var(--bg-card-rgb),${0.93 - easedHomeProgress * 0.03}) 48%,
-                    rgba(var(--bg-card-rgb),${0.42 - easedHomeProgress * 0.1}) 78%,
-                    rgba(var(--bg-card-rgb),0) 100%)`,
-                }}
-              />
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 backdrop-blur-[18px]"
-                style={{
-                  height: `${112 + easedHomeProgress * 28}px`,
-                  opacity: 0.34 + easedHomeProgress * 0.42,
-                  maskImage: "linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0))",
-                  WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0))",
-                }}
-              />
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 border-b border-[var(--border-subtle)]"
-                style={{
-                  height: `${88 + easedHomeProgress * 24}px`,
-                  opacity: 0.14 + easedHomeProgress * 0.5,
-                }}
-              />
-            </>
+            <div
+              className="pointer-events-none absolute top-0 px-4 md:px-6"
+              style={{
+                width: `calc(100vw - ${stableSidebarOffset}px)`,
+                marginLeft: `${stableSidebarOffset}px`,
+              }}
+            >
+              <div className="mx-auto w-full max-w-[1120px]">
+                <div
+                  className="relative mx-auto overflow-hidden rounded-b-[36px]"
+                  style={{
+                    width: `${1020 - easedHomeProgress * 188}px`,
+                    minWidth: "648px",
+                    height: `${154 - easedHomeProgress * 14}px`,
+                  }}
+                >
+                  <div
+                    className="absolute inset-x-0 top-0"
+                    style={{
+                      height: `${176 - easedHomeProgress * 30}px`,
+                      background: `linear-gradient(180deg,
+                        rgba(var(--brand-rgb),${0.16 + easedHomeProgress * 0.08}),
+                        rgba(var(--brand-rgb),${0.05 + easedHomeProgress * 0.06}) 38%,
+                        rgba(255,255,255,0) 100%)`,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-x-0 top-0"
+                    style={{
+                      height: `${128 + easedHomeProgress * 26}px`,
+                      opacity: 0.46 + easedHomeProgress * 0.34,
+                      background: `linear-gradient(180deg,
+                        rgba(var(--bg-card-rgb),0.99) 0%,
+                        rgba(var(--bg-card-rgb),0.96) 46%,
+                        rgba(var(--bg-card-rgb),${0.56 - easedHomeProgress * 0.1}) 78%,
+                        rgba(var(--bg-card-rgb),0) 100%)`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           ) : null}
           <div
             className="flex justify-center px-4 md:px-6"

@@ -69,7 +69,7 @@ function ImageCard({
   const imageUrl = getEventImage(undefined, event.categorySlug);
 
   return (
-    <div className={`group overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
+    <div className={`group self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
       <Link className="block" href={`/events/${event.slug}`}>
         <div className={`relative overflow-hidden ${featured ? "aspect-[1.55/1]" : compact ? "aspect-[1.04/1]" : "aspect-[1.2/1]"}`}>
           <div
@@ -306,8 +306,8 @@ export function HomeClient() {
       <div className="container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)_288px]">
         <div>
           {sponsoredEvent ? (
-            <section>
-              <SectionHeading eyebrow="Sponsored" title="Sponsored ads" />
+            <section className="mt-6">
+              <SectionHeading eyebrow="Sponsored" />
               <SponsoredAdCard event={sponsoredEvent} />
             </section>
           ) : null}
@@ -348,9 +348,9 @@ export function HomeClient() {
           {socialEvents.length > 0 ? (
             <section className="mt-8">
               <SectionHeading eyebrow="Friends" linkHref="/dashboard/notifications" title="Where your people are going" />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.25fr_0.75fr]">
+              <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-[1.25fr_0.75fr]">
                 <ImageCard featured event={socialEvents[0] as (typeof events)[number]} />
-                <div className="grid gap-4">
+                <div className="grid content-start gap-4">
                   {socialEvents.slice(1).map((event) => (
                     <ImageCard key={event.id} compact event={event} />
                   ))}
@@ -362,9 +362,9 @@ export function HomeClient() {
           {forYouLead ? (
             <section className="mt-8">
               <SectionHeading eyebrow="For you" linkHref="/events" title="Next best plan" />
-              <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="grid items-start gap-4 lg:grid-cols-[1.15fr_0.85fr]">
                 <ImageCard featured event={forYouLead} />
-                <div className="grid gap-4">
+                <div className="grid content-start gap-4">
                   {forYouCards.map((event) => (
                     <ImageCard key={event.id} compact event={event} />
                   ))}

@@ -100,10 +100,10 @@
 }
 
 :root[data-theme="dark"] {
-  --brand: #3ddc97;
+  --brand: #087f18;
   --brand-rgb: 61 220 151;
   --hover-outline: #9c9c9c;
-  --brand-hover: #2ec985;
+  --brand-hover: #2ec962;
   --brand-dim: rgba(61, 220, 151, 0.15);
   --brand-glow: rgba(61, 220, 151, 0.18);
   --brand-glow-soft: rgba(61, 220, 151, 0.08);
@@ -135,7 +135,7 @@
   --border-subtle: rgba(255, 255, 255, 0.07);
   --border-card: rgba(255, 255, 255, 0.05);
   --status-live-bg: rgba(61, 220, 151, 0.1);
-  --status-live-text: #3ddc97;
+  --status-live-text: #45b423;
   --status-live-border: rgba(61, 220, 151, 0.16);
   --status-pending-text: #ffb432;
   --status-review-text: #e85d8a;
