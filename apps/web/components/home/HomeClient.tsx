@@ -67,7 +67,7 @@ function ImageCard({
   return (
     <div className={`group self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
       <Link className="block" href={`/events/${event.slug}`}>
-        <div className="relative aspect-[3/2] overflow-hidden">
+        <div className="relative aspect-[2/1] overflow-hidden">
           <div
             aria-label={event.title}
             className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
@@ -79,17 +79,17 @@ function ImageCard({
             {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
           </div>
           <CardHoverActions />
-          <div className="absolute bottom-0 left-0 right-0 p-5 text-white md:p-6">
-            <p className="max-w-[75%] text-[1.45rem] font-semibold tracking-[-0.035em] md:text-[1.75rem]">
+          <div className="absolute bottom-0 left-0 right-0 p-3 text-white md:p-4">
+            <p className="max-w-[75%] text-[1.15rem] font-semibold tracking-[-0.035em] md:text-[1.35rem]">
               {event.title}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[0.8rem] text-white/88">
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2.5 py-1 backdrop-blur-sm">
-                <CalendarBlank size={12} weight="regular" />
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.75rem] text-white/88">
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 backdrop-blur-sm">
+                <CalendarBlank size={11} weight="regular" />
                 {event.dateLabel}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2.5 py-1 backdrop-blur-sm">
-                <Clock size={12} weight="regular" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 backdrop-blur-sm">
+                <Clock size={11} weight="regular" />
                 {event.timeLabel}
               </span>
             </div>
@@ -97,7 +97,7 @@ function ImageCard({
         </div>
       </Link>
 
-      <div className="p-4">
+      <div className="p-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.venue}</p>
