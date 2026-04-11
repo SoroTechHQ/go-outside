@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  ArrowSquareOut,
   ArrowsOutSimple,
   BookmarkSimple,
   CalendarBlank,
   CheckCircle,
   Clock,
   HeartStraight,
+  Images,
   MapPin,
   PaperPlaneTilt,
   ShieldCheck,
@@ -21,184 +21,184 @@ import {
 } from "@phosphor-icons/react";
 import { events, getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
 
-type EventType = (typeof events)[number];
+type EventItem = (typeof events)[number];
 
-const ALL_CATEGORY_SLUGS = [
-  "music", "food", "sports", "arts", "tech", "nightlife", "culture", "outdoors",
-];
+// ── Image helpers ─────────────────────────────────────────────────────────────
+const ALL_SLUGS = ["music", "food", "sports", "arts", "tech", "nightlife", "culture", "outdoors"];
 
-function getEventImages(event: EventType): string[] {
-  const baseIdx = Math.max(0, ALL_CATEGORY_SLUGS.indexOf(event.categorySlug));
-  return Array.from({ length: 8 }, (_, i) =>
-    getEventImage(undefined, ALL_CATEGORY_SLUGS[(baseIdx + i) % ALL_CATEGORY_SLUGS.length]),
+function getEventImages(event: EventItem): string[] {
+  const base = Math.max(0, ALL_SLUGS.indexOf(event.categorySlug));
+  return Array.from({ length: 9 }, (_, i) =>
+    getEventImage(undefined, ALL_SLUGS[(base + i) % ALL_SLUGS.length]),
   );
 }
 
+// ── Mock data ─────────────────────────────────────────────────────────────────
 const LINEUPS: Record<string, string[]> = {
-  music: ["DJ Kwame × Akosua Asante", "Live Band: The Accra Collective", "Open Mic Session", "Closing Set: DJ Nana"],
-  food: ["Chef Abena's Signature Menu", "Wine Pairing by Sommelier Kofi", "Live Cooking Demo", "Dessert Buffet"],
-  sports: ["Opening Ceremony", "Main Match / Competition", "Half-time Show", "Awards & Closing"],
-  arts: ["Exhibition Tour", "Live Painting Session", "Artist Talk", "Networking Reception"],
-  tech: ["Keynote Address", "Panel: Future of African Tech", "Demo Pitches", "Networking Happy Hour"],
+  music:     ["DJ Kwame × Akosua Asante", "Live Band: The Accra Collective", "Open Mic Session", "Closing Set: DJ Nana"],
+  food:      ["Chef Abena's Signature Menu", "Wine Pairing by Sommelier Kofi", "Live Cooking Demo", "Dessert Buffet"],
+  sports:    ["Opening Ceremony", "Main Match / Competition", "Half-time Show", "Awards & Closing"],
+  arts:      ["Exhibition Tour", "Live Painting Session", "Artist Talk", "Networking Reception"],
+  tech:      ["Keynote Address", "Panel: Future of African Tech", "Demo Pitches", "Networking Happy Hour"],
   nightlife: ["Warm-up: DJ Esi", "Main Act: Sarkodie × Friends", "Late Night DJ", "After-party"],
-  culture: ["Traditional Dance", "Cultural Showcase", "Storytelling Session", "Community Feast"],
-  outdoors: ["Morning Activity", "Midday Picnic", "Group Games", "Sunset Wrap-up"],
+  culture:   ["Traditional Dance", "Cultural Showcase", "Storytelling Session", "Community Feast"],
+  outdoors:  ["Morning Activity", "Midday Picnic", "Group Games", "Sunset Wrap-up"],
 };
 
 const SOCIAL_POSTS = [
-  {
-    user: "Ama K.",
-    handle: "@ama.k",
-    text: "Can't believe this is happening in Accra!! 🔥 The vibes are going to be immaculate.",
-    avatar: "AK",
-    time: "2h ago",
-  },
-  {
-    user: "Yaw Darko",
-    handle: "@yawdarko",
-    text: "Been waiting for something like this all year. Grabbed my tickets the second they dropped.",
-    avatar: "YD",
-    time: "5h ago",
-  },
-  {
-    user: "Esi M.",
-    handle: "@esi.m_accra",
-    text: "The venue alone is worth it 📍 Adding this to my list of unmissable experiences.",
-    avatar: "EM",
-    time: "1d ago",
-  },
+  { user: "Ama K.",    handle: "@ama.k",        text: "Can't believe this is happening in Accra!! 🔥 The vibes are going to be immaculate.", avatar: "AK", time: "2h ago" },
+  { user: "Yaw Darko", handle: "@yawdarko",     text: "Been waiting for something like this all year. Grabbed my tickets the second they dropped.",  avatar: "YD", time: "5h ago" },
+  { user: "Esi M.",    handle: "@esi.m_accra",  text: "The venue alone is worth it 📍 Adding this to my list of unmissable experiences.",            avatar: "EM", time: "1d ago" },
 ];
 
 const POLICIES = [
-  { label: "Cancellation", detail: "Full refund up to 48 hours before the event. No refunds after that." },
-  { label: "Age Requirement", detail: "18+ unless otherwise noted. Valid ID required at entry." },
-  { label: "Photography", detail: "Personal photography allowed. Commercial use requires prior written consent." },
-  { label: "Entry", detail: "Gates open 30 minutes before start time. Latecomers admitted at discretion." },
+  { label: "Cancellation",   detail: "Full refund up to 48 hours before the event. No refunds after that." },
+  { label: "Age Requirement",detail: "18+ unless otherwise noted. Valid ID required at entry." },
+  { label: "Photography",    detail: "Personal photography allowed. Commercial use requires prior written consent." },
+  { label: "Entry",          detail: "Gates open 30 minutes before start time. Latecomers admitted at discretion." },
 ];
 
-function PhotoModal({
-  images,
-  initialIndex,
-  onClose,
-}: {
-  images: string[];
-  initialIndex: number;
-  onClose: () => void;
-}) {
+const REEL_THUMBNAILS = [
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&w=360&h=480&fit=crop",
+  "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=360&h=480&fit=crop",
+  "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&w=360&h=480&fit=crop",
+  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=360&h=480&fit=crop",
+];
+
+const SOCIAL_REELS = [
+  { platform: "instagram" as const, user: "@accra.vibes",  likes: "12.4K", caption: "This event is gonna go OFF 🔥 who's coming?",                  thumbIdx: 0 },
+  { platform: "tiktok"    as const, user: "@kofi_events",  likes: "8.2K",  caption: "POV: you're about to have the time of your life",                thumbIdx: 1 },
+  { platform: "instagram" as const, user: "@nightlife_gh", likes: "5.7K",  caption: "Already have my tickets 🎟️ see you there!",                      thumbIdx: 2 },
+  { platform: "tiktok"    as const, user: "@accra_out",    likes: "3.1K",  caption: "This city never sleeps and I'm here for it",                     thumbIdx: 3 },
+];
+
+const ORG_AVATARS = [
+  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&w=80&h=80&fit=crop&crop=faces",
+  "https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&w=80&h=80&fit=crop&crop=faces",
+];
+
+const DEFAULT_WIDTH = 540;
+const MIN_WIDTH = 420;
+const MAX_WIDTH = 960;
+
+// ── Photo modal ───────────────────────────────────────────────────────────────
+function PhotoModal({ images, initialIndex, onClose }: { images: string[]; initialIndex: number; onClose: () => void }) {
   const [idx, setIdx] = useState(initialIndex);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const h = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") setIdx((i) => (i + 1) % images.length);
-      if (e.key === "ArrowLeft") setIdx((i) => (i - 1 + images.length) % images.length);
+      if (e.key === "ArrowLeft")  setIdx((i) => (i - 1 + images.length) % images.length);
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [images.length, onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/92 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      {/* Close */}
-      <button
-        className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-        onClick={onClose}
-        type="button"
-      >
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/92 backdrop-blur-sm" onClick={onClose}>
+      <button className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={onClose} type="button">
         <X size={18} weight="bold" />
       </button>
-
-      {/* Prev */}
-      <button
-        className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-        onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + images.length) % images.length); }}
-        type="button"
-      >
+      <button className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + images.length) % images.length); }} type="button">
         <ArrowLeft size={18} weight="bold" />
       </button>
-
-      {/* Image */}
-      <div
-        className="relative max-h-[88vh] max-w-[88vw] overflow-hidden rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className="h-[75vh] w-[75vw] bg-cover bg-center"
-          style={{ backgroundImage: `url(${images[idx]})` }}
-        />
-        {/* Dot nav */}
+      <div className="relative max-h-[88vh] max-w-[88vw] overflow-hidden rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="h-[75vh] w-[75vw] bg-cover bg-center" style={{ backgroundImage: `url(${images[idx]})` }} />
         <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
           {images.map((_, i) => (
-            <button
-              key={i}
-              className={`rounded-full transition-all ${i === idx ? "h-1.5 w-5 bg-white" : "h-1.5 w-1.5 bg-white/40 hover:bg-white/70"}`}
-              onClick={() => setIdx(i)}
-              type="button"
-            />
+            <button key={i} className={`rounded-full transition-all ${i === idx ? "h-1.5 w-5 bg-white" : "h-1.5 w-1.5 bg-white/40 hover:bg-white/70"}`} onClick={() => setIdx(i)} type="button" />
           ))}
         </div>
       </div>
-
-      {/* Next */}
-      <button
-        className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-        onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % images.length); }}
-        type="button"
-      >
+      <button className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % images.length); }} type="button">
         <ArrowRight size={18} weight="bold" />
       </button>
-
-      <p className="absolute bottom-5 right-6 text-xs text-white/50">
-        {idx + 1} / {images.length}
-      </p>
+      <p className="absolute bottom-5 right-6 text-xs text-white/50">{idx + 1} / {images.length}</p>
     </div>
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export function EventSidePane({
   event,
   onClose,
-  isFullScreen,
-  onToggleFullScreen,
+  onWidthChange,
 }: {
-  event: EventType;
+  event: EventItem;
   onClose: () => void;
-  isFullScreen: boolean;
-  onToggleFullScreen: () => void;
+  onWidthChange?: (w: number) => void;
 }) {
   const images = getEventImages(event);
+  const [paneWidth, setPaneWidth] = useState(DEFAULT_WIDTH);
+  const [mounted, setMounted] = useState(false);
   const [photoModal, setPhotoModal] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
   const [saved, setSaved] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ active: boolean; startX: number; startWidth: number }>({ active: false, startX: 0, startWidth: DEFAULT_WIDTH });
 
   const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
   const reviewCount = 48 + ((event.id?.charCodeAt(1) ?? 66) % 80);
   const lineup = LINEUPS[event.categorySlug] ?? LINEUPS.music ?? [];
-
   const mapLat = (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018).toFixed(4);
-  const mapLon = (-0.187 + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018).toFixed(4);
+  const mapLon = (-0.187  + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018).toFixed(4);
   const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${(Number(mapLon) - 0.022).toFixed(4)}%2C${(Number(mapLat) - 0.015).toFixed(4)}%2C${(Number(mapLon) + 0.022).toFixed(4)}%2C${(Number(mapLat) + 0.015).toFixed(4)}&layer=mapnik&marker=${mapLat}%2C${mapLon}`;
 
-  // Keyboard: Escape closes (unless photo modal is open)
+  // Slide-in animation
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !photoModal.open) onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // Sync width to parent
+  useEffect(() => { onWidthChange?.(paneWidth); }, [paneWidth, onWidthChange]);
+
+  // Escape key
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape" && !photoModal.open) onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [onClose, photoModal.open]);
 
-  const paneWidth = isFullScreen ? "w-[800px]" : "w-[460px]";
+  // Drag-to-resize
+  const onDragStart = (e: React.MouseEvent) => {
+    dragRef.current = { active: true, startX: e.clientX, startWidth: paneWidth };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current.active) return;
+      const delta = dragRef.current.startX - e.clientX;
+      setPaneWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragRef.current.startWidth + delta)));
+    };
+    const onUp = () => {
+      if (dragRef.current.active) {
+        dragRef.current.active = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); };
+  }, []);
+
+  const toggleFullScreen = () =>
+    setPaneWidth((w) => (w >= MAX_WIDTH - 100 ? DEFAULT_WIDTH : MAX_WIDTH));
 
   return (
     <>
-      {/* Side pane */}
       <div
-        className={`fixed right-0 top-0 z-40 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_40px_rgba(0,0,0,0.14)] transition-[width] duration-300 ease-in-out ${paneWidth}`}
+        className="fixed right-0 top-0 z-40 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)] transition-transform duration-300 ease-out"
+        style={{ width: paneWidth, transform: mounted ? "translateX(0)" : "translateX(100%)" }}
       >
+        {/* Drag handle */}
+        <div
+          className="absolute left-0 top-0 z-10 h-full w-2 cursor-col-resize opacity-0 hover:opacity-100 hover:bg-[var(--brand)]/20 transition-opacity"
+          onMouseDown={onDragStart}
+        />
+
         {/* ── Header ── */}
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--home-border)] px-4 py-3">
           <div className="flex items-center gap-1.5">
@@ -212,116 +212,105 @@ export function EventSidePane({
             </button>
             <button
               className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
-              onClick={onToggleFullScreen}
-              title={isFullScreen ? "Collapse" : "Expand"}
+              onClick={toggleFullScreen}
+              title="Toggle full width"
               type="button"
             >
               <ArrowsOutSimple size={14} weight="bold" />
             </button>
           </div>
-          <Link
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--home-border)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
-            href={`/events/${event.slug}`}
-          >
-            Open full page
-            <ArrowSquareOut size={11} weight="bold" />
-          </Link>
+          <p className="text-xs font-medium text-[var(--text-tertiary)] opacity-60">
+            Drag edge to resize
+          </p>
         </div>
 
-        {/* ── Scrollable content ── */}
-        <div className="flex-1 overflow-y-auto" ref={contentRef}>
-          {/* Photo strip */}
-          <div className="flex gap-1.5 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {images.map((img, i) => (
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto">
+
+          {/* Airbnb-style photo grid */}
+          <div className="relative">
+            <div className="flex h-[300px] gap-0.5 overflow-hidden">
+              {/* Main large image */}
               <button
-                key={i}
-                className="relative h-28 w-44 shrink-0 overflow-hidden rounded-xl border border-[var(--home-border)] transition hover:opacity-90"
-                onClick={() => setPhotoModal({ open: true, index: i })}
+                className="relative flex-1 overflow-hidden"
+                onClick={() => setPhotoModal({ open: true, index: 0 })}
                 type="button"
               >
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition duration-300 hover:scale-[1.04]"
-                  style={{ backgroundImage: `url(${img})` }}
-                />
-                {i === images.length - 1 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                    <span className="rounded-full border border-white/30 bg-black/40 px-2.5 py-1 text-[0.65rem] font-semibold text-white backdrop-blur-sm">
-                      +{images.length} photos
+                <div className="absolute inset-0 bg-cover bg-center transition duration-300 hover:opacity-90" style={{ backgroundImage: `url(${images[0]})` }} />
+              </button>
+              {/* Right column: 2 stacked */}
+              <div className="flex w-[38%] flex-col gap-0.5">
+                <button className="relative flex-1 overflow-hidden" onClick={() => setPhotoModal({ open: true, index: 1 })} type="button">
+                  <div className="absolute inset-0 bg-cover bg-center transition duration-300 hover:opacity-90" style={{ backgroundImage: `url(${images[1]})` }} />
+                </button>
+                <button className="relative flex-1 overflow-hidden" onClick={() => setPhotoModal({ open: true, index: 2 })} type="button">
+                  <div className="absolute inset-0 bg-cover bg-center transition duration-300 hover:opacity-90" style={{ backgroundImage: `url(${images[2]})` }} />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <span className="rounded-full bg-black/40 px-2.5 py-1 text-[0.65rem] font-semibold text-white backdrop-blur-sm">
+                      +{images.length - 3} more
                     </span>
                   </div>
-                )}
-              </button>
-            ))}
+                </button>
+              </div>
+            </div>
+            {/* View all photos button */}
+            <button
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl border border-white/40 bg-white/90 px-3.5 py-2 text-[0.75rem] font-semibold text-gray-800 shadow-sm backdrop-blur-sm transition hover:bg-white"
+              onClick={() => setPhotoModal({ open: true, index: 0 })}
+              type="button"
+            >
+              <Images size={13} weight="regular" />
+              View all photos
+            </button>
           </div>
 
-          <div className="space-y-6 px-5 pb-12">
-            {/* ── Title + category + rating ── */}
+          <div className="space-y-6 px-5 pb-4 pt-5">
+            {/* ── Title + category ── */}
             <div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-dim)] px-2.5 py-0.5 text-[0.68rem] font-semibold text-[var(--brand)]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-dim)] px-2.5 py-0.5 text-[0.7rem] font-semibold text-[var(--brand)]">
                 {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
               </span>
-              <h2 className="mt-2.5 text-[1.45rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--text-primary)]">
+              <h2 className="mt-2.5 text-[1.55rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--text-primary)]">
                 {event.title}
               </h2>
+
+              {/* Rating */}
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex items-center gap-0.5">
                   {Array.from({ length: 5 }, (_, i) => (
-                    <Star
-                      key={i}
-                      className={i < Math.floor(Number(rating)) ? "text-amber-400" : "text-[var(--text-tertiary)]"}
-                      size={13}
-                      weight={i < Math.floor(Number(rating)) ? "fill" : "regular"}
-                    />
+                    <Star key={i} className={i < Math.floor(Number(rating)) ? "text-amber-400" : "text-[var(--text-tertiary)]"} size={13} weight={i < Math.floor(Number(rating)) ? "fill" : "regular"} />
                   ))}
                 </div>
                 <span className="text-sm font-semibold text-[var(--text-primary)]">{rating}</span>
                 <span className="text-xs text-[var(--text-tertiary)]">({reviewCount} reviews)</span>
               </div>
+
+              {/* Organizer — below rating */}
+              <div className="mt-3 flex items-center gap-2.5 border-t border-[var(--home-border)] pt-3">
+                <div className="flex items-center">
+                  {ORG_AVATARS.map((url, i) => (
+                    <img key={i} alt="" className={`h-9 w-9 rounded-full border-2 border-[var(--bg-card)] object-cover ${i > 0 ? "-ml-3" : ""}`} src={url} />
+                  ))}
+                </div>
+                <div>
+                  <p className="text-[0.68rem] font-medium text-[var(--text-tertiary)]">Hosted by</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Accra Events Co. & Kofi B.</p>
+                    <CheckCircle size={13} weight="fill" className="text-[var(--brand)]" />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* ── Quick actions ── */}
-            <div className="flex gap-2">
-              <Link
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-                href={`/events/${event.slug}`}
-              >
-                <Ticket size={15} weight="bold" />
-                {event.priceValue === 0 ? "Get Free Tickets" : `Get Tickets · ${event.priceLabel}`}
-              </Link>
-              <button
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition ${
-                  saved
-                    ? "border-rose-400/50 bg-rose-50/10 text-rose-400"
-                    : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"
-                }`}
-                onClick={() => setSaved((v) => !v)}
-                type="button"
-              >
-                <HeartStraight size={16} weight={saved ? "fill" : "regular"} />
-              </button>
-              <button
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                type="button"
-              >
-                <PaperPlaneTilt size={15} weight="regular" />
-              </button>
-              <button
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                type="button"
-              >
-                <BookmarkSimple size={15} weight="regular" />
-              </button>
-            </div>
-
-            {/* ── Date / venue ── */}
+            {/* ── Date / Venue ── */}
             <div className="space-y-3 rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-4">
               <div className="flex items-start gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
                   <CalendarBlank size={14} weight="regular" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{event.dateLabel}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{event.timeLabel}</p>
+                  <p className="text-[0.95rem] font-medium text-[var(--text-primary)]">{event.dateLabel}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{event.timeLabel}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -329,84 +318,94 @@ export function EventSidePane({
                   <MapPin size={14} weight="regular" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{event.venue}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{event.locationLine}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
-                  <Clock size={14} weight="regular" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">Doors open 30 min early</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Arrive early to avoid queues</p>
+                  <p className="text-[0.95rem] font-medium text-[var(--text-primary)]">{event.venue}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{event.locationLine}</p>
                 </div>
               </div>
             </div>
 
             {/* ── About ── */}
             <div>
-              <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                About this event
-              </p>
-              <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+              <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">About this event</p>
+              <p className="text-[0.95rem] leading-relaxed text-[var(--text-secondary)]">
                 {event.shortDescription ?? "An unmissable experience."} Join us for an unforgettable evening in the heart of {event.city}. This is one of those events you'll be talking about for months — curated for the culture, built for the moment.
               </p>
             </div>
 
             {/* ── Map ── */}
             <div>
-              <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                Location
-              </p>
+              <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Location</p>
               <div className="overflow-hidden rounded-xl border border-[var(--home-border)]">
-                <iframe
-                  className="h-[180px] w-full"
-                  loading="lazy"
-                  src={mapSrc}
-                  title={`Map for ${event.venue}`}
-                />
+                <iframe className="h-[180px] w-full" loading="lazy" src={mapSrc} title={`Map for ${event.venue}`} />
                 <div className="flex items-center justify-between border-t border-[var(--home-border)] bg-[var(--bg-surface)] px-3 py-2">
-                  <p className="truncate text-xs text-[var(--text-secondary)]">
-                    {event.venue}, {event.locationLine}
-                  </p>
-                  <a
-                    className="ml-2 shrink-0 text-xs font-medium text-[var(--brand)] hover:underline"
-                    href={`https://www.openstreetmap.org/?mlat=${mapLat}&mlon=${mapLon}#map=15/${mapLat}/${mapLon}`}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Open maps ↗
-                  </a>
+                  <p className="truncate text-xs text-[var(--text-secondary)]">{event.venue}, {event.locationLine}</p>
+                  <a className="ml-2 shrink-0 text-xs font-medium text-[var(--brand)] hover:underline" href={`https://www.openstreetmap.org/?mlat=${mapLat}&mlon=${mapLon}#map=15/${mapLat}/${mapLon}`} rel="noopener noreferrer" target="_blank">Open maps ↗</a>
                 </div>
               </div>
             </div>
 
-            {/* ── Lineup / What's happening ── */}
+            {/* ── What's happening ── */}
             <div>
-              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                What's happening
-              </p>
+              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">What's happening</p>
               <div className="space-y-2">
                 {lineup.map((item, i) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] px-3 py-2.5"
-                  >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.65rem] font-bold text-[var(--brand)]">
-                      {i + 1}
-                    </span>
-                    <span className="text-sm text-[var(--text-primary)]">{item}</span>
+                  <div key={item} className="flex items-center gap-0 overflow-hidden rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)]">
+                    {/* Thumbnail */}
+                    <div className="relative h-16 w-16 shrink-0">
+                      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${images[(i + 3) % images.length]})` }} />
+                    </div>
+                    <div className="flex flex-1 items-center gap-2.5 px-3 py-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)]">{i + 1}</span>
+                      <span className="text-sm text-[var(--text-primary)]">{item}</span>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Buzz online (social reels) ── */}
+            <div>
+              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Buzz online</p>
+              <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {SOCIAL_REELS.map((reel, i) => (
+                  <a
+                    key={i}
+                    className="group flex w-[160px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] transition hover:-translate-y-0.5 hover:shadow-lg"
+                    href={reel.platform === "instagram" ? "https://instagram.com" : "https://tiktok.com"}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative h-[200px] overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${REEL_THUMBNAILS[reel.thumbIdx]})` }}>
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/65" />
+                      {/* Platform badge */}
+                      <div
+                        className="absolute left-2 top-2 rounded-full px-2 py-0.5"
+                        style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C" : "#010101" }}
+                      >
+                        <span className="text-[0.58rem] font-bold uppercase tracking-wider text-white">
+                          {reel.platform === "instagram" ? "Insta" : "TikTok"}
+                        </span>
+                      </div>
+                      {/* Likes */}
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white">
+                        <HeartStraight size={11} weight="fill" />
+                        <span className="text-[0.65rem] font-semibold">{reel.likes}</span>
+                      </div>
+                    </div>
+                    {/* Caption */}
+                    <div className="p-2.5">
+                      <p className="text-[0.68rem] font-semibold text-[var(--text-tertiary)]">{reel.user}</p>
+                      <p className="mt-0.5 line-clamp-2 text-[0.72rem] text-[var(--text-secondary)]">{reel.caption}</p>
+                    </div>
+                  </a>
                 ))}
               </div>
             </div>
 
             {/* ── About the host ── */}
             <div>
-              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                About the host
-              </p>
+              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">About the host</p>
               <div className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-emerald-700 text-sm font-bold text-white">
@@ -418,15 +417,10 @@ export function EventSidePane({
                       <CheckCircle size={14} weight="fill" className="text-[var(--brand)]" />
                     </div>
                     <p className="text-xs text-[var(--text-secondary)]">Verified organizer · 47 events hosted</p>
-                    <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">
-                      One of Accra's leading event curators, bringing world-class experiences to the city since 2019.
-                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">One of Accra's leading event curators, bringing world-class experiences to the city since 2019.</p>
                   </div>
                 </div>
-                <Link
-                  className="mt-3 block w-full rounded-lg border border-[var(--home-border)] py-2 text-center text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                  href="#"
-                >
+                <Link className="mt-3 block w-full rounded-lg border border-[var(--home-border)] py-2 text-center text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]" href="#">
                   Visit host page →
                 </Link>
               </div>
@@ -434,27 +428,18 @@ export function EventSidePane({
 
             {/* ── What people are saying ── */}
             <div>
-              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                What people are saying
-              </p>
+              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">What people are saying</p>
               <div className="space-y-2.5">
                 {SOCIAL_POSTS.map((post) => (
-                  <div
-                    key={post.handle}
-                    className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-3.5"
-                  >
+                  <div key={post.handle} className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-3.5">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)]">
-                        {post.avatar}
-                      </div>
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)]">{post.avatar}</div>
                       <div>
                         <p className="text-xs font-semibold text-[var(--text-primary)]">{post.user}</p>
-                        <p className="text-[0.65rem] text-[var(--text-tertiary)]">
-                          {post.handle} · {post.time}
-                        </p>
+                        <p className="text-[0.65rem] text-[var(--text-tertiary)]">{post.handle} · {post.time}</p>
                       </div>
                     </div>
-                    <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">{post.text}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{post.text}</p>
                   </div>
                 ))}
               </div>
@@ -462,17 +447,11 @@ export function EventSidePane({
 
             {/* ── Policies ── */}
             <div>
-              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                Policies
-              </p>
+              <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Policies</p>
               <div className="divide-y divide-[var(--home-border)] overflow-hidden rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)]">
                 {POLICIES.map((policy) => (
                   <div key={policy.label} className="flex items-start gap-3 px-4 py-3">
-                    <ShieldCheck
-                      size={13}
-                      weight="fill"
-                      className="mt-0.5 shrink-0 text-[var(--brand)]"
-                    />
+                    <ShieldCheck size={13} weight="fill" className="mt-0.5 shrink-0 text-[var(--brand)]" />
                     <div>
                       <p className="text-xs font-semibold text-[var(--text-primary)]">{policy.label}</p>
                       <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{policy.detail}</p>
@@ -481,6 +460,41 @@ export function EventSidePane({
                 ))}
               </div>
             </div>
+
+            {/* Bottom spacer so sticky footer doesn't cover last item */}
+            <div className="h-4" />
+          </div>
+        </div>
+
+        {/* ── Sticky footer ── */}
+        <div className="shrink-0 border-t border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Link
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              href={`/events/${event.slug}`}
+            >
+              <Ticket size={15} weight="bold" />
+              {event.priceValue === 0 ? "Get Free Tickets" : `Get Tickets · ${event.priceLabel}`}
+            </Link>
+            <button
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${saved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
+              onClick={() => setSaved((v) => !v)}
+              type="button"
+            >
+              <HeartStraight size={17} weight={saved ? "fill" : "regular"} />
+            </button>
+            <button
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              type="button"
+            >
+              <PaperPlaneTilt size={16} weight="regular" />
+            </button>
+            <button
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              type="button"
+            >
+              <BookmarkSimple size={15} weight="regular" />
+            </button>
           </div>
         </div>
       </div>
