@@ -307,7 +307,6 @@ export function HomeClient() {
         <div>
           {sponsoredEvent ? (
             <section className="mt-6">
-              <SectionHeading eyebrow="Sponsored" />
               <SponsoredAdCard event={sponsoredEvent} />
             </section>
           ) : null}

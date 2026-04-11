@@ -96,7 +96,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   return (
     <motion.aside
       animate={{ width: isExpanded ? 240 : 72 }}
-      className="fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none border-r border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%),var(--bg-elevated)] backdrop-blur-xl md:flex md:flex-col"
+      className="fixed left-0 top-0 z-30 hidden h-screen overflow-hidden rounded-none bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%),var(--bg-elevated)] backdrop-blur-xl md:flex md:flex-col"
       onMouseEnter={() => {
         if (isDesktop) {
           setHovered(true);
