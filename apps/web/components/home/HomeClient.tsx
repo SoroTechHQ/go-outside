@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -12,16 +12,15 @@ import {
   Fire,
   HeartStraight,
   MapPin,
-  Sparkle,
   TrendUp,
   UsersThree,
 } from "@phosphor-icons/react";
+import type { FC } from "react";
 import {
   categories,
   events,
   getCategoryEmoji,
   getEventImage,
-  getOrganizerById,
   getRecommendedEvents,
 } from "@gooutside/demo-data";
 import HomeSearchHero from "../search/HomeSearchHero";
@@ -34,6 +33,32 @@ const FRIEND_CLUSTERS = [
 
 const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 
+const INITIAL_COUNT = 6;
+const PAGE_SIZE = 4;
+
+type PhosphorProps = { size?: number; weight?: string; className?: string };
+type SocialBadge = { Icon: FC<PhosphorProps>; label: string; cls: string };
+
+const SOCIAL_BADGE_SETS: SocialBadge[][] = [
+  [{ Icon: UsersThree, label: "Ama + Yaw are going", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20" }],
+  [
+    { Icon: HeartStraight, label: "Esi + 2 liked", cls: "bg-rose-500/10 text-rose-400 border-rose-400/20" },
+    { Icon: UsersThree, label: "3 friends saved", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20" },
+  ],
+  [{ Icon: Fire, label: "Trending in Accra", cls: "bg-orange-500/10 text-orange-400 border-orange-400/20" }],
+  [
+    { Icon: BookmarkSimple, label: "Kofi saved this", cls: "bg-violet-500/10 text-violet-400 border-violet-400/20" },
+    { Icon: Fire, label: "Trending", cls: "bg-orange-500/10 text-orange-400 border-orange-400/20" },
+  ],
+  [{ Icon: MapPin, label: "Popular spot in Accra", cls: "bg-sky-500/10 text-sky-400 border-sky-400/20" }],
+  [
+    { Icon: UsersThree, label: "Jojo + Esi are going", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20" },
+    { Icon: HeartStraight, label: "Liked by 5 friends", cls: "bg-rose-500/10 text-rose-400 border-rose-400/20" },
+  ],
+  [{ Icon: TrendUp, label: "Up 42% this week", cls: "bg-amber-500/10 text-amber-400 border-amber-400/20" }],
+  [{ Icon: UsersThree, label: "Your crew is going", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20" }],
+];
+
 function buildResultList(source: typeof events, limit: number, excludeSlugs: string[] = []) {
   return source.filter((event) => !excludeSlugs.includes(event.slug)).slice(0, limit);
 }
@@ -42,16 +67,16 @@ function CardHoverActions() {
   return (
     <div className="absolute right-3 top-3 flex gap-2 opacity-0 transition duration-200 group-hover:opacity-100">
       <button
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition hover:bg-[var(--brand)]"
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition hover:bg-[var(--brand)]"
         type="button"
       >
-        <HeartStraight size={16} weight="regular" />
+        <HeartStraight size={14} weight="regular" />
       </button>
       <button
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition hover:bg-[var(--brand)]"
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition hover:bg-[var(--brand)]"
         type="button"
       >
-        <BookmarkSimple size={16} weight="regular" />
+        <BookmarkSimple size={14} weight="regular" />
       </button>
     </div>
   );
@@ -59,37 +84,40 @@ function CardHoverActions() {
 
 function ImageCard({
   event,
+  feedIndex = 0,
 }: {
   event: (typeof events)[number];
+  feedIndex?: number;
 }) {
   const imageUrl = getEventImage(undefined, event.categorySlug);
+  const badges = SOCIAL_BADGE_SETS[feedIndex % SOCIAL_BADGE_SETS.length];
 
   return (
-    <div className={`group self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
+    <div className="group self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]">
       <Link className="block" href={`/events/${event.slug}`}>
-        <div className="relative aspect-[2/1] overflow-hidden">
+        <div className="relative aspect-8/3 overflow-hidden">
           <div
             aria-label={event.title}
             className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
             role="img"
             style={{ backgroundImage: `url(${imageUrl})` }}
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.06),rgba(0,0,0,0.18)_45%,rgba(0,0,0,0.72)_100%)]" />
-          <div className="absolute left-3 top-3 rounded-full border border-white/18 bg-black/18 px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04),rgba(0,0,0,0.15)_40%,rgba(0,0,0,0.72)_100%)]" />
+          <div className="absolute left-3 top-3 rounded-full border border-white/18 bg-black/18 px-2.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
             {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
           </div>
           <CardHoverActions />
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white md:p-4">
-            <p className="max-w-[75%] text-[1.15rem] font-semibold tracking-[-0.035em] md:text-[1.35rem]">
+            <p className="max-w-[75%] text-[1.1rem] font-semibold tracking-[-0.035em] md:text-[1.25rem]">
               {event.title}
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.75rem] text-white/88">
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[0.72rem] text-white/88">
               <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 backdrop-blur-sm">
-                <CalendarBlank size={11} weight="regular" />
+                <CalendarBlank size={10} weight="regular" />
                 {event.dateLabel}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 backdrop-blur-sm">
-                <Clock size={11} weight="regular" />
+                <Clock size={10} weight="regular" />
                 {event.timeLabel}
               </span>
             </div>
@@ -98,15 +126,26 @@ function ImageCard({
       </Link>
 
       <div className="p-3">
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {badges.map((badge) => (
+            <span
+              key={badge.label}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[0.67rem] font-semibold ${badge.cls}`}
+            >
+              <badge.Icon size={10} weight="fill" />
+              {badge.label}
+            </span>
+          ))}
+        </div>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.venue}</p>
-            <p className="mt-1 inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-              <MapPin size={12} weight="regular" />
+            <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+              <MapPin size={11} weight="regular" />
               {event.locationLine}
             </p>
           </div>
-          <span className="shrink-0 rounded-full bg-[var(--brand-dim)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+          <span className="shrink-0 rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
             {event.priceLabel}
           </span>
         </div>
@@ -214,6 +253,8 @@ export function HomeClient() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const selectedCategories = useMemo(
     () => searchParams.get("category")?.split(",").filter(Boolean) ?? [],
@@ -238,18 +279,51 @@ export function HomeClient() {
     });
   }, [query, selectedCategories, when]);
 
+  // Reset scroll position when filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_COUNT);
+  }, [searchParams]);
+
   const recommended = useMemo(() => getRecommendedEvents(), []);
   const sponsoredEvent = filteredEvents.find((event) => event.categorySlug === "tech") ?? filteredEvents[0] ?? events[0];
-  const socialEvents = buildResultList(filteredEvents.length > 0 ? filteredEvents : events, 3, [sponsoredEvent?.slug ?? ""]);
-  const forYouLead = recommended[0] ?? filteredEvents[0] ?? events[0];
-  const forYouCards = buildResultList(recommended.length > 0 ? recommended : events, 3, [forYouLead?.slug ?? ""]);
+
+  const allFeedEvents = useMemo(() => {
+    const base = filteredEvents.length > 0 ? filteredEvents : events;
+    return base.filter((e) => e.slug !== sponsoredEvent?.slug);
+  }, [filteredEvents, sponsoredEvent]);
+
+  // Cycle events for truly endless scroll
+  const visibleEvents = useMemo(() => {
+    if (allFeedEvents.length === 0) return [];
+    return Array.from({ length: Math.min(visibleCount, allFeedEvents.length * 8) }, (_, i) => {
+      const event = allFeedEvents[i % allFeedEvents.length];
+      return { ...event, _feedIndex: i, _feedKey: `${event.id}-${Math.floor(i / allFeedEvents.length)}` };
+    });
+  }, [allFeedEvents, visibleCount]);
+
   const trendingCards = buildResultList(
     filteredEvents.filter((event) => event.trending).length > 0
       ? filteredEvents.filter((event) => event.trending)
       : events.filter((event) => event.trending),
     2,
   );
-  const forYouEvents = forYouLead ? [forYouLead, ...forYouCards] : forYouCards;
+
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => prev + PAGE_SIZE);
+  }, []);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const updateCategory = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -341,38 +415,18 @@ export function HomeClient() {
             </div>
           </section>
 
-          {socialEvents.length > 0 ? (
-            <section className="mt-8">
-              <SectionHeading eyebrow="Friends" linkHref="/dashboard/notifications" title="Where your people are going" />
-              <div className="space-y-5">
-                {socialEvents.map((event) => (
-                  <ImageCard key={event.id} event={event} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          {forYouEvents.length > 0 ? (
-            <section className="mt-8">
-              <SectionHeading eyebrow="For you" linkHref="/events" title="Next best plan" />
-              <div className="space-y-5">
-                {forYouEvents.map((event) => (
-                  <ImageCard key={event.id} event={event} />
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          {trendingCards.length > 0 ? (
-            <section className="mt-8">
-              <SectionHeading eyebrow="Trending" linkHref="/events" title="Moving across Accra" />
-              <div className="space-y-5">
-                {trendingCards.map((event) => (
-                  <ImageCard key={event.id} event={event} />
-                ))}
-              </div>
-            </section>
-          ) : null}
+          <section className="mt-6 space-y-4">
+            {visibleEvents.map((event) => (
+              <ImageCard key={event._feedKey} event={event} feedIndex={event._feedIndex} />
+            ))}
+            <div ref={sentinelRef} className="flex items-center justify-center py-6">
+              <span className="inline-flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:0ms]" />
+                <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:150ms]" />
+                <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:300ms]" />
+              </span>
+            </div>
+          </section>
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-[118px] xl:self-start">
@@ -500,7 +554,6 @@ export function HomeClient() {
               4
             </div>
           </Link>
-
         </aside>
       </div>
     </main>
