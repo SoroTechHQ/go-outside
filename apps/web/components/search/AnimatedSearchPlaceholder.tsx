@@ -16,7 +16,17 @@ const SEARCH_SUGGESTIONS = [
   "Sip & Paint",
 ];
 
-export function AnimatedSearchPlaceholder({ isVisible }: { isVisible: boolean }) {
+type AnimatedSearchPlaceholderProps = {
+  isVisible: boolean;
+  suggestions?: string[];
+  className?: string;
+};
+
+export function AnimatedSearchPlaceholder({
+  isVisible,
+  suggestions = SEARCH_SUGGESTIONS,
+  className = "",
+}: AnimatedSearchPlaceholderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -27,7 +37,7 @@ export function AnimatedSearchPlaceholder({ isVisible }: { isVisible: boolean })
       return;
     }
 
-    const current = SEARCH_SUGGESTIONS[currentIndex] ?? SEARCH_SUGGESTIONS[0];
+    const current = suggestions[currentIndex] ?? suggestions[0] ?? "";
 
     if (isPaused) {
       const timeout = window.setTimeout(() => {
@@ -40,7 +50,7 @@ export function AnimatedSearchPlaceholder({ isVisible }: { isVisible: boolean })
     if (isDeleting) {
       if (displayText.length === 0) {
         setIsDeleting(false);
-        setCurrentIndex((value) => (value + 1) % SEARCH_SUGGESTIONS.length);
+        setCurrentIndex((value) => (value + 1) % Math.max(suggestions.length, 1));
         return;
       }
 
@@ -58,10 +68,10 @@ export function AnimatedSearchPlaceholder({ isVisible }: { isVisible: boolean })
     }
 
     setIsPaused(true);
-  }, [currentIndex, displayText, isDeleting, isPaused, isVisible]);
+  }, [currentIndex, displayText, isDeleting, isPaused, isVisible, suggestions]);
 
   return (
-    <span className="select-none text-[var(--text-tertiary)]">
+    <span className={`select-none text-[var(--text-tertiary)] ${className}`.trim()}>
       {displayText}
       <motion.span
         animate={{ opacity: [1, 0, 1] }}

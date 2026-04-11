@@ -138,24 +138,16 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
               return (
                 <Link key={item.href} href={item.href}>
                   <motion.div
-                    className={`relative flex h-[52px] items-center rounded-xl ${
+                    className={`relative flex h-[52px] items-center ${
                       isExpanded ? "gap-3.5 px-5" : "justify-center"
                     } ${
                       active
-                        ? "bg-[var(--brand)]/12 text-[var(--brand)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+                        ? "font-semibold text-[var(--brand)]"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                     transition={{ duration: 0.15 }}
                     whileTap={{ scale: 0.97 }}
                   >
-                    {active ? (
-                      <motion.div
-                        className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-[var(--brand)]"
-                        layoutId="nav-active-bar"
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                      />
-                    ) : null}
-
                     <Icon
                       size={24}
                       weight={active ? "fill" : "regular"}
@@ -192,7 +184,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
 
         <div className="px-2 pt-4">
           <button
-            className={`flex h-[52px] w-full items-center rounded-xl text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] ${
+            className={`flex h-[52px] w-full items-center text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] ${
               isExpanded ? "gap-3.5 px-5" : "justify-center"
             }`}
             onClick={() => {
@@ -220,14 +212,14 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
           </button>
 
           <Link
-            className={`mt-2 flex h-[56px] items-center rounded-xl border transition ${
+            className={`mt-2 flex h-[56px] items-center transition ${
               pathname.startsWith("/dashboard/profile")
-                ? "border-[var(--brand)]/25 bg-[var(--brand)]/10 text-[var(--text-primary)]"
-                : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+                ? "font-semibold text-[var(--brand)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
             href="/dashboard/profile"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/14 text-[var(--brand)]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center text-[var(--brand)]">
               {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/dashboard/profile") ? "fill" : "regular"} />}
             </div>
             <AnimatePresence>
@@ -240,7 +232,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   transition={{ duration: 0.2 }}
                 >
                   <p className="truncate text-sm font-medium text-[var(--text-primary)]">Profile</p>
-                  <span className="mt-1 inline-flex rounded-full bg-[var(--brand)]/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+                  <span className="mt-1 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
                     {userName}
                   </span>
                 </motion.div>

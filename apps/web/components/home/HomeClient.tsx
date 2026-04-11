@@ -32,7 +32,7 @@ const FRIEND_CLUSTERS = [
   { labels: ["Jojo"], note: "rated it 5 stars" },
 ];
 
-const PULSE_BADGES = ["Gold badge x3", "Night owl", "5 friends"];
+const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 
 function buildResultList(source: typeof events, limit: number, excludeSlugs: string[] = []) {
   return source.filter((event) => !excludeSlugs.includes(event.slug)).slice(0, limit);
@@ -60,16 +60,18 @@ function CardHoverActions() {
 function ImageCard({
   event,
   compact = false,
+  featured = false,
 }: {
   event: (typeof events)[number];
   compact?: boolean;
+  featured?: boolean;
 }) {
   const imageUrl = getEventImage(undefined, event.categorySlug);
 
   return (
-    <div className={`group overflow-hidden rounded-[26px] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
+    <div className={`group overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]`}>
       <Link className="block" href={`/events/${event.slug}`}>
-        <div className={`relative overflow-hidden ${compact ? "aspect-[1.04/1]" : "aspect-[1.2/1]"}`}>
+        <div className={`relative overflow-hidden ${featured ? "aspect-[1.55/1]" : compact ? "aspect-[1.04/1]" : "aspect-[1.2/1]"}`}>
           <div
             aria-label={event.title}
             className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
@@ -122,10 +124,10 @@ function SponsoredAdCard({ event }: { event: (typeof events)[number] }) {
 
   return (
     <Link
-      className="group block overflow-hidden rounded-[30px] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow-strong)]"
+      className="group block overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow-strong)]"
       href={`/events/${event.slug}`}
     >
-      <div className="relative aspect-[4.6/1] min-h-[210px] overflow-hidden">
+      <div className="relative aspect-[4.9/1] min-h-[180px] overflow-hidden">
         <div
           aria-label={event.title}
           className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
@@ -153,18 +155,18 @@ function SponsoredAdCard({ event }: { event: (typeof events)[number] }) {
             </span>
           </div>
 
-          <h3 className="max-w-[540px] text-[2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.25rem]">
+          <h3 className="max-w-[540px] text-[1.65rem] font-semibold tracking-[-0.04em] text-white md:text-[1.85rem]">
             {event.title}
           </h3>
-          <p className="mt-2 max-w-[620px] text-[1rem] text-white/82">
+          <p className="mt-2 max-w-[620px] text-[0.92rem] text-white/82">
             {event.dateLabel} · {event.timeLabel} · {event.venue}, {event.city}
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-white/20 bg-white/12 px-5 py-3 text-[1.05rem] font-semibold text-white backdrop-blur-sm">
+            <span className="rounded-full border border-white/20 bg-white/12 px-4 py-2.5 text-[0.95rem] font-semibold text-white backdrop-blur-sm">
               {event.priceValue === 0 ? "Free" : event.priceLabel}
             </span>
-            <span className="rounded-full bg-[#7ed03d] px-7 py-3 text-[1.05rem] font-semibold text-white">
+            <span className="rounded-full bg-[#7ed03d] px-6 py-2.5 text-[0.95rem] font-semibold text-white">
               Get Tickets →
             </span>
           </div>
@@ -286,7 +288,7 @@ export function HomeClient() {
 
       <div className="container-shell px-4 pt-3 md:px-6">
         {hasFilters ? (
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[22px] border border-[var(--home-highlight-border)] bg-[var(--brand-dim)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--home-shadow)]">
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-highlight-border)] bg-[var(--brand-dim)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--home-shadow)]">
             <span className="font-medium text-[var(--text-primary)]">
               {filteredEvents.length} result{filteredEvents.length === 1 ? "" : "s"} for your current plan
             </span>
@@ -346,10 +348,13 @@ export function HomeClient() {
           {socialEvents.length > 0 ? (
             <section className="mt-8">
               <SectionHeading eyebrow="Friends" linkHref="/dashboard/notifications" title="Where your people are going" />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {socialEvents.map((event) => (
-                  <ImageCard key={event.id} compact event={event} />
-                ))}
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.25fr_0.75fr]">
+                <ImageCard featured event={socialEvents[0] as (typeof events)[number]} />
+                <div className="grid gap-4">
+                  {socialEvents.slice(1).map((event) => (
+                    <ImageCard key={event.id} compact event={event} />
+                  ))}
+                </div>
               </div>
             </section>
           ) : null}
@@ -358,7 +363,7 @@ export function HomeClient() {
             <section className="mt-8">
               <SectionHeading eyebrow="For you" linkHref="/events" title="Next best plan" />
               <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                <ImageCard event={forYouLead} />
+                <ImageCard featured event={forYouLead} />
                 <div className="grid gap-4">
                   {forYouCards.map((event) => (
                     <ImageCard key={event.id} compact event={event} />
@@ -381,7 +386,7 @@ export function HomeClient() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-[118px] xl:self-start">
-          <section className="rounded-[28px] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)]">
+          <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--pulse-gold)]">
@@ -419,7 +424,7 @@ export function HomeClient() {
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
+          <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
@@ -440,7 +445,7 @@ export function HomeClient() {
                 return (
                   <Link
                     key={event.id}
-                    className="block rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30"
+                    className="block rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30"
                     href={`/events/${event.slug}`}
                   >
                     <div className="flex items-start gap-3">
@@ -459,7 +464,7 @@ export function HomeClient() {
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
+          <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <TrendUp size={18} weight="bold" className="text-[var(--brand)]" />
@@ -476,7 +481,7 @@ export function HomeClient() {
               {trendingCards.map((event, index) => (
                 <Link
                   key={event.id}
-                  className="flex items-center gap-3 rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30"
+                  className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30"
                   href={`/events/${event.slug}`}
                 >
                   <span className="text-lg font-semibold text-[var(--text-tertiary)]">{index + 1}</span>
@@ -491,7 +496,7 @@ export function HomeClient() {
           </section>
 
           <Link
-            className="flex items-center gap-3 rounded-[28px] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]"
+            className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]"
             href="/dashboard/notifications"
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">

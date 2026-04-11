@@ -25,15 +25,60 @@ function getInitials(name: string) {
 
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
   const pathname = usePathname();
-  const { isCompact, isMini } = useSearchBarScroll();
+  const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
   const stableSidebarOffset = 88;
   const isHome = pathname === "/";
+  const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
+  const easedHomeProgress =
+    totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
 
   if (appShell) {
     return (
       <>
         <header className="sticky top-0 z-40 hidden md:flex">
+          {isHome ? (
+            <>
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0"
+                style={{
+                  height: `${176 - easedHomeProgress * 30}px`,
+                  background: `linear-gradient(180deg,
+                    rgba(var(--brand-rgb),${0.16 + easedHomeProgress * 0.08}),
+                    rgba(var(--brand-rgb),${0.05 + easedHomeProgress * 0.06}) 38%,
+                    rgba(255,255,255,0) 100%)`,
+                }}
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0"
+                style={{
+                  height: `${128 + easedHomeProgress * 26}px`,
+                  opacity: 0.5 + easedHomeProgress * 0.48,
+                  background: `linear-gradient(180deg,
+                    rgba(var(--bg-card-rgb),${0.98 - easedHomeProgress * 0.01}) 0%,
+                    rgba(var(--bg-card-rgb),${0.93 - easedHomeProgress * 0.03}) 48%,
+                    rgba(var(--bg-card-rgb),${0.42 - easedHomeProgress * 0.1}) 78%,
+                    rgba(var(--bg-card-rgb),0) 100%)`,
+                }}
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 backdrop-blur-[18px]"
+                style={{
+                  height: `${112 + easedHomeProgress * 28}px`,
+                  opacity: 0.34 + easedHomeProgress * 0.42,
+                  maskImage: "linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0))",
+                  WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0))",
+                }}
+              />
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 border-b border-[var(--border-subtle)]"
+                style={{
+                  height: `${88 + easedHomeProgress * 24}px`,
+                  opacity: 0.14 + easedHomeProgress * 0.5,
+                }}
+              />
+            </>
+          ) : null}
           <div
             className="flex justify-center px-4 md:px-6"
             style={{
@@ -42,15 +87,20 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             }}
           >
             <div
-              className={`flex w-full justify-center transition-all duration-300 ${isHome ? "items-start" : "items-center"}`}
+              className={`flex w-full justify-center transition-[height,padding,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHome ? "items-start" : "items-center"}`}
               style={{
-                height: isHome ? (isMini ? 108 : isCompact ? 136 : 156) : isFocused ? 110 : isCompact ? 72 : 84,
-                paddingTop: isHome ? (isMini ? 14 : isCompact ? 18 : 26) : isFocused ? 26 : isCompact ? 16 : 18,
-                paddingBottom: isHome ? (isMini ? 10 : isCompact ? 16 : 20) : isFocused ? 20 : isCompact ? 10 : 14,
+                height: isHome ? `${160 - easedHomeProgress * 52}px` : isFocused ? 110 : isCompact ? 72 : 84,
+                paddingTop: isHome ? `${28 - easedHomeProgress * 11}px` : isFocused ? 26 : isCompact ? 16 : 18,
+                paddingBottom: isHome ? `${22 - easedHomeProgress * 10}px` : isFocused ? 20 : isCompact ? 10 : 14,
+                transform: isHome ? `translateY(${8 - easedHomeProgress * 4}px)` : undefined,
               }}
             >
               {isHome ? (
-                <HomeSearchHero mode={isMini ? "mini" : isCompact ? "compact" : "expanded"} />
+                <HomeSearchHero
+                  compactProgress={compactProgress}
+                  miniProgress={miniProgress}
+                  mode={isMini ? "mini" : isCompact ? "compact" : "expanded"}
+                />
               ) : (
                 <SearchBar
                   isCompact={isCompact}

@@ -28,7 +28,7 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 rounded-[28px] border border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.95)] px-3 py-2 shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-md md:hidden">
+    <nav className="fixed bottom-4 left-4 right-4 z-50 rounded-[var(--radius-card-lg)] border border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.95)] px-3 py-2 shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-md md:hidden">
       <div className="flex min-h-[56px] items-center justify-around pb-[env(safe-area-inset-bottom)]">
         {items.map((item) => {
           const active =
