@@ -20,7 +20,7 @@ const interDisplay = Inter({
 
 export const metadata: Metadata = {
   title: "GoOutside",
-  description: "Social-first event discovery and booking frontend for Ghana.",
+  description: "Social-first event discovery and platform for Ghana.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
