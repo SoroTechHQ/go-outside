@@ -11,11 +11,12 @@ import {
   Clock,
   Fire,
   HeartStraight,
+  Images,
   MapPin,
   TrendUp,
   UsersThree,
 } from "@phosphor-icons/react";
-import type { FC } from "react";
+import type { Icon } from "@phosphor-icons/react";
 import {
   categories,
   events,
@@ -36,8 +37,7 @@ const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 const INITIAL_COUNT = 6;
 const PAGE_SIZE = 4;
 
-type PhosphorProps = { size?: number; weight?: string; className?: string };
-type SocialBadge = { Icon: FC<PhosphorProps>; label: string; cls: string };
+type SocialBadge = { Icon: Icon; label: string; cls: string };
 
 const SOCIAL_BADGE_SETS: SocialBadge[][] = [
   [{ Icon: UsersThree, label: "Ama + Yaw are going", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20" }],
@@ -59,13 +59,22 @@ const SOCIAL_BADGE_SETS: SocialBadge[][] = [
   [{ Icon: UsersThree, label: "Your crew is going", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-400/20" }],
 ];
 
+const ALL_CATEGORY_SLUGS = ["music", "food", "sports", "arts", "tech", "nightlife", "culture", "outdoors"];
+
+function getEventImages(event: (typeof events)[number]): [string, string, string, string, string] {
+  const baseIdx = Math.max(0, ALL_CATEGORY_SLUGS.indexOf(event.categorySlug));
+  return Array.from({ length: 5 }, (_, i) =>
+    getEventImage(undefined, ALL_CATEGORY_SLUGS[(baseIdx + i) % ALL_CATEGORY_SLUGS.length]),
+  ) as [string, string, string, string, string];
+}
+
 function buildResultList(source: typeof events, limit: number, excludeSlugs: string[] = []) {
   return source.filter((event) => !excludeSlugs.includes(event.slug)).slice(0, limit);
 }
 
 function CardHoverActions() {
   return (
-    <div className="absolute right-3 top-3 flex gap-2 opacity-0 transition duration-200 group-hover:opacity-100">
+    <div className="absolute right-3 top-3 z-10 flex gap-1.5 opacity-0 transition duration-200 group-hover:opacity-100">
       <button
         className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition hover:bg-[var(--brand)]"
         type="button"
@@ -89,39 +98,69 @@ function ImageCard({
   event: (typeof events)[number];
   feedIndex?: number;
 }) {
-  const imageUrl = getEventImage(undefined, event.categorySlug);
+  const images = getEventImages(event);
   const badges = SOCIAL_BADGE_SETS[feedIndex % SOCIAL_BADGE_SETS.length];
 
   return (
     <div className="group self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]">
       <Link className="block" href={`/events/${event.slug}`}>
-        <div className="relative aspect-8/3 overflow-hidden">
-          <div
-            aria-label={event.title}
-            className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.04]"
-            role="img"
-            style={{ backgroundImage: `url(${imageUrl})` }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04),rgba(0,0,0,0.15)_40%,rgba(0,0,0,0.72)_100%)]" />
-          <div className="absolute left-3 top-3 rounded-full border border-white/18 bg-black/18 px-2.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
-            {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
-          </div>
-          <CardHoverActions />
-          <div className="absolute bottom-0 left-0 right-0 p-3 text-white md:p-4">
-            <p className="max-w-[75%] text-[1.1rem] font-semibold tracking-[-0.035em] md:text-[1.25rem]">
-              {event.title}
-            </p>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[0.72rem] text-white/88">
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 backdrop-blur-sm">
-                <CalendarBlank size={10} weight="regular" />
-                {event.dateLabel}
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/28 px-2 py-0.5 backdrop-blur-sm">
-                <Clock size={10} weight="regular" />
-                {event.timeLabel}
-              </span>
+        {/* Photo grid */}
+        <div className="relative flex h-[210px] gap-0.5 overflow-hidden rounded-t-[var(--radius-card-lg)]">
+          {/* Left: large hero image */}
+          <div className="relative w-[56%] flex-shrink-0 overflow-hidden">
+            <div
+              aria-label={event.title}
+              className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
+              role="img"
+              style={{ backgroundImage: `url(${images[0]})` }}
+            />
+            {/* gradient for title legibility */}
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.0)_35%,rgba(0,0,0,0.68)_100%)]" />
+
+            {/* Category eyebrow */}
+            <div className="absolute left-3 top-3 rounded-full border border-white/18 bg-black/18 px-2.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
+              {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
+            </div>
+
+            {/* Title + date */}
+            <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+              <p className="text-[1.05rem] font-semibold leading-tight tracking-[-0.03em]">
+                {event.title}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.7rem] text-white/85">
+                <span className="inline-flex items-center gap-1">
+                  <CalendarBlank size={10} weight="regular" />
+                  {event.dateLabel}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock size={10} weight="regular" />
+                  {event.timeLabel}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Right: 2×2 grid */}
+          <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-0.5">
+            {([images[1], images[2], images[3], images[4]] as string[]).map((img, i) => (
+              <div key={i} className="relative overflow-hidden">
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
+                  style={{ backgroundImage: `url(${img})` }}
+                />
+                {i === 3 && (
+                  <div className="absolute inset-0 flex items-end justify-end bg-black/35 p-2">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/25 bg-white/15 px-2 py-1 text-[0.6rem] font-semibold text-white backdrop-blur-sm">
+                      <Images size={9} weight="regular" />
+                      Show all photos
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <CardHoverActions />
         </div>
       </Link>
 
@@ -279,25 +318,28 @@ export function HomeClient() {
     });
   }, [query, selectedCategories, when]);
 
-  // Reset scroll position when filters change
   useEffect(() => {
     setVisibleCount(INITIAL_COUNT);
   }, [searchParams]);
 
   const recommended = useMemo(() => getRecommendedEvents(), []);
-  const sponsoredEvent = filteredEvents.find((event) => event.categorySlug === "tech") ?? filteredEvents[0] ?? events[0];
+  const sponsoredEvent =
+    filteredEvents.find((event) => event.categorySlug === "tech") ?? filteredEvents[0] ?? events[0];
 
   const allFeedEvents = useMemo(() => {
     const base = filteredEvents.length > 0 ? filteredEvents : events;
     return base.filter((e) => e.slug !== sponsoredEvent?.slug);
   }, [filteredEvents, sponsoredEvent]);
 
-  // Cycle events for truly endless scroll
   const visibleEvents = useMemo(() => {
     if (allFeedEvents.length === 0) return [];
     return Array.from({ length: Math.min(visibleCount, allFeedEvents.length * 8) }, (_, i) => {
       const event = allFeedEvents[i % allFeedEvents.length];
-      return { ...event, _feedIndex: i, _feedKey: `${event.id}-${Math.floor(i / allFeedEvents.length)}` };
+      return {
+        ...event,
+        _feedIndex: i,
+        _feedKey: `${event.id}-${Math.floor(i / allFeedEvents.length)}`,
+      };
     });
   }, [allFeedEvents, visibleCount]);
 
