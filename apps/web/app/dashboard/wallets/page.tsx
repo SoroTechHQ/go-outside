@@ -70,7 +70,7 @@ export default function WalletsPage() {
   const pastEvents = past.map((t) => getEventBySlug(t.eventSlug));
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
+    <main className="min-h-screen bg-[var(--bg-base)] pb-48 text-[var(--text-primary)]">
       <div className="mx-auto max-w-lg px-4 pt-8">
 
         {/* ── XP / Wallet Banner ── */}
@@ -115,7 +115,7 @@ export default function WalletsPage() {
                 ) : null;
               })}
             </div>
-          ) : (
+          ) : ( 
             <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-8 text-center">
               <p className="text-sm text-[var(--text-tertiary)]">No upcoming events.</p>
               <Link className="mt-3 inline-block text-sm font-semibold text-[var(--brand)]" href="/">
@@ -127,7 +127,7 @@ export default function WalletsPage() {
 
         {/* ── Past Tickets — stacked + Atropos parallax ── */}
         {past.length > 0 && (
-          <section className="mt-10">
+          <section className="mt-10 pb-[120px]">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
                 Past Tickets
@@ -135,8 +135,12 @@ export default function WalletsPage() {
               <span className="text-[11px] text-[var(--text-tertiary)]">{past.length} attended</span>
             </div>
 
-            {/* Client component — handles Atropos + stack rendering */}
-            <StackedPastTickets tickets={past} events={pastEvents} />
+
+
+            {/* Client component — handles stack rendering */}
+            <div className="mt-24 isolate">
+              <StackedPastTickets tickets={past} events={pastEvents} />
+            </div>
           </section>
         )}
 
