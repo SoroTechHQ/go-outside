@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   MapPin,
   PencilSimple,
@@ -163,15 +164,26 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
     <>
       {/* ── Cover — full width ─────────────────────────────────────────────── */}
       <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10] md:h-52">
+        {currentProfile.coverUrl ? (
+          <Image
+            src={currentProfile.coverUrl}
+            alt="Cover"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+        ) : null}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(74,159,99,0.2),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.4),transparent_65%)]" />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(74,159,99,0.9) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-        />
+        {!currentProfile.coverUrl && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage: "radial-gradient(circle, rgba(74,159,99,0.9) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+        )}
         {/* Cover actions */}
         {currentProfile.isOwnProfile && (
           <button
@@ -191,7 +203,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
         <div className="min-w-0">
 
           {/* Avatar row — overlaps cover */}
-          <div className="-mt-11 flex items-end justify-between pb-4 md:-mt-14">
+          <div className="relative z-10 -mt-11 flex items-end justify-between pb-4 md:-mt-14">
             <ProfileAvatar
               name={currentProfile.name}
               avatarUrl={currentProfile.avatarUrl}

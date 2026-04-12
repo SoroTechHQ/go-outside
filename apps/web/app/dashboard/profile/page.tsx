@@ -26,7 +26,7 @@ export default function ProfilePage() {
     bio: "Culture seeker. Always at the right place at the right time. Accra nightlife is my love language.",
     location: "Osu, Accra",
     avatarUrl: null,
-    coverUrl: null,
+    coverUrl: "https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=1200&q=80",
     joinedAt: "January 2024",
     pulseScore: 1240,
     pulseTier: "City Native",

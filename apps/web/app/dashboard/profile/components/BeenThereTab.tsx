@@ -1,6 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Ticket } from "@phosphor-icons/react/dist/ssr";
-import { type AttendeeTicket, type EventItem } from "@gooutside/demo-data";
+import { type AttendeeTicket, type EventItem, getEventImage } from "@gooutside/demo-data";
 
 function tierGradient(tier: AttendeeTicket["tier"]) {
   if (tier === "gold")   return "from-[#3d2200] via-[#5a3400] to-[#3a2100]";
@@ -50,6 +51,7 @@ export function BeenThereTab({ tickets, events }: Props) {
         const accent = tierAccent(ticket.tier);
         const grad   = tierGradient(ticket.tier);
         const hasGoldBadge = i === 0; // mock — first event earns it
+        const imgUrl = getEventImage(undefined, event.categorySlug);
 
         return (
           <Link
@@ -58,6 +60,14 @@ export function BeenThereTab({ tickets, events }: Props) {
             className="group relative overflow-hidden rounded-[18px] border border-white/5 transition hover:scale-[1.02] hover:border-white/10 active:scale-[0.98]"
           >
             <div className={`bg-gradient-to-br ${grad} relative p-4`}>
+              {imgUrl && (
+                <Image
+                  src={imgUrl}
+                  alt={event.title}
+                  fill
+                  className="object-cover object-center opacity-20 transition group-hover:opacity-25"
+                />
+              )}
               {/* Gold badge indicator */}
               {hasGoldBadge && (
                 <span

@@ -49,12 +49,12 @@ export function ProfileAvatar({
 }) {
   return (
     <>
-      <span className="md:hidden">
+      <div className="md:hidden">
         <UserAvatar name={name} avatarUrl={avatarUrl} size={80} ringClass={ringClass} className={borderClass} />
-      </span>
-      <span className="hidden md:block">
+      </div>
+      <div className="hidden md:block">
         <UserAvatar name={name} avatarUrl={avatarUrl} size={96} ringClass={ringClass} className={borderClass} />
-      </span>
+      </div>
     </>
   );
 }
