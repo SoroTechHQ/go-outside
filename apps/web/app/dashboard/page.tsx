@@ -25,8 +25,8 @@ export default function DashboardPage() {
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
   return (
-    <main className="page-grid min-h-screen pb-24">
-      <div className="container-shell py-10">
+    <main className="page-grid min-h-screen pb-36 md:pb-24">
+      <div className="container-shell px-4 py-8 md:py-10">
         <div className="mx-auto max-w-[720px] text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[var(--brand)]">
             {demoData.attendee.roleLabel}

@@ -188,12 +188,14 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   background: var(--bg-base);
   scroll-behavior: smooth;
   color-scheme: light;
+  overscroll-behavior: none;
 }
 
 :root[data-theme="dark"] {
@@ -337,7 +339,47 @@ a {
   cursor: pointer;
 }
 
+/* ── Mobile touch feedback ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  button, a, [role="button"] {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+}
+
+/* ── Safe-area bottom padding helper ─────────────────────────────────────── */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* ── Momentum scroll ─────────────────────────────────────────────────────── */
+.momentum-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
 ::selection {
   background: rgba(56, 189, 248, 0.28);
   color: var(--text-primary);
+}
+
+/* ── react-tweet dark theme override ─────────────────────────────────────── */
+:root[data-theme="dark"] .react-tweet-theme {
+  --tweet-bg-color: #152a1a;
+  --tweet-border: 1px solid rgba(74, 159, 99, 0.2);
+  --tweet-font-family: var(--font-body), sans-serif;
+  --tweet-color-blue-secondary: #4a9f63;
+  --tweet-color-blue-secondary-hover: rgba(74, 159, 99, 0.1);
+  --tweet-color-text-primary: rgba(255, 255, 255, 0.85);
+  --tweet-color-text-secondary: rgba(255, 255, 255, 0.4);
+  --tweet-bg-color-hover: #1c3422;
+}
+
+/* ── Profile page tab scrollbar hide ────────────────────────────────────── */
+.profile-tab-bar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.profile-tab-bar::-webkit-scrollbar {
+  display: none;
 }

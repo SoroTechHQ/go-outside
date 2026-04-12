@@ -5,8 +5,8 @@ export default function SavedEventsPage() {
   const savedEvents = getSavedEvents();
 
   return (
-    <main className="page-grid min-h-screen pb-24">
-      <div className="container-shell py-10">
+    <main className="page-grid min-h-screen pb-36 md:pb-24">
+      <div className="container-shell px-4 py-8 md:py-10">
         <SectionHeader
           eyebrow="Activity"
           index="01"

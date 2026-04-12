@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   BookmarkSimple,
@@ -136,17 +137,17 @@ function ImageCard({
 
   return (
     <div
-      className="group cursor-pointer self-start overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]"
+      className="group w-full min-w-0 cursor-pointer overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition active:scale-[0.99] hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]"
       onClick={onCardClick}
       onKeyDown={(e) => e.key === "Enter" && onCardClick?.()}
       role="button"
       tabIndex={0}
     >
       {/* ── Photo grid ── */}
-      <div className="relative flex aspect-8/3 overflow-hidden rounded-t-[var(--radius-card-lg)]">
+      <div className="relative flex aspect-[3/2] overflow-hidden rounded-t-[var(--radius-card-lg)] sm:aspect-[8/3]">
 
-        {/* Hero image — left 56% */}
-        <div className="relative w-[56%] shrink-0 overflow-hidden">
+        {/* Hero image — full width on mobile, left 56% on sm+ */}
+        <div className="relative w-full shrink-0 overflow-hidden sm:w-[56%]">
           <div
             aria-label={event.title}
             className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
@@ -190,7 +191,7 @@ function ImageCard({
             )}
 
             {/* Title */}
-            <p className="text-[1.3rem] font-semibold leading-tight tracking-[-0.03em]">
+            <p className="text-[1.1rem] font-semibold leading-tight tracking-[-0.03em] sm:text-[1.3rem]">
               {event.title}
             </p>
 
@@ -222,8 +223,8 @@ function ImageCard({
           </div>
         </div>
 
-        {/* 2×2 image grid — right 44% */}
-        <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-0.5">
+        {/* 2×2 image grid — hidden on mobile, right 44% on sm+ */}
+        <div className="hidden sm:grid flex-1 grid-cols-2 grid-rows-2 gap-0.5">
           {([images[1], images[2], images[3], images[4]] as string[]).map((img, i) => (
             <div key={i} className="relative overflow-hidden">
               <div
@@ -246,10 +247,10 @@ function ImageCard({
       </div>
 
       {/* ── Card body — venue + price only ── */}
-      <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3 px-3.5 py-3">
         <div className="min-w-0">
-          <p className="truncate text-[0.95rem] font-medium text-[var(--text-primary)]">{event.venue}</p>
-          <p className="mt-0.5 inline-flex items-center gap-1 text-[0.8rem] text-[var(--text-secondary)]">
+          <p className="truncate text-[0.95rem] font-semibold text-[var(--text-primary)]">{event.venue}</p>
+          <p className="mt-0.5 inline-flex items-center gap-1 text-[0.78rem] text-[var(--text-secondary)]">
             <MapPin size={12} weight="regular" />
             {event.locationLine}
           </p>
@@ -266,41 +267,28 @@ function SponsoredAdCard({ event }: { event: (typeof events)[number] }) {
   const imageUrl = getEventImage(undefined, event.categorySlug);
   return (
     <Link
-      className="group block overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow-strong)]"
+      className="group block overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow-strong)] active:scale-[0.99]"
       href={`/events/${event.slug}`}
     >
-      <div className="relative aspect-4/1 min-h-45 overflow-hidden">
+      <div className="relative min-h-[180px] overflow-hidden sm:min-h-[220px] md:aspect-[4/1] md:min-h-0">
         <div
           aria-label={event.title}
           className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
           role="img"
-          style={{ backgroundImage: `url(${imageUrl})` }}
+          style={{ backgroundImage: `url(${imageUrl})`, aspectRatio: "3/1" }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,8,6,0.76)_0%,rgba(5,8,6,0.42)_42%,rgba(5,8,6,0.18)_100%)]" />
-        <div className="absolute right-5 top-5 flex gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/22 text-white backdrop-blur-sm">
-            <ArrowRight className="rotate-180" size={20} weight="bold" />
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(5,8,6,0.82)_0%,rgba(5,8,6,0.38)_60%,rgba(5,8,6,0.14)_100%)] md:bg-[linear-gradient(90deg,rgba(5,8,6,0.76)_0%,rgba(5,8,6,0.42)_42%,rgba(5,8,6,0.18)_100%)]" />
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-7">
+          <div className="mb-2.5 flex flex-wrap items-center gap-2 md:mb-4 md:gap-3">
+            <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">Sponsored</span>
+            <span className="rounded-full border border-[var(--brand)] bg-[rgba(47,143,69,0.18)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8bd98f] md:px-4 md:py-2 md:text-[0.74rem]">Tech</span>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-black/22 text-white backdrop-blur-sm">
-            <ArrowRight size={20} weight="bold" />
+          <h3 className="text-[1.25rem] font-semibold leading-tight tracking-[-0.03em] text-white md:max-w-[540px] md:text-[1.85rem]">{event.title}</h3>
+          <p className="mt-1.5 text-[0.8rem] text-white/75 md:mt-2 md:text-[0.92rem]">{event.dateLabel} · {event.venue}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-5 md:gap-3">
+            <span className="rounded-full border border-white/20 bg-white/12 px-3.5 py-2 text-[0.82rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2.5 md:text-[0.95rem]">{event.priceValue === 0 ? "Free" : event.priceLabel}</span>
+            <span className="rounded-full bg-[#7ed03d] px-4 py-2 text-[0.82rem] font-semibold text-white md:px-6 md:py-2.5 md:text-[0.95rem]">Get Tickets →</span>
           </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-black/45 px-4 py-2 text-[0.74rem] font-semibold uppercase tracking-[0.24em] text-white">Sponsored</span>
-            <span className="rounded-full border border-[var(--brand)] bg-[rgba(47,143,69,0.18)] px-4 py-2 text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-[#8bd98f]">Tech</span>
-          </div>
-          <h3 className="max-w-135 text-[1.65rem] font-semibold tracking-[-0.04em] text-white md:text-[1.85rem]">{event.title}</h3>
-          <p className="mt-2 max-w-155 text-[0.92rem] text-white/82">{event.dateLabel} · {event.timeLabel} · {event.venue}, {event.city}</p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-white/20 bg-white/12 px-4 py-2.5 text-[0.95rem] font-semibold text-white backdrop-blur-sm">{event.priceValue === 0 ? "Free" : event.priceLabel}</span>
-            <span className="rounded-full bg-[#7ed03d] px-6 py-2.5 text-[0.95rem] font-semibold text-white">Get Tickets →</span>
-          </div>
-        </div>
-        <div className="absolute bottom-7 left-1/2 flex -translate-x-1/2 gap-2">
-          <span className="h-3 w-3 rounded-full bg-white/45" />
-          <span className="h-3 w-3 rounded-full bg-[#7ed03d]" />
-          <span className="h-3 w-3 rounded-full bg-white/45" />
         </div>
       </div>
     </Link>
@@ -385,11 +373,11 @@ export function HomeClient() {
   return (
     <>
       <div
-        className="transition-[padding-right] duration-300 ease-in-out"
+        className="w-full overflow-x-hidden transition-[padding-right] duration-300 ease-in-out"
         style={{ paddingRight: selectedEvent ? paneWidth : 0 }}
       >
-        <main className="page-grid min-h-screen pb-28">
-          <div className="container-shell px-4 pt-6 md:hidden">
+        <main className="page-grid min-h-screen overflow-x-hidden pb-32 md:pb-16">
+          <div className="px-3 pt-4 md:hidden">
             <HomeSearchHero mode="mobile" />
           </div>
 
@@ -411,18 +399,23 @@ export function HomeClient() {
           </div>
 
           <div className="container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)_288px]">
-            <div>
+            <div className="min-w-0">
               {sponsoredEvent && (
-                <section className="mt-6">
+                <motion.section
+                  className="mt-4"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                >
                   <SponsoredAdCard event={sponsoredEvent} />
-                </section>
+                </motion.section>
               )}
 
               {/* Category filters */}
-              <section className="mt-6">
-                <div className="flex flex-wrap gap-2">
+              <section className="mt-5">
+                <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
                   <button
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${selectedCategories.length === 0 ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
+                    className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${selectedCategories.length === 0 ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
                     onClick={clearFilters}
                     type="button"
                   >
@@ -433,7 +426,7 @@ export function HomeClient() {
                     return (
                       <button
                         key={category.slug}
-                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
+                        className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
                         onClick={() => updateCategory(category.slug)}
                         type="button"
                       >
@@ -453,20 +446,34 @@ export function HomeClient() {
                   return (
                     <Fragment key={event._feedKey}>
                       {isFirstInSection && (
-                        <div className={idx === 0 ? "mb-1 mt-4" : "mb-1 mt-10"}>
+                        <motion.div
+                          className={idx === 0 ? "mb-1 mt-4" : "mb-1 mt-10"}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-40px" }}
+                          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        >
                           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
                             {section.eyebrow}
                           </p>
-                          <h2 className="mt-1.5 text-[1.6rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-[1.85rem]">
+                          <h2 className="mt-1.5 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-[1.85rem]">
                             {section.title}
                           </h2>
-                        </div>
+                        </motion.div>
                       )}
-                      <ImageCard
-                        event={event}
-                        feedIndex={event._feedIndex}
-                        onCardClick={() => setSelectedEvent(event)}
-                      />
+                      <motion.div
+                        className="min-w-0"
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-20px" }}
+                        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1], delay: (idx % CARDS_PER_SECTION) * 0.06 }}
+                      >
+                        <ImageCard
+                          event={event}
+                          feedIndex={event._feedIndex}
+                          onCardClick={() => setSelectedEvent(event)}
+                        />
+                      </motion.div>
                     </Fragment>
                   );
                 })}

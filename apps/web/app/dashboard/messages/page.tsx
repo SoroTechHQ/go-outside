@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   ArrowLeft,
   DotsThree,
@@ -11,6 +11,9 @@ import {
   Phone,
   Info,
   MagnifyingGlass,
+  PaperPlaneTilt,
+  Plus,
+  Smiley,
 } from "@phosphor-icons/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -286,6 +289,80 @@ function Bubble({ msg }: { msg: Message }) {
   );
 }
 
+// ─── Compose bar ─────────────────────────────────────────────────────────────
+function ComposeBar({ onSend }: { onSend: (text: string) => void }) {
+  const [text, setText] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const submit = useCallback(() => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onSend(trimmed);
+    setText("");
+    inputRef.current?.focus();
+  }, [text, onSend]);
+
+  return (
+    <div
+      className="shrink-0 border-t px-3 py-2"
+      style={{
+        borderColor: "var(--border-subtle)",
+        background: "var(--bg-card)",
+        paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+        marginBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+    >
+      <div className="flex items-end gap-2">
+        <button
+          aria-label="Attach"
+          className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-muted)] active:scale-95"
+          style={{ color: "var(--text-tertiary)" }}
+          type="button"
+        >
+          <Plus size={18} weight="bold" />
+        </button>
+
+        <div
+          className="flex flex-1 items-center rounded-[20px] px-4 py-2.5 text-[14px]"
+          style={{ background: "var(--bg-muted)" }}
+        >
+          <input
+            ref={inputRef}
+            className="flex-1 bg-transparent outline-none"
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
+            placeholder="Message…"
+            style={{ color: "var(--text-primary)" }}
+            value={text}
+          />
+          <button
+            aria-label="Emoji"
+            className="ml-1 shrink-0 transition-colors"
+            style={{ color: "var(--text-tertiary)" }}
+            type="button"
+          >
+            <Smiley size={18} weight="regular" />
+          </button>
+        </div>
+
+        <button
+          aria-label="Send"
+          className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all active:scale-90"
+          onClick={submit}
+          style={{
+            background: text.trim() ? "var(--brand)" : "var(--bg-muted)",
+            color: text.trim() ? "white" : "var(--text-tertiary)",
+            transition: "background 0.18s ease, transform 0.1s ease",
+          }}
+          type="button"
+        >
+          <PaperPlaneTilt size={16} weight="fill" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MessagesPage() {
   const [tab, setTab] = useState<Tab>("primary");
@@ -306,7 +383,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeId]);
+  }, [activeId, convos]);
 
   function openConv(conv: Conversation) {
     setConvos((prev) =>
@@ -316,29 +393,48 @@ export default function MessagesPage() {
     setShowThread(true);
   }
 
+  function sendMessage(text: string) {
+    if (!activeId) return;
+    const newMsg: Message = {
+      id: `m${Date.now()}`,
+      text,
+      mine: true,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      read: false,
+    };
+    setConvos((prev) =>
+      prev.map((c) =>
+        c.id === activeId
+          ? { ...c, messages: [...c.messages, newMsg], lastMessage: text, time: "now" }
+          : c,
+      ),
+    );
+  }
+
   const unreadRequests = convos.filter((c) => c.tab === "requests" && c.unread > 0).length;
 
   return (
-    <main className="page-grid h-screen overflow-hidden">
+    <main className="page-grid overflow-hidden" style={{ height: "100dvh" }}>
       <div className="flex h-full">
 
         {/* ── Left: conversation list ──────────────────────────────── */}
         <div
-          className={`flex flex-col border-r shrink-0 ${showThread ? "hidden md:flex" : "flex"} w-full md:w-[320px] lg:w-[340px]`}
+          className={`flex shrink-0 flex-col border-r ${showThread ? "hidden md:flex" : "flex"} w-full md:w-[320px] lg:w-[340px]`}
           style={{ borderColor: "var(--border-subtle)" }}
         >
           {/* Header */}
-          <div className="px-5 pt-7 pb-4">
-            <div className="flex items-center justify-between mb-5">
+          <div className="px-4 pb-3 pt-6 md:px-5 md:pt-7">
+            <div className="mb-4 flex items-center justify-between">
               <h1
-                className="text-[22px] font-bold tracking-tight"
+                className="text-[20px] font-bold tracking-tight md:text-[22px]"
                 style={{ color: "var(--text-primary)" }}
               >
                 Messages
               </h1>
               <button
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--bg-muted)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-muted)]"
                 style={{ color: "var(--text-tertiary)" }}
+                type="button"
               >
                 <DotsThree size={20} weight="bold" />
               </button>
@@ -346,39 +442,40 @@ export default function MessagesPage() {
 
             {/* Search */}
             <div
-              className="flex items-center gap-2.5 px-3.5 h-10 rounded-2xl mb-3"
+              className="mb-3 flex h-10 items-center gap-2.5 rounded-2xl px-3.5"
               style={{ background: "var(--bg-muted)" }}
             >
               <MagnifyingGlass size={14} weight="bold" style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
               <input
-                value={search}
+                className="flex-1 bg-transparent text-[13px] outline-none"
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search messages…"
-                className="flex-1 bg-transparent text-[13px] outline-none"
                 style={{ color: "var(--text-primary)" }}
+                value={search}
               />
             </div>
 
             {/* Tabs */}
             <div
-              className="flex gap-1 p-1 rounded-2xl"
+              className="flex gap-1 rounded-2xl p-1"
               style={{ background: "var(--bg-muted)" }}
             >
               {TABS.map((t) => (
                 <button
                   key={t}
+                  className="relative h-8 flex-1 rounded-xl text-[12px] font-semibold capitalize transition-all"
                   onClick={() => setTab(t)}
-                  className="flex-1 h-8 rounded-xl text-[12px] font-semibold capitalize transition-all relative"
                   style={{
                     background: tab === t ? "var(--bg-card)" : "transparent",
                     color: tab === t ? "var(--text-primary)" : "var(--text-tertiary)",
                     boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
                   }}
+                  type="button"
                 >
                   {t}
                   {t === "requests" && unreadRequests > 0 && (
                     <span
-                      className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full"
+                      className="absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full"
                       style={{ background: "#e85d8a" }}
                     />
                   )}
@@ -388,9 +485,12 @@ export default function MessagesPage() {
           </div>
 
           {/* List */}
-          <div className="flex-1 overflow-y-auto px-3 pb-4">
+          <div
+            className="flex-1 overflow-y-auto px-3"
+            style={{ paddingBottom: "max(96px, calc(72px + env(safe-area-inset-bottom)))" }}
+          >
             {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-6">
+              <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
                 <ChatCircleDots size={36} style={{ color: "var(--text-tertiary)" }} />
                 <p className="text-[14px] font-medium" style={{ color: "var(--text-secondary)" }}>
                   No {tab} messages
@@ -400,8 +500,8 @@ export default function MessagesPage() {
               filtered.map((conv) => (
                 <ConvItem
                   key={conv.id}
-                  conv={conv}
                   active={conv.id === activeId}
+                  conv={conv}
                   onClick={() => openConv(conv)}
                 />
               ))
@@ -411,28 +511,29 @@ export default function MessagesPage() {
 
         {/* ── Right: thread pane ──────────────────────────────────── */}
         <div
-          className={`flex-1 flex flex-col min-w-0 ${showThread ? "flex" : "hidden md:flex"}`}
+          className={`flex min-w-0 flex-1 flex-col ${showThread ? "flex" : "hidden md:flex"}`}
           style={{ background: "var(--bg-card)" }}
         >
           {active ? (
             <>
               {/* Thread header */}
               <div
-                className="flex items-center gap-3 px-5 py-4 border-b shrink-0"
+                className="flex shrink-0 items-center gap-2 border-b px-4 py-3 md:px-5 md:py-4"
                 style={{ borderColor: "var(--border-subtle)" }}
               >
                 <button
+                  className="md:hidden -ml-1 flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-muted)] active:scale-95"
                   onClick={() => setShowThread(false)}
-                  className="md:hidden w-9 h-9 rounded-full flex items-center justify-center -ml-1 transition-colors hover:bg-[var(--bg-muted)]"
                   style={{ color: "var(--text-secondary)" }}
+                  type="button"
                 >
                   <ArrowLeft size={18} weight="bold" />
                 </button>
 
-                <Avatar initials={active.initials} color={active.color} online={active.online} size={40} />
+                <Avatar color={active.color} initials={active.initials} online={active.online} size={38} />
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-semibold" style={{ color: "var(--text-primary)" }}>
                     {active.name}
                   </p>
                   <p className="text-[12px]" style={{ color: active.online ? "#22c55e" : "var(--text-tertiary)" }}>
@@ -449,8 +550,9 @@ export default function MessagesPage() {
                     <button
                       key={label}
                       aria-label={label}
-                      className="w-9 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-[var(--bg-muted)]"
+                      className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-muted)] active:scale-95"
                       style={{ color: "var(--text-tertiary)" }}
+                      type="button"
                     >
                       <Icon size={18} weight="regular" />
                     </button>
@@ -459,13 +561,13 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2.5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
-                  <span className="text-[11px] font-medium px-2" style={{ color: "var(--text-tertiary)" }}>
+              <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-5 md:px-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="h-px flex-1" style={{ background: "var(--border-subtle)" }} />
+                  <span className="px-2 text-[11px] font-medium" style={{ color: "var(--text-tertiary)" }}>
                     Today
                   </span>
-                  <div className="flex-1 h-px" style={{ background: "var(--border-subtle)" }} />
+                  <div className="h-px flex-1" style={{ background: "var(--border-subtle)" }} />
                 </div>
 
                 {active.messages.map((msg) => (
@@ -473,12 +575,15 @@ export default function MessagesPage() {
                 ))}
                 <div ref={bottomRef} />
               </div>
+
+              {/* Compose bar */}
+              <ComposeBar onSend={sendMessage} />
             </>
           ) : (
             /* Empty state */
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
               <div
-                className="w-16 h-16 rounded-full border-2 flex items-center justify-center"
+                className="flex h-16 w-16 items-center justify-center rounded-full border-2"
                 style={{ borderColor: "var(--border-default)", color: "var(--text-tertiary)" }}
               >
                 <ChatCircleDots size={28} weight="light" />
@@ -487,7 +592,7 @@ export default function MessagesPage() {
                 <p className="text-[18px] font-semibold" style={{ color: "var(--text-primary)" }}>
                   Your messages
                 </p>
-                <p className="text-[14px] mt-1" style={{ color: "var(--text-tertiary)" }}>
+                <p className="mt-1 text-[14px]" style={{ color: "var(--text-tertiary)" }}>
                   Select a conversation to start chatting
                 </p>
               </div>

@@ -28,15 +28,15 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
   const [isFocused, setIsFocused] = useState(false);
   const stableSidebarOffset = 88;
-  const isHome = pathname === "/";
+  const isHome     = pathname === "/";
   const isMessages = pathname === "/dashboard/messages";
-  const isWallets =
-    pathname === "/dashboard/wallets" || pathname.startsWith("/dashboard/wallets/");
+  const isWallets  = pathname === "/dashboard/wallets" || pathname.startsWith("/dashboard/wallets/");
+  const isProfile  = pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/profile/");
   const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
   const easedHomeProgress =
     totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
 
-  if (isMessages || isWallets) return null;
+  if (isMessages || isWallets || isProfile) return null;
 
   if (appShell) {
     return (
@@ -119,22 +119,25 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
           </div>
         </header>
 
-        <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] px-4 py-4 backdrop-blur-xl md:hidden">
+        <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+            <Link href="/" className="text-[1.15rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
               GoOutside
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Link
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
                 href="/search"
               >
-                <MagnifyingGlass size={18} weight="bold" />
+                <MagnifyingGlass size={17} weight="bold" />
               </Link>
               <ThemeToggle />
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black">
+              <Link
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
+                href="/dashboard/profile"
+              >
                 {getInitials(userName)}
-              </div>
+              </Link>
             </div>
           </div>
         </header>
@@ -159,29 +162,35 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black">
+            <Link
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition hover:opacity-90"
+              href="/dashboard/profile"
+            >
               {getInitials(userName)}
-            </div>
+            </Link>
           </div>
         </div>
       </header>
 
-      <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] px-4 py-4 backdrop-blur-xl md:hidden">
+      <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+          <Link href="/" className="text-[1.15rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
             GoOutside
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Link
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
               href="/search"
             >
-              <MagnifyingGlass size={18} weight="bold" />
+              <MagnifyingGlass size={17} weight="bold" />
             </Link>
             <ThemeToggle />
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black">
+            <Link
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
+              href="/dashboard/profile"
+            >
               {getInitials(userName)}
-            </div>
+            </Link>
           </div>
         </div>
       </header>

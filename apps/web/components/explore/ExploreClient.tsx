@@ -364,9 +364,9 @@ function MobileReels({ entries }: { entries: ExploreEntry[] }) {
     setSavedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   return (
-    <div className="no-scrollbar h-[calc(100svh-72px)] snap-y snap-mandatory overflow-y-scroll">
+    <div className="no-scrollbar h-[calc(100svh-56px-88px)] snap-y snap-mandatory overflow-y-scroll md:h-[calc(100svh-72px)]">
       {slides.map((slide, i) => (
-        <div key={`${slide.entry.event.id}-${i}`} className="relative h-[calc(100svh-72px)] w-full snap-start overflow-hidden">
+        <div key={`${slide.entry.event.id}-${i}`} className="relative h-[calc(100svh-56px-88px)] w-full snap-start overflow-hidden md:h-[calc(100svh-72px)]">
           {slide.type === "video" ? (
             <ReelSlide
               entry={slide.entry}
