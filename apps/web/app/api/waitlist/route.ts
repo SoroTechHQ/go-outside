@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
           : "event goer";
 
     await resend.emails.send({
-      from: "GoOutside <onboarding@resend.dev>",
+      from: "GoOutside <waitlist@mail.gooutside.club>",
       to: email.toLowerCase().trim(),
       subject: "You're in — GoOutside is coming to Accra 🟢",
       html: `
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
           <tr>
             <td style="padding:0 40px 40px;">
               <p style="margin:0 0 8px;font-size:13px;color:#a9a9a9;">We'll reach out when early access opens. Stay tuned.</p>
-              <p style="margin:0;font-size:13px;color:#a9a9a9;">— The GoOutside team</p>
+              <p style="margin:0;font-size:13px;color:#a9a9a9;">— The GoOutside Club</p>
             </td>
           </tr>
           <tr>
