@@ -9,6 +9,7 @@ type Signup = {
   phone: string | null;
   role: string | null;
   created_at: string;
+  email_sent: boolean;
 };
 
 // ─── Password Gate ────────────────────────────────────────────────────────────
@@ -30,7 +31,6 @@ export function PasswordGate() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        // Reload to show the authenticated view
         window.location.reload();
       } else {
         const data = await res.json();
@@ -107,6 +107,8 @@ export function PasswordGate() {
 export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
   const [signups, setSignups] = useState<Signup[]>(initialSignups);
   const [refreshing, setRefreshing] = useState(false);
+  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
+  const [sentToast, setSentToast] = useState<string | null>(null);
 
   function formatDate(iso: string) {
     const d = new Date(iso);
@@ -132,18 +134,47 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
     }
   }
 
+  async function handleSendEmail(id: string) {
+    setSendingIds((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch("/api/admin/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setSignups((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, email_sent: true } : s))
+        );
+        const signup = signups.find((s) => s.id === id);
+        setSentToast(`Sent to ${signup?.email}`);
+        setTimeout(() => setSentToast(null), 3000);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to send email.");
+      }
+    } finally {
+      setSendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/admin/auth", { method: "DELETE" });
     window.location.reload();
   }
 
   function downloadCSV() {
-    const headers = ["Name", "Email", "Phone", "Role", "Signed Up"];
+    const headers = ["Name", "Email", "Phone", "Role", "Email Sent", "Signed Up"];
     const rows = signups.map((s) => [
       s.name ?? "",
       s.email,
       s.phone ?? "",
       s.role ?? "",
+      s.email_sent ? "yes" : "no",
       formatDate(s.created_at),
     ]);
     const csv = [headers, ...rows]
@@ -158,11 +189,25 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
     URL.revokeObjectURL(url);
   }
 
+  const unsentCount = signups.filter((s) => !s.email_sent).length;
+  const sentCount = signups.filter((s) => s.email_sent).length;
+
   return (
     <div
       style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}
       className="min-h-screen bg-[#fafafa]"
     >
+      {/* Toast */}
+      {sentToast && (
+        <div className="fixed top-4 right-4 z-50 bg-[#0f110f] text-white text-[13px] font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" fill="#2f8f45" />
+            <path d="M4.5 7l2 2 3-3" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {sentToast}
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-[#ececec] sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -212,14 +257,20 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-4 gap-4 mb-8">
           {[
             { label: "Total Signups", value: signups.length },
-            { label: "With Name", value: signups.filter((s) => s.name).length },
+            { label: "Emails Sent", value: sentCount },
+            { label: "Emails Unsent", value: unsentCount, highlight: unsentCount > 0 },
             { label: "With Phone", value: signups.filter((s) => s.phone).length },
           ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-xl border border-[#ececec] p-5">
-              <p className="text-[28px] font-bold text-[#0f110f] leading-none mb-1">{stat.value}</p>
+            <div
+              key={stat.label}
+              className={`rounded-xl border p-5 ${stat.highlight ? "bg-[#fff8f0] border-[#f5d6a8]" : "bg-white border-[#ececec]"}`}
+            >
+              <p className={`text-[28px] font-bold leading-none mb-1 ${stat.highlight ? "text-[#c97c1a]" : "text-[#0f110f]"}`}>
+                {stat.value}
+              </p>
               <p className="text-[12px] text-[#a9a9a9]">{stat.label}</p>
             </div>
           ))}
@@ -234,6 +285,11 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
                 {signups.length}
               </span>
             </h2>
+            {unsentCount > 0 && (
+              <span className="text-[12px] text-[#c97c1a] font-medium">
+                {unsentCount} without confirmation email
+              </span>
+            )}
           </div>
 
           {signups.length === 0 ? (
@@ -250,6 +306,7 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
                     <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#a9a9a9] uppercase tracking-wide">Name</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#a9a9a9] uppercase tracking-wide">Phone</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#a9a9a9] uppercase tracking-wide">Role</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#a9a9a9] uppercase tracking-wide">Email</th>
                     <th className="text-left px-5 py-3 text-[11px] font-semibold text-[#a9a9a9] uppercase tracking-wide">Signed Up</th>
                   </tr>
                 </thead>
@@ -276,6 +333,38 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
                           </span>
                         ) : (
                           <span className="text-[#d8d8d8]">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {s.email_sent ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#f0f9f2] text-[#2f8f45] border border-[#c8e8ce]">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M2 5l2.5 2.5 3.5-4" stroke="#2f8f45" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Sent
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleSendEmail(s.id)}
+                            disabled={sendingIds.has(s.id)}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#fff8f0] text-[#c97c1a] border border-[#f5d6a8] hover:bg-[#ffefd8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {sendingIds.has(s.id) ? (
+                              <>
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="animate-spin">
+                                  <circle cx="5" cy="5" r="4" stroke="#c97c1a" strokeWidth="1.3" strokeDasharray="6 6" />
+                                </svg>
+                                Sending…
+                              </>
+                            ) : (
+                              <>
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                  <path d="M1 1l8 4-8 4V6l5-1-5-1V1z" fill="#c97c1a" />
+                                </svg>
+                                Send
+                              </>
+                            )}
+                          </button>
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-[#a9a9a9] whitespace-nowrap">

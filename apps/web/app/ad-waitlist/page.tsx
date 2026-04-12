@@ -16,7 +16,7 @@ export default async function AdminWaitlistPage() {
   // Fetch signups server-side
   const { data: signups, error } = await supabaseAdmin
     .from("waitlist_signups")
-    .select("id, email, name, phone, role, created_at")
+    .select("id, email, name, phone, role, created_at, email_sent")
     .order("created_at", { ascending: false });
 
   if (error) {
