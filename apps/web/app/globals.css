@@ -2,6 +2,8 @@
 @source "../../../packages/ui/src/**/*.{tsx,ts}";
 @source "../components/**/*.{tsx,ts}";
 
+@custom-variant dark (:root[data-theme="dark"] &);
+
 :root {
   --app-shell-offset: 72px;
   --brand: #2f8f45;
