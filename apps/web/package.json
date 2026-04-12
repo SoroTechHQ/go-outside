@@ -12,6 +12,7 @@
     "@gooutside/ui": "workspace:*",
     "@phosphor-icons/react": "^2.1.7",
     "@supabase/supabase-js": "^2.103.0",
+    "atropos": "^2.0.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.7.4",
     "lucide-react": "^0.511.0",

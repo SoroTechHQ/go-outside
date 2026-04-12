@@ -29,9 +29,14 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   const [isFocused, setIsFocused] = useState(false);
   const stableSidebarOffset = 88;
   const isHome = pathname === "/";
+  const isMessages = pathname === "/dashboard/messages";
+  const isWallets =
+    pathname === "/dashboard/wallets" || pathname.startsWith("/dashboard/wallets/");
   const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
   const easedHomeProgress =
     totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
+
+  if (isMessages || isWallets) return null;
 
   if (appShell) {
     return (

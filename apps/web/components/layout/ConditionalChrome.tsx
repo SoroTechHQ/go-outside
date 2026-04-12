@@ -9,9 +9,13 @@ import type { ReactNode } from "react";
 // Routes that should render without the app shell (sidebar, header, footer, bg)
 const STANDALONE_ROUTES = ["/waitlist", "/ad-waitlist"];
 
+// Routes that suppress only the footer (app chrome stays)
+const NO_FOOTER_ROUTES = ["/dashboard/wallets"];
+
 export function ConditionalChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isStandalone = STANDALONE_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
+  const hideFooter = NO_FOOTER_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
 
   if (isStandalone) {
     return <>{children}</>;
@@ -22,7 +26,7 @@ export function ConditionalChrome({ children }: { children: ReactNode }) {
       <AppBackground />
       <AppChrome />
       <div className="app-content">{children}</div>
-      <Footer />
+      {!hideFooter && <Footer />}
     </>
   );
 }

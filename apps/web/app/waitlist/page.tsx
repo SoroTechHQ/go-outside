@@ -8,8 +8,7 @@ import {
   EnvelopeSimple,
   User,
   Phone,
-  Plus,
-  Minus,
+  CaretDown,
   CheckCircle,
   CalendarCheck,
   Ticket,
@@ -84,8 +83,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     <button onClick={() => setOpen((o) => !o)} className="w-full text-left" aria-expanded={open}>
       <div className="flex items-center justify-between py-4 border-b border-[#ececec]">
         <span className="text-[15px] font-medium text-[#0f110f] pr-6 text-left">{q}</span>
-        <span className="shrink-0 w-6 h-6 rounded-full border border-[#d8d8d8] flex items-center justify-center text-[#6f6f6f]">
-          {open ? <Minus size={11} weight="bold" /> : <Plus size={11} weight="bold" />}
+        <span
+          className="shrink-0 w-6 h-6 rounded-full border border-[#d8d8d8] flex items-center justify-center text-[#6f6f6f] transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          <CaretDown size={11} weight="bold" />
         </span>
       </div>
       <div

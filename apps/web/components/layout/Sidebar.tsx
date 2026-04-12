@@ -69,14 +69,14 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
     role === "organizer" || role === "admin"
       ? [
           { href: "/", label: "Home", icon: House },
-          { href: "/dashboard/notifications", label: "Messages", icon: ChatCircleDots, unread: true },
-          { href: "/dashboard/tickets", label: "Wallets", icon: Wallet },
+          { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
+          { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
           { href: "/dashboard/saved", label: "Activity", icon: TrendUp },
         ]
       : [
           { href: "/", label: "Home", icon: House },
-          { href: "/dashboard/notifications", label: "Messages", icon: ChatCircleDots, unread: true },
-          { href: "/dashboard/tickets", label: "Wallets", icon: Wallet },
+          { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
+          { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
           { href: "/dashboard/saved", label: "Activity", icon: TrendUp },
         ];
 

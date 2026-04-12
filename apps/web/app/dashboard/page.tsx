@@ -67,7 +67,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  <Button href={`/dashboard/tickets/${ticket.id}`}>Open Ticket</Button>
+                  <Button href={`/dashboard/wallets/${ticket.id}`}>Open Ticket</Button>
                   <Button href="/" variant="ghost">
                     Keep Exploring
                   </Button>

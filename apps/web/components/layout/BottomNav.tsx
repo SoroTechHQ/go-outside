@@ -19,10 +19,14 @@ type BottomNavItem = {
 
 export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const pathname = usePathname();
+
+  // Full-screen pages that manage their own layout
+  if (pathname === "/dashboard/messages") return null;
+
   const items: BottomNavItem[] = [
     { href: "/", icon: House, label: "Home" },
-    { href: "/dashboard/notifications", icon: ChatCircleDots, label: "Messages", unread: true },
-    { href: "/dashboard/tickets", icon: Wallet, label: "Wallets" },
+    { href: "/dashboard/messages", icon: ChatCircleDots, label: "Messages", unread: true },
+    { href: "/dashboard/wallets", icon: Wallet, label: "Wallets" },
     { href: "/dashboard/saved", icon: TrendUp, label: "Activity" },
     { href: "/dashboard/profile", icon: UserCircle, label: "Profile" },
   ];

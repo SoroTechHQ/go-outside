@@ -65,10 +65,13 @@ export type Review = {
   rating: string;
 };
 
+export type TicketTier = "default" | "gold" | "silver";
+
 export type AttendeeTicket = {
   id: string;
   eventSlug: string;
   status: string;
+  tier?: TicketTier;
   typeLabel: string;
   reference: string;
   seatLabel: string;
