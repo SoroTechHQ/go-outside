@@ -141,9 +141,9 @@ type Props = { tickets: AttendeeTicket[]; events: (EventItem | undefined)[]; };
           if cards don't overlap enough → decrease PULL_UP
   PULL_UP should equal roughly (card rendered height - PEEK).
 */
-const PEEK = 100;        // px of lower card visible below card above
-const PULL_UP = 765;    // px to pull each card up (≈ card height - PEEK)
-                        // card height ≈ 636px, so 636 - 96 = 540
+
+import { PEEK, PULL_UP } from "./stackConfig";
+export { PEEK, PULL_UP, stackTopMargin } from "./stackConfig";
 
 export function StackedPastTickets({ tickets, events }: Props) {
   const count = tickets.length;

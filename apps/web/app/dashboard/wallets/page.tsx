@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { demoData, getEventBySlug, type AttendeeTicket, type EventItem } from "@gooutside/demo-data";
 import { StackedPastTickets } from "../../../components/wallet/StackedPastTickets";
+import { stackTopMargin } from "../../../components/wallet/stackConfig";
 
 // ─── Tier helpers (server-safe) ───────────────────────────────────────────────
 
@@ -138,7 +139,7 @@ export default function WalletsPage() {
 
 
             {/* Client component — handles stack rendering */}
-            <div className="mt-24 isolate">
+            <div className="isolate" style={{ marginTop: stackTopMargin(past.length) }}>
               <StackedPastTickets tickets={past} events={pastEvents} />
             </div>
           </section>

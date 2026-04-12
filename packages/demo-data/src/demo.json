@@ -222,6 +222,93 @@
       ],
       "gallery": ["Workshop tables", "Print wall", "Conversation pit"],
       "tags": ["design", "visual-culture", "networking"]
+    },
+    {
+      "id": "evt-accra-jazz-night",
+      "slug": "accra-jazz-night",
+      "title": "Accra Jazz Night",
+      "eyebrow": "Late-night sessions",
+      "city": "Accra",
+      "venue": "The Loft, Cantonments",
+      "locationLine": "Cantonments, Accra",
+      "dateLabel": "Friday, March 7",
+      "timeLabel": "8:00 PM",
+      "priceLabel": "GHS 150",
+      "priceValue": 150,
+      "capacityLabel": "180 / 200 seats claimed",
+      "shortDescription": "An intimate jazz evening featuring local ensembles and an open-floor session to close the night.",
+      "description": "Accra Jazz Night is a monthly fixture for the city's growing live-music scene. The format keeps things unhurried — two sets from resident ensembles, a guest feature, and an open-floor closing hour where the crowd and the band meet in the middle.",
+      "categorySlug": "music",
+      "organizerId": "org-sankofa-sessions",
+      "status": "past",
+      "featured": false,
+      "trending": false,
+      "saved": false,
+      "rating": "4.8",
+      "bannerTone": "from-[#1a1a30] via-[#0d0d20] to-[#050510]",
+      "ticketTypes": [
+        { "name": "General Admission", "priceLabel": "GHS 150", "remainingLabel": "Sold out" }
+      ],
+      "gallery": ["Stage setup", "Crowd floor", "Brass section"],
+      "tags": ["jazz", "live-music", "nightlife"]
+    },
+    {
+      "id": "evt-ho-wellness-run",
+      "slug": "ho-wellness-run",
+      "title": "Ho Wellness Run",
+      "eyebrow": "Morning collective",
+      "city": "Ho",
+      "venue": "Ho Municipal Park",
+      "locationLine": "Ho, Volta Region",
+      "dateLabel": "Sunday, January 19",
+      "timeLabel": "6:30 AM",
+      "priceLabel": "GHS 40",
+      "priceValue": 40,
+      "capacityLabel": "520 / 600 spots claimed",
+      "shortDescription": "A community 5K run through Ho's green belt, followed by a breakfast social and recovery session.",
+      "description": "Ho Wellness Run is a quarterly morning event for runners and active community members across the Volta Region. The route winds through the municipal park and surrounding greenery before finishing at a shared breakfast setup with local vendors and a cool-down wellness session.",
+      "categorySlug": "sports",
+      "organizerId": "org-lakefront-social",
+      "status": "past",
+      "featured": false,
+      "trending": false,
+      "saved": false,
+      "rating": "4.5",
+      "bannerTone": "from-[#0d2b1a] via-[#091f13] to-[#040f09]",
+      "ticketTypes": [
+        { "name": "Runner Pass", "priceLabel": "GHS 40", "remainingLabel": "Sold out" }
+      ],
+      "gallery": ["Start line", "Park trail", "Breakfast social"],
+      "tags": ["running", "wellness", "community"]
+    },
+    {
+      "id": "evt-takoradi-art-walk",
+      "slug": "takoradi-art-walk",
+      "title": "Takoradi Art Walk",
+      "eyebrow": "Open studios weekend",
+      "city": "Takoradi",
+      "venue": "Sekondi-Takoradi Cultural Centre",
+      "locationLine": "Market Circle, Takoradi",
+      "dateLabel": "Saturday, February 22",
+      "timeLabel": "11:00 AM",
+      "priceLabel": "GHS 60",
+      "priceValue": 60,
+      "capacityLabel": "310 / 400 seats claimed",
+      "shortDescription": "A self-guided walking tour through open artist studios, pop-up galleries, and live mural installations.",
+      "description": "The Takoradi Art Walk turns the city's streets into a gallery floor for one weekend every quarter. Ticket holders receive a route map and studio guide, unlocking access to private workspaces, artist-led talks, and a communal closing reception at sundown.",
+      "categorySlug": "arts",
+      "organizerId": "org-lakefront-social",
+      "status": "past",
+      "featured": false,
+      "trending": false,
+      "saved": false,
+      "rating": "4.7",
+      "bannerTone": "from-[#2a1a08] via-[#1a1008] to-[#0d0804]",
+      "ticketTypes": [
+        { "name": "Walk Pass", "priceLabel": "GHS 60", "remainingLabel": "Sold out" }
+      ],
+      "gallery": ["Open studio", "Mural wall", "Closing reception"],
+      "tags": ["arts", "walking-tour", "community"]
     }
   ],
   "reviews": [
@@ -298,6 +385,42 @@
         "tier": "default",
         "typeLabel": "Studio Pass",
         "reference": "GO-3H7Q1",
+        "seatLabel": "Open",
+        "holderName": "Kofi Mensah",
+        "calendarLabel": "Add to Calendar",
+        "shareLabel": "Share Ticket"
+      },
+      {
+        "id": "ticket-ho-wellness-run",
+        "eventSlug": "ho-wellness-run",
+        "status": "past",
+        "tier": "default",
+        "typeLabel": "Runner Pass",
+        "reference": "GO-1R9K3",
+        "seatLabel": "Open",
+        "holderName": "Kofi Mensah",
+        "calendarLabel": "Add to Calendar",
+        "shareLabel": "Share Ticket"
+      },
+      {
+        "id": "ticket-accra-jazz-night",
+        "eventSlug": "accra-jazz-night",
+        "status": "past",
+        "tier": "gold",
+        "typeLabel": "General Admission",
+        "reference": "GO-7J4N8",
+        "seatLabel": "Floor",
+        "holderName": "Kofi Mensah",
+        "calendarLabel": "Add to Calendar",
+        "shareLabel": "Share Ticket"
+      },
+      {
+        "id": "ticket-takoradi-art-walk",
+        "eventSlug": "takoradi-art-walk",
+        "status": "past",
+        "tier": "silver",
+        "typeLabel": "Walk Pass",
+        "reference": "GO-2W6R5",
         "seatLabel": "Open",
         "holderName": "Kofi Mensah",
         "calendarLabel": "Add to Calendar",
@@ -382,7 +505,8 @@
     },
     "ticketTypes": [
       { "name": "Early Access", "priceLabel": "GHS 120", "quantity": "80", "limit": "2 per user" },
-      { "name": "General Access", "priceLabel": "GHS 180", "quantity": "160", "limit": "4 per user" }
+      { "name": "General Access", "priceLabel": "GHS 180", "quantity": "160", "limit": "4 per user" },
+      { "name": "Table for Two", "priceLabel": "GHS 480", "quantity": "10", "limit": "1 per user" }
     ]
   }
 }
