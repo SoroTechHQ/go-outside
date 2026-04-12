@@ -41,6 +41,10 @@ const FAQ_ITEMS = [
     a: "The first 1,000 people to join GoOutside get permanent Founding Member status. Your badge lives on your profile forever, and you earn 2× Pulse points for your first 90 days — meaning faster recommendations, bigger influence, and a head start on the scene.",
   },
   {
+    q: "What are Pulse points?",
+    a: "Pulse is GoOutside's way of measuring how connected you are to Accra's scene. Every time you attend an event, leave a review, or engage on the platform, you earn Pulse points. Your score builds over time, unlocks tiers from Newcomer to Legend, and converts into real value — the more points you earn, the more you can redeem towards tickets and experiences. As a Founding Member, you earn points at 2× the normal rate for your first 90 days. That means you build your score faster, unlock tiers sooner, and carry more influence over what gets recommended to your friends. The earlier you join, the bigger your head start.",
+  },
+  {
     q: "I'm an event organizer — is this for me too?",
     a: "Absolutely. Organizers get a dedicated dashboard to list events, embed TikToks and Reels natively, manage tickets, and tap into GoOutside's social graph to reach exactly the audience who'd love their event.",
   },
