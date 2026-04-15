@@ -8,9 +8,14 @@ import { createAdminRouter } from './routes/admin.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createDiscoveryRouter } from './routes/discovery.js';
 import { createEventsRouter } from './routes/events.js';
+import { createFeedRouter } from './routes/feed.js';
+import { createFriendsRouter } from './routes/friends.js';
+import { createInteractionsRouter } from './routes/interactions.js';
 import { createMediaRouter } from './routes/media.js';
 import { createOrganizerRouter } from './routes/organizer.js';
 import { createPaymentsRouter } from './routes/payments.js';
+import { createPreviewRouter } from './routes/preview.js';
+import { createSessionsRouter } from './routes/sessions.js';
 import { createTicketsRouter } from './routes/tickets.js';
 import { MemoryStore } from './store.js';
 
@@ -43,6 +48,8 @@ export function createApp(options?: {
   );
 
   app.route('/auth', createAuthRouter(store, services));
+  // preview must be registered before events so /:slug/preview is matched first
+  app.route('/events', createPreviewRouter(store, services));
   app.route('/events', createEventsRouter(store, services));
   app.route('/tickets', createTicketsRouter(store, services));
   app.route('/payments', createPaymentsRouter(store, services));
@@ -50,6 +57,12 @@ export function createApp(options?: {
   app.route('/admin', createAdminRouter(store, services));
   app.route('/discovery', createDiscoveryRouter(store, services));
   app.route('/media', createMediaRouter(store, services));
+
+  // v2 — Algorithm + Social layer
+  app.route('/feed', createFeedRouter(store, services));
+  app.route('/interactions', createInteractionsRouter(store, services));
+  app.route('/sessions', createSessionsRouter(store, services));
+  app.route('/friends', createFriendsRouter(store, services));
 
   return { app, store, services };
 }

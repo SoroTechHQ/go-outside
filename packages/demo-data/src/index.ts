@@ -1,4 +1,5 @@
 import rawDemo from "./demo.json";
+import rawSeed from "./ghana-seed.json";
 
 export type NavLink = {
   label: string;
@@ -184,4 +185,52 @@ export function filterEvents(filters: {
 
     return cityMatch && categoryMatch && priceMatch && queryMatch;
   });
+}
+
+// ── Ghana seed data (120 users, 30 events, interactions) ──────────────────
+
+export const seedData = rawSeed;
+
+export const seedUsers     = rawSeed.users;
+export const seedEvents    = rawSeed.events;
+export const seedEdges     = rawSeed.graph_edges;
+export const seedFriendships = rawSeed.friendships;
+export const seedSnippets  = rawSeed.snippets;
+export const seedFeedSections = rawSeed.feed_sections;
+export const seedScarcity  = rawSeed.scarcity_states;
+
+export type SeedUser = (typeof rawSeed.users)[0];
+export type SeedEvent = (typeof rawSeed.events)[0];
+export type SeedEdge = (typeof rawSeed.graph_edges)[0];
+export type SeedSnippet = (typeof rawSeed.snippets)[0];
+export type ScarcityState = keyof typeof rawSeed.scarcity_states;
+
+export function getSeedEventBySlug(slug: string) {
+  return rawSeed.events.find((e) => e.slug === slug);
+}
+
+export function getSeedUserById(id: string) {
+  return rawSeed.users.find((u) => u.id === id);
+}
+
+export function getSeedEventsByCategory(categorySlug: string) {
+  return rawSeed.events.filter((e) => e.categorySlug === categorySlug);
+}
+
+export function getSeedUserFriends(userId: string) {
+  return rawSeed.friendships
+    .filter(
+      (f) =>
+        (f.requesterId === userId || f.addresseeId === userId) &&
+        f.status === "accepted"
+    )
+    .map((f) => (f.requesterId === userId ? f.addresseeId : f.requesterId));
+}
+
+export function getScarcityForEvent(eventId: string) {
+  return (rawSeed.scarcity_states as Record<string, { state: string; ticketsRemaining: number; fillRate: number; label: string }>)[eventId] ?? null;
+}
+
+export function getSeedFeedSection(sectionKey: string) {
+  return (rawSeed.feed_sections as Record<string, unknown>)[sectionKey] ?? null;
 }
