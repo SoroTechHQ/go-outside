@@ -80,12 +80,13 @@ export function LockModal({ event, onClose }: LockModalProps) {
               className="mb-2 text-center text-[22px] font-normal italic text-[#F5FFF0]"
               style={{ fontFamily: "'DM Serif Display', serif" }}
             >
-              Create a free account to continue
+              GoOutside is coming soon
             </h2>
 
             {/* Subtitle */}
             <p className="mb-6 text-center text-[14px] font-light leading-relaxed text-[#6B8C6B]">
-              Save events, buy tickets, and discover what your friends are going to.
+              We&apos;re launching in Accra soon. Join the waitlist for early access,
+              ticket drops, and first look at events near you.
             </p>
 
             {/* Event preview strip */}
@@ -115,15 +116,15 @@ export function LockModal({ event, onClose }: LockModalProps) {
             {/* Primary CTA */}
             <Link
               ref={firstFocusRef}
-              href="/sign-up"
+              href="/waitlist"
               className="mb-3 flex h-12 w-full items-center justify-center rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.25)] transition hover:brightness-110"
             >
-              Create free account →
+              Join the waitlist →
             </Link>
 
             {/* Sign in link */}
             <p className="text-center text-[13px] text-[#6B8C6B]">
-              Already have an account?{" "}
+              Already have early access?{" "}
               <Link href="/sign-in" className="text-[#5FBF2A] underline-offset-2 hover:underline">
                 Sign in
               </Link>

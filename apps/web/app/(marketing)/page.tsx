@@ -11,6 +11,7 @@ import {
   CheckCircle,
   ArrowLeft,
   ArrowRight,
+  ArrowDown,
 } from "@phosphor-icons/react";
 import { EventPreviewCard } from "../../components/landing/EventPreviewCard";
 import { LockModal }        from "../../components/landing/LockModal";
@@ -118,11 +119,7 @@ export default function LandingPage() {
   const closeLock = useCallback(() => setLockedEvent(undefined), []);
 
   function handleSearch() {
-    if (searchVal.trim()) {
-      void router.push(`/sign-up?intent=search&q=${encodeURIComponent(searchVal.trim())}`);
-    } else {
-      void router.push("/sign-up");
-    }
+    void router.push("/waitlist");
   }
 
   // Horizontal scroll ref for "This Weekend" section
@@ -181,15 +178,20 @@ export default function LandingPage() {
 
         {/* Center content */}
         <div className="relative z-10 flex w-full max-w-[600px] flex-col items-center gap-0 text-center">
-          {/* Eyebrow */}
-          <motion.p
+          {/* Coming soon badge + eyebrow */}
+          <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0 }}
-            className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-[#5FBF2A]"
+            className="mb-4 flex flex-col items-center gap-2"
           >
-            Accra&apos;s Social Event Platform
-          </motion.p>
+            <span className="rounded-full border border-[rgba(95,191,42,0.25)] bg-[rgba(95,191,42,0.08)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5FBF2A]">
+              🇬🇭 &nbsp;Coming Soon to Accra
+            </span>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6B8C6B]">
+              Accra&apos;s Social Event Platform
+            </p>
+          </motion.div>
 
           {/* Headline */}
           <div className="mb-5">
@@ -298,6 +300,23 @@ export default function LandingPage() {
             ))}
           </motion.div>
         </div>
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5"
+        >
+          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#4A6A4A]">
+            Scroll
+          </span>
+          <motion.div
+            animate={{ y: [0, 5, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ArrowDown size={14} color="#4A6A4A" />
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -537,10 +556,10 @@ export default function LandingPage() {
             </motion.ul>
             <motion.div variants={itemVariants}>
               <Link
-                href="/sign-up?role=organizer"
+                href="/waitlist?role=organizer"
                 className="inline-flex h-12 items-center rounded-full border border-[rgba(95,191,42,0.35)] px-7 text-[14px] font-bold text-[#5FBF2A] transition hover:bg-[rgba(95,191,42,0.06)]"
               >
-                Apply as an Organizer →
+                Join as an Organizer →
               </Link>
             </motion.div>
           </div>
@@ -666,6 +685,12 @@ export default function LandingPage() {
         style={{ background: "radial-gradient(ellipse at center, rgba(95,191,42,0.08) 0%, transparent 70%)" }}
       >
         <AnimatedSection className="mx-auto max-w-[640px] px-6">
+          <motion.div variants={itemVariants}>
+            <span className="mb-4 inline-block rounded-full border border-[rgba(95,191,42,0.25)] bg-[rgba(95,191,42,0.08)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5FBF2A]">
+              Early access — limited spots
+            </span>
+          </motion.div>
+
           <motion.h2
             variants={itemVariants}
             className="mb-4 text-[36px] font-normal italic text-[#F5FFF0] md:text-[48px]"
@@ -679,16 +704,17 @@ export default function LandingPage() {
             variants={itemVariants}
             className="mb-8 text-[16px] font-light text-[#6B8C6B]"
           >
-            Join thousands of people discovering, attending, and sharing events across Ghana.
+            We&apos;re launching soon. Join the waitlist to get early access,
+            first-look at events, and exclusive ticket drops.
           </motion.p>
 
           <motion.div variants={itemVariants}>
             <Link
-              href="/sign-up"
+              href="/waitlist"
               className="inline-flex h-14 items-center rounded-full bg-[#5FBF2A] px-10 text-[16px] font-bold text-[#020702]"
               style={{ animation: "pulseGlow 2.5s ease-in-out infinite" }}
             >
-              Start Exploring — It&apos;s Free
+              Join the Waitlist — It&apos;s Free
             </Link>
           </motion.div>
 
@@ -696,7 +722,7 @@ export default function LandingPage() {
             variants={itemVariants}
             className="mt-5 text-[13px] text-[#4A6A4A]"
           >
-            No credit card required · Free to browse · Ghanaian-made 🇬🇭
+            No spam · Free forever to browse · Ghanaian-made 🇬🇭
           </motion.p>
         </AnimatedSection>
       </section>

@@ -4,7 +4,9 @@ import { InstagramLogo, TwitterLogo, TiktokLogo } from "@phosphor-icons/react/di
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#020702] text-[#F5FFF0]">
+    // color-scheme: dark forces browser chrome (scrollbars, inputs) to stay dark
+    // regardless of the visitor's system theme setting
+    <div className="min-h-screen bg-[#020702] text-[#F5FFF0]" style={{ colorScheme: "dark" }}>
       {/* Navbar */}
       <nav
         className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-[rgba(95,191,42,0.06)] px-5 md:px-8"
@@ -39,10 +41,10 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             Sign in
           </Link>
           <Link
-            href="/sign-up"
+            href="/waitlist"
             className="flex h-[38px] items-center rounded-full bg-[#5FBF2A] px-5 text-[13px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.25)] transition hover:brightness-110"
           >
-            Get Started
+            Join Waitlist
           </Link>
         </div>
       </nav>
@@ -89,7 +91,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#5FBF2A]">Platform</p>
             {["Discover Events", "For Organizers", "Pricing", "Download App"].map((link) => (
               <div key={link}>
-                <Link href="/sign-up" className="text-[14px] text-[#6B8C6B] transition hover:text-[#F5FFF0]">
+                <Link href="/waitlist" className="text-[14px] text-[#6B8C6B] transition hover:text-[#F5FFF0]">
                   {link}
                 </Link>
               </div>

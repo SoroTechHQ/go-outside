@@ -22,10 +22,12 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
   const dotClr = CATEGORY_COLORS[event.category] ?? "#5FBF2A";
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group relative flex w-full flex-col overflow-hidden rounded-[14px] border border-[rgba(95,191,42,0.08)] bg-[#0D140D] text-left transition-all duration-200 hover:-translate-y-[3px] hover:border-[rgba(95,191,42,0.22)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-[14px] border border-[rgba(95,191,42,0.08)] bg-[#0D140D] text-left transition-all duration-200 hover:-translate-y-[3px] hover:border-[rgba(95,191,42,0.22)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
     >
       {/* Image */}
       <div className="relative w-full overflow-hidden" style={{ height: imgH }}>
@@ -106,6 +108,6 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
           </p>
         )}
       </div>
-    </button>
+    </div>
   );
 }
