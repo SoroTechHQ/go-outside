@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
-import type { VibeData } from "../../../../lib/onboarding-utils";
+import type { VibeData } from "@/lib/onboarding-utils";
 
 /* ── Question data ─────────────────────────────────────────────────────────── */
 
@@ -129,8 +129,8 @@ export default function OnboardingVibePage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100svh-64px)] flex-col items-center justify-center px-5 py-10 sm:px-8">
-      <div className="w-full max-w-lg">
+    <div>
+      <div>
         <div className="mb-8 text-center">
           <h1
             className="text-[26px] font-normal italic text-[#F5FFF0]"

@@ -22,10 +22,13 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json() as Record<string, unknown>;
 
-  // Whitelist updatable fields
+  // Whitelist updatable scalar fields
   const allowed = [
     "first_name", "last_name", "username", "bio", "phone",
-    "location_city", "interests", "vibe",
+    "location_city", "location_city_name", "location_region",
+    "location_country", "location_formatted", "location_place_id",
+    "location_source",
+    "interests", "vibe",
     "pulse_score", "pulse_tier", "onboarding_complete",
     "avatar_url",
   ] as const;
@@ -33,6 +36,13 @@ export async function PATCH(req: NextRequest) {
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];
+  }
+
+  // PostGIS point: convert lat/lng floats → EWKT string Supabase accepts
+  const lat = body.location_lat as number | undefined;
+  const lng = body.location_lng as number | undefined;
+  if (lat != null && lng != null && lat !== 0 && lng !== 0) {
+    updates.location_point = `SRID=4326;POINT(${lng} ${lat})`;
   }
 
   const { data, error } = await supabaseAdmin

@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
-import { computeStartingScore, getTierFromScore, getTierSlug } from "../../../../lib/onboarding-utils";
-import type { VibeData } from "../../../../lib/onboarding-utils";
+import { computeStartingScore, getTierFromScore, getTierSlug } from "@/lib/onboarding-utils";
+import type { VibeData } from "@/lib/onboarding-utils";
 
 type Phase = "loading" | "reveal";
 
@@ -97,7 +97,7 @@ export default function OnboardingPulsePage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100svh-64px)] flex-col items-center justify-center px-5 py-10 text-center">
+    <div className="text-center">
       <AnimatePresence mode="wait">
         {phase === "loading" ? (
           <motion.div

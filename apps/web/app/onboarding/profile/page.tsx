@@ -3,18 +3,29 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { GHANA_CITIES } from "../../../../lib/onboarding-utils";
+import { LocationAutocomplete, type PlaceResult } from "../../../components/ui/LocationAutocomplete";
 
 const schema = z.object({
-  first_name:    z.string().min(1, "Required"),
-  last_name:     z.string().min(1, "Required"),
-  username:      z.string().min(2, "Min 2 characters").max(30).regex(/^[a-z0-9._]+$/, "Lowercase letters, numbers, . and _ only").optional().or(z.literal("")),
-  phone:         z.string().optional().or(z.literal("")),
-  location_city: z.string().min(1, "Required"),
+  first_name: z.string().min(1, "Required"),
+  last_name:  z.string().min(1, "Required"),
+  username:   z.string().min(2, "Min 2 characters").max(30).regex(/^[a-z0-9._]+$/, "Lowercase letters, numbers, . and _ only").optional().or(z.literal("")),
+  phone:      z.string().optional().or(z.literal("")),
+  location:   z.object({
+    place_id:          z.string(),
+    city_name:         z.string().min(1, "Required"),
+    region:            z.string(),
+    country:           z.string(),
+    formatted_address: z.string(),
+    lat:               z.number(),
+    lng:               z.number(),
+  }, { required_error: "Please select your city" }).nullable().refine(
+    (v) => v !== null && v.city_name.length > 0,
+    "Please select your city"
+  ),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -30,14 +41,14 @@ export default function OnboardingProfilePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      first_name:    "",
-      last_name:     "",
-      username:      "",
-      phone:         "",
-      location_city: "Accra",
+      first_name: "",
+      last_name:  "",
+      username:   "",
+      phone:      "",
+      location:   null,
     },
   });
 
@@ -45,11 +56,11 @@ export default function OnboardingProfilePage() {
   useEffect(() => {
     if (!isLoaded || !user) return;
     reset({
-      first_name:    user.firstName ?? "",
-      last_name:     user.lastName  ?? "",
-      username:      (user.username ?? "").toLowerCase(),
-      phone:         user.phoneNumbers?.[0]?.phoneNumber ?? "",
-      location_city: "Accra",
+      first_name: user.firstName ?? "",
+      last_name:  user.lastName  ?? "",
+      username:   (user.username ?? "").toLowerCase(),
+      phone:      user.phoneNumbers?.[0]?.phoneNumber ?? "",
+      location:   null,
     });
   }, [isLoaded, user, reset]);
 
@@ -57,18 +68,37 @@ export default function OnboardingProfilePage() {
     setSubmitting(true);
     setError(null);
     try {
+      const loc = values.location as PlaceResult;
+      const payload = {
+        first_name:          values.first_name,
+        last_name:           values.last_name,
+        username:            values.username,
+        phone:               values.phone,
+        location_city:       loc.city_name,
+        location_city_name:  loc.city_name,
+        location_region:     loc.region,
+        location_country:    loc.country,
+        location_formatted:  loc.formatted_address,
+        location_place_id:   loc.place_id,
+        location_source:     "onboarding",
+        // PostGIS point sent as WKT; API will handle conversion
+        ...(loc.lat && loc.lng
+          ? { location_lat: loc.lat, location_lng: loc.lng }
+          : {}),
+      };
+
       const res = await fetch("/api/users/me", {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(values),
+        body:    JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to save profile");
 
-      // Advance Clerk metadata
+      // Advance Clerk metadata — username is saved to Supabase only,
+      // updating it via Clerk requires extra verification and is unnecessary here
       await user?.update({
         firstName: values.first_name,
         lastName:  values.last_name,
-        username:  values.username || undefined,
         unsafeMetadata: {
           ...(user.unsafeMetadata ?? {}),
           onboardingStep: 2,
@@ -84,15 +114,15 @@ export default function OnboardingProfilePage() {
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-[calc(100svh-64px)] items-center justify-center">
+      <div className="flex min-h-[30vh] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5FBF2A] border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[calc(100svh-64px)] flex-col items-center justify-center px-5 py-10 sm:px-8">
-      <div className="w-full max-w-lg">
+    <div>
+      <div className="mx-auto w-full max-w-lg">
         {/* Avatar */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="relative">
@@ -171,21 +201,25 @@ export default function OnboardingProfilePage() {
             <input {...register("phone")} type="tel" className={inputCls} placeholder="+233 XX XXX XXXX" />
           </div>
 
-          {/* City */}
+          {/* City — Google Places autocomplete */}
           <div>
             <label className={labelCls}>Your city</label>
-            <select
-              {...register("location_city")}
-              className={`${inputCls} cursor-pointer appearance-none`}
-            >
-              {GHANA_CITIES.map((c) => (
-                <option key={c} value={c} className="bg-[#131A13]">
-                  {c}
-                </option>
-              ))}
-            </select>
-            {errors.location_city && (
-              <p className="mt-1 text-[11px] text-red-400">{errors.location_city.message}</p>
+            <Controller
+              name="location"
+              control={control}
+              render={({ field }) => (
+                <LocationAutocomplete
+                  value={field.value as PlaceResult | null}
+                  onChange={field.onChange}
+                  placeholder="Search for your city…"
+                  showShortcuts
+                />
+              )}
+            />
+            {errors.location && (
+              <p className="mt-1 text-[11px] text-red-400">
+                {errors.location.message ?? "Please select your city"}
+              </p>
             )}
           </div>
 

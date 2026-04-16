@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
-import { LANDMARK_BY_ID } from "../../../../lib/landmark-events";
+import { LANDMARK_BY_ID } from "@/lib/landmark-events";
 
 const CATEGORIES = [
   { slug: "music",       name: "Music",        emoji: "🎵" },
@@ -90,8 +90,8 @@ export default function OnboardingInterestsPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100svh-64px)] flex-col items-center justify-center px-5 py-10 sm:px-8">
-      <div className="w-full max-w-lg">
+    <div>
+      <div>
         <div className="mb-8 text-center">
           <h1
             className="text-[26px] font-normal italic text-[#F5FFF0]"
@@ -111,7 +111,7 @@ export default function OnboardingInterestsPage() {
         )}
 
         {/* 4×2 grid */}
-        <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {CATEGORIES.map((cat) => {
             const isSel      = selected.has(cat.slug);
             const fromHistory = historyCategories.has(cat.slug);
@@ -195,11 +195,6 @@ export default function OnboardingInterestsPage() {
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 480px) {
-          .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-      `}</style>
     </div>
   );
 }

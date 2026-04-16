@@ -5,7 +5,7 @@ import { X, Check, Camera } from "@phosphor-icons/react";
 import type { UserProfile } from "../types";
 import { UserAvatar } from "./UserAvatar";
 import { getTierInfo } from "../types";
-import { GHANA_CITIES } from "../../../../lib/onboarding-utils";
+import { LocationAutocomplete, type PlaceResult } from "../../../../components/ui/LocationAutocomplete";
 
 type Props = {
   profile: UserProfile;
@@ -18,7 +18,11 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
   const [lastName,  setLastName]  = useState(profile.name.split(" ").slice(1).join(" ") ?? "");
   const [handle,    setHandle]    = useState(profile.handle);
   const [bio,       setBio]       = useState(profile.bio ?? "");
-  const [location,  setLocation]  = useState(profile.location);
+  const [locationPlace, setLocationPlace] = useState<PlaceResult | null>(
+    profile.location
+      ? { place_id: "", city_name: profile.location, region: "", country: "Ghana", formatted_address: profile.location, lat: 0, lng: 0 }
+      : null
+  );
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState<string | null>(null);
 
@@ -33,11 +37,20 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          first_name:    firstName.trim(),
-          last_name:     lastName.trim(),
-          username:      handle.replace(/^@/, ""),
-          bio:           bio.trim(),
-          location_city: location,
+          first_name:         firstName.trim(),
+          last_name:          lastName.trim(),
+          username:           handle.replace(/^@/, ""),
+          bio:                bio.trim(),
+          location_city:      locationPlace?.city_name ?? "",
+          location_city_name: locationPlace?.city_name ?? "",
+          location_region:    locationPlace?.region ?? "",
+          location_country:   locationPlace?.country ?? "Ghana",
+          location_formatted: locationPlace?.formatted_address ?? "",
+          location_place_id:  locationPlace?.place_id ?? "",
+          location_source:    "manual",
+          ...(locationPlace?.lat && locationPlace?.lng
+            ? { location_lat: locationPlace.lat, location_lng: locationPlace.lng }
+            : {}),
         }),
       });
       if (!res.ok) throw new Error("Failed to save");
@@ -46,7 +59,7 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
         name:     `${firstName} ${lastName}`.trim(),
         handle:   handle.replace(/^@/, ""),
         bio:      bio.trim(),
-        location: location,
+        location: locationPlace?.city_name ?? "",
       });
       onClose();
     } catch (e) {
@@ -157,18 +170,12 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
             City
           </label>
-          <select
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className={`${inputCls} appearance-none cursor-pointer`}
-          >
-            {GHANA_CITIES.map((c) => (
-              <option key={c} value={c} className="bg-[#0c1a10]">{c}</option>
-            ))}
-            {!GHANA_CITIES.includes(location as typeof GHANA_CITIES[number]) && location && (
-              <option value={location} className="bg-[#0c1a10]">{location}</option>
-            )}
-          </select>
+          <LocationAutocomplete
+            value={locationPlace}
+            onChange={setLocationPlace}
+            placeholder="Search for your city…"
+            showShortcuts
+          />
         </div>
 
         {error && (

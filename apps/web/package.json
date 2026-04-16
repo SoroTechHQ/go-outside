@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.2.1",
+    "@googlemaps/js-api-loader": "^2.0.2",
     "@gooutside/demo-data": "workspace:*",
     "@gooutside/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
+    "@types/google.maps": "^3.64.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

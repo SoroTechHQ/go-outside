@@ -10,7 +10,7 @@ import {
   INITIAL_LANDMARK_IDS,
   LANDMARK_BY_ID,
   type LandmarkEvent,
-} from "../../../../lib/landmark-events";
+} from "@/lib/landmark-events";
 
 const CATEGORY_COLORS: Record<string, string> = {
   music:       "#7c3aed",
@@ -125,8 +125,8 @@ export default function OnboardingHistoryPage() {
     .filter((e): e is LandmarkEvent => Boolean(e));
 
   return (
-    <div className="flex min-h-[calc(100svh-64px)] flex-col items-center justify-start px-5 py-8 sm:px-8">
-      <div className="w-full max-w-2xl">
+    <div>
+      <div>
         <div className="mb-6 text-center">
           <h1
             className="text-[24px] font-normal italic text-[#F5FFF0]"
