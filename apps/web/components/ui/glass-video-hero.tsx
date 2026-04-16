@@ -24,25 +24,39 @@ const HeroSection = () => {
         {fullBleed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      {/* Video Background */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
-      >
-        <source src={VIDEO_URL} type="video/mp4" />
-      </video>
+      {/* Video + shader stack */}
+      <div className="absolute inset-0 z-0" style={{ isolation: "isolate" }}>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={VIDEO_URL} type="video/mp4" />
+        </video>
 
-      {/* Green hue overlay */}
-      <div
-        className="absolute inset-0 z-[1]"
-        style={{
-          background:
-            "linear-gradient(160deg, rgba(5,25,10,0.72) 0%, rgba(10,45,20,0.60) 50%, rgba(5,25,10,0.75) 100%)",
-        }}
-      />
+        {/* Hue-shift: replaces purple tones with green */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "#2f8f45", mixBlendMode: "hue", opacity: 0.92 }}
+        />
+
+        {/* Darken for readability */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "rgba(0,0,0,0.42)", mixBlendMode: "multiply" }}
+        />
+
+        {/* Radial green accent */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 65% 45% at 50% 40%, rgba(47,143,69,0.22) 0%, transparent 70%)",
+            mixBlendMode: "screen",
+          }}
+        />
+      </div>
 
       {/* Hero Content */}
       <div className="relative z-10 flex flex-col items-center text-center mt-32 px-6">

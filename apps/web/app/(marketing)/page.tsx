@@ -207,38 +207,53 @@ export default function LandingPage() {
           SECTION 1 — HERO
       ════════════════════════════════════════ */}
       <section className="relative flex h-screen items-center justify-center overflow-hidden px-5">
-        {/* ── Video background ── */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ zIndex: 0 }}
-        >
-          <source
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260210_031346_d87182fb-b0af-4273-84d1-c6fd17d6bf0f.mp4"
-            type="video/mp4"
-          />
-        </video>
-
-        {/* ── Green hue overlay ── */}
+        {/* ── Video + shader stack (isolation container) ── */}
         <div
           className="absolute inset-0"
-          style={{
-            zIndex: 1,
-            background:
-              "linear-gradient(160deg, rgba(4,22,10,0.78) 0%, rgba(8,40,18,0.65) 55%, rgba(4,22,10,0.80) 100%)",
-          }}
-        />
-        {/* Soft green radial glow at centre */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            zIndex: 2,
-            background: "radial-gradient(ellipse 70% 50% at 50% 40%, rgba(47,143,69,0.18) 0%, transparent 70%)",
-          }}
-        />
+          style={{ zIndex: 0, isolation: "isolate" }}
+        >
+          {/* Video */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+          >
+            <source
+              src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260210_031346_d87182fb-b0af-4273-84d1-c6fd17d6bf0f.mp4"
+              type="video/mp4"
+            />
+          </video>
+
+          {/* Hue-shift layer — replaces the purple tones in the video with green */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "#2f8f45",
+              mixBlendMode: "hue",
+              opacity: 0.92,
+            }}
+          />
+
+          {/* Darkening layer — brings down brightness for text readability */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "rgba(0,0,0,0.42)",
+              mixBlendMode: "multiply",
+            }}
+          />
+
+          {/* Subtle radial green accent at content centre */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: "radial-gradient(ellipse 65% 45% at 50% 40%, rgba(47,143,69,0.22) 0%, transparent 70%)",
+              mixBlendMode: "screen",
+            }}
+          />
+        </div>
 
         {/* ── Floating card left ── */}
         <motion.div
