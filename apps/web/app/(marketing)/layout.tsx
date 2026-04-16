@@ -4,28 +4,27 @@ import { InstagramLogo, TwitterLogo, TiktokLogo } from "@phosphor-icons/react/di
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
-    // color-scheme: dark forces browser chrome (scrollbars, inputs) to stay dark
-    // regardless of the visitor's system theme setting
-    <div className="min-h-screen bg-[#020702] text-[#F5FFF0]" style={{ colorScheme: "dark" }}>
+    <div
+      className="min-h-screen bg-white text-[#0f110f]"
+      style={{ colorScheme: "light" }}
+    >
       {/* Navbar */}
       <nav
-        className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-[rgba(95,191,42,0.06)] px-5 md:px-8"
-        style={{ background: "rgba(2,7,2,0.85)", backdropFilter: "blur(16px)" }}
+        className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-black/[0.06] px-5 md:px-8"
+        style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(16px)" }}
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-[rgba(95,191,42,0.2)] bg-[rgba(95,191,42,0.15)]"
-          >
+          <div className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.08)]">
             <span
-              className="text-[14px] italic leading-none text-[#5FBF2A]"
+              className="text-[14px] italic leading-none text-[#2f8f45]"
               style={{ fontFamily: "'DM Serif Display', serif" }}
             >
               G
             </span>
           </div>
           <span
-            className="hidden text-[17px] italic text-[#F5FFF0] sm:block"
+            className="hidden text-[17px] italic text-[#0f110f] sm:block"
             style={{ fontFamily: "'DM Serif Display', serif" }}
           >
             GoOutside
@@ -34,15 +33,16 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
 
         {/* Right CTAs */}
         <div className="flex items-center gap-2">
+          {/* TODO: restore href="/sign-in" at launch */}
           <Link
-            href="/sign-in"
-            className="flex h-[38px] items-center rounded-full bg-[rgba(255,255,255,0.04)] px-5 text-[13px] font-medium text-[#6B8C6B] transition hover:bg-[rgba(255,255,255,0.08)] hover:text-[#F5FFF0]"
+            href="/waitlist"
+            className="flex h-[38px] items-center rounded-full bg-black/[0.04] px-5 text-[13px] font-medium text-[#4a4a4a] transition hover:bg-black/[0.07] hover:text-[#0f110f]"
           >
             Sign in
           </Link>
           <Link
             href="/waitlist"
-            className="flex h-[38px] items-center rounded-full bg-[#5FBF2A] px-5 text-[13px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.25)] transition hover:brightness-110"
+            className="flex h-[38px] items-center rounded-full bg-[#2f8f45] px-5 text-[13px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.30)] transition hover:bg-[#256f36]"
           >
             Join Waitlist
           </Link>
@@ -53,32 +53,32 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       {children}
 
       {/* Footer */}
-      <footer className="border-t border-[rgba(95,191,42,0.06)] bg-[#080D08] px-6 pb-8 pt-14 md:px-12">
+      <footer className="border-t border-black/[0.06] bg-[#f8faf8] px-6 pb-8 pt-14 md:px-12">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-3">
-          {/* Brand column */}
+          {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-[rgba(95,191,42,0.2)] bg-[rgba(95,191,42,0.15)]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.08)]">
                 <span
-                  className="text-[14px] italic leading-none text-[#5FBF2A]"
+                  className="text-[14px] italic leading-none text-[#2f8f45]"
                   style={{ fontFamily: "'DM Serif Display', serif" }}
                 >
                   G
                 </span>
               </div>
               <span
-                className="text-[17px] italic text-[#F5FFF0]"
+                className="text-[17px] italic text-[#0f110f]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
                 GoOutside
               </span>
             </Link>
-            <p className="text-[14px] font-light text-[#6B8C6B]">Your city is waiting.</p>
+            <p className="text-[14px] font-light text-[#6f6f6f]">Your city is waiting.</p>
             <div className="flex gap-2">
               {[InstagramLogo, TwitterLogo, TiktokLogo].map((Icon, i) => (
                 <button
                   key={i}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(255,255,255,0.04)] text-[#6B8C6B] transition hover:text-[#F5FFF0]"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.05] text-[#6f6f6f] transition hover:text-[#0f110f]"
                 >
                   <Icon size={16} />
                 </button>
@@ -86,24 +86,24 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Platform column */}
+          {/* Platform */}
           <div className="space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#5FBF2A]">Platform</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Platform</p>
             {["Discover Events", "For Organizers", "Pricing", "Download App"].map((link) => (
               <div key={link}>
-                <Link href="/waitlist" className="text-[14px] text-[#6B8C6B] transition hover:text-[#F5FFF0]">
+                <Link href="/waitlist" className="text-[14px] text-[#6f6f6f] transition hover:text-[#0f110f]">
                   {link}
                 </Link>
               </div>
             ))}
           </div>
 
-          {/* Company column */}
+          {/* Company */}
           <div className="space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#5FBF2A]">Company</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Company</p>
             {["About", "Blog", "Careers", "Privacy Policy", "Terms of Service"].map((link) => (
               <div key={link}>
-                <Link href="#" className="text-[14px] text-[#6B8C6B] transition hover:text-[#F5FFF0]">
+                <Link href="#" className="text-[14px] text-[#6f6f6f] transition hover:text-[#0f110f]">
                   {link}
                 </Link>
               </div>
@@ -112,9 +112,9 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Bottom bar */}
-        <div className="mx-auto mt-10 flex max-w-5xl flex-col items-center justify-between gap-2 border-t border-[rgba(95,191,42,0.05)] pt-6 sm:flex-row">
-          <p className="text-[12px] text-[#4A6A4A]">© 2026 GoOutside. All rights reserved.</p>
-          <p className="text-[12px] text-[#4A6A4A]">Made in Accra 🇬🇭</p>
+        <div className="mx-auto mt-10 flex max-w-5xl flex-col items-center justify-between gap-2 border-t border-black/[0.06] pt-6 sm:flex-row">
+          <p className="text-[12px] text-[#a9a9a9]">© 2026 GoOutside. All rights reserved.</p>
+          <p className="text-[12px] text-[#a9a9a9]">Made in Accra 🇬🇭</p>
         </div>
       </footer>
     </div>

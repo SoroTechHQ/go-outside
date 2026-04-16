@@ -20,7 +20,7 @@ import { AnimatedCounter }  from "../../components/landing/AnimatedCounter";
 import { LANDING_EVENTS }   from "../../lib/landing-data";
 import type { LandingEvent } from "../../lib/landing-data";
 
-/* ── Typewriter hook ────────────────────────────────────────────────────── */
+/* ── Typewriter ──────────────────────────────────────────────────────── */
 
 const TYPEWRITER_PHRASES = [
   "Detty December events",
@@ -39,12 +39,10 @@ function useTypewriter(active: boolean) {
 
   useEffect(() => {
     if (!active) { setDisplay(""); return; }
-
     let timeout: ReturnType<typeof setTimeout>;
 
     function tick() {
       const phrase = TYPEWRITER_PHRASES[phraseIdx.current]!;
-
       if (!deleting.current) {
         charIdx.current++;
         setDisplay(phrase.slice(0, charIdx.current));
@@ -74,7 +72,72 @@ function useTypewriter(active: boolean) {
   return display;
 }
 
-/* ── Animation variants ─────────────────────────────────────────────────── */
+/* ── Search loader overlay ───────────────────────────────────────────── */
+
+const SEARCH_TEXTS = ["Finding events…", "Checking the scene…", "Almost there…"];
+
+function SearchLoader({ query }: { query: string }) {
+  const [textIdx, setTextIdx] = useState(0);
+
+  useEffect(() => {
+    const iv = setInterval(() => setTextIdx((i) => (i + 1) % SEARCH_TEXTS.length), 700);
+    return () => clearInterval(iv);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white"
+    >
+      {/* Expanding rings */}
+      <div className="relative mb-8 flex h-24 w-24 items-center justify-center">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full border border-[rgba(47,143,69,0.3)]"
+            initial={{ width: 36, height: 36, opacity: 0.9 }}
+            animate={{ width: 36 + i * 52, height: 36 + i * 52, opacity: 0 }}
+            transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.45, ease: "easeOut" }}
+          />
+        ))}
+        <div className="absolute flex h-9 w-9 items-center justify-center rounded-full bg-[#2f8f45]">
+          <MagnifyingGlass size={16} color="white" weight="bold" />
+        </div>
+      </div>
+
+      {/* Search query display */}
+      {query && (
+        <motion.p
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-2 max-w-xs truncate text-center text-[18px] font-semibold text-[#0f110f]"
+          style={{ fontFamily: "'DM Serif Display', serif", fontStyle: "italic" }}
+        >
+          &ldquo;{query}&rdquo;
+        </motion.p>
+      )}
+
+      {/* Cycling status text */}
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={textIdx}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="text-[14px] text-[#a9a9a9]"
+        >
+          {SEARCH_TEXTS[textIdx]}
+        </motion.p>
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/* ── Variants ────────────────────────────────────────────────────────── */
 
 const containerVariants = {
   hidden:  {},
@@ -86,11 +149,9 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
-/* ── Section wrappers ───────────────────────────────────────────────────── */
-
 function AnimatedSection({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const ref     = useRef<HTMLDivElement>(null);
-  const inView  = useInView(ref, { once: true, margin: "-80px" });
+  const ref    = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
     <motion.div
       ref={ref}
@@ -104,25 +165,32 @@ function AnimatedSection({ children, className = "" }: { children: React.ReactNo
   );
 }
 
-/* ── Page ───────────────────────────────────────────────────────────────── */
+/* ── Page ────────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   const router = useRouter();
 
-  const [searchVal,    setSearchVal]    = useState("");
+  const [searchVal,     setSearchVal]     = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
-  const [lockedEvent,  setLockedEvent]  = useState<LandingEvent | null | undefined>(undefined);
+  const [lockedEvent,   setLockedEvent]   = useState<LandingEvent | null | undefined>(undefined);
+  const [searching,     setSearching]     = useState(false);
+  const [searchQuery,   setSearchQuery]   = useState("");
 
   const typewriter = useTypewriter(!searchVal && !searchFocused);
 
   const openLock  = useCallback((ev: LandingEvent) => setLockedEvent(ev), []);
   const closeLock = useCallback(() => setLockedEvent(undefined), []);
 
-  function handleSearch() {
-    void router.push("/waitlist");
+  function triggerSearch(query: string) {
+    setSearchQuery(query);
+    setSearching(true);
+    setTimeout(() => router.push("/waitlist"), 900);
   }
 
-  // Horizontal scroll ref for "This Weekend" section
+  function handleSearch() {
+    triggerSearch(searchVal);
+  }
+
   const scrollRef = useRef<HTMLDivElement>(null);
   function scrollRow(dir: number) {
     scrollRef.current?.scrollBy({ left: dir * 420, behavior: "smooth" });
@@ -134,28 +202,24 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* ── Background glow orbs ── */}
+      {/* Subtle green glow — light/airy, not dark */}
       <div
-        className="pointer-events-none fixed -left-40 -top-40 -z-10 h-[600px] w-[600px] rounded-full blur-[180px]"
-        style={{ background: "rgba(95,191,42,0.07)" }}
+        className="pointer-events-none fixed -left-60 -top-60 -z-10 h-[700px] w-[700px] rounded-full blur-[200px]"
+        style={{ background: "rgba(47,143,69,0.05)" }}
       />
       <div
-        className="pointer-events-none fixed -right-40 top-1/2 -z-10 h-[500px] w-[500px] rounded-full blur-[160px]"
-        style={{ background: "rgba(95,191,42,0.05)" }}
-      />
-      <div
-        className="pointer-events-none fixed -bottom-40 left-1/3 -z-10 h-[400px] w-[400px] rounded-full blur-[140px]"
-        style={{ background: "rgba(95,191,42,0.04)" }}
+        className="pointer-events-none fixed -right-60 top-1/3 -z-10 h-[600px] w-[600px] rounded-full blur-[200px]"
+        style={{ background: "rgba(47,143,69,0.04)" }}
       />
 
-      {/* ══════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════
           SECTION 1 — HERO
-      ══════════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       <section className="relative flex h-screen items-center justify-center overflow-hidden px-5">
-        {/* Floating card — left (desktop only) */}
+        {/* Floating card left */}
         <motion.div
           className="pointer-events-none absolute left-[calc(50%-480px)] top-1/2 hidden -translate-y-1/2 md:block"
-          style={{ rotate: -6, opacity: 0.55, willChange: "transform" }}
+          style={{ rotate: -6, opacity: 0.6, willChange: "transform" }}
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -164,10 +228,10 @@ export default function LandingPage() {
           </div>
         </motion.div>
 
-        {/* Floating card — right (desktop only) */}
+        {/* Floating card right */}
         <motion.div
           className="pointer-events-none absolute right-[calc(50%-480px)] top-1/2 hidden -translate-y-1/2 md:block"
-          style={{ rotate: 6, opacity: 0.55, willChange: "transform" }}
+          style={{ rotate: 6, opacity: 0.6, willChange: "transform" }}
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         >
@@ -177,18 +241,18 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Center content */}
-        <div className="relative z-10 flex w-full max-w-[600px] flex-col items-center gap-0 text-center">
-          {/* Coming soon badge + eyebrow */}
+        <div className="relative z-10 flex w-full max-w-[600px] flex-col items-center text-center">
+          {/* Coming soon + eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0 }}
-            className="mb-4 flex flex-col items-center gap-2"
+            transition={{ duration: 0.4 }}
+            className="mb-5 flex flex-col items-center gap-2"
           >
-            <span className="rounded-full border border-[rgba(95,191,42,0.25)] bg-[rgba(95,191,42,0.08)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5FBF2A]">
+            <span className="rounded-full border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.07)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2f8f45]">
               🇬🇭 &nbsp;Coming Soon to Accra
             </span>
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6B8C6B]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#a9a9a9]">
               Accra&apos;s Social Event Platform
             </p>
           </motion.div>
@@ -201,7 +265,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 + i * 0.08 }}
-                className="block text-[40px] font-normal italic leading-[1.05] text-[#F5FFF0] sm:text-[56px] md:text-[72px]"
+                className="block text-[40px] font-normal italic leading-[1.05] text-[#0f110f] sm:text-[56px] md:text-[72px]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
                 {line}
@@ -214,7 +278,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="mb-7 max-w-[480px] text-[15px] font-light text-[#6B8C6B] sm:text-[18px]"
+            className="mb-8 max-w-[480px] text-[15px] font-light text-[#6f6f6f] sm:text-[18px]"
           >
             Discover events. Go with friends. Build your scene.
           </motion.p>
@@ -227,19 +291,21 @@ export default function LandingPage() {
             className="mb-7 w-full"
           >
             <div
-              className="flex h-14 w-full items-center rounded-full transition-all duration-200"
+              role="button"
+              tabIndex={0}
+              onClick={() => triggerSearch(searchVal)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") triggerSearch(searchVal); }}
+              className="flex h-14 w-full cursor-pointer items-center rounded-full bg-white transition-all duration-200"
               style={{
-                background:    "rgba(13,20,13,0.90)",
-                border:        searchFocused
-                  ? "1px solid rgba(95,191,42,0.35)"
-                  : "1px solid rgba(95,191,42,0.20)",
-                boxShadow:     searchFocused
-                  ? "0 0 0 1px rgba(95,191,42,0.08), 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(95,191,42,0.08)"
-                  : "0 0 0 1px rgba(95,191,42,0.08), 0 8px 32px rgba(0,0,0,0.4)",
-                backdropFilter: "blur(12px)",
+                border:     searchFocused
+                  ? "1px solid rgba(47,143,69,0.40)"
+                  : "1px solid rgba(0,0,0,0.10)",
+                boxShadow:  searchFocused
+                  ? "0 0 0 3px rgba(47,143,69,0.08), 0 4px 20px rgba(0,0,0,0.08)"
+                  : "0 2px 12px rgba(0,0,0,0.06)",
               }}
             >
-              <MagnifyingGlass size={20} className="ml-5 shrink-0 text-[#4A6A4A]" />
+              <MagnifyingGlass size={20} className="ml-5 shrink-0 text-[#c0c0c0]" />
               <div className="relative ml-3 flex-1">
                 <input
                   type="text"
@@ -247,33 +313,34 @@ export default function LandingPage() {
                   onChange={(e) => setSearchVal(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
+                  onClick={() => triggerSearch(searchVal)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-                  className="w-full bg-transparent text-[15px] text-[#F5FFF0] outline-none placeholder-transparent"
+                  className="w-full cursor-pointer bg-transparent text-[15px] text-[#0f110f] outline-none placeholder-transparent"
                   placeholder="Search"
                   aria-label="Search events"
+                  readOnly
                 />
-                {/* Typewriter placeholder */}
                 {!searchVal && !searchFocused && (
                   <span
-                    className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[15px] text-[#4A6A4A]"
+                    className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[15px] text-[#c0c0c0]"
                     aria-hidden
                   >
                     {typewriter}
-                    <span className="ml-px inline-block w-[1px] animate-pulse bg-[#4A6A4A]">&nbsp;</span>
+                    <span className="ml-px inline-block w-[1px] animate-pulse bg-[#c0c0c0]">&nbsp;</span>
                   </span>
                 )}
               </div>
               <button
                 type="button"
-                onClick={handleSearch}
-                className="mr-2 flex h-10 items-center rounded-full bg-[#5FBF2A] px-5 text-[14px] font-bold text-[#020702] transition hover:brightness-110"
+                onClick={(e) => { e.stopPropagation(); handleSearch(); }}
+                className="mr-2 flex h-10 items-center rounded-full bg-[#2f8f45] px-5 text-[14px] font-bold text-white transition hover:bg-[#256f36]"
               >
                 Search
               </button>
             </div>
           </motion.div>
 
-          {/* Social proof row */}
+          {/* Social proof */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -286,81 +353,77 @@ export default function LandingPage() {
               { num: "4.9★", label: "average event rating" },
             ].map((stat, i) => (
               <div key={stat.num} className="flex items-center gap-6">
-                {i > 0 && <div className="h-4 w-px bg-[rgba(95,191,42,0.12)]" />}
+                {i > 0 && <div className="h-4 w-px bg-black/[0.10]" />}
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="text-[16px] font-normal italic text-[#5FBF2A]"
+                    className="text-[16px] font-normal italic text-[#2f8f45]"
                     style={{ fontFamily: "'DM Serif Display', serif" }}
                   >
                     {stat.num}
                   </span>
-                  <span className="text-[12px] font-light text-[#6B8C6B]">{stat.label}</span>
+                  <span className="text-[12px] font-light text-[#a9a9a9]">{stat.label}</span>
                 </div>
               </div>
             ))}
           </motion.div>
-        </div>
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.6 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5"
-        >
-          <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#4A6A4A]">
-            Scroll
-          </span>
+
+          {/* Scroll indicator — sits just below social proof so it's visible mid-screen */}
           <motion.div
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 0.6 }}
+            className="mt-10 flex flex-col items-center gap-1.5"
           >
-            <ArrowDown size={14} color="#4A6A4A" />
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#c0c0c0]">
+              Scroll
+            </span>
+            <motion.div
+              animate={{ y: [0, 5, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ArrowDown size={14} color="#c0c0c0" />
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 2 — TICKER BAR
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          SECTION 2 — TICKER
+      ════════════════════════════════════════ */}
       <TickerBar />
 
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 3 — LIVE EVENT CARDS
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          SECTION 3 — EVENT CARDS
+      ════════════════════════════════════════ */}
       <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
-        {/* Header */}
         <AnimatedSection className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <motion.div variants={itemVariants}>
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#5FBF2A]">Discover</p>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Discover</p>
             <h2
-              className="text-[28px] font-normal italic text-[#F5FFF0] md:text-[36px]"
+              className="text-[28px] font-normal italic text-[#0f110f] md:text-[36px]"
               style={{ fontFamily: "'DM Serif Display', serif" }}
             >
               What&apos;s happening in Accra
             </h2>
-            <p className="mt-1 text-[16px] font-light text-[#6B8C6B]">
-              Browse upcoming events. Sign up to save, share, and buy tickets.
+            <p className="mt-1 text-[16px] font-light text-[#6f6f6f]">
+              Browse upcoming events. Join the waitlist to save and buy tickets.
             </p>
           </motion.div>
           <motion.div variants={itemVariants} className="shrink-0">
             <button
               onClick={() => setLockedEvent(featuredEvent)}
-              className="text-[14px] text-[#5FBF2A] underline-offset-2 hover:underline"
+              className="text-[14px] text-[#2f8f45] underline-offset-2 hover:underline"
             >
               See all events →
             </button>
           </motion.div>
         </AnimatedSection>
 
-        {/* Grid */}
         <AnimatedSection>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr]">
-            {/* Featured large card */}
             <motion.div variants={itemVariants}>
               <EventPreviewCard event={featuredEvent} variant="featured" onClick={() => openLock(featuredEvent)} />
             </motion.div>
-
-            {/* 2×2 small cards */}
             <div className="grid grid-cols-2 gap-3">
               {gridEvents.map((ev) => (
                 <motion.div key={ev.id} variants={itemVariants}>
@@ -372,16 +435,16 @@ export default function LandingPage() {
         </AnimatedSection>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 4 — HORIZONTAL SCROLL "THIS WEEKEND"
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          SECTION 4 — THIS WEEKEND
+      ════════════════════════════════════════ */}
       <section className="py-10">
         <div className="mx-auto max-w-5xl px-5 md:px-8">
           <AnimatedSection className="mb-4 flex items-center justify-between">
             <motion.div variants={itemVariants} className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#5FBF2A]" />
+              <span className="h-2 w-2 rounded-full bg-[#2f8f45]" />
               <h3
-                className="text-[18px] font-normal italic text-[#F5FFF0]"
+                className="text-[18px] font-normal italic text-[#0f110f]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
                 This weekend
@@ -390,19 +453,19 @@ export default function LandingPage() {
             <motion.div variants={itemVariants} className="flex items-center gap-2">
               <button
                 onClick={() => setLockedEvent(featuredEvent)}
-                className="text-[13px] text-[#6B8C6B] transition hover:text-[#F5FFF0]"
+                className="text-[13px] text-[#6f6f6f] transition hover:text-[#0f110f]"
               >
                 See all →
               </button>
               <button
                 onClick={() => scrollRow(-1)}
-                className="hidden h-9 w-9 items-center justify-center rounded-full border border-[rgba(95,191,42,0.10)] bg-[#0D140D] text-[#6B8C6B] transition hover:text-[#F5FFF0] md:flex"
+                className="hidden h-9 w-9 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#6f6f6f] transition hover:text-[#0f110f] md:flex"
               >
                 <ArrowLeft size={14} />
               </button>
               <button
                 onClick={() => scrollRow(1)}
-                className="hidden h-9 w-9 items-center justify-center rounded-full border border-[rgba(95,191,42,0.10)] bg-[#0D140D] text-[#6B8C6B] transition hover:text-[#F5FFF0] md:flex"
+                className="hidden h-9 w-9 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#6f6f6f] transition hover:text-[#0f110f] md:flex"
               >
                 <ArrowRight size={14} />
               </button>
@@ -423,14 +486,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════
           SECTION 5 — HOW IT WORKS
-      ══════════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
         <AnimatedSection className="mb-10 text-center">
           <motion.h2
             variants={itemVariants}
-            className="text-[28px] font-normal italic text-[#F5FFF0] md:text-[36px]"
+            className="text-[28px] font-normal italic text-[#0f110f] md:text-[36px]"
             style={{ fontFamily: "'DM Serif Display', serif" }}
           >
             How GoOutside works
@@ -461,83 +524,78 @@ export default function LandingPage() {
             <motion.div
               key={step}
               variants={itemVariants}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="relative overflow-hidden rounded-[16px] border border-[rgba(95,191,42,0.10)] bg-[#0D140D] p-7"
+              className="relative overflow-hidden rounded-[16px] border border-black/[0.07] bg-white p-7 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
             >
-              {/* Top gradient line */}
               <div
                 className="absolute left-0 right-0 top-0 h-px"
-                style={{ background: "linear-gradient(to right, transparent, rgba(95,191,42,0.2), transparent)" }}
+                style={{ background: "linear-gradient(to right, transparent, rgba(47,143,69,0.25), transparent)" }}
               />
-              {/* Decorative step number */}
               <span
-                className="absolute right-5 top-4 select-none text-[48px] font-normal italic leading-none text-[#F5FFF0]"
-                style={{ fontFamily: "'DM Serif Display', serif", opacity: 0.06 }}
+                className="absolute right-5 top-4 select-none text-[48px] font-normal italic leading-none text-[#0f110f]"
+                style={{ fontFamily: "'DM Serif Display', serif", opacity: 0.04 }}
               >
                 {step}
               </span>
-              {/* Icon */}
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(95,191,42,0.10)]">
-                <Icon size={28} color="#5FBF2A" />
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(47,143,69,0.08)]">
+                <Icon size={28} color="#2f8f45" />
               </div>
               <h3
-                className="mb-2 text-[20px] font-normal italic text-[#F5FFF0]"
+                className="mb-2 text-[20px] font-normal italic text-[#0f110f]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
                 {title}
               </h3>
-              <p className="text-[14px] font-light leading-[1.65] text-[#6B8C6B]">{body}</p>
+              <p className="text-[14px] font-light leading-[1.65] text-[#6f6f6f]">{body}</p>
             </motion.div>
           ))}
         </AnimatedSection>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 6 — STATS BANNER
-      ══════════════════════════════════════════════════════════════════ */}
-      <section className="border-y border-[rgba(95,191,42,0.06)] bg-[#080D08] py-10">
+      {/* ════════════════════════════════════════
+          SECTION 6 — STATS
+      ════════════════════════════════════════ */}
+      <section className="border-y border-black/[0.06] bg-[#f8faf8] py-10">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-8 px-5 sm:flex-row sm:gap-0">
           {[
-            { target: 89, suffix: "K+", label: "People going out" },
+            { target: 89,  suffix: "K+", label: "People going out" },
             { target: 340, suffix: "+",  label: "Events this month" },
             { target: 28,  suffix: "",   label: "Cities" },
-            { target: 49,  suffix: "★",  label: "Average rating", display: "4.9★" },
+            { display: "4.9★", label: "Average rating" },
           ].map((stat, i) => (
             <div key={stat.label} className="flex flex-1 items-center">
-              {i > 0 && <div className="mx-auto hidden h-12 w-px self-center bg-[rgba(95,191,42,0.06)] sm:block" />}
+              {i > 0 && <div className="mx-auto hidden h-12 w-px self-center bg-black/[0.07] sm:block" />}
               <div className="flex-1 text-center">
                 <p
-                  className="text-[32px] font-normal italic leading-none text-[#F5FFF0] md:text-[40px]"
+                  className="text-[32px] font-normal italic leading-none text-[#0f110f] md:text-[40px]"
                   style={{ fontFamily: "'DM Serif Display', serif" }}
                 >
-                  {stat.display ? stat.display : (
-                    <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                  {"display" in stat && stat.display ? stat.display : (
+                    <AnimatedCounter target={(stat as { target: number; suffix: string; label: string }).target} suffix={(stat as { target: number; suffix: string; label: string }).suffix} />
                   )}
                 </p>
-                <p className="mt-1.5 text-[14px] text-[#6B8C6B]">{stat.label}</p>
+                <p className="mt-1.5 text-[14px] text-[#6f6f6f]">{stat.label}</p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════
           SECTION 7 — FOR ORGANIZERS
-      ══════════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
         <AnimatedSection className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-16">
-          {/* Text column */}
           <div className="space-y-5">
             <motion.div variants={itemVariants}>
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#5FBF2A]">For Organizers</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">For Organizers</p>
               <h2
-                className="text-[28px] font-normal italic text-[#F5FFF0] md:text-[36px]"
+                className="text-[28px] font-normal italic text-[#0f110f] md:text-[36px]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
                 Bring your events to life
               </h2>
             </motion.div>
-            <motion.p variants={itemVariants} className="text-[16px] font-light leading-relaxed text-[#6B8C6B]">
+            <motion.p variants={itemVariants} className="text-[16px] font-light leading-relaxed text-[#6f6f6f]">
               GoOutside gives you everything you need to sell tickets, manage attendees, and grow your audience in Ghana.
               No monthly fees. Just a small platform fee per ticket sold.
             </motion.p>
@@ -548,8 +606,8 @@ export default function LandingPage() {
                 "Analytics: revenue, ticket velocity, ratings",
                 "Free to list. 5% fee on paid tickets only.",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-[14px] text-[#6B8C6B]">
-                  <CheckCircle size={20} color="#5FBF2A" weight="fill" className="mt-0.5 shrink-0" />
+                <li key={item} className="flex items-start gap-3 text-[14px] text-[#6f6f6f]">
+                  <CheckCircle size={20} color="#2f8f45" weight="fill" className="mt-0.5 shrink-0" />
                   {item}
                 </li>
               ))}
@@ -557,7 +615,7 @@ export default function LandingPage() {
             <motion.div variants={itemVariants}>
               <Link
                 href="/waitlist?role=organizer"
-                className="inline-flex h-12 items-center rounded-full border border-[rgba(95,191,42,0.35)] px-7 text-[14px] font-bold text-[#5FBF2A] transition hover:bg-[rgba(95,191,42,0.06)]"
+                className="inline-flex h-12 items-center rounded-full border border-[rgba(47,143,69,0.35)] px-7 text-[14px] font-bold text-[#2f8f45] transition hover:bg-[rgba(47,143,69,0.06)]"
               >
                 Join as an Organizer →
               </Link>
@@ -567,53 +625,48 @@ export default function LandingPage() {
           {/* Dashboard preview */}
           <motion.div variants={itemVariants}>
             <div
-              className="rounded-[16px] border border-[rgba(95,191,42,0.10)] bg-[#0D140D] p-5"
+              className="rounded-[16px] border border-black/[0.07] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.07)]"
               style={{ transform: "rotate(2deg)" }}
             >
-              {/* Header row */}
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-[14px] font-semibold text-[#F5FFF0]">My Events</p>
-                <button className="rounded-full bg-[#5FBF2A] px-3 py-1 text-[11px] font-bold text-[#020702]">
+                <p className="text-[14px] font-semibold text-[#0f110f]">My Events</p>
+                <button className="rounded-full bg-[#2f8f45] px-3 py-1 text-[11px] font-bold text-white">
                   New Event +
                 </button>
               </div>
-
-              {/* Mini stats */}
               <div className="mb-4 grid grid-cols-3 gap-2">
                 {[
                   { val: "GHS 12,400", lbl: "Revenue" },
                   { val: "247",        lbl: "Tickets sold" },
                   { val: "4.8★",      lbl: "Avg rating" },
                 ].map((s) => (
-                  <div key={s.lbl} className="rounded-[10px] bg-[rgba(255,255,255,0.04)] px-3 py-2.5">
+                  <div key={s.lbl} className="rounded-[10px] bg-[#f5f5f5] px-3 py-2.5">
                     <p
-                      className="text-[18px] font-normal italic text-[#F5FFF0]"
+                      className="text-[18px] font-normal italic text-[#0f110f]"
                       style={{ fontFamily: "'DM Serif Display', serif" }}
                     >
                       {s.val}
                     </p>
-                    <p className="text-[11px] text-[#4A6A4A]">{s.lbl}</p>
+                    <p className="text-[11px] text-[#a9a9a9]">{s.lbl}</p>
                   </div>
                 ))}
               </div>
-
-              {/* Event rows */}
               <div className="space-y-2">
                 {[
-                  { dot: "#7c3aed", name: "Ga Rooftop After Hours", status: "Published", statusBg: "rgba(95,191,42,0.10)", statusClr: "#5FBF2A", amount: "GHS 5,400" },
-                  { dot: "#2563eb", name: "Product Market Accra",   status: "Published", statusBg: "rgba(95,191,42,0.10)", statusClr: "#5FBF2A", amount: "Free" },
-                  { dot: "#d97706", name: "Accra Chef Table",        status: "Draft",     statusBg: "rgba(255,255,255,0.06)", statusClr: "#6B8C6B", amount: "GHS 3,200" },
+                  { dot: "#7c3aed", name: "Ga Rooftop After Hours", status: "Published", sBg: "rgba(47,143,69,0.08)",  sClr: "#2f8f45",  amount: "GHS 5,400" },
+                  { dot: "#2563eb", name: "Product Market Accra",   status: "Published", sBg: "rgba(47,143,69,0.08)",  sClr: "#2f8f45",  amount: "Free" },
+                  { dot: "#d97706", name: "Accra Chef Table",        status: "Draft",     sBg: "rgba(0,0,0,0.05)",     sClr: "#9a9a9a",  amount: "GHS 3,200" },
                 ].map((row) => (
-                  <div key={row.name} className="flex items-center gap-2 rounded-[10px] bg-[rgba(255,255,255,0.02)] px-3 py-2.5">
+                  <div key={row.name} className="flex items-center gap-2 rounded-[10px] bg-[#f8f8f8] px-3 py-2.5">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: row.dot }} />
-                    <span className="min-w-0 flex-1 truncate text-[12px] text-[#c8e0c8]">{row.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12px] text-[#0f110f]">{row.name}</span>
                     <span
                       className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                      style={{ background: row.statusBg, color: row.statusClr }}
+                      style={{ background: row.sBg, color: row.sClr }}
                     >
                       {row.status}
                     </span>
-                    <span className="shrink-0 text-[12px] text-[#6B8C6B]">{row.amount}</span>
+                    <span className="shrink-0 text-[12px] text-[#6f6f6f]">{row.amount}</span>
                   </div>
                 ))}
               </div>
@@ -622,54 +675,39 @@ export default function LandingPage() {
         </AnimatedSection>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════
           SECTION 8 — TESTIMONIALS
-      ══════════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       <section className="mx-auto max-w-5xl px-5 py-10 md:px-8">
         <AnimatedSection className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {[
-            {
-              quote:  "I found the Ga Rooftop event on a Friday afternoon and had tickets by evening. The QR check-in was seamless.",
-              name:   "Kofi Mensah",
-              desc:   "Music lover · Osu, Accra",
-              initials: "KM",
-            },
-            {
-              quote:  "As an organizer, I sold out my first event in 48 hours. The analytics dashboard showed me exactly where my audience was coming from.",
-              name:   "Ama Asante",
-              desc:   "Founder · Sankofa Sessions",
-              initials: "AA",
-            },
-            {
-              quote:  "I never knew there were this many things happening in Accra on weekends. GoOutside changed how I plan my weekends completely.",
-              name:   "Ekow Boateng",
-              desc:   "Tech professional · East Legon",
-              initials: "EB",
-            },
+            { quote: "I found the Ga Rooftop event on a Friday afternoon and had tickets by evening. The QR check-in was seamless.", name: "Kofi Mensah",  desc: "Music lover · Osu, Accra",           initials: "KM" },
+            { quote: "As an organizer, I sold out my first event in 48 hours. The analytics dashboard showed me exactly where my audience was coming from.", name: "Ama Asante",  desc: "Founder · Sankofa Sessions",         initials: "AA" },
+            { quote: "I never knew there were this many things happening in Accra on weekends. GoOutside changed how I plan my weekends completely.", name: "Ekow Boateng", desc: "Tech professional · East Legon",      initials: "EB" },
           ].map(({ quote, name, desc, initials }) => (
             <motion.div
               key={name}
               variants={itemVariants}
-              className="relative overflow-hidden rounded-[16px] border border-[rgba(95,191,42,0.10)] bg-[#0D140D] p-6"
+              className="relative overflow-hidden rounded-[16px] border border-black/[0.07] bg-white p-6 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
             >
               <div
                 className="absolute left-0 right-0 top-0 h-px"
-                style={{ background: "linear-gradient(to right, transparent, rgba(95,191,42,0.2), transparent)" }}
+                style={{ background: "linear-gradient(to right, transparent, rgba(47,143,69,0.25), transparent)" }}
               />
               <span
-                className="mb-2 block text-[48px] font-normal italic leading-none text-[#5FBF2A]"
-                style={{ fontFamily: "'DM Serif Display', serif", opacity: 0.4 }}
+                className="mb-2 block text-[48px] font-normal italic leading-none text-[#2f8f45]"
+                style={{ fontFamily: "'DM Serif Display', serif", opacity: 0.35 }}
               >
                 &ldquo;
               </span>
-              <p className="mb-5 text-[15px] font-light leading-[1.65] text-[#F5FFF0]">{quote}</p>
+              <p className="mb-5 text-[15px] font-light leading-[1.65] text-[#0f110f]">{quote}</p>
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#080D08] text-[13px] font-semibold text-[#5FBF2A]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(47,143,69,0.08)] text-[13px] font-semibold text-[#2f8f45]">
                   {initials}
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-[#F5FFF0]">{name}</p>
-                  <p className="text-[12px] text-[#6B8C6B]">{desc}</p>
+                  <p className="text-[14px] font-semibold text-[#0f110f]">{name}</p>
+                  <p className="text-[12px] text-[#a9a9a9]">{desc}</p>
                 </div>
               </div>
             </motion.div>
@@ -677,33 +715,30 @@ export default function LandingPage() {
         </AnimatedSection>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════
           SECTION 9 — FINAL CTA
-      ══════════════════════════════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       <section
         className="relative py-20 text-center"
-        style={{ background: "radial-gradient(ellipse at center, rgba(95,191,42,0.08) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(ellipse at center, rgba(47,143,69,0.06) 0%, transparent 70%)" }}
       >
         <AnimatedSection className="mx-auto max-w-[640px] px-6">
           <motion.div variants={itemVariants}>
-            <span className="mb-4 inline-block rounded-full border border-[rgba(95,191,42,0.25)] bg-[rgba(95,191,42,0.08)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5FBF2A]">
+            <span className="mb-5 inline-block rounded-full border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.07)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2f8f45]">
               Early access — limited spots
             </span>
           </motion.div>
 
           <motion.h2
             variants={itemVariants}
-            className="mb-4 text-[36px] font-normal italic text-[#F5FFF0] md:text-[48px]"
+            className="mb-4 text-[36px] font-normal italic text-[#0f110f] md:text-[48px]"
             style={{ fontFamily: "'DM Serif Display', serif" }}
           >
             The city is going out.{" "}
-            <span className="text-[#5FBF2A]">Are you?</span>
+            <span className="text-[#2f8f45]">Are you?</span>
           </motion.h2>
 
-          <motion.p
-            variants={itemVariants}
-            className="mb-8 text-[16px] font-light text-[#6B8C6B]"
-          >
+          <motion.p variants={itemVariants} className="mb-8 text-[16px] font-light text-[#6f6f6f]">
             We&apos;re launching soon. Join the waitlist to get early access,
             first-look at events, and exclusive ticket drops.
           </motion.p>
@@ -711,21 +746,23 @@ export default function LandingPage() {
           <motion.div variants={itemVariants}>
             <Link
               href="/waitlist"
-              className="inline-flex h-14 items-center rounded-full bg-[#5FBF2A] px-10 text-[16px] font-bold text-[#020702]"
+              className="inline-flex h-14 items-center rounded-full bg-[#2f8f45] px-10 text-[16px] font-bold text-white shadow-[0_4px_20px_rgba(47,143,69,0.30)]"
               style={{ animation: "pulseGlow 2.5s ease-in-out infinite" }}
             >
               Join the Waitlist — It&apos;s Free
             </Link>
           </motion.div>
 
-          <motion.p
-            variants={itemVariants}
-            className="mt-5 text-[13px] text-[#4A6A4A]"
-          >
+          <motion.p variants={itemVariants} className="mt-5 text-[13px] text-[#c0c0c0]">
             No spam · Free forever to browse · Ghanaian-made 🇬🇭
           </motion.p>
         </AnimatedSection>
       </section>
+
+      {/* Search loader overlay */}
+      <AnimatePresence>
+        {searching && <SearchLoader query={searchQuery} />}
+      </AnimatePresence>
 
       {/* LockModal */}
       <AnimatePresence>
@@ -736,8 +773,8 @@ export default function LandingPage() {
 
       <style>{`
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 18px rgba(95,191,42,0.25); }
-          50%       { box-shadow: 0 0 36px rgba(95,191,42,0.45); }
+          0%, 100% { box-shadow: 0 4px 20px rgba(47,143,69,0.30); }
+          50%       { box-shadow: 0 4px 32px rgba(47,143,69,0.50); }
         }
       `}</style>
     </>

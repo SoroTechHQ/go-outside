@@ -15,7 +15,6 @@ interface LockModalProps {
 export function LockModal({ event, onClose }: LockModalProps) {
   const firstFocusRef = useRef<HTMLAnchorElement>(null);
 
-  // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -24,13 +23,11 @@ export function LockModal({ event, onClose }: LockModalProps) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  // Focus trap
   useEffect(() => {
     firstFocusRef.current?.focus();
   }, []);
@@ -46,7 +43,7 @@ export function LockModal({ event, onClose }: LockModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-[4px]"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[4px]"
             onClick={onClose}
           />
 
@@ -57,41 +54,41 @@ export function LockModal({ event, onClose }: LockModalProps) {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 16 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-[420px] rounded-[24px] border border-[rgba(95,191,42,0.10)] bg-[#0D140D] p-8 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
+            className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-[420px] rounded-[24px] border border-black/[0.08] bg-white p-8 shadow-[0_24px_60px_rgba(0,0,0,0.15)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
+            {/* Close */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(255,255,255,0.04)] text-[#6B8C6B] transition hover:text-[#F5FFF0]"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.05] text-[#6f6f6f] transition hover:text-[#0f110f]"
             >
               <X size={15} />
             </button>
 
             {/* Lock icon */}
             <div className="mb-4 flex justify-center">
-              <div className="rounded-[12px] bg-[rgba(95,191,42,0.10)] p-3">
-                <Lock size={40} color="#5FBF2A" />
+              <div className="rounded-[12px] bg-[rgba(47,143,69,0.10)] p-3">
+                <Lock size={40} color="#2f8f45" />
               </div>
             </div>
 
             {/* Title */}
             <h2
-              className="mb-2 text-center text-[22px] font-normal italic text-[#F5FFF0]"
+              className="mb-2 text-center text-[22px] font-normal italic text-[#0f110f]"
               style={{ fontFamily: "'DM Serif Display', serif" }}
             >
               GoOutside is coming soon
             </h2>
 
             {/* Subtitle */}
-            <p className="mb-6 text-center text-[14px] font-light leading-relaxed text-[#6B8C6B]">
+            <p className="mb-6 text-center text-[14px] font-light leading-relaxed text-[#6f6f6f]">
               We&apos;re launching in Accra soon. Join the waitlist for early access,
               ticket drops, and first look at events near you.
             </p>
 
             {/* Event preview strip */}
             {event && (
-              <div className="mb-5 flex items-center gap-3 rounded-[12px] bg-[#080D08] p-3">
+              <div className="mb-5 flex items-center gap-3 rounded-[12px] bg-[#f8faf8] p-3">
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[8px]">
                   <Image
                     src={event.imageUrl}
@@ -103,12 +100,12 @@ export function LockModal({ event, onClose }: LockModalProps) {
                 </div>
                 <div className="min-w-0">
                   <p
-                    className="truncate text-[14px] font-normal italic text-[#F5FFF0]"
+                    className="truncate text-[14px] font-normal italic text-[#0f110f]"
                     style={{ fontFamily: "'DM Serif Display', serif" }}
                   >
                     {event.title}
                   </p>
-                  <p className="mt-0.5 text-[12px] text-[#6B8C6B]">{event.date}</p>
+                  <p className="mt-0.5 text-[12px] text-[#6f6f6f]">{event.date}</p>
                 </div>
               </div>
             )}
@@ -117,15 +114,16 @@ export function LockModal({ event, onClose }: LockModalProps) {
             <Link
               ref={firstFocusRef}
               href="/waitlist"
-              className="mb-3 flex h-12 w-full items-center justify-center rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.25)] transition hover:brightness-110"
+              className="mb-3 flex h-12 w-full items-center justify-center rounded-full bg-[#2f8f45] text-[14px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.30)] transition hover:bg-[#256f36]"
             >
               Join the waitlist →
             </Link>
 
             {/* Sign in link */}
-            <p className="text-center text-[13px] text-[#6B8C6B]">
+            {/* TODO: restore href="/sign-in" at launch */}
+            <p className="text-center text-[13px] text-[#6f6f6f]">
               Already have early access?{" "}
-              <Link href="/sign-in" className="text-[#5FBF2A] underline-offset-2 hover:underline">
+              <Link href="/waitlist" className="text-[#2f8f45] underline-offset-2 hover:underline">
                 Sign in
               </Link>
             </p>

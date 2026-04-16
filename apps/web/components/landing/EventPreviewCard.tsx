@@ -19,7 +19,7 @@ const IMAGE_HEIGHTS: Record<string, number> = {
 
 export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardProps) {
   const imgH   = IMAGE_HEIGHTS[variant];
-  const dotClr = CATEGORY_COLORS[event.category] ?? "#5FBF2A";
+  const dotClr = CATEGORY_COLORS[event.category] ?? "#2f8f45";
 
   return (
     <div
@@ -27,7 +27,7 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
-      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-[14px] border border-[rgba(95,191,42,0.08)] bg-[#0D140D] text-left transition-all duration-200 hover:-translate-y-[3px] hover:border-[rgba(95,191,42,0.22)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
+      className="group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-[14px] border border-black/[0.08] bg-white text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-[3px] hover:border-[rgba(47,143,69,0.3)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
     >
       {/* Image */}
       <div className="relative w-full overflow-hidden" style={{ height: imgH }}>
@@ -41,7 +41,7 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
         />
 
         {/* Scrim */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(9,16,13,0.72)] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(0,0,0,0.55)] via-transparent to-transparent" />
 
         {/* Category pill */}
         <span
@@ -56,14 +56,14 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(2,7,2,0.72)] backdrop-blur-[6px] text-white/70 transition hover:text-[#5FBF2A]"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 backdrop-blur-[6px] text-[#4a4a4a] transition hover:text-[#2f8f45]"
           >
             <Heart size={13} />
           </button>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(2,7,2,0.72)] backdrop-blur-[6px] text-white/70 transition hover:text-[#5FBF2A]"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 backdrop-blur-[6px] text-[#4a4a4a] transition hover:text-[#2f8f45]"
           >
             <Eye size={13} />
           </button>
@@ -71,7 +71,7 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
 
         {/* Scarcity pill */}
         {event.scarcity && (
-          <span className="absolute bottom-3 left-3 rounded-full bg-[rgba(232,147,42,0.15)] px-2 py-0.5 text-[10px] font-bold text-[#E8932A] ring-1 ring-[rgba(232,147,42,0.25)]">
+          <span className="absolute bottom-3 left-3 rounded-full bg-[rgba(217,119,6,0.15)] px-2 py-0.5 text-[10px] font-bold text-[#b45309] ring-1 ring-[rgba(217,119,6,0.25)]">
             {event.scarcity.label}
           </span>
         )}
@@ -79,23 +79,23 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
 
       {/* Card body */}
       <div className="flex flex-1 flex-col p-3">
-        <p className="mb-0.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-white/40">
+        <p className="mb-0.5 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-black/30">
           {event.eyebrow}
         </p>
         <p
-          className="text-[14px] font-normal italic leading-snug text-[#F5FFF0]"
+          className="text-[14px] font-normal italic leading-snug text-[#0f110f]"
           style={{ fontFamily: "'DM Serif Display', serif" }}
         >
           {event.title}
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-2">
-          <p className="text-[11px] text-[#6B8C6B]">{event.date}</p>
+          <p className="text-[11px] text-[#6f6f6f]">{event.date}</p>
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
               event.isFree
-                ? "bg-[rgba(95,191,42,0.10)] text-[#5FBF2A]"
-                : "bg-[rgba(255,255,255,0.04)] text-[#F5FFF0]"
+                ? "bg-[rgba(47,143,69,0.10)] text-[#2f8f45]"
+                : "bg-black/[0.05] text-[#0f110f]"
             }`}
           >
             {event.price}
@@ -103,7 +103,7 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
         </div>
 
         {event.friendCount && event.friendCount > 0 && (
-          <p className="mt-1.5 text-[11px] text-[#4A6A4A]">
+          <p className="mt-1.5 text-[11px] text-[#a9a9a9]">
             {event.friendCount} people going
           </p>
         )}
