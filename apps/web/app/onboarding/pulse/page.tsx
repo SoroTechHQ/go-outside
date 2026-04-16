@@ -83,17 +83,28 @@ export default function OnboardingPulsePage() {
     });
   }, [phase]);
 
+  const [enterError, setEnterError] = useState<string | null>(null);
+
   async function handleEnter() {
     setSubmitting(true);
+    setEnterError(null);
     const tierSlug = getTierSlug(score);
 
-    await fetch("/api/onboarding/complete", {
+    const res = await fetch("/api/onboarding/complete", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ pulse_score: score, pulse_tier: tierSlug }),
     });
 
-    router.push("/home");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      setEnterError(body.error ?? "Something went wrong. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    // Hard navigation so the server component re-reads fresh Clerk metadata
+    window.location.href = "/home";
   }
 
   return (
@@ -205,6 +216,12 @@ export default function OnboardingPulsePage() {
                 </motion.div>
               ))}
             </div>
+
+            {enterError && (
+              <p className="w-full max-w-xs rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-center text-[12px] text-red-400">
+                {enterError}
+              </p>
+            )}
 
             {/* CTA */}
             <motion.button

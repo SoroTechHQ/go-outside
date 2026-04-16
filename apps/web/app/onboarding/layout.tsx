@@ -1,14 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { ONBOARDING_STEPS } from "../../lib/onboarding-utils";
+import { usePathname, useRouter } from "next/navigation";
+import { ONBOARDING_STEPS, STEP_ROUTES } from "../../lib/onboarding-utils";
+import { ArrowLeft } from "@phosphor-icons/react";
 
 const TOTAL_STEPS = 5;
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router   = useRouter();
   const step     = ONBOARDING_STEPS[pathname] ?? 1;
+  const prevRoute = step > 1 ? STEP_ROUTES[step - 1] : null;
 
   return (
     /*
@@ -36,12 +39,23 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
       {/* ── Top bar (outside card) ─────────────────────────────────────── */}
       <header className="fixed left-0 right-0 top-0 z-30 flex items-center justify-between px-5 py-4 sm:px-8">
-        <span
-          className="font-display text-[15px] italic text-[#5FBF2A]"
-          style={{ fontFamily: "'DM Serif Display', serif" }}
-        >
-          GoOutside
-        </span>
+        {/* Back button — hidden on step 1 */}
+        {prevRoute ? (
+          <button
+            onClick={() => router.push(prevRoute)}
+            className="flex items-center gap-1.5 text-[#4A6A4A] transition hover:text-[#5FBF2A]"
+          >
+            <ArrowLeft size={14} />
+            <span className="text-[12px] font-medium">Back</span>
+          </button>
+        ) : (
+          <span
+            className="text-[15px] italic text-[#5FBF2A]"
+            style={{ fontFamily: "'DM Serif Display', serif" }}
+          >
+            GoOutside
+          </span>
+        )}
         <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4A6A4A]">
           Step {step} of {TOTAL_STEPS}
         </span>

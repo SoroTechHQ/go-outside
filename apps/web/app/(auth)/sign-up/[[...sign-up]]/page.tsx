@@ -96,7 +96,7 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      <SignUp appearance={appearance} />
+      <SignUp appearance={appearance} forceRedirectUrl="/onboarding/profile" />
     </div>
   );
 }

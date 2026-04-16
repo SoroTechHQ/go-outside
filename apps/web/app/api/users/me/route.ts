@@ -45,10 +45,18 @@ export async function PATCH(req: NextRequest) {
     updates.location_point = `SRID=4326;POINT(${lng} ${lat})`;
   }
 
+  // Upsert — creates the row if the Clerk webhook hasn't fired yet
+  const base = {
+    clerk_id:   clerk.id,
+    email:      clerk.emailAddresses[0]?.emailAddress ?? "",
+    first_name: clerk.firstName ?? "User",
+    last_name:  clerk.lastName  ?? "",
+    role:       "attendee" as const,
+  };
+
   const { data, error } = await supabaseAdmin
     .from("users")
-    .update(updates)
-    .eq("clerk_id", clerk.id)
+    .upsert({ ...base, ...updates }, { onConflict: "clerk_id" })
     .select("*")
     .single();
 
