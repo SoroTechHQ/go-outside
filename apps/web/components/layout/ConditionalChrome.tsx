@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 
 // Routes that should render without the app shell (sidebar, header, footer, bg)
 // "/" is handled by page.tsx which injects chrome only when authenticated
-const STANDALONE_ROUTES = ["/", "/waitlist", "/ad-waitlist"];
+const STANDALONE_ROUTES = ["/", "/waitlist", "/ad-waitlist", "/sign-in", "/sign-up", "/onboarding"];
 
 // Routes that suppress only the footer (app chrome stays)
 const NO_FOOTER_ROUTES = ["/dashboard/wallets"];
