@@ -11,29 +11,34 @@ export async function POST(req: NextRequest) {
     pulse_tier:  string;
   };
 
-  // Resolve Supabase user
-  const { data: sbUser } = await supabaseAdmin
+  // Upsert user row — handles the case where the Clerk webhook hasn't fired yet
+  const { data: sbUser, error: upsertErr } = await supabaseAdmin
     .from("users")
+    .upsert(
+      {
+        clerk_id:            clerk.id,
+        email:               clerk.emailAddresses[0]?.emailAddress ?? "",
+        first_name:          clerk.firstName ?? "User",
+        last_name:           clerk.lastName  ?? "",
+        role:                "attendee",
+        pulse_score,
+        pulse_tier,
+        onboarding_complete: true,
+        updated_at:          new Date().toISOString(),
+      },
+      { onConflict: "clerk_id" }
+    )
     .select("id")
-    .eq("clerk_id", clerk.id)
-    .maybeSingle();
+    .single();
 
-  if (!sbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (upsertErr || !sbUser) {
+    console.error("[/api/onboarding/complete] upsert failed", upsertErr);
+    return NextResponse.json({ error: "Failed to save user" }, { status: 500 });
+  }
 
   const userId = sbUser.id as string;
 
-  // Update user record
-  await supabaseAdmin
-    .from("users")
-    .update({
-      pulse_score,
-      pulse_tier,
-      onboarding_complete: true,
-      updated_at:          new Date().toISOString(),
-    })
-    .eq("id", userId);
-
-  // Insert pulse_score_history entry
+  // Insert pulse_score_history entry (best-effort — table may not exist in all envs)
   await supabaseAdmin
     .from("pulse_score_history")
     .insert({
