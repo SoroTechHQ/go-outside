@@ -184,7 +184,7 @@ export default function LandingPage() {
   function triggerSearch(query: string) {
     setSearchQuery(query);
     setSearching(true);
-    setTimeout(() => router.push("/waitlist"), 900);
+    setTimeout(() => router.push("/sign-in"), 900);
   }
 
   function handleSearch() {
@@ -289,7 +289,7 @@ export default function LandingPage() {
             className="mb-5 flex flex-col items-center gap-2"
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(47,143,69,0.50)] bg-[rgba(20,60,30,0.45)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86efac] backdrop-blur-xl shadow-[0_0_20px_rgba(47,143,69,0.15),inset_0_1px_0_rgba(255,255,255,0.08)]">
-              🇬🇭 &nbsp;Coming Soon to Accra
+              🇬🇭 &nbsp;Now in Accra
             </span>
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
               Accra&apos;s Social Event Platform
@@ -445,7 +445,7 @@ export default function LandingPage() {
               What&apos;s happening in Accra
             </h2>
             <p className="mt-1 text-[16px] font-light text-[#6f6f6f]">
-              Browse upcoming events. Join the waitlist to save and buy tickets.
+              Browse upcoming events. Sign up to save and buy tickets.
             </p>
           </motion.div>
           <motion.div variants={itemVariants} className="shrink-0">
@@ -653,7 +653,7 @@ export default function LandingPage() {
             </motion.ul>
             <motion.div variants={itemVariants}>
               <Link
-                href="/waitlist?role=organizer"
+                href="/sign-up"
                 className="inline-flex h-12 items-center rounded-full border border-[rgba(47,143,69,0.35)] px-7 text-[14px] font-bold text-[#2f8f45] transition hover:bg-[rgba(47,143,69,0.06)]"
               >
                 Join as an Organizer →
@@ -764,7 +764,7 @@ export default function LandingPage() {
         <AnimatedSection className="mx-auto max-w-[640px] px-6">
           <motion.div variants={itemVariants}>
             <span className="mb-5 inline-block rounded-full border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.07)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2f8f45]">
-              Early access — limited spots
+              Free to join
             </span>
           </motion.div>
 
@@ -778,22 +778,22 @@ export default function LandingPage() {
           </motion.h2>
 
           <motion.p variants={itemVariants} className="mb-8 text-[16px] font-light text-[#6f6f6f]">
-            We&apos;re launching soon. Join the waitlist to get early access,
-            first-look at events, and exclusive ticket drops.
+            Create your free account in seconds. Discover events, buy tickets,
+            and go out with your people in Accra.
           </motion.p>
 
           <motion.div variants={itemVariants}>
             <Link
-              href="/waitlist"
+              href="/sign-up"
               className="inline-flex h-14 items-center rounded-full bg-[#2f8f45] px-10 text-[16px] font-bold text-white shadow-[0_4px_20px_rgba(47,143,69,0.30)]"
               style={{ animation: "pulseGlow 2.5s ease-in-out infinite" }}
             >
-              Join the Waitlist — It&apos;s Free
+              Get Started — It&apos;s Free
             </Link>
           </motion.div>
 
           <motion.p variants={itemVariants} className="mt-5 text-[13px] text-[#c0c0c0]">
-            No spam · Free forever to browse · Ghanaian-made 🇬🇭
+            No credit card · Free to browse · Ghanaian-made 🇬🇭
           </motion.p>
         </AnimatedSection>
       </section>

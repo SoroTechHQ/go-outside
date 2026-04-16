@@ -33,18 +33,17 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
 
         {/* Right CTAs */}
         <div className="flex items-center gap-2">
-          {/* TODO: restore href="/sign-in" at launch */}
           <Link
-            href="/waitlist"
+            href="/sign-in"
             className="flex h-[38px] items-center rounded-full bg-black/[0.04] px-5 text-[13px] font-medium text-[#4a4a4a] transition hover:bg-black/[0.07] hover:text-[#0f110f]"
           >
             Sign in
           </Link>
           <Link
-            href="/waitlist"
+            href="/sign-up"
             className="flex h-[38px] items-center rounded-full bg-[#2f8f45] px-5 text-[13px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.30)] transition hover:bg-[#256f36]"
           >
-            Join Waitlist
+            Get Started
           </Link>
         </div>
       </nav>
@@ -89,10 +88,15 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           {/* Platform */}
           <div className="space-y-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Platform</p>
-            {["Discover Events", "For Organizers", "Pricing", "Download App"].map((link) => (
-              <div key={link}>
-                <Link href="/waitlist" className="text-[14px] text-[#6f6f6f] transition hover:text-[#0f110f]">
-                  {link}
+            {[
+              { label: "Discover Events",  href: "/sign-up" },
+              { label: "For Organizers",   href: "/sign-up" },
+              { label: "Pricing",          href: "#" },
+              { label: "Download App",     href: "#" },
+            ].map(({ label, href }) => (
+              <div key={label}>
+                <Link href={href} className="text-[14px] text-[#6f6f6f] transition hover:text-[#0f110f]">
+                  {label}
                 </Link>
               </div>
             ))}

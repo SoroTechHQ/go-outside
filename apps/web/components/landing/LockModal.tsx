@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Lock } from "@phosphor-icons/react";
+import { X, Ticket } from "@phosphor-icons/react";
 import Link from "next/link";
 import Image from "next/image";
 import type { LandingEvent } from "../../lib/landing-data";
@@ -65,10 +65,10 @@ export function LockModal({ event, onClose }: LockModalProps) {
               <X size={15} />
             </button>
 
-            {/* Lock icon */}
+            {/* Icon */}
             <div className="mb-4 flex justify-center">
               <div className="rounded-[12px] bg-[rgba(47,143,69,0.10)] p-3">
-                <Lock size={40} color="#2f8f45" />
+                <Ticket size={40} color="#2f8f45" />
               </div>
             </div>
 
@@ -77,13 +77,12 @@ export function LockModal({ event, onClose }: LockModalProps) {
               className="mb-2 text-center text-[22px] font-normal italic text-[#0f110f]"
               style={{ fontFamily: "'DM Serif Display', serif" }}
             >
-              GoOutside is coming soon
+              Ready to go out?
             </h2>
 
             {/* Subtitle */}
             <p className="mb-6 text-center text-[14px] font-light leading-relaxed text-[#6f6f6f]">
-              We&apos;re launching in Accra soon. Join the waitlist for early access,
-              ticket drops, and first look at events near you.
+              Create a free account to save events, get tickets, and see what your friends are attending.
             </p>
 
             {/* Event preview strip */}
@@ -113,17 +112,16 @@ export function LockModal({ event, onClose }: LockModalProps) {
             {/* Primary CTA */}
             <Link
               ref={firstFocusRef}
-              href="/waitlist"
+              href="/sign-up"
               className="mb-3 flex h-12 w-full items-center justify-center rounded-full bg-[#2f8f45] text-[14px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.30)] transition hover:bg-[#256f36]"
             >
-              Join the waitlist →
+              Create an account →
             </Link>
 
             {/* Sign in link */}
-            {/* TODO: restore href="/sign-in" at launch */}
             <p className="text-center text-[13px] text-[#6f6f6f]">
-              Already have early access?{" "}
-              <Link href="/waitlist" className="text-[#2f8f45] underline-offset-2 hover:underline">
+              Already have an account?{" "}
+              <Link href="/sign-in" className="text-[#2f8f45] underline-offset-2 hover:underline">
                 Sign in
               </Link>
             </p>
