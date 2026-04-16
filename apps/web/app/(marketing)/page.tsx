@@ -202,24 +202,48 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* Subtle green glow — light/airy, not dark */}
-      <div
-        className="pointer-events-none fixed -left-60 -top-60 -z-10 h-[700px] w-[700px] rounded-full blur-[200px]"
-        style={{ background: "rgba(47,143,69,0.05)" }}
-      />
-      <div
-        className="pointer-events-none fixed -right-60 top-1/3 -z-10 h-[600px] w-[600px] rounded-full blur-[200px]"
-        style={{ background: "rgba(47,143,69,0.04)" }}
-      />
 
       {/* ════════════════════════════════════════
           SECTION 1 — HERO
       ════════════════════════════════════════ */}
       <section className="relative flex h-screen items-center justify-center overflow-hidden px-5">
-        {/* Floating card left */}
+        {/* ── Video background ── */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ zIndex: 0 }}
+        >
+          <source
+            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260210_031346_d87182fb-b0af-4273-84d1-c6fd17d6bf0f.mp4"
+            type="video/mp4"
+          />
+        </video>
+
+        {/* ── Green hue overlay ── */}
+        <div
+          className="absolute inset-0"
+          style={{
+            zIndex: 1,
+            background:
+              "linear-gradient(160deg, rgba(4,22,10,0.78) 0%, rgba(8,40,18,0.65) 55%, rgba(4,22,10,0.80) 100%)",
+          }}
+        />
+        {/* Soft green radial glow at centre */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 2,
+            background: "radial-gradient(ellipse 70% 50% at 50% 40%, rgba(47,143,69,0.18) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* ── Floating card left ── */}
         <motion.div
           className="pointer-events-none absolute left-[calc(50%-480px)] top-1/2 hidden -translate-y-1/2 md:block"
-          style={{ rotate: -6, opacity: 0.6, willChange: "transform" }}
+          style={{ rotate: -6, opacity: 0.75, willChange: "transform", zIndex: 5 }}
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -228,10 +252,10 @@ export default function LandingPage() {
           </div>
         </motion.div>
 
-        {/* Floating card right */}
+        {/* ── Floating card right ── */}
         <motion.div
           className="pointer-events-none absolute right-[calc(50%-480px)] top-1/2 hidden -translate-y-1/2 md:block"
-          style={{ rotate: 6, opacity: 0.6, willChange: "transform" }}
+          style={{ rotate: 6, opacity: 0.75, willChange: "transform", zIndex: 5 }}
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         >
@@ -240,8 +264,8 @@ export default function LandingPage() {
           </div>
         </motion.div>
 
-        {/* Center content */}
-        <div className="relative z-10 flex w-full max-w-[600px] flex-col items-center text-center">
+        {/* ── Center content ── */}
+        <div className="relative flex w-full max-w-[600px] flex-col items-center text-center" style={{ zIndex: 10 }}>
           {/* Coming soon + eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -249,10 +273,10 @@ export default function LandingPage() {
             transition={{ duration: 0.4 }}
             className="mb-5 flex flex-col items-center gap-2"
           >
-            <span className="rounded-full border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.07)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2f8f45]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(47,143,69,0.50)] bg-[rgba(20,60,30,0.45)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86efac] backdrop-blur-xl shadow-[0_0_20px_rgba(47,143,69,0.15),inset_0_1px_0_rgba(255,255,255,0.08)]">
               🇬🇭 &nbsp;Coming Soon to Accra
             </span>
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#a9a9a9]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
               Accra&apos;s Social Event Platform
             </p>
           </motion.div>
@@ -265,8 +289,8 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 + i * 0.08 }}
-                className="block text-[40px] font-normal italic leading-[1.05] text-[#0f110f] sm:text-[56px] md:text-[72px]"
-                style={{ fontFamily: "'DM Serif Display', serif" }}
+                className="block text-[40px] font-normal italic leading-[1.05] text-white sm:text-[56px] md:text-[72px]"
+                style={{ fontFamily: "'DM Serif Display', serif", textShadow: "0 2px 24px rgba(0,0,0,0.4)" }}
               >
                 {line}
               </motion.h1>
@@ -278,7 +302,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="mb-8 max-w-[480px] text-[15px] font-light text-[#6f6f6f] sm:text-[18px]"
+            className="mb-8 max-w-[480px] text-[15px] font-light text-white/70 sm:text-[18px]"
           >
             Discover events. Go with friends. Build your scene.
           </motion.p>
@@ -295,14 +319,14 @@ export default function LandingPage() {
               tabIndex={0}
               onClick={() => triggerSearch(searchVal)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") triggerSearch(searchVal); }}
-              className="flex h-14 w-full cursor-pointer items-center rounded-full bg-white transition-all duration-200"
+              className="flex h-14 w-full cursor-pointer items-center rounded-full bg-white/95 backdrop-blur-md transition-all duration-200"
               style={{
                 border:     searchFocused
-                  ? "1px solid rgba(47,143,69,0.40)"
-                  : "1px solid rgba(0,0,0,0.10)",
+                  ? "1px solid rgba(47,143,69,0.50)"
+                  : "1px solid rgba(255,255,255,0.20)",
                 boxShadow:  searchFocused
-                  ? "0 0 0 3px rgba(47,143,69,0.08), 0 4px 20px rgba(0,0,0,0.08)"
-                  : "0 2px 12px rgba(0,0,0,0.06)",
+                  ? "0 0 0 3px rgba(47,143,69,0.15), 0 4px 30px rgba(0,0,0,0.25)"
+                  : "0 4px 30px rgba(0,0,0,0.30)",
               }}
             >
               <MagnifyingGlass size={20} className="ml-5 shrink-0 text-[#c0c0c0]" />
@@ -333,7 +357,7 @@ export default function LandingPage() {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleSearch(); }}
-                className="mr-2 flex h-10 items-center rounded-full bg-[#2f8f45] px-5 text-[14px] font-bold text-white transition hover:bg-[#256f36]"
+                className="mr-2 flex h-10 items-center rounded-full bg-[#2f8f45] px-5 text-[14px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.40)] transition hover:bg-[#256f36]"
               >
                 Search
               </button>
@@ -353,35 +377,35 @@ export default function LandingPage() {
               { num: "4.9★", label: "average event rating" },
             ].map((stat, i) => (
               <div key={stat.num} className="flex items-center gap-6">
-                {i > 0 && <div className="h-4 w-px bg-black/[0.10]" />}
+                {i > 0 && <div className="h-4 w-px bg-white/20" />}
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="text-[16px] font-normal italic text-[#2f8f45]"
+                    className="text-[16px] font-normal italic text-[#4ade80]"
                     style={{ fontFamily: "'DM Serif Display', serif" }}
                   >
                     {stat.num}
                   </span>
-                  <span className="text-[12px] font-light text-[#a9a9a9]">{stat.label}</span>
+                  <span className="text-[12px] font-light text-white/55">{stat.label}</span>
                 </div>
               </div>
             ))}
           </motion.div>
 
-          {/* Scroll indicator — sits just below social proof so it's visible mid-screen */}
+          {/* Scroll indicator */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.6 }}
             className="mt-10 flex flex-col items-center gap-1.5"
           >
-            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#c0c0c0]">
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/35">
               Scroll
             </span>
             <motion.div
               animate={{ y: [0, 5, 0] }}
               transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
             >
-              <ArrowDown size={14} color="#c0c0c0" />
+              <ArrowDown size={14} color="rgba(255,255,255,0.35)" />
             </motion.div>
           </motion.div>
         </div>
