@@ -9,6 +9,7 @@ import { createAuthRouter } from './routes/auth.js';
 import { createDiscoveryRouter } from './routes/discovery.js';
 import { createEventsRouter } from './routes/events.js';
 import { createFeedRouter } from './routes/feed.js';
+import { createActivityRouter } from './routes/activity.js';
 import { createFriendsRouter } from './routes/friends.js';
 import { createInteractionsRouter } from './routes/interactions.js';
 import { createMediaRouter } from './routes/media.js';
@@ -63,6 +64,7 @@ export function createApp(options?: {
   app.route('/interactions', createInteractionsRouter(store, services));
   app.route('/sessions', createSessionsRouter(store, services));
   app.route('/friends', createFriendsRouter(store, services));
+  app.route('/activity', createActivityRouter(store, services));
 
   return { app, store, services };
 }
