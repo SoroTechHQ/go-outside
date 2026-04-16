@@ -2,18 +2,22 @@ import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../supabase";
 
 export type SupabaseUser = {
-  id:                string;
-  clerk_id:          string;
-  email:             string;
-  first_name:        string;
-  last_name:         string;
-  avatar_url:        string | null;
-  role:              "admin" | "organizer" | "attendee";
-  interests:         string[];
-  location_city:     string | null;
-  pulse_score:       number | null;
-  pulse_tier:        string | null;
-  onboarding_complete: boolean | null;
+  id:                   string;
+  clerk_id:             string;
+  email:                string;
+  phone:                string | null;
+  first_name:           string;
+  last_name:            string;
+  username:             string | null;
+  bio:                  string | null;
+  avatar_url:           string | null;
+  role:                 "admin" | "organizer" | "attendee";
+  interests:            string[];
+  location_city:        string | null;
+  pulse_score:          number;
+  pulse_tier:           string;
+  vibe:                 Record<string, unknown>;
+  onboarding_complete:  boolean;
 };
 
 /**

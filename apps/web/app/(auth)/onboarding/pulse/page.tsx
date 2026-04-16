@@ -1,284 +1,232 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { motion, AnimatePresence } from "framer-motion";
+import { computeStartingScore, getTierFromScore, getTierSlug } from "../../../../lib/onboarding-utils";
+import type { VibeData } from "../../../../lib/onboarding-utils";
 
 type Phase = "loading" | "reveal";
 
-function computeStartingScore(interestCount: number) {
-  return interestCount * 5 + 10;
-}
-
-function getTier(score: number): { label: string; bg: string; color: string } {
-  if (score >= 300) return { label: "Regular",  bg: "rgba(95,191,42,0.12)",   color: "#5FBF2A" };
-  if (score >= 100) return { label: "Explorer", bg: "rgba(74,122,232,0.12)", color: "#4A7AE8" };
-  return               { label: "Newcomer", bg: "rgba(255,255,255,0.04)",  color: "#6B8C6B" };
-}
-
-function useCountUp(target: number, duration: number, active: boolean) {
-  const [count, setCount] = useState(0);
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (!active) return;
-    const start = performance.now();
-    function tick(now: number) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * target));
-      if (progress < 1) rafRef.current = requestAnimationFrame(tick);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [target, duration, active]);
-
-  return count;
-}
+const LOADING_TEXTS = [
+  "Reading your vibe…",
+  "Mapping your scene…",
+  "Building your profile…",
+  "Almost ready…",
+];
 
 const STATS = [
   { value: "89K+", label: "People going out" },
   { value: "340+", label: "Events this month" },
-  { value: "28",   label: "Cities" },
+  { value: "28",   label: "Cities active" },
 ];
 
-export default function OnboardingPulsePage() {
-  const router = useRouter();
-  const [phase,   setPhase]   = useState<Phase>("loading");
-  const [loading, setLoading] = useState(false);
-
-  // Read interests count from demo localStorage
-  const [interests, setInterests] = useState<string[]>([]);
+function useCountUp(target: number, duration: number, active: boolean) {
+  const [count, setCount] = useState(0);
+  const raf = useRef<number>(0);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const user = JSON.parse(localStorage.getItem("demo_user") ?? "{}");
-    setInterests(user.interests ?? []);
-    // Move to reveal phase after 2 seconds
-    const t = setTimeout(() => setPhase("reveal"), 2000);
-    return () => clearTimeout(t);
+    if (!active || target === 0) return;
+    const start = performance.now();
+    function tick(now: number) {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setCount(Math.round(eased * target));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    }
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target, duration, active]);
+  return count;
+}
+
+export default function OnboardingPulsePage() {
+  const router   = useRouter();
+  const { user } = useUser();
+  const [phase,      setPhase]      = useState<Phase>("loading");
+  const [textIdx,    setTextIdx]    = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const confettiFired = useRef(false);
+
+  // Compute score from Clerk metadata
+  const interests   = (user?.unsafeMetadata?.interests as string[])  ?? [];
+  const pastEvents  = (user?.unsafeMetadata?.pastEventIds as string[]) ?? [];
+  const vibe        = (user?.unsafeMetadata?.vibe as VibeData | null) ?? null;
+
+  const score = computeStartingScore({ interests, pastEvents, vibe });
+  const tier  = getTierFromScore(score);
+  const displayed = useCountUp(score, 1600, phase === "reveal");
+
+  // Rotate loading text
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setTextIdx((i) => (i + 1) % LOADING_TEXTS.length);
+    }, 600);
+    const t = setTimeout(() => {
+      clearInterval(iv);
+      setPhase("reveal");
+    }, 2600);
+    return () => { clearInterval(iv); clearTimeout(t); };
   }, []);
 
-  const startingScore = computeStartingScore(interests.length);
-  const tier          = getTier(startingScore);
-  const displayScore  = useCountUp(startingScore, 1500, phase === "reveal");
+  // Fire confetti on reveal
+  useEffect(() => {
+    if (phase !== "reveal" || confettiFired.current) return;
+    confettiFired.current = true;
+    import("canvas-confetti").then(({ default: confetti }) => {
+      void confetti({
+        colors:        ["#5FBF2A", "#F5FFF0", "#a3e635"],
+        particleCount: 80,
+        spread:        70,
+        origin:        { y: 0.55 },
+      });
+    });
+  }, [phase]);
 
   async function handleEnter() {
-    setLoading(true);
-    if (typeof window !== "undefined") {
-      const user = JSON.parse(localStorage.getItem("demo_user") ?? "{}");
-      localStorage.setItem("demo_user", JSON.stringify({ ...user, onboardingComplete: true }));
-    }
-    await new Promise((r) => setTimeout(r, 300));
-    router.push("/");
+    setSubmitting(true);
+    const tierSlug = getTierSlug(score);
+
+    await fetch("/api/onboarding/complete", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ pulse_score: score, pulse_tier: tierSlug }),
+    });
+
+    router.push("/dashboard");
   }
 
   return (
-    <div
-      style={{
-        minHeight:      "100svh",
-        background:     "#020702",
-        display:        "flex",
-        flexDirection:  "column",
-        alignItems:     "center",
-        justifyContent: "center",
-        padding:        "48px 24px",
-        position:       "relative",
-        textAlign:      "center",
-      }}
-    >
-      {/* Glow orbs */}
-      <div style={{ position: "fixed", top: "-128px", left: "-128px", width: "500px", height: "500px", borderRadius: "50%", background: "rgba(95,191,42,0.07)", filter: "blur(160px)", pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: "-128px", right: "-128px", width: "400px", height: "400px", borderRadius: "50%", background: "rgba(95,191,42,0.05)", filter: "blur(140px)", pointerEvents: "none" }} />
-
-      <div
-        style={{
-          width:    "100%",
-          maxWidth: "480px",
-          position: "relative",
-          zIndex:   1,
-          opacity:  1,
-          transition: "opacity 300ms ease",
-        }}
-      >
+    <div className="flex min-h-[calc(100svh-64px)] flex-col items-center justify-center px-5 py-10 text-center">
+      <AnimatePresence mode="wait">
         {phase === "loading" ? (
-          /* PHASE 1 — loading animation */
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "24px" }}>
-            {/* Three expanding rings */}
-            <div style={{ position: "relative", width: "80px", height: "80px" }}>
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center gap-6"
+          >
+            {/* Expanding rings */}
+            <div className="relative h-20 w-20">
               {[0, 1, 2].map((i) => (
-                <div
+                <motion.div
                   key={i}
-                  style={{
-                    position:     "absolute",
-                    inset:        0,
-                    borderRadius: "50%",
-                    border:       "1.5px solid rgba(95,191,42,0.4)",
-                    animation:    `ring-expand 1.8s ease-in-out ${i * 0.4}s infinite`,
-                  }}
+                  className="absolute rounded-full border border-[rgba(95,191,42,0.4)]"
+                  initial={{ width: 40, height: 40, opacity: 0.8, x: "-50%", y: "-50%" }}
+                  animate={{ width: 40 + i * 60, height: 40 + i * 60, opacity: 0 }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4, ease: "easeOut" }}
+                  style={{ left: "50%", top: "50%" }}
                 />
               ))}
-              {/* Center dot */}
-              <div
-                style={{
-                  position:       "absolute",
-                  inset:          "35%",
-                  borderRadius:   "50%",
-                  background:     "rgba(95,191,42,0.6)",
-                }}
-              />
+              <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(95,191,42,0.7)]" />
             </div>
-            <p style={{ fontSize: "14px", fontWeight: 300, color: "#6B8C6B" }}>
-              Calculating your Pulse…
-            </p>
-          </div>
+
+            <div>
+              <p className="text-[13px] font-light text-[#6B8C6B]">Personalising your GoOutside…</p>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={textIdx}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.25 }}
+                  className="mt-1 text-[12px] text-[#3a5a3a]"
+                >
+                  {LOADING_TEXTS[textIdx]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+          </motion.div>
         ) : (
-          /* PHASE 2 — score reveal */
-          <div
-            style={{
-              display:       "flex",
-              flexDirection: "column",
-              alignItems:    "center",
-              gap:           "12px",
-              animation:     "fade-up 400ms ease forwards",
-            }}
+          <motion.div
+            key="reveal"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex w-full max-w-sm flex-col items-center gap-4"
           >
-            {/* Score number */}
-            <p
+            {/* Score */}
+            <motion.p
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 16, delay: 0.1 }}
+              className="font-display leading-none"
               style={{
                 fontFamily: "'DM Serif Display', serif",
                 fontStyle:  "italic",
-                fontSize:   "clamp(56px, 10vw, 72px)",
-                fontWeight: 400,
+                fontSize:   "clamp(64px, 14vw, 80px)",
                 color:      "#5FBF2A",
-                margin:     0,
-                lineHeight: 1,
               }}
             >
-              {displayScore}
-            </p>
+              {displayed}
+            </motion.p>
 
-            {/* Label + tier */}
-            <p
-              style={{
-                fontSize:      "14px",
-                fontWeight:    500,
-                color:         "#6B8C6B",
-                textTransform: "uppercase",
-                letterSpacing: ".08em",
-              }}
-            >
+            <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-[#6B8C6B]">
               Your Pulse Score
             </p>
 
+            {/* Tier badge */}
             <span
-              style={{
-                background:   tier.bg,
-                color:        tier.color,
-                borderRadius: "100px",
-                padding:      "4px 14px",
-                fontSize:     "11px",
-                fontWeight:   700,
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-              }}
+              className="rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-[0.08em]"
+              style={{ background: tier.bg, color: tier.color }}
             >
               {tier.label}
             </span>
 
-            {/* Tagline */}
             <p
-              style={{
-                fontFamily:   "'DM Serif Display', serif",
-                fontStyle:    "italic",
-                fontSize:     "20px",
-                color:        "#F5FFF0",
-                marginTop:    "8px",
-              }}
+              className="mt-2 text-[20px] font-normal italic text-[#F5FFF0]"
+              style={{ fontFamily: "'DM Serif Display', serif" }}
             >
-              Accra's been waiting.
+              Accra&apos;s been waiting.
             </p>
-            <p style={{ fontSize: "13px", fontWeight: 300, color: "#4A6A4A", lineHeight: 1.5 }}>
+            <p className="text-[13px] font-light leading-relaxed text-[#4A6A4A]">
               Go out more. Your score grows with every event.
             </p>
 
             {/* Stats row */}
-            <div
-              style={{
-                display:             "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap:                 "10px",
-                width:               "100%",
-                marginTop:           "16px",
-              }}
-            >
+            <div className="mt-2 grid w-full grid-cols-3 gap-2">
               {STATS.map((stat, i) => (
-                <div
+                <motion.div
                   key={stat.label}
-                  style={{
-                    background:   "var(--bg-card, #0D140D)",
-                    border:       "1px solid rgba(95,191,42,0.10)",
-                    borderRadius: "12px",
-                    padding:      "12px 16px",
-                    animation:    `fade-up 400ms ease ${i * 100 + 200}ms both`,
-                  }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.1 }}
+                  className="rounded-[12px] border border-[rgba(95,191,42,0.1)] bg-[#0D140D] px-3 py-3"
                 >
                   <p
-                    style={{
-                      fontFamily:   "'DM Serif Display', serif",
-                      fontStyle:    "italic",
-                      fontSize:     "20px",
-                      color:        "#F5FFF0",
-                      marginBottom: "4px",
-                    }}
+                    className="text-[18px] font-normal italic text-[#F5FFF0]"
+                    style={{ fontFamily: "'DM Serif Display', serif" }}
                   >
                     {stat.value}
                   </p>
-                  <p style={{ fontSize: "11px", color: "#4A6A4A" }}>
-                    {stat.label}
-                  </p>
-                </div>
+                  <p className="mt-1 text-[10px] text-[#4A6A4A]">{stat.label}</p>
+                </motion.div>
               ))}
             </div>
 
-            {/* Enter button */}
-            <button
+            {/* CTA */}
+            <motion.button
               onClick={handleEnter}
-              disabled={loading}
-              style={{
-                display:      "block",
-                width:        "100%",
-                maxWidth:     "320px",
-                height:       "44px",
-                borderRadius: "100px",
-                background:   loading ? "rgba(95,191,42,0.4)" : "#5FBF2A",
-                color:        "#020702",
-                fontWeight:   700,
-                fontSize:     "14px",
-                border:       "none",
-                cursor:       loading ? "not-allowed" : "pointer",
-                boxShadow:    loading ? "none" : "0 0 18px rgba(95,191,42,0.25)",
-                margin:       "24px auto 0",
-                transition:   "background 150ms",
-                animation:    "fade-up 400ms ease 500ms both",
-              }}
+              disabled={submitting}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-4 flex h-[46px] w-full max-w-xs items-center justify-center gap-2 rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.3)] transition disabled:opacity-50"
             >
-              {loading ? "Entering…" : "Enter GoOutside →"}
-            </button>
-          </div>
+              {submitting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#020702] border-t-transparent" />
+                  Entering…
+                </>
+              ) : (
+                "Enter GoOutside →"
+              )}
+            </motion.button>
+          </motion.div>
         )}
-      </div>
-
-      <style>{`
-        @keyframes ring-expand {
-          0%   { transform: scale(0.6); opacity: 0.8; }
-          100% { transform: scale(2.2); opacity: 0; }
-        }
-        @keyframes fade-up {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      </AnimatePresence>
     </div>
   );
 }
