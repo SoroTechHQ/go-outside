@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import {
   LANDMARK_BY_ID,
   type LandmarkEvent,
 } from "@/lib/landmark-events";
+import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 
 const CATEGORY_COLORS: Record<string, string> = {
   music:       "#7c3aed",
@@ -75,6 +76,20 @@ export default function OnboardingHistoryPage() {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [shownIds, setShownIds]    = useState<string[]>(INITIAL_LANDMARK_IDS);
   const [submitting, setSubmitting]= useState(false);
+
+  // Restore draft on mount
+  useEffect(() => {
+    const draft = getOnboardingDraft();
+    if (draft.pastEventIds && draft.pastEventIds.length > 0) {
+      setSelected(new Set(draft.pastEventIds));
+    }
+  }, []);
+
+  // Persist selection to draft
+  useEffect(() => {
+    const ids = [...selected];
+    if (ids.length > 0) saveOnboardingDraft({ pastEventIds: ids });
+  }, [selected]);
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => {

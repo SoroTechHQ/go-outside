@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -52,14 +53,15 @@ export default function OnboardingProfilePage() {
     },
   });
 
-  // Pre-fill from Clerk user once loaded
+  // Pre-fill from Clerk user + cookie draft once loaded
   useEffect(() => {
     if (!isLoaded || !user) return;
+    const draft = getOnboardingDraft();
     reset({
-      first_name: user.firstName ?? "",
-      last_name:  user.lastName  ?? "",
-      username:   (user.username ?? "").toLowerCase(),
-      phone:      user.phoneNumbers?.[0]?.phoneNumber ?? "",
+      first_name: draft.profile?.first_name ?? user.firstName ?? "",
+      last_name:  draft.profile?.last_name  ?? user.lastName  ?? "",
+      username:   draft.profile?.username   ?? (user.username ?? "").toLowerCase(),
+      phone:      draft.profile?.phone      ?? user.phoneNumbers?.[0]?.phoneNumber ?? "",
       location:   null,
     });
   }, [isLoaded, user, reset]);
@@ -93,6 +95,17 @@ export default function OnboardingProfilePage() {
         body:    JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to save profile");
+
+      // Save to draft so back-navigation restores these values
+      saveOnboardingDraft({
+        profile: {
+          first_name: values.first_name,
+          last_name:  values.last_name,
+          username:   values.username,
+          phone:      values.phone,
+          city:       values.location?.city_name,
+        },
+      });
 
       // Advance Clerk metadata — username is saved to Supabase only,
       // updating it via Clerk requires extra verification and is unnecessary here

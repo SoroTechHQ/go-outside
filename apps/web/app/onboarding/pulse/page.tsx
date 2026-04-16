@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { clearOnboardingDraft } from "@/lib/cookies";
 import { motion, AnimatePresence } from "framer-motion";
 import { computeStartingScore, getTierFromScore, getTierSlug } from "@/lib/onboarding-utils";
 import type { VibeData } from "@/lib/onboarding-utils";
@@ -103,7 +104,10 @@ export default function OnboardingPulsePage() {
       return;
     }
 
-    // Hard navigation so the server component re-reads fresh Clerk metadata
+    // Onboarding done — clear the draft cookie
+    clearOnboardingDraft();
+
+    // Hard navigation so the server component re-reads fresh Clerk metadata + go_done cookie
     window.location.href = "/home";
   }
 
