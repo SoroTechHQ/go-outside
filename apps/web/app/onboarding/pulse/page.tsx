@@ -93,7 +93,7 @@ export default function OnboardingPulsePage() {
       body:    JSON.stringify({ pulse_score: score, pulse_tier: tierSlug }),
     });
 
-    router.push("/dashboard");
+    router.push("/home");
   }
 
   return (
