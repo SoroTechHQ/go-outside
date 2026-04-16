@@ -1,17 +1,27 @@
 import { notFound } from "next/navigation";
-import { events, getCategoryBySlug, getOrganizerById } from "@gooutside/demo-data";
+import { getOrganizerByUserId } from "../../../lib/db/organizers";
+import { getEventsByOrganizer } from "../../../lib/db/events";
+import { getCategories } from "../../../lib/db/categories";
 import { EventCard, ShellCard } from "@gooutside/ui";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import type { Category } from "@gooutside/demo-data";
 
-export default async function OrganizerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrganizerProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const organizer = getOrganizerById(id);
 
-  if (!organizer) {
-    notFound();
-  }
+  const [organizer, organizerEvents, categories] = await Promise.all([
+    getOrganizerByUserId(id),
+    getEventsByOrganizer(id),
+    getCategories(),
+  ]);
 
-  const organizerEvents = events.filter((e) => e.organizerId === id);
+  if (!organizer) notFound();
+
+  const categoryMap = new Map<string, Category>(categories.map((c) => [c.slug, c]));
 
   return (
     <main className="page-grid min-h-screen pb-24">
@@ -23,7 +33,9 @@ export default async function OrganizerProfilePage({ params }: { params: Promise
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="font-display text-5xl italic text-[var(--text-primary)]">{organizer.name}</h1>
+                <h1 className="font-display text-5xl italic text-[var(--text-primary)]">
+                  {organizer.name}
+                </h1>
                 {organizer.verified && (
                   <ShieldCheck size={22} className="text-[var(--neon)]" weight="fill" />
                 )}
@@ -39,16 +51,28 @@ export default async function OrganizerProfilePage({ params }: { params: Promise
         </ShellCard>
 
         <div className="mb-6">
-          <h2 className="font-display text-3xl italic text-[var(--text-primary)]">Events by {organizer.name}</h2>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">{organizerEvents.length} listing{organizerEvents.length !== 1 ? "s" : ""}</p>
+          <h2 className="font-display text-3xl italic text-[var(--text-primary)]">
+            Events by {organizer.name}
+          </h2>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            {organizerEvents.length} listing{organizerEvents.length !== 1 ? "s" : ""}
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
           {organizerEvents.map((event) => {
-            const category = getCategoryBySlug(event.categorySlug);
-            return category ? (
-              <EventCard key={event.id} category={category} event={event} organizer={organizer} />
-            ) : null;
+            const category = categoryMap.get(event.categorySlug) ?? {
+              slug: event.categorySlug, name: event.eyebrow,
+              iconKey: "calendar", description: "",
+            };
+            return (
+              <EventCard
+                key={event.id}
+                category={category}
+                event={event}
+                organizer={organizer}
+              />
+            );
           })}
         </div>
       </section>

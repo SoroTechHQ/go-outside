@@ -68,6 +68,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.103.0
         version: 2.103.0
+      '@tanstack/react-query':
+        specifier: ^5.99.0
+        version: 5.99.0(react@19.2.4)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.99.0
+        version: 5.99.0(@tanstack/react-query@5.99.0(react@19.2.4))(react@19.2.4)
       atropos:
         specifier: ^2.0.2
         version: 2.0.2
@@ -1000,6 +1006,23 @@ packages:
 
   '@tanstack/query-core@5.90.16':
     resolution: {integrity: sha512-MvtWckSVufs/ja463/K4PyJeqT+HMlJWtw6PrCpywznd2NSgO3m4KwO9RqbFqGg6iDE8vVMFWMeQI4Io3eEYww==}
+
+  '@tanstack/query-core@5.99.0':
+    resolution: {integrity: sha512-3Jv3WQG0BCcH7G+7lf/bP8QyBfJOXeY+T08Rin3GZ1bshvwlbPt7NrDHMEzGdKIOmOzvIQmxjk28YEQX60k7pQ==}
+
+  '@tanstack/query-devtools@5.99.0':
+    resolution: {integrity: sha512-m4ufXaJ8FjWXw7xDtyzE/6fkZAyQFg9WrbMrUpt8ZecRJx58jiFOZ2lxZMphZdIpAnIeto/S8stbwLKLusyckQ==}
+
+  '@tanstack/react-query-devtools@5.99.0':
+    resolution: {integrity: sha512-CqqX7LCU9yOfCY/vBURSx2YSD83ryfX+QkfkaKionTfg1s2Hdm572Ro99gW3QPoJjzvsj1HM4pnN4nbDy3MXKA==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.99.0
+      react: ^18 || ^19
+
+  '@tanstack/react-query@5.99.0':
+    resolution: {integrity: sha512-OY2bCqPemT1LlqJ8Y2CUau4KELnIhhG9Ol3ZndPbdnB095pRbPo1cHuXTndg8iIwtoHTgwZjyaDnQ0xD0mYwAw==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@types/bcryptjs@2.4.6':
     resolution: {integrity: sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ==}
@@ -2144,6 +2167,21 @@ snapshots:
       tailwindcss: 4.2.2
 
   '@tanstack/query-core@5.90.16': {}
+
+  '@tanstack/query-core@5.99.0': {}
+
+  '@tanstack/query-devtools@5.99.0': {}
+
+  '@tanstack/react-query-devtools@5.99.0(@tanstack/react-query@5.99.0(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@tanstack/query-devtools': 5.99.0
+      '@tanstack/react-query': 5.99.0(react@19.2.4)
+      react: 19.2.4
+
+  '@tanstack/react-query@5.99.0(react@19.2.4)':
+    dependencies:
+      '@tanstack/query-core': 5.99.0
+      react: 19.2.4
 
   '@types/bcryptjs@2.4.6': {}
 

@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeScript } from "@gooutside/ui";
 import { ConditionalChrome } from "../components/layout/ConditionalChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const interBody = Inter({
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${interBody.variable} ${interDisplay.variable} font-body lab-bg relative`}>
         <ClerkProvider>
-          <ThemeScript />
-          <AppShellProvider>
-            <ConditionalChrome>{children}</ConditionalChrome>
-          </AppShellProvider>
+          <Providers>
+            <ThemeScript />
+            <AppShellProvider>
+              <ConditionalChrome>{children}</ConditionalChrome>
+            </AppShellProvider>
+          </Providers>
         </ClerkProvider>
       </body>
     </html>

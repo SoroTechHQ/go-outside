@@ -1,16 +1,26 @@
 import { notFound } from "next/navigation";
-import { events, getCategoryBySlug, getOrganizerById } from "@gooutside/demo-data";
+import { getCategoryBySlug } from "../../../lib/db/categories";
+import { getEventsByCategory } from "../../../lib/db/events";
+import { getOrganizers } from "../../../lib/db/organizers";
 import { AppIcon, Button, EventCard, ShellCard } from "@gooutside/ui";
+import type { Organizer } from "@gooutside/demo-data";
 
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
 
-  if (!category) {
-    notFound();
-  }
+  const [category, categoryEvents, organizers] = await Promise.all([
+    getCategoryBySlug(slug),
+    getEventsByCategory(slug),
+    getOrganizers(),
+  ]);
 
-  const categoryEvents = events.filter((e) => e.categorySlug === slug);
+  if (!category) notFound();
+
+  const organizerMap = new Map<string, Organizer>(organizers.map((o) => [o.id, o]));
 
   return (
     <main className="page-grid min-h-screen pb-24">
@@ -19,17 +29,25 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bg-muted)] text-[var(--neon)]">
             <AppIcon name={category.iconKey} size={26} weight="bold" />
           </div>
-          <h1 className="font-display text-5xl italic text-[var(--text-primary)]">{category.name}</h1>
+          <h1 className="font-display text-5xl italic text-[var(--text-primary)]">
+            {category.name}
+          </h1>
         </div>
       </div>
 
       <section className="container-shell py-10">
-        <p className="mb-6 text-sm text-[var(--text-secondary)]">{categoryEvents.length} events in this scene</p>
+        <p className="mb-6 text-sm text-[var(--text-secondary)]">
+          {categoryEvents.length} event{categoryEvents.length !== 1 ? "s" : ""} in this scene
+        </p>
 
         {categoryEvents.length === 0 ? (
           <ShellCard className="py-12 text-center">
-            <h3 className="font-display text-3xl italic text-[var(--text-primary)]">No events yet</h3>
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">Check back soon — this scene is growing.</p>
+            <h3 className="font-display text-3xl italic text-[var(--text-primary)]">
+              No events yet
+            </h3>
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+              Check back soon — this scene is growing.
+            </p>
             <div className="mt-6 flex justify-center">
               <Button href="/events">Browse all events</Button>
             </div>
@@ -37,9 +55,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         ) : (
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {categoryEvents.map((event) => {
-              const organizer = getOrganizerById(event.organizerId);
+              const organizer = organizerMap.get(event.organizerId);
               return organizer ? (
-                <EventCard key={event.id} category={category} event={event} organizer={organizer} />
+                <EventCard
+                  key={event.id}
+                  category={category}
+                  event={event}
+                  organizer={organizer}
+                />
               ) : null;
             })}
           </div>

@@ -1,8 +1,10 @@
-import { organizers } from "@gooutside/demo-data";
+import { getOrganizers } from "../../lib/db/organizers";
 import { Button, SectionHeader, ShellCard } from "@gooutside/ui";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 
-export default function OrganizersPage() {
+export default async function OrganizersPage() {
+  const organizers = await getOrganizers();
+
   return (
     <main className="page-grid min-h-screen pb-24">
       <section className="container-shell py-10">
@@ -22,7 +24,9 @@ export default function OrganizersPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="font-display text-2xl italic text-[var(--text-primary)]">{org.name}</h2>
+                    <h2 className="font-display text-2xl italic text-[var(--text-primary)]">
+                      {org.name}
+                    </h2>
                     {org.verified && (
                       <ShieldCheck size={16} className="shrink-0 text-[var(--neon)]" weight="fill" />
                     )}
