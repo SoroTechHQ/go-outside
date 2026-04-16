@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.2.1",
     "@gooutside/demo-data": "workspace:*",
     "@gooutside/ui": "workspace:*",
     "@phosphor-icons/react": "^2.1.7",

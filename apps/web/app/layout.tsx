@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeScript } from "@gooutside/ui";
 import { ConditionalChrome } from "../components/layout/ConditionalChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
@@ -27,10 +28,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${interBody.variable} ${interDisplay.variable} font-body lab-bg relative`}>
-        <ThemeScript />
-        <AppShellProvider>
-          <ConditionalChrome>{children}</ConditionalChrome>
-        </AppShellProvider>
+        <ClerkProvider>
+          <ThemeScript />
+          <AppShellProvider>
+            <ConditionalChrome>{children}</ConditionalChrome>
+          </AppShellProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
