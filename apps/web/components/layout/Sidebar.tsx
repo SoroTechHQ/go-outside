@@ -71,13 +71,13 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
           { href: "/", label: "Home", icon: House },
           { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
           { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
-          { href: "/dashboard/saved", label: "Activity", icon: TrendUp },
+          { href: "/dashboard/activity", label: "Activity", icon: TrendUp },
         ]
       : [
           { href: "/", label: "Home", icon: House },
           { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
           { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
-          { href: "/dashboard/saved", label: "Activity", icon: TrendUp },
+          { href: "/dashboard/activity", label: "Activity", icon: TrendUp },
         ];
 
   useEffect(() => {

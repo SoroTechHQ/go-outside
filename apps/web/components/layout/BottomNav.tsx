@@ -25,7 +25,7 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
     { href: "/", icon: House, label: "Home" },
     { href: "/dashboard/messages", icon: ChatCircleDots, label: "Messages", unread: true },
     { href: "/dashboard/wallets", icon: Wallet, label: "Wallets" },
-    { href: "/dashboard/saved", icon: TrendUp, label: "Activity" },
+    { href: "/dashboard/activity", icon: TrendUp, label: "Activity" },
     { href: "/dashboard/profile", icon: UserCircle, label: "Profile" },
   ];
 

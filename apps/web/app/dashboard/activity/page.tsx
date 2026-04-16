@@ -23,14 +23,6 @@ export default async function ActivityPage() {
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
       <div className="container-shell px-4 py-8 md:py-10">
-        <SectionHeader
-          eyebrow="Your world"
-          index="01"
-          title={
-            unreadCount > 0 ? `Activity · ${unreadCount} new` : "Activity"
-          }
-          description="Tickets, saves, reviews, and everything happening around you."
-        />
 
         <div className="mx-auto mt-8 max-w-[680px]">
           <ActivityFeed userId={user.id} />
