@@ -232,7 +232,7 @@ export default function LandingPage() {
             style={{
               background: "#2f8f45",
               mixBlendMode: "hue",
-              opacity: 0.92,
+              opacity: 0.62,
             }}
           />
 

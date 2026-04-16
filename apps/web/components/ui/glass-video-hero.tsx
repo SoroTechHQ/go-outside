@@ -39,7 +39,7 @@ const HeroSection = () => {
         {/* Hue-shift: replaces purple tones with green */}
         <div
           className="absolute inset-0"
-          style={{ background: "#2f8f45", mixBlendMode: "hue", opacity: 0.92 }}
+          style={{ background: "#2f8f45", mixBlendMode: "hue", opacity: 0.62 }}
         />
 
         {/* Darken for readability */}
