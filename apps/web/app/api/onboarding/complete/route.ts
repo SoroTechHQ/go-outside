@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
 
+const COOKIE_OPTS = {
+  path:     "/",
+  sameSite: "lax" as const,
+  secure:   process.env.NODE_ENV === "production",
+  maxAge:   30 * 24 * 60 * 60, // 30 days
+};
+
 export async function POST(req: NextRequest) {
   const clerk = await currentUser();
   if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +35,7 @@ export async function POST(req: NextRequest) {
       },
       { onConflict: "clerk_id" }
     )
-    .select("id")
+    .select("id, location_city, interests, vibe")
     .single();
 
   if (upsertErr || !sbUser) {
@@ -57,5 +64,21 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ ok: true });
+  // Build response and set cookies
+  const res = NextResponse.json({ ok: true });
+
+  // go_done — HttpOnly, read by /home server component to skip Clerk round-trip
+  res.cookies.set("go_done", "1", { ...COOKIE_OPTS, httpOnly: true });
+
+  // go_prefs — client-readable, used by feed for instant personalization
+  const prefs = {
+    city:      (sbUser as Record<string, unknown>).location_city as string ?? "",
+    interests: ((sbUser as Record<string, unknown>).interests as string[]) ?? [],
+    vibe:      ((sbUser as Record<string, unknown>).vibe as Record<string, unknown> | null) ?? null,
+    score:     pulse_score,
+    tier:      pulse_tier,
+  };
+  res.cookies.set("go_prefs", JSON.stringify(prefs), { ...COOKIE_OPTS, httpOnly: false });
+
+  return res;
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_BY_ID } from "@/lib/landmark-events";
+import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 
 const CATEGORIES = [
   { slug: "music",       name: "Music",        emoji: "🎵" },
@@ -28,23 +29,40 @@ export default function OnboardingInterestsPage() {
 
   // Auto-highlight categories from past event selections (Step 3)
   const [historyCategories, setHistoryCategories] = useState<Set<string>>(new Set());
+  const hydrated = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
-    const pastIds = (user.unsafeMetadata?.pastEventIds as string[]) ?? [];
+    if (hydrated.current) return;
+    hydrated.current = true;
+
+    // First restore cookie draft
+    const draft = getOnboardingDraft();
+    const draftInterests = new Set<CategorySlug>(
+      (draft.interests ?? []) as CategorySlug[]
+    );
+
+    // Then layer in categories derived from past events (cookie or Clerk)
+    const pastIds = draft.pastEventIds
+      ?? ((user?.unsafeMetadata?.pastEventIds as string[] | undefined) ?? []);
     const cats = new Set<string>();
     for (const id of pastIds) {
       const ev = LANDMARK_BY_ID.get(id);
       if (ev) cats.add(ev.category);
     }
     setHistoryCategories(cats);
-    // Pre-select them
+
     setSelected((prev) => {
-      const next = new Set(prev);
+      const next = new Set([...prev, ...draftInterests]);
       for (const c of cats) next.add(c as CategorySlug);
       return next;
     });
   }, [user]);
+
+  // Persist selection to draft on every change
+  useEffect(() => {
+    const arr = [...selected];
+    if (arr.length > 0) saveOnboardingDraft({ interests: arr });
+  }, [selected]);
 
   function toggle(slug: CategorySlug) {
     setSelected((prev) => {

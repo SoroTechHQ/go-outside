@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import type { VibeData } from "@/lib/onboarding-utils";
+import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 
 /* ── Question data ─────────────────────────────────────────────────────────── */
 
@@ -82,6 +83,21 @@ export default function OnboardingVibePage() {
   const { user }   = useUser();
   const [vibe, setVibe] = useState<Partial<VibeData>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Restore draft on mount
+  useEffect(() => {
+    const draft = getOnboardingDraft();
+    if (draft.vibe && Object.keys(draft.vibe).length > 0) {
+      setVibe(draft.vibe as Partial<VibeData>);
+    }
+  }, []);
+
+  // Persist draft whenever vibe changes
+  useEffect(() => {
+    if (Object.keys(vibe).length > 0) {
+      saveOnboardingDraft({ vibe: vibe as Record<string, unknown> });
+    }
+  }, [vibe]);
 
   function select(key: keyof VibeData, value: string, multi: boolean) {
     setVibe((prev) => {
