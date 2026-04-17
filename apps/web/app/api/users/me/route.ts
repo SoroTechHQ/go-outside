@@ -21,6 +21,11 @@ export async function PATCH(req: NextRequest) {
   if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json() as Record<string, unknown>;
+  const { data: existing } = await supabaseAdmin
+    .from("users")
+    .select("role")
+    .eq("clerk_id", clerk.id)
+    .maybeSingle();
 
   // Whitelist updatable scalar fields
   const allowed = [
@@ -51,7 +56,7 @@ export async function PATCH(req: NextRequest) {
     email:      clerk.emailAddresses[0]?.emailAddress ?? "",
     first_name: clerk.firstName ?? "User",
     last_name:  clerk.lastName  ?? "",
-    role:       "attendee" as const,
+    role:       (existing?.role as "admin" | "organizer" | "attendee" | undefined) ?? "attendee",
   };
 
   const { data, error } = await supabaseAdmin

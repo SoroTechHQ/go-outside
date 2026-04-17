@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ChartBar,
   ChatCircleDots,
   House,
   MoonStars,
@@ -73,6 +74,10 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
     { href: "/wallets", label: "Wallets", icon: Wallet },
     { href: "/activity", label: "Activity", icon: MoonStars },
   ];
+
+  if (role === "organizer" || role === "admin") {
+    navItems.splice(4, 0, { href: "/organizer", label: "Organizer", icon: ChartBar });
+  }
 
   useEffect(() => {
     if (!isTabletUp) {
