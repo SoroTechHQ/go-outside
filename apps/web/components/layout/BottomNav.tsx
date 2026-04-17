@@ -23,10 +23,10 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
 
   const items: BottomNavItem[] = [
     { href: "/", icon: House, label: "Home" },
-    { href: "/dashboard/trending", icon: Fire, label: "Trending" },
-    { href: "/dashboard/messages", icon: ChatCircleDots, label: "Messages", unread: true },
-    { href: "/dashboard/wallets", icon: Wallet, label: "Wallets" },
-    { href: "/dashboard/profile", icon: UserCircle, label: "Profile" },
+    { href: "/trending", icon: Fire, label: "Trending" },
+    { href: "/messages", icon: ChatCircleDots, label: "Messages", unread: true },
+    { href: "/wallets", icon: Wallet, label: "Wallets" },
+    { href: "/profile", icon: UserCircle, label: "Profile" },
   ];
 
   return (

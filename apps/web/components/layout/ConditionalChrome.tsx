@@ -10,20 +10,23 @@ import type { ReactNode } from "react";
 // "/" uses the (marketing) layout which has its own navbar/footer
 const STANDALONE_ROUTES = ["/", "/waitlist", "/ad-waitlist", "/sign-in", "/sign-up", "/onboarding"];
 
-// Routes that suppress only the footer (app chrome stays)
+// Routes that suppress only the footer (app chrome stays).
+// These use the clean rewritten URLs (e.g. /messages not /dashboard/messages).
 const NO_FOOTER_ROUTES = [
-  "/dashboard/wallets",
-  "/dashboard/messages",
-  "/dashboard/activity",
-  "/dashboard/notifications",
-  "/dashboard/tickets",
-  "/dashboard/saved",
-  "/dashboard/profile",
-  "/dashboard/trending",
-  "/dashboard/checkout",
-  "/dashboard/user",
-  "/dashboard/organizer",
-  "/dashboard/events",
+  "/wallets",
+  "/messages",
+  "/activity",
+  "/notifications",
+  "/tickets",
+  "/saved",
+  "/profile",
+  "/trending",
+  "/checkout",
+  "/user",
+  "/organizer",
+  "/events",
+  // Also catch any legacy /dashboard/* direct hits during transition
+  "/dashboard",
 ];
 
 export function ConditionalChrome({ children }: { children: ReactNode }) {

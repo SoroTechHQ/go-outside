@@ -6,6 +6,7 @@ import {
   ChatCircleDots,
   House,
   MoonStars,
+  ShoppingCart,
   SunDim,
   TrendUp,
   UserCircle,
@@ -67,10 +68,10 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   const isExpanded = isDesktop && hovered;
   const navItems: NavItem[] = [
     { href: "/", label: "Home", icon: House },
-    { href: "/dashboard/trending", label: "Trending", icon: TrendUp },
-    { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
-    { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
-    { href: "/dashboard/activity", label: "Activity", icon: MoonStars },
+    { href: "/trending", label: "Trending", icon: TrendUp },
+    { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
+    { href: "/wallets", label: "Wallets", icon: Wallet },
+    { href: "/activity", label: "Activity", icon: MoonStars },
   ];
 
   useEffect(() => {
@@ -176,6 +177,38 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
         </div>
 
         <div className="px-2 pt-4">
+          <Link
+            className={`relative flex h-[52px] w-full items-center transition ${
+              pathname.startsWith("/dashboard/tickets")
+                ? "font-semibold text-[var(--brand)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            } ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}
+            href="/dashboard/tickets"
+          >
+            <ShoppingCart
+              size={24}
+              weight={pathname.startsWith("/dashboard/tickets") ? "fill" : "regular"}
+              className={pathname.startsWith("/dashboard/tickets") ? "text-[var(--brand)]" : "text-current"}
+            />
+            <AnimatePresence>
+              {isExpanded ? (
+                <motion.span
+                  animate={{ opacity: 1, width: "auto" }}
+                  className="overflow-hidden whitespace-nowrap text-sm font-medium"
+                  exit={{ opacity: 0, width: 0 }}
+                  initial={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  My Tickets
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+            {/* Cart count badge */}
+            <div className={`absolute flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white ${isExpanded ? "right-3 top-3" : "right-3.5 top-3"}`}>
+              2
+            </div>
+          </Link>
+
           <button
             className={`flex h-[52px] w-full items-center text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] ${
               isExpanded ? "gap-3.5 px-5" : "justify-center"
