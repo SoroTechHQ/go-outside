@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChatCircleDots, Fire, House, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react";
+import {
+  ChartBar,
+  ChatCircleDots,
+  Fire,
+  House,
+  UserCircle,
+  Wallet,
+} from "@phosphor-icons/react";
 
 type BottomNavRole = "attendee" | "organizer" | "admin";
 
@@ -29,10 +36,14 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
     { href: "/profile", icon: UserCircle, label: "Profile" },
   ];
 
+  if (role === "organizer" || role === "admin") {
+    items.push({ href: "/organizer", icon: ChartBar, label: "Org" });
+  }
+
   return (
     <nav className="fixed bottom-3 left-3 right-3 z-50 rounded-[22px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_4px_24px_rgba(0,0,0,0.10),0_1px_4px_rgba(0,0,0,0.06)] md:hidden">
       <div
-        className="flex items-center justify-around px-1"
+        className="flex items-center justify-around gap-0.5 px-1"
         style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
         {items.map((item) => {
@@ -45,7 +56,7 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
           return (
             <Link
               key={item.href}
-              className="relative flex flex-1 flex-col items-center pt-2.5"
+              className="relative flex min-w-0 flex-1 flex-col items-center pt-2.5"
               href={item.href}
             >
               {/* Animated active pill */}
@@ -67,12 +78,12 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
                 <Icon
                   size={21}
                   weight={active ? "fill" : "regular"}
-                  className={`transition-colors duration-150 ${
-                    active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
-                  }`}
-                />
+                    className={`transition-colors duration-150 ${
+                      active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
+                    }`}
+                  />
                 <span
-                  className={`text-[10px] font-medium transition-colors duration-150 ${
+                  className={`max-w-full truncate text-[9px] font-medium transition-colors duration-150 ${
                     active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
                   }`}
                 >
