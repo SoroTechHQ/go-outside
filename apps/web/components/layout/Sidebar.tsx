@@ -65,20 +65,13 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   }, []);
 
   const isExpanded = isDesktop && hovered;
-  const navItems: NavItem[] =
-    role === "organizer" || role === "admin"
-      ? [
-          { href: "/", label: "Home", icon: House },
-          { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
-          { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
-          { href: "/dashboard/activity", label: "Activity", icon: TrendUp },
-        ]
-      : [
-          { href: "/", label: "Home", icon: House },
-          { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
-          { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
-          { href: "/dashboard/activity", label: "Activity", icon: TrendUp },
-        ];
+  const navItems: NavItem[] = [
+    { href: "/", label: "Home", icon: House },
+    { href: "/dashboard/trending", label: "Trending", icon: TrendUp },
+    { href: "/dashboard/messages", label: "Messages", icon: ChatCircleDots, unread: true },
+    { href: "/dashboard/wallets", label: "Wallets", icon: Wallet },
+    { href: "/dashboard/activity", label: "Activity", icon: MoonStars },
+  ];
 
   useEffect(() => {
     if (!isTabletUp) {

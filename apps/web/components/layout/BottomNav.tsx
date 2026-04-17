@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChatCircleDots, House, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react";
+import { ChatCircleDots, Fire, House, TrendUp, UserCircle, Wallet } from "@phosphor-icons/react";
 
 type BottomNavRole = "attendee" | "organizer" | "admin";
 
@@ -23,9 +23,9 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
 
   const items: BottomNavItem[] = [
     { href: "/", icon: House, label: "Home" },
+    { href: "/dashboard/trending", icon: Fire, label: "Trending" },
     { href: "/dashboard/messages", icon: ChatCircleDots, label: "Messages", unread: true },
     { href: "/dashboard/wallets", icon: Wallet, label: "Wallets" },
-    { href: "/dashboard/activity", icon: TrendUp, label: "Activity" },
     { href: "/dashboard/profile", icon: UserCircle, label: "Profile" },
   ];
 

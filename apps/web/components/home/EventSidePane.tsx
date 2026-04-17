@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { GetTicketModal, type EventForTicket } from "../tickets/GetTicketModal";
 import {
   ArrowLeft,
   ArrowRight,
@@ -378,21 +379,24 @@ function PaneFooter({
   event,
   saved,
   onToggleSaved,
+  onGetTickets,
 }: {
   event: EventItem;
   saved: boolean;
   onToggleSaved: () => void;
+  onGetTickets: () => void;
 }) {
   return (
     <div className="shrink-0 border-t border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
       <div className="flex items-center gap-2">
-        <Link
+        <button
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
-          href={`/events/${event.slug}`}
+          onClick={onGetTickets}
+          type="button"
         >
           <Ticket size={15} weight="bold" />
           {event.priceValue === 0 ? "Get Free Tickets" : `Get Tickets · ${event.priceLabel}`}
-        </Link>
+        </button>
         <button
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${saved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
           onClick={onToggleSaved}
@@ -434,6 +438,7 @@ export function EventSidePane({
   const [mounted, setMounted] = useState(false);
   const [photoModal, setPhotoModal] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
   const [saved, setSaved] = useState(false);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
 
   // Mobile bottom sheet state
   const SNAP_PEEK = 66;   // vh — half-open
@@ -526,14 +531,14 @@ export function EventSidePane({
       <>
         {/* Backdrop */}
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
           style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.3s ease" }}
           onClick={onClose}
         />
 
         {/* Bottom sheet */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--home-border)] bg-[var(--bg-card)] shadow-[0_-8px_48px_rgba(0,0,0,0.22)]"
+          className="fixed bottom-0 left-0 right-0 z-[51] flex flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--home-border)] bg-[var(--bg-card)] shadow-[0_-8px_48px_rgba(0,0,0,0.22)]"
           style={{
             height: `${sheetHeight}vh`,
             transition: isSnapping ? "height 0.38s cubic-bezier(0.22,1,0.36,1)" : "none",
@@ -587,7 +592,7 @@ export function EventSidePane({
           </div>
 
           {/* Sticky footer */}
-          <PaneFooter event={event} onToggleSaved={() => setSaved((v) => !v)} saved={saved} />
+          <PaneFooter event={event} onToggleSaved={() => setSaved((v) => !v)} saved={saved} onGetTickets={() => setTicketModalOpen(true)} />
         </div>
 
         {photoModal.open && (
@@ -595,6 +600,31 @@ export function EventSidePane({
             images={images}
             initialIndex={photoModal.index}
             onClose={() => setPhotoModal({ open: false, index: 0 })}
+          />
+        )}
+
+        {ticketModalOpen && (
+          <GetTicketModal
+            event={{
+              id: event.slug,
+              title: event.title,
+              date: event.dateLabel,
+              time: event.timeLabel,
+              venue: event.venue,
+              imageUrl: images[0],
+              organizer: "GoOutside",
+              ticketTypes: event.priceValue === 0
+                ? [{ id: "free", name: "General Admission", price: 0, priceType: "free" as const, description: "Free entry", remaining: 100, maxPerUser: 4 }]
+                : event.ticketTypes.map((t, i) => ({
+                    id: `tier-${i}`,
+                    name: t.name,
+                    price: i === 0 ? event.priceValue : Math.round(event.priceValue * (1.5 + i * 0.8)),
+                    priceType: "paid" as const,
+                    description: t.remainingLabel,
+                    maxPerUser: 4,
+                  })),
+            }}
+            onClose={() => setTicketModalOpen(false)}
           />
         )}
       </>
@@ -605,7 +635,7 @@ export function EventSidePane({
   return (
     <>
       <div
-        className="fixed right-0 top-0 z-40 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)] transition-transform duration-300 ease-out"
+        className="fixed right-0 top-0 z-50 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)] transition-transform duration-300 ease-out"
         style={{ width: paneWidth, transform: mounted ? "translateX(0)" : "translateX(100%)" }}
       >
         {/* Drag handle */}
@@ -650,7 +680,7 @@ export function EventSidePane({
         </div>
 
         {/* Sticky footer */}
-        <PaneFooter event={event} onToggleSaved={() => setSaved((v) => !v)} saved={saved} />
+        <PaneFooter event={event} onToggleSaved={() => setSaved((v) => !v)} saved={saved} onGetTickets={() => setTicketModalOpen(true)} />
       </div>
 
       {photoModal.open && (
@@ -658,6 +688,31 @@ export function EventSidePane({
           images={images}
           initialIndex={photoModal.index}
           onClose={() => setPhotoModal({ open: false, index: 0 })}
+        />
+      )}
+
+      {ticketModalOpen && (
+        <GetTicketModal
+          event={{
+            id: event.slug,
+            title: event.title,
+            date: event.dateLabel,
+            time: event.timeLabel,
+            venue: event.venue,
+            imageUrl: images[0],
+            organizer: "GoOutside",
+            ticketTypes: event.priceValue === 0
+              ? [{ id: "free", name: "General Admission", price: 0, priceType: "free" as const, description: "Free entry", remaining: 100, maxPerUser: 4 }]
+              : event.ticketTypes.map((t, i) => ({
+                  id: `tier-${i}`,
+                  name: t.name,
+                  price: i === 0 ? event.priceValue : Math.round(event.priceValue * (1.5 + i * 0.8)),
+                  priceType: "paid" as const,
+                  description: t.remainingLabel,
+                  maxPerUser: 4,
+                })),
+          }}
+          onClose={() => setTicketModalOpen(false)}
         />
       )}
     </>

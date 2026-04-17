@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +25,8 @@ import {
 } from "@gooutside/demo-data";
 import HomeSearchHero from "../search/HomeSearchHero";
 import { EventSidePane } from "./EventSidePane";
+import { useAppShell } from "../layout/AppShellContext";
+import { useInfiniteEvents, getFilteredEvents } from "../../hooks/useEventsQuery";
 
 // ── Unsplash avatar pool ──────────────────────────────────────────────────────
 const AVATAR_POOL = [
@@ -68,8 +70,6 @@ const FRIEND_CLUSTERS = [
 
 const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 
-const INITIAL_COUNT = 6;
-const PAGE_SIZE = 4;
 const CARDS_PER_SECTION = 3;
 
 const FEED_SECTIONS = [
@@ -299,8 +299,8 @@ export function HomeClient() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setPeekPanelWidth } = useAppShell();
 
-  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
   const [paneWidth, setPaneWidth] = useState(520);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -312,31 +312,22 @@ export function HomeClient() {
   const query = (searchParams.get("q") ?? "").trim().toLowerCase();
   const when = (searchParams.get("when") ?? "").trim().toLowerCase();
 
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(event.categorySlug);
-      const queryMatch = query.length === 0 || `${event.title} ${event.venue} ${event.city} ${event.shortDescription}`.toLowerCase().includes(query);
-      const whenMatch = when.length === 0 || `${event.dateLabel} ${event.timeLabel} ${event.eyebrow}`.toLowerCase().includes(when);
-      return categoryMatch && queryMatch && whenMatch;
-    });
-  }, [query, selectedCategories, when]);
+  const filters = useMemo(
+    () => ({ categories: selectedCategories, query, when }),
+    [selectedCategories, query, when],
+  );
 
-  useEffect(() => { setVisibleCount(INITIAL_COUNT); }, [searchParams]);
+  const { data, fetchNextPage } = useInfiniteEvents(filters);
+
+  const visibleEvents = useMemo(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data],
+  );
+
+  // For sidebar widgets and sponsored card (non-feed derived state)
+  const filteredEvents = useMemo(() => getFilteredEvents(filters), [filters]);
 
   const sponsoredEvent = filteredEvents.find((e) => e.categorySlug === "tech") ?? filteredEvents[0] ?? events[0];
-
-  const allFeedEvents = useMemo(() => {
-    const base = filteredEvents.length > 0 ? filteredEvents : events;
-    return base.filter((e) => e.slug !== sponsoredEvent?.slug);
-  }, [filteredEvents, sponsoredEvent]);
-
-  const visibleEvents = useMemo(() => {
-    if (allFeedEvents.length === 0) return [];
-    return Array.from({ length: Math.min(visibleCount, allFeedEvents.length * 8) }, (_, i) => {
-      const event = allFeedEvents[i % allFeedEvents.length]!;
-      return { ...event, _feedIndex: i, _feedKey: `${event.id}-${Math.floor(i / allFeedEvents.length)}` };
-    });
-  }, [allFeedEvents, visibleCount]);
 
   const trendingCards = buildResultList(
     filteredEvents.filter((e) => e.trending).length > 0
@@ -345,18 +336,21 @@ export function HomeClient() {
     2,
   );
 
-  const loadMore = useCallback(() => setVisibleCount((p) => p + PAGE_SIZE), []);
+  // Sync pane width to AppShellContext so header adjusts
+  useEffect(() => {
+    setPeekPanelWidth(selectedEvent ? paneWidth : 0);
+  }, [selectedEvent, paneWidth, setPeekPanelWidth]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) loadMore(); },
+      (entries) => { if (entries[0]?.isIntersecting) fetchNextPage(); },
       { rootMargin: "400px" },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [loadMore]);
+  }, [fetchNextPage]);
 
   const updateCategory = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());

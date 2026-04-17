@@ -87,6 +87,26 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+        {/* Cover photo */}
+        <div className="relative overflow-hidden rounded-[16px] border border-white/8">
+          <div className="h-20 w-full bg-gradient-to-br from-[var(--brand)]/40 to-[#256f36]/20 flex items-center justify-center">
+            {profile.coverUrl ? (
+              <img alt="cover" className="h-full w-full object-cover" src={profile.coverUrl} />
+            ) : (
+              <p className="text-[11px] text-white/30">No cover image</p>
+            )}
+          </div>
+          <button
+            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
+            type="button"
+          >
+            <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <Camera size={12} />
+              Change Cover
+            </div>
+          </button>
+        </div>
+
         {/* Avatar */}
         <div className="relative flex items-center gap-4 rounded-[16px] border border-white/8 bg-white/4 p-4">
           <div className="relative">
@@ -102,7 +122,7 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
           </div>
           <div>
             <p className="text-[12px] font-semibold text-white/70">Profile photo</p>
-            <p className="mt-0.5 text-[11px] text-white/30">Synced from your account</p>
+            <p className="mt-0.5 text-[11px] text-white/30">Synced from your Clerk account</p>
           </div>
         </div>
 
