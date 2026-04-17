@@ -11,7 +11,20 @@ import type { ReactNode } from "react";
 const STANDALONE_ROUTES = ["/", "/waitlist", "/ad-waitlist", "/sign-in", "/sign-up", "/onboarding"];
 
 // Routes that suppress only the footer (app chrome stays)
-const NO_FOOTER_ROUTES = ["/dashboard/wallets"];
+const NO_FOOTER_ROUTES = [
+  "/dashboard/wallets",
+  "/dashboard/messages",
+  "/dashboard/activity",
+  "/dashboard/notifications",
+  "/dashboard/tickets",
+  "/dashboard/saved",
+  "/dashboard/profile",
+  "/dashboard/trending",
+  "/dashboard/checkout",
+  "/dashboard/user",
+  "/dashboard/organizer",
+  "/dashboard/events",
+];
 
 export function ConditionalChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();

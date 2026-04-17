@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { MagnifyingGlass, ShoppingCart } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
 import { usePathname } from "next/navigation";
 import HomeSearchHero from "../search/HomeSearchHero";
 import SearchBar from "../search/SearchBar";
 import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
+import { useAppShell } from "./AppShellContext";
+import { NotificationBell } from "../notifications/NotificationBell";
+import { useCart } from "../cart/CartContext";
 
 type HeaderProps = {
   appShell?: boolean;
@@ -26,7 +29,9 @@ function getInitials(name: string) {
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
   const pathname = usePathname();
   const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
+  const { peekPanelWidth } = useAppShell();
   const [isFocused, setIsFocused] = useState(false);
+  const { totalCount, openCart } = useCart();
   const stableSidebarOffset = 88;
   const isHome     = pathname === "/";
   const isMessages = pathname === "/dashboard/messages";
@@ -41,13 +46,14 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   if (appShell) {
     return (
       <>
-        <header className="sticky top-0 z-40 hidden md:flex">
+        <header className="sticky top-0 z-40 hidden md:flex pointer-events-none">
           {isHome ? (
             <div
               className="pointer-events-none absolute top-0 px-4 md:px-6"
               style={{
-                width: `calc(100vw - ${stableSidebarOffset}px)`,
+                width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
                 marginLeft: `${stableSidebarOffset}px`,
+                transition: "width 0.3s ease-in-out",
               }}
             >
               <div className="mx-auto w-full max-w-[1120px]">
@@ -86,10 +92,11 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             </div>
           ) : null}
           <div
-            className="flex justify-center px-4 md:px-6"
+            className="pointer-events-auto flex justify-center px-4 md:px-6"
             style={{
-              width: `calc(100vw - ${stableSidebarOffset}px)`,
+              width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
               marginLeft: `${stableSidebarOffset}px`,
+              transition: "width 0.3s ease-in-out",
             }}
           >
             <div
@@ -125,12 +132,19 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
               GoOutside
             </Link>
             <div className="flex items-center gap-1.5">
-              <Link
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
-                href="/search"
-              >
-                <MagnifyingGlass size={17} weight="bold" />
-              </Link>
+              <NotificationBell />
+              {totalCount > 0 && (
+                <button
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95"
+                  onClick={openCart}
+                  type="button"
+                >
+                  <ShoppingCart size={17} weight="bold" />
+                  <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
+                    {totalCount}
+                  </span>
+                </button>
+              )}
               <ThemeToggle />
               <Link
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
@@ -160,7 +174,20 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
               onFocusChange={setIsFocused}
             />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            {totalCount > 0 && (
+              <button
+                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)]"
+                onClick={openCart}
+                type="button"
+              >
+                <ShoppingCart size={17} weight="bold" />
+                <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
+                  {totalCount}
+                </span>
+              </button>
+            )}
             <ThemeToggle />
             <Link
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition hover:opacity-90"
