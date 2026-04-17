@@ -83,7 +83,7 @@ export default async function WalletTicketPage({
       {/* Back nav */}
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] px-4 py-3 backdrop-blur-md">
         <Link
-          href="/dashboard/wallets"
+          href="/wallets"
           className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
         >
           <ArrowLeft size={18} />

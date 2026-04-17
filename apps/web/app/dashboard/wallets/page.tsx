@@ -73,7 +73,7 @@ export default async function WalletsPage() {
               </p>
             </div>
             <Link
-              href="/dashboard/profile"
+              href="/profile"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/60 transition hover:bg-white/12 hover:text-white"
             >
               <ArrowRight size={20} />
@@ -102,7 +102,7 @@ export default async function WalletsPage() {
                 return (
                   <Link
                     key={ticket.id}
-                    href={`/dashboard/wallets/${ticket.id}`}
+                    href={`/wallets/${ticket.id}`}
                     className="group flex min-w-[160px] flex-col overflow-hidden rounded-[20px] border border-white/5 shadow-md transition hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                   >
                     <div className={`bg-gradient-to-br ${grad} flex h-[112px] flex-col justify-between p-4`}>

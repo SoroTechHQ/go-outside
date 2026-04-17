@@ -112,7 +112,7 @@ export default function UserProfilePage() {
             <div className="flex items-center gap-2 mb-2">
               <button
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] active:scale-95"
-                onClick={() => router.push("/dashboard/messages")}
+                onClick={() => router.push("/messages")}
                 type="button"
               >
                 <ChatCircleDots size={18} weight="regular" />

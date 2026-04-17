@@ -179,16 +179,16 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
         <div className="px-2 pt-4">
           <Link
             className={`relative flex h-[52px] w-full items-center transition ${
-              pathname.startsWith("/dashboard/tickets")
+              pathname.startsWith("/tickets")
                 ? "font-semibold text-[var(--brand)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}
-            href="/dashboard/tickets"
+            href="/tickets"
           >
             <ShoppingCart
               size={24}
-              weight={pathname.startsWith("/dashboard/tickets") ? "fill" : "regular"}
-              className={pathname.startsWith("/dashboard/tickets") ? "text-[var(--brand)]" : "text-current"}
+              weight={pathname.startsWith("/tickets") ? "fill" : "regular"}
+              className={pathname.startsWith("/tickets") ? "text-[var(--brand)]" : "text-current"}
             />
             <AnimatePresence>
               {isExpanded ? (
@@ -239,14 +239,14 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
 
           <Link
             className={`mt-2 flex h-[56px] items-center transition ${
-              pathname.startsWith("/dashboard/profile")
+              pathname.startsWith("/profile")
                 ? "font-semibold text-[var(--brand)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
-            href="/dashboard/profile"
+            href="/profile"
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center text-[var(--brand)]">
-              {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/dashboard/profile") ? "fill" : "regular"} />}
+              {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/profile") ? "fill" : "regular"} />}
             </div>
             <AnimatePresence>
               {isExpanded ? (

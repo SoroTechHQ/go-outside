@@ -74,7 +74,7 @@ export function GetTicketModal({ event, onClose }: GetTicketModalProps) {
 
   function handleCheckout() {
     onClose();
-    router.push("/dashboard/checkout");
+    router.push("/checkout");
   }
 
   return (

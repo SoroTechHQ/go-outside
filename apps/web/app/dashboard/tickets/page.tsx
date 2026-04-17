@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function TicketsPage() {
-  redirect("/dashboard/wallets");
+  redirect("/wallets");
 }

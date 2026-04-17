@@ -166,7 +166,7 @@ export function StackedPastTickets({ tickets, events }: Props) {
               zIndex: count - i,
             }}
           >
-            <Link href={`/dashboard/wallets/${ticket.id}`} className="block">
+            <Link href={`/wallets/${ticket.id}`} className="block">
               <FullTicketCard
                 cardIndex={i}
                 event={event}

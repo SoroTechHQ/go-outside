@@ -11,7 +11,7 @@ export function CartDrawer() {
 
   function handleCheckout() {
     closeCart();
-    router.push("/dashboard/checkout");
+    router.push("/checkout");
   }
 
   return (
