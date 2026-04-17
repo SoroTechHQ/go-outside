@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../supabase";
+import { supabaseAdmin } from "../../../lib/supabase";
 
 type OrganizerProfileRow = {
   organization_name: string;
@@ -94,6 +94,29 @@ export type OrganizerDashboardData = {
     featured: boolean;
   }>;
 };
+
+export type OrganizerCalendarItem = {
+  id: string;
+  day: number;
+  kind: "event" | "post" | "campaign";
+  title: string;
+  timeLabel: string;
+  status: string;
+};
+
+export type OrganizerAudienceData = {
+  pulseBreakdown: Array<{ label: string; percentage: number }>;
+  referralSources: Array<{ label: string; value: number }>;
+  neighbourhoods: Array<{ name: string; share: number }>;
+  ageBands: Array<{ label: string; share: number }>;
+};
+
+export type OrganizerHashtagPerformance = Array<{
+  tag: string;
+  postCount: number;
+  avgReachPerPost: number;
+  totalEngagements: number;
+}>;
 
 function getInitials(name: string) {
   return name
@@ -304,14 +327,14 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
         id: "comment-burst",
         tone: "amber",
         title: "Community activity",
-        body: `Questions are clustering around ${recentEvents[0]?.title ?? "your latest event"} — worth pinning a response.`,
+        body: `Questions are clustering around ${recentEvents[0]?.title ?? "your latest event"}; pinning a reply would clean that thread up fast.`,
         timeLabel: "1h ago",
       },
       {
         id: "boost-window",
         tone: "coral",
         title: "Boost window",
-        body: `Your best-performing reach window is Thursday to Saturday evenings right now.`,
+        body: "Your strongest reach window is Thursday to Saturday evenings right now.",
         timeLabel: "Today",
       },
     ],
@@ -342,4 +365,85 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       },
     ],
   };
+}
+
+export function getOrganizerCalendarItems(dashboard: OrganizerDashboardData): OrganizerCalendarItem[] {
+  const baseDays = [3, 7, 11, 14, 18, 22, 27];
+  const eventItems = dashboard.recentEvents.map((event, index) => ({
+    id: `event-${event.id}`,
+    day: baseDays[index] ?? 28,
+    kind: "event" as const,
+    title: event.title,
+    timeLabel: index % 2 === 0 ? "7:00 PM" : "2:00 PM",
+    status: event.statusLabel,
+  }));
+
+  const postItems = dashboard.hashtags.slice(0, 2).map((tag, index) => ({
+    id: `post-${tag}`,
+    day: [5, 16][index] ?? 5,
+    kind: "post" as const,
+    title: `Scheduled post ${tag}`,
+    timeLabel: "11:30 AM",
+    status: "Scheduled",
+  }));
+
+  const campaignItems = [
+    {
+      id: "campaign-boost",
+      day: 20,
+      kind: "campaign" as const,
+      title: "Boost weekend push",
+      timeLabel: "9:00 AM",
+      status: "Active",
+    },
+  ];
+
+  return [...eventItems, ...postItems, ...campaignItems].sort((a, b) => a.day - b.day);
+}
+
+export function getOrganizerAudienceData(dashboard: OrganizerDashboardData): OrganizerAudienceData {
+  const organic = dashboard.overview.organicReach;
+  const boosted = dashboard.overview.boostedReach;
+  const totalReach = Math.max(organic + boosted, 1);
+
+  return {
+    pulseBreakdown: [
+      { label: "Legends", percentage: 18 },
+      { label: "City Natives", percentage: 27 },
+      { label: "Regulars", percentage: 31 },
+      { label: "Explorers", percentage: 17 },
+      { label: "Newcomers", percentage: 7 },
+    ],
+    referralSources: [
+      { label: "Organic", value: Math.round((organic / totalReach) * 100) },
+      { label: "Boosted", value: Math.round((boosted / totalReach) * 100) },
+      { label: "Friend Shares", value: 16 },
+      { label: "Search", value: 11 },
+    ],
+    neighbourhoods: [
+      { name: "Osu", share: 24 },
+      { name: "East Legon", share: 19 },
+      { name: "Labone", share: 14 },
+      { name: "Cantonments", share: 12 },
+      { name: "Tema", share: 9 },
+    ],
+    ageBands: [
+      { label: "18-24", share: 21 },
+      { label: "25-29", share: 33 },
+      { label: "30-34", share: 24 },
+      { label: "35-44", share: 15 },
+      { label: "45+", share: 7 },
+    ],
+  };
+}
+
+export function getOrganizerHashtagPerformance(
+  dashboard: OrganizerDashboardData,
+): OrganizerHashtagPerformance {
+  return dashboard.hashtags.slice(0, 6).map((tag, index) => ({
+    tag,
+    postCount: Math.max(1, 6 - index),
+    avgReachPerPost: 1200 - index * 145,
+    totalEngagements: 480 - index * 52,
+  }));
 }
