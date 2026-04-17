@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { getOrganizerDashboardData } from "../../../../../app/organizer/_lib/dashboard";
+import { getOrganizerAudienceData, getOrganizerDashboardData } from "../../../../../app/organizer/_lib/dashboard";
 import { supabaseAdmin } from "../../../../../lib/supabase";
 
 export async function GET() {
@@ -9,13 +9,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: user, error } = await supabaseAdmin
+  const { data: user } = await supabaseAdmin
     .from("users")
     .select("id, role")
     .eq("clerk_id", clerk.id)
     .maybeSingle();
 
-  if (error || !user) {
+  if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
@@ -28,5 +28,5 @@ export async function GET() {
     return NextResponse.json({ error: "Organizer profile not found" }, { status: 404 });
   }
 
-  return NextResponse.json(dashboard);
+  return NextResponse.json(getOrganizerAudienceData(dashboard));
 }
