@@ -655,14 +655,13 @@ export function EventSidePane({
             >
               <X size={15} weight="bold" />
             </button>
-            <button
+            <Link
               className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
-              onClick={toggleFullScreen}
-              title="Toggle full width"
-              type="button"
+              href={`/events/${event.slug}`}
+              title="Open full page"
             >
               <ArrowsOutSimple size={14} weight="bold" />
-            </button>
+            </Link>
           </div>
           <p className="text-xs font-medium text-[var(--text-tertiary)] opacity-60">Drag edge to resize</p>
         </div>

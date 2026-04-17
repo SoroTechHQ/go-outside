@@ -34,9 +34,9 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   const { totalCount, openCart } = useCart();
   const stableSidebarOffset = 88;
   const isHome     = pathname === "/";
-  const isMessages = pathname === "/dashboard/messages";
-  const isWallets  = pathname === "/dashboard/wallets" || pathname.startsWith("/dashboard/wallets/");
-  const isProfile  = pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/profile/");
+  const isMessages = pathname === "/messages" || pathname === "/dashboard/messages";
+  const isWallets  = pathname === "/wallets" || pathname.startsWith("/wallets/") || pathname.startsWith("/dashboard/wallets");
+  const isProfile  = pathname === "/profile" || pathname.startsWith("/profile/") || pathname.startsWith("/dashboard/profile");
   const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
   const easedHomeProgress =
     totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
@@ -148,7 +148,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
               <ThemeToggle />
               <Link
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
-                href="/dashboard/profile"
+                href="/profile"
               >
                 {getInitials(userName)}
               </Link>
@@ -191,7 +191,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             <ThemeToggle />
             <Link
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition hover:opacity-90"
-              href="/dashboard/profile"
+              href="/profile"
             >
               {getInitials(userName)}
             </Link>
@@ -214,7 +214,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             <ThemeToggle />
             <Link
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
-              href="/dashboard/profile"
+              href="/profile"
             >
               {getInitials(userName)}
             </Link>
