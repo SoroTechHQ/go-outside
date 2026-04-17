@@ -89,7 +89,7 @@ export default async function DashboardPage() {
                   ))}
                 </div>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
-                  <Button href={`/dashboard/wallets/${nextTicket.id}`}>Open Ticket</Button>
+                  <Button href={`/wallets/${nextTicket.id}`}>Open Ticket</Button>
                   <Button href="/" variant="ghost">Keep Exploring</Button>
                 </div>
               </>
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
               </div>
               <Link
                 className="text-sm font-semibold text-[var(--brand)]"
-                href="/dashboard/profile#interests"
+                href="/profile#interests"
               >
                 Edit interests →
               </Link>
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
                 Events you may want to revisit before they sell out.
               </p>
             </div>
-            <Link className="text-sm font-semibold text-[var(--brand)]" href="/dashboard/activity">
+            <Link className="text-sm font-semibold text-[var(--brand)]" href="/activity">
               See all →
             </Link>
           </div>

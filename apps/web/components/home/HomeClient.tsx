@@ -516,7 +516,7 @@ export function HomeClient() {
                     <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">Friendtivities</p>
                     <h3 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Plans in motion</h3>
                   </div>
-                  <Link className="text-xs font-medium text-[var(--brand)]" href="/dashboard/notifications">See all</Link>
+                  <Link className="text-xs font-medium text-[var(--brand)]" href="/notifications">See all</Link>
                 </div>
                 <div className="space-y-2.5">
                   {(trendingCards.length > 0 ? trendingCards : events.slice(0, 2)).map((event, index) => {
@@ -561,7 +561,7 @@ export function HomeClient() {
                 </div>
               </section>
 
-              <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/dashboard/notifications">
+              <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/notifications">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
                   <ChatCircleDots size={20} weight="regular" />
                 </div>

@@ -32,7 +32,7 @@ const DEMO_NOTIFICATIONS: AppNotification[] = [
     type: "ticket",
     title: "Tickets Confirmed!",
     body: "Your 2 tickets for Afrobeats Night are ready in your wallet.",
-    href: "/dashboard/tickets",
+    href: "/wallets",
     read: false,
     createdAt: new Date(Date.now() - 2 * 60 * 1000),
   },
@@ -51,7 +51,7 @@ const DEMO_NOTIFICATIONS: AppNotification[] = [
     type: "event",
     title: "Reminder: Ghana Tech Summit",
     body: "Your event starts in 2 days. Don't forget to download your ticket.",
-    href: "/dashboard/tickets",
+    href: "/wallets",
     read: true,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
   },
@@ -60,7 +60,7 @@ const DEMO_NOTIFICATIONS: AppNotification[] = [
     type: "announcement",
     title: "New feature: Trending",
     body: "Discover what's hot in Ghana with our new Trending page.",
-    href: "/dashboard/trending",
+    href: "/trending",
     read: true,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
   },
@@ -270,7 +270,7 @@ export function NotificationBell() {
             <div className="border-t border-[var(--border-subtle)] px-4 py-2.5">
               <button
                 className="w-full text-center text-[12px] font-medium text-[var(--brand)] hover:underline"
-                onClick={() => { setOpen(false); router.push("/dashboard/notifications"); }}
+                onClick={() => { setOpen(false); router.push("/notifications"); }}
                 type="button"
               >
                 View all notifications

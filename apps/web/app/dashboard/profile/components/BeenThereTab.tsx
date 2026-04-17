@@ -56,7 +56,7 @@ export function BeenThereTab({ tickets, events }: Props) {
         return (
           <Link
             key={ticket.id}
-            href={`/dashboard/wallets/${ticket.id}`}
+            href={`/wallets/${ticket.id}`}
             className="group relative overflow-hidden rounded-[18px] border border-white/5 transition hover:scale-[1.02] hover:border-white/10 active:scale-[0.98]"
           >
             <div className={`bg-gradient-to-br ${grad} relative p-4`}>

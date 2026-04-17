@@ -34,7 +34,7 @@ export default function CheckoutPage() {
 
   function handleProceedToPayment() {
     if (!form.name || !form.email) return;
-    router.push("/dashboard/checkout/payment");
+    router.push("/checkout/payment");
   }
 
   if (items.length === 0) {

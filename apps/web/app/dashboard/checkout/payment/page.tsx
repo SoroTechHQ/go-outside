@@ -27,7 +27,7 @@ export default function PaymentPage() {
   const [momoNetwork, setMomoNetwork] = useState<"mtn" | "vodafone" | "airteltigo">("mtn");
 
   if (items.length === 0 && !success) {
-    router.replace("/dashboard/checkout");
+    router.replace("/checkout");
     return null;
   }
 
@@ -63,7 +63,7 @@ export default function PaymentPage() {
           <div className="flex gap-3 flex-wrap justify-center">
             <button
               className="rounded-2xl bg-[var(--brand)] px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-[var(--brand-hover)]"
-              onClick={() => router.push("/dashboard/tickets")}
+              onClick={() => router.push("/wallets")}
               type="button"
             >
               View My Tickets
