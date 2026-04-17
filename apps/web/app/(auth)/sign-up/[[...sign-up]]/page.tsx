@@ -1,69 +1,67 @@
 import { SignUp } from "@clerk/nextjs";
 
-// Same appearance tokens as sign-in — unified light-mode palette
-const appearance = {
+const clerkAppearance = {
   variables: {
-    colorPrimary:          "#2f8f45",
-    colorBackground:       "#ffffff",
-    colorInputBackground:  "#ffffff",
-    colorInputText:        "#0f110f",
-    colorText:             "#0f110f",
-    colorTextSecondary:    "#6f6f6f",
-    colorNeutral:          "#0f110f",
-    colorDanger:           "#e85d8a",
-    borderRadius:          "12px",
-    fontFamily:            "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
-    fontSize:              "14px",
+    colorPrimary:         "#2f8f45",
+    colorBackground:      "#ffffff",
+    colorInputBackground: "#f7f7f7",
+    colorInputText:       "#0f110f",
+    colorText:            "#0f110f",
+    colorTextSecondary:   "#6b7280",
+    colorNeutral:         "#0f110f",
+    colorDanger:          "#dc2626",
+    borderRadius:         "12px",
+    fontFamily:           "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
+    fontSize:             "14px",
+    spacingUnit:          "16px",
   },
   elements: {
-    card:                 "shadow-none p-0 bg-transparent border-0",
-    rootBox:              "w-full",
+    card:                        "shadow-none p-0 bg-transparent border-0",
+    cardBox:                     "shadow-none bg-transparent",
+    rootBox:                     "w-full",
 
-    headerTitle:          "text-[26px] font-bold text-[#0f110f] tracking-tight",
-    headerSubtitle:       "text-[14px] text-[#6f6f6f]",
-    logoBox:              "hidden",
+    headerTitle:                 "text-[22px] font-bold tracking-tight text-[#0f110f]",
+    headerSubtitle:              "text-[13px] text-[#6b7280] mt-1",
+    logoBox:                     "hidden",
 
-    socialButtonsBlockButton:
-      "h-12 rounded-xl border border-[#d8d8d8] bg-white text-[#0f110f] text-[14px] font-medium hover:bg-[#fafafa] hover:border-[#c8c8c8] transition-all shadow-none",
-    socialButtonsBlockButtonText: "text-[#0f110f] font-medium",
+    socialButtonsBlockButton:    "h-11 rounded-xl border border-[#e5e7eb] bg-white text-[#0f110f] text-[13px] font-medium transition hover:bg-[#f9fafb] hover:border-[#d1d5db] shadow-none",
+    socialButtonsBlockButtonText:"font-medium text-[#0f110f]",
+    socialButtonsIconButton:     "h-11 w-11 rounded-xl border border-[#e5e7eb] bg-white shadow-none hover:bg-[#f9fafb] hover:border-[#d1d5db] transition",
 
-    dividerLine:          "bg-[#ececec]",
-    dividerText:          "text-[#a9a9a9] text-[12px] font-medium",
+    dividerRow:                  "my-4",
+    dividerLine:                 "bg-[#e5e7eb]",
+    dividerText:                 "text-[11px] font-semibold text-[#9ca3af] uppercase tracking-[.06em] px-3",
 
-    formFieldLabel:
-      "text-[11px] font-semibold uppercase tracking-[.07em] text-[#6f6f6f]",
+    formFieldLabel:              "text-[11px] font-semibold uppercase tracking-[.08em] text-[#6b7280] mb-1",
 
-    formFieldInput:
-      "h-12 rounded-xl border-[1.5px] border-[#d8d8d8] bg-white text-[#0f110f] text-[14px] px-3 placeholder-[#a9a9a9] focus:border-[#2f8f45] focus:ring-[3px] focus:ring-[#2f8f45]/10 outline-none transition-all",
+    formFieldInput:              "h-11 rounded-xl border border-[#e5e7eb] bg-[#f7f7f7] text-[#0f110f] text-[14px] placeholder-[#9ca3af] focus:border-[#2f8f45] focus:ring-2 focus:ring-[#2f8f45]/15 outline-none transition-all shadow-none",
+    formFieldInputShowPasswordButton: "text-[#9ca3af] hover:text-[#6b7280]",
 
-    formButtonPrimary:
-      "h-12 rounded-xl bg-[#2f8f45] text-white text-[14px] font-bold hover:bg-[#256f36] transition-colors shadow-none",
+    formButtonPrimary:           "h-11 rounded-xl bg-[#2f8f45] text-white text-[14px] font-semibold hover:bg-[#256f36] active:bg-[#1e5c2c] transition-colors shadow-none mt-1",
 
-    footerActionLink:     "text-[#2f8f45] font-semibold hover:text-[#256f36] transition-colors",
-    footerActionText:     "text-[#6f6f6f]",
-    footer:               "border-t border-[#ececec] pt-5 mt-5",
+    footerActionLink:            "text-[#2f8f45] font-semibold hover:text-[#256f36] transition-colors",
+    footerActionText:            "text-[#6b7280]",
+    footer:                      "pt-4 mt-1",
 
-    formFieldErrorText:   "text-[13px] text-[#e85d8a]",
-    alert:                "rounded-xl border border-[#e85d8a]/20 bg-[#fdf2f6] text-[#e85d8a] text-[13px]",
+    formFieldErrorText:          "text-[12px] text-[#dc2626] mt-1",
+    alert:                       "rounded-xl border border-[#fecaca] bg-[#fef2f2] text-[#dc2626] text-[13px] p-3",
 
-    cardBox:              "shadow-none",
+    main:                        "gap-4",
+    form:                        "gap-3",
   },
 };
 
 export default function SignUpPage() {
   return (
-    <div>
+    <>
       {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center", marginBottom: "20px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "9px", justifyContent: "center", marginBottom: "20px" }}>
         <span
           style={{
-            width:          "30px",
-            height:         "30px",
-            borderRadius:   "8px",
-            background:     "#0f110f",
-            display:        "flex",
-            alignItems:     "center",
-            justifyContent: "center",
+            width: "32px", height: "32px", borderRadius: "9px",
+            background: "#0f110f",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
           }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -71,32 +69,34 @@ export default function SignUpPage() {
             <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.5" />
           </svg>
         </span>
-        <span style={{ fontSize: "17px", fontWeight: 700, color: "#0f110f", letterSpacing: "-0.02em", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+        <span style={{ fontSize: "18px", fontWeight: 800, color: "#0f110f", letterSpacing: "-0.03em" }}>
           GoOutside
         </span>
       </div>
 
       {/* Founding member badge */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
         <div
           style={{
-            display:     "inline-flex",
-            alignItems:  "center",
-            gap:         "6px",
-            padding:     "5px 12px",
-            borderRadius: "100px",
-            background:  "#f0f9f2",
-            border:      "1px solid #c8e8ce",
+            display: "inline-flex", alignItems: "center", gap: "7px",
+            padding: "5px 14px", borderRadius: "100px",
+            background: "#f0fdf4", border: "1px solid #bbf7d0",
           }}
         >
-          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#2f8f45", display: "inline-block" }} />
-          <span style={{ fontSize: "12px", fontWeight: 600, color: "#2f8f45", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" }}>
+          <span
+            style={{
+              width: "6px", height: "6px", borderRadius: "50%",
+              background: "#2f8f45", display: "inline-block",
+              boxShadow: "0 0 5px rgba(47,143,69,0.6)",
+            }}
+          />
+          <span style={{ fontSize: "12px", fontWeight: 600, color: "#166534" }}>
             Founding Member spots open
           </span>
         </div>
       </div>
 
-      <SignUp appearance={appearance} forceRedirectUrl="/onboarding/profile" />
-    </div>
+      <SignUp appearance={clerkAppearance} forceRedirectUrl="/onboarding/profile" />
+    </>
   );
 }
