@@ -31,13 +31,47 @@ export default function PaymentPage() {
     return null;
   }
 
-  async function handlePay() {
+  function handlePay() {
     setLoading(true);
-    // Simulate Paystack payment
-    await new Promise((r) => setTimeout(r, 2200));
-    setLoading(false);
-    setSuccess(true);
-    clearCart();
+
+    if (typeof window === "undefined") return;
+
+    // Load Paystack inline.js if not already loaded
+    const launch = () => {
+      // @ts-expect-error paystack global
+      const handler = window.PaystackPop?.setup({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "",
+        email: "customer@gooutside.app",
+        amount: totalPrice * 100, // kobo
+        currency: "GHS",
+        channels: method === "mobile_money" ? ["mobile_money"] : method === "card" ? ["card"] : ["bank_transfer"],
+        metadata: { phone: momoNumber, network: momoNetwork },
+        callback: () => {
+          setLoading(false);
+          setSuccess(true);
+          clearCart();
+        },
+        onClose: () => setLoading(false),
+      });
+      handler?.openIframe();
+    };
+
+    if (totalPrice === 0) {
+      // Free event — skip Paystack
+      setTimeout(() => { setLoading(false); setSuccess(true); clearCart(); }, 800);
+      return;
+    }
+
+    // Dynamically load Paystack script
+    if (document.getElementById("paystack-js")) {
+      launch();
+    } else {
+      const script = document.createElement("script");
+      script.id = "paystack-js";
+      script.src = "https://js.paystack.co/v1/inline.js";
+      script.onload = launch;
+      document.head.appendChild(script);
+    }
   }
 
   if (success) {

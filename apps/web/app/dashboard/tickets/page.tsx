@@ -17,7 +17,7 @@ export default function CartPage() {
   const router = useRouter();
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+    <div className="mx-auto max-w-xl px-4 py-8 md:px-6 lg:px-0">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>

@@ -12,7 +12,6 @@ const DASHBOARD_REWRITES = [
   "wallets",
   "checkout",
   "user",
-  "events",
 ];
 
 const nextConfig: NextConfig = {

@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import { useCart, type TicketTier } from "../cart/CartContext";
 import { useRouter } from "next/navigation";
+import { useToast } from "../ui/toast";
 
 export type EventForTicket = {
   id: string;
@@ -50,6 +51,7 @@ export function GetTicketModal({ event, onClose }: GetTicketModalProps) {
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
   const router = useRouter();
+  const toastHook = useToast();
 
   const maxQty = selectedTier?.maxPerUser ?? 10;
   const subtotal = selectedTier
@@ -70,6 +72,15 @@ export function GetTicketModal({ event, onClose }: GetTicketModalProps) {
       quantity,
     });
     setStep("added");
+    // Auto-close after 2s and fire toast
+    setTimeout(() => {
+      onClose();
+      toastHook.message({
+        text: `${quantity} ticket${quantity !== 1 ? "s" : ""} added to cart`,
+        action: "Go to checkout",
+        onAction: () => router.push("/tickets"),
+      });
+    }, 2000);
   }
 
   function handleCheckout() {
