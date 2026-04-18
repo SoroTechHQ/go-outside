@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useAppShell } from "./AppShellContext";
+import { useCart } from "../cart/CartContext";
 
 type SidebarRole = "attendee" | "organizer" | "admin";
 
@@ -48,6 +49,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
   const [hovered, setHovered] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const { setSidebarWidth } = useAppShell();
+  const { totalCount } = useCart();
 
   useEffect(() => {
     const syncTheme = () => {
@@ -209,9 +211,11 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
               ) : null}
             </AnimatePresence>
             {/* Cart count badge */}
-            <div className={`absolute flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white ${isExpanded ? "right-3 top-3" : "right-3.5 top-3"}`}>
-              2
-            </div>
+            {totalCount > 0 && (
+              <div className={`absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[9px] font-bold text-black ${isExpanded ? "right-3 top-3" : "right-3.5 top-3"}`}>
+                {totalCount > 99 ? "99+" : totalCount}
+              </div>
+            )}
           </Link>
 
           <button

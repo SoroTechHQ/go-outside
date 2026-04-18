@@ -324,13 +324,20 @@ export function HomeClient() {
     [data],
   );
 
-  // For sidebar widgets and sponsored card (non-feed derived state)
+  // Sidebar widgets — prefer real DB events from the feed, fall back to demo data
   const filteredEvents = useMemo(() => getFilteredEvents(filters), [filters]);
 
-  const sponsoredEvent = filteredEvents.find((e) => e.categorySlug === "tech") ?? filteredEvents[0] ?? events[0];
+  const sponsoredEvent =
+    visibleEvents.find((e) => e.categorySlug === "tech") ??
+    visibleEvents[0] ??
+    filteredEvents.find((e) => e.categorySlug === "tech") ??
+    filteredEvents[0] ??
+    events[0];
 
   const trendingCards = buildResultList(
-    filteredEvents.filter((e) => e.trending).length > 0
+    visibleEvents.filter((e) => e.trending).length > 0
+      ? visibleEvents.filter((e) => e.trending)
+      : filteredEvents.filter((e) => e.trending).length > 0
       ? filteredEvents.filter((e) => e.trending)
       : events.filter((e) => e.trending),
     2,

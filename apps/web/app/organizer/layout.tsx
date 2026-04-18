@@ -30,15 +30,13 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
   const fallbackName = `${user.first_name} ${user.last_name}`.trim() || user.first_name;
 
   return (
-    <main className="page-grid min-h-screen pb-6 md:pb-8">
-      <div className="w-full px-3 py-3 md:px-4 md:py-4 xl:px-5 xl:py-5">
-        <OrganizerShell
-          organizerName={dashboard?.organizer.name ?? fallbackName}
-          verified={Boolean(dashboard?.organizer.verified)}
-        >
-          {children}
-        </OrganizerShell>
-      </div>
-    </main>
+    <div className="h-screen overflow-hidden">
+      <OrganizerShell
+        organizerName={dashboard?.organizer.name ?? fallbackName}
+        verified={Boolean(dashboard?.organizer.verified)}
+      >
+        {children}
+      </OrganizerShell>
+    </div>
   );
 }
