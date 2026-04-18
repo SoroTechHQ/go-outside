@@ -235,11 +235,23 @@ export function EventPeekPanel({
 
               {/* Organizer */}
               <div className="border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-muted)] p-5">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">{organizer.name}</p>
+                <Link
+                  className="inline-block text-sm font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
+                  href={`/organizers/${organizer.id}`}
+                >
+                  {organizer.name}
+                </Link>
                 <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{organizer.tag}</p>
                 <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
                   {organizer.followersLabel} · {organizer.eventsLabel}
                 </p>
+                <Link
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand)] transition hover:opacity-80"
+                  href={`/organizers/${organizer.id}`}
+                >
+                  View host profile
+                  <CaretRight size={12} />
+                </Link>
               </div>
             </div>
 

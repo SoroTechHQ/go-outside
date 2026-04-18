@@ -20,7 +20,8 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
-import type { events } from "@gooutside/demo-data";
+import type { events, Organizer } from "@gooutside/demo-data";
+import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
 import { SearchBar } from "../../../components/search/SearchBar";
 import { useAppShell } from "../../../components/layout/AppShellContext";
 
@@ -40,12 +41,6 @@ const LINEUPS: Record<string, string[]> = {
   outdoors:  ["Morning Activity", "Midday Picnic", "Group Games", "Sunset Wrap-up"],
 };
 
-const SOCIAL_POSTS = [
-  { user: "Ama K.",    handle: "@ama.k",       text: "Can't believe this is happening in Accra!! 🔥 The vibes are going to be immaculate.", avatar: "AK", time: "2h ago" },
-  { user: "Yaw Darko", handle: "@yawdarko",    text: "Been waiting for something like this all year. Grabbed my tickets the second they dropped.",  avatar: "YD", time: "5h ago" },
-  { user: "Esi M.",    handle: "@esi.m_accra", text: "The venue alone is worth it 📍 Adding this to my list of unmissable experiences.",            avatar: "EM", time: "1d ago" },
-];
-
 const POLICIES = [
   { label: "Cancellation",    detail: "Full refund up to 48 hours before the event. No refunds after that." },
   { label: "Age Requirement", detail: "18+ unless otherwise noted. Valid ID required at entry." },
@@ -58,11 +53,6 @@ const REEL_THUMBNAILS = [
   "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=360&h=480&fit=crop",
   "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&w=360&h=480&fit=crop",
   "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=360&h=480&fit=crop",
-];
-
-const ORG_AVATARS = [
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&w=80&h=80&fit=crop&crop=faces",
-  "https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&w=80&h=80&fit=crop&crop=faces",
 ];
 
 function getEventImages(event: EventItem): string[] {
@@ -119,7 +109,13 @@ function PhotoLightbox({ images, startIdx, onClose }: { images: string[]; startI
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export function EventDetailClient({ event }: { event: EventItem }) {
+export function EventDetailClient({
+  event,
+  organizer,
+}: {
+  event: EventItem;
+  organizer: Organizer;
+}) {
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
@@ -285,19 +281,28 @@ export function EventDetailClient({ event }: { event: EventItem }) {
             </div>
 
             {/* Host */}
-            <div className="flex items-center gap-4 border-b border-[var(--home-border)] py-8">
+            <Link
+              className="flex items-center gap-4 border-b border-[var(--home-border)] py-8 transition hover:opacity-90"
+              href={`/organizers/${organizer.id}`}
+            >
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-emerald-700 text-[0.9rem] font-bold text-white">
-                {(event.city ?? "AC").slice(0, 2).toUpperCase()}
+                {organizer.name.slice(0, 2).toUpperCase()}
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-[0.92rem] text-[var(--text-secondary)]">Hosted by</p>
                 <div className="flex items-center gap-1.5">
-                  <p className="text-lg font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Accra Events Co.</p>
-                  <CheckCircle size={16} weight="fill" className="text-[var(--brand)]" />
+                  <p className="text-lg font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+                    {organizer.name}
+                  </p>
+                  {organizer.verified ? (
+                    <CheckCircle size={16} weight="fill" className="text-[var(--brand)]" />
+                  ) : null}
                 </div>
-                <p className="mt-0.5 text-sm text-[var(--text-secondary)]">Verified · 47 events · Since 2019</p>
+                <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+                  {organizer.followersLabel} · {organizer.eventsLabel}
+                </p>
               </div>
-            </div>
+            </Link>
 
             {/* Date & venue quick-look */}
             <div className="grid gap-4 border-b border-[var(--home-border)] py-8 sm:grid-cols-2">
@@ -412,13 +417,23 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                 </div>
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {SOCIAL_POSTS.map(post => (
+                {EVENT_COMMUNITY_POSTS.map((post) => (
                   <div key={post.handle} className="rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-5">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.65rem] font-bold text-[var(--brand)]">{post.avatar}</div>
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{post.user}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">{post.time}</p>
+                      <Link
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.65rem] font-bold text-[var(--brand)] transition hover:scale-105"
+                        href={`/dashboard/user/${post.userId}`}
+                      >
+                        {post.avatar}
+                      </Link>
+                      <div className="min-w-0">
+                        <Link
+                          className="text-sm font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
+                          href={`/dashboard/user/${post.userId}`}
+                        >
+                          {post.user}
+                        </Link>
+                        <p className="text-xs text-[var(--text-tertiary)]">{post.handle} · {post.time}</p>
                       </div>
                     </div>
                     <p className="mt-3 text-[0.95rem] leading-relaxed text-[var(--text-secondary)]">{post.text}</p>
@@ -522,15 +537,27 @@ export function EventDetailClient({ event }: { event: EventItem }) {
               {/* Organizer mini-card */}
               <div className="border-t border-[var(--home-border)] px-6 py-5">
                 <div className="flex items-center gap-3">
-                  {ORG_AVATARS.slice(0, 2).map((url, i) => (
-                    <img key={i} alt="" className={`h-9 w-9 rounded-full border-2 border-[var(--bg-card)] object-cover ${i > 0 ? "-ml-3" : ""}`} src={url} />
-                  ))}
+                  <Link
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-emerald-700 text-sm font-bold text-white transition hover:scale-105"
+                    href={`/organizers/${organizer.id}`}
+                  >
+                    {organizer.name.slice(0, 2).toUpperCase()}
+                  </Link>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">Accra Events Co.</p>
-                      <CheckCircle size={13} weight="fill" className="shrink-0 text-[var(--brand)]" />
+                      <Link
+                        className="truncate text-sm font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
+                        href={`/organizers/${organizer.id}`}
+                      >
+                        {organizer.name}
+                      </Link>
+                      {organizer.verified ? (
+                        <CheckCircle size={13} weight="fill" className="shrink-0 text-[var(--brand)]" />
+                      ) : null}
                     </div>
-                    <p className="text-xs text-[var(--text-tertiary)]">Verified organizer</p>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {organizer.followersLabel} · {organizer.eventsLabel}
+                    </p>
                   </div>
                 </div>
               </div>

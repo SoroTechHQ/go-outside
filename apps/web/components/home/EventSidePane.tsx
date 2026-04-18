@@ -20,7 +20,14 @@ import {
   Ticket,
   X,
 } from "@phosphor-icons/react";
-import { events, getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
+import {
+  events,
+  getCategoryEmoji,
+  getEventImage,
+  getOrganizerById,
+  type Organizer,
+} from "@gooutside/demo-data";
+import { EVENT_COMMUNITY_POSTS } from "../../lib/mock-community";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 
 type EventItem = (typeof events)[number];
@@ -47,12 +54,6 @@ const LINEUPS: Record<string, string[]> = {
   outdoors:  ["Morning Activity", "Midday Picnic", "Group Games", "Sunset Wrap-up"],
 };
 
-const SOCIAL_POSTS = [
-  { user: "Ama K.",    handle: "@ama.k",        text: "Can't believe this is happening in Accra!! 🔥 The vibes are going to be immaculate.", avatar: "AK", time: "2h ago" },
-  { user: "Yaw Darko", handle: "@yawdarko",     text: "Been waiting for something like this all year. Grabbed my tickets the second they dropped.",  avatar: "YD", time: "5h ago" },
-  { user: "Esi M.",    handle: "@esi.m_accra",  text: "The venue alone is worth it 📍 Adding this to my list of unmissable experiences.",            avatar: "EM", time: "1d ago" },
-];
-
 const POLICIES = [
   { label: "Cancellation",   detail: "Full refund up to 48 hours before the event. No refunds after that." },
   { label: "Age Requirement",detail: "18+ unless otherwise noted. Valid ID required at entry." },
@@ -72,11 +73,6 @@ const SOCIAL_REELS = [
   { platform: "tiktok"    as const, user: "@kofi_events",  likes: "8.2K",  caption: "POV: you're about to have the time of your life",                thumbIdx: 1 },
   { platform: "instagram" as const, user: "@nightlife_gh", likes: "5.7K",  caption: "Already have my tickets 🎟️ see you there!",                      thumbIdx: 2 },
   { platform: "tiktok"    as const, user: "@accra_out",    likes: "3.1K",  caption: "This city never sleeps and I'm here for it",                     thumbIdx: 3 },
-];
-
-const ORG_AVATARS = [
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&w=80&h=80&fit=crop&crop=faces",
-  "https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&w=80&h=80&fit=crop&crop=faces",
 ];
 
 const DEFAULT_WIDTH = 480;
@@ -124,6 +120,7 @@ function PhotoModal({ images, initialIndex, onClose }: { images: string[]; initi
 // ── Shared pane content ──────────────────────────────────────────────────────
 function PaneContent({
   event,
+  organizer,
   images,
   onSetPhotoModal,
   onClose,
@@ -131,6 +128,7 @@ function PaneContent({
   onToggleSaved,
 }: {
   event: EventItem;
+  organizer: Organizer;
   images: string[];
   onSetPhotoModal: (v: { open: boolean; index: number }) => void;
   onClose: () => void;
@@ -199,17 +197,28 @@ function PaneContent({
             <span className="text-xs text-[var(--text-tertiary)]">({reviewCount} reviews)</span>
           </div>
           <div className="mt-3 flex items-center gap-2.5 border-t border-[var(--home-border)] pt-3">
-            <div className="flex items-center">
-              {ORG_AVATARS.map((url, i) => (
-                <img key={i} alt="" className={`h-9 w-9 rounded-full border-2 border-[var(--bg-card)] object-cover ${i > 0 ? "-ml-3" : ""}`} src={url} />
-              ))}
-            </div>
-            <div>
+            <Link
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-emerald-700 text-xs font-bold text-white transition hover:scale-105"
+              href={`/organizers/${organizer.id}`}
+            >
+              {organizer.name.slice(0, 2).toUpperCase()}
+            </Link>
+            <div className="min-w-0">
               <p className="text-[0.68rem] font-medium text-[var(--text-tertiary)]">Hosted by</p>
               <div className="flex items-center gap-1">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Accra Events Co. & Kofi B.</p>
-                <CheckCircle size={13} weight="fill" className="text-[var(--brand)]" />
+                <Link
+                  className="truncate text-sm font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
+                  href={`/organizers/${organizer.id}`}
+                >
+                  {organizer.name}
+                </Link>
+                {organizer.verified ? (
+                  <CheckCircle size={13} weight="fill" className="text-[var(--brand)]" />
+                ) : null}
               </div>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                {organizer.followersLabel} · {organizer.eventsLabel}
+              </p>
             </div>
           </div>
         </div>
@@ -315,19 +324,37 @@ function PaneContent({
           <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">About the host</p>
           <div className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-emerald-700 text-sm font-bold text-white">
-                {(event.city ?? "AC").slice(0, 2).toUpperCase()}
-              </div>
+              <Link
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-emerald-700 text-sm font-bold text-white transition hover:scale-105"
+                href={`/organizers/${organizer.id}`}
+              >
+                {organizer.name.slice(0, 2).toUpperCase()}
+              </Link>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <p className="font-semibold text-[var(--text-primary)]">Accra Events Co.</p>
-                  <CheckCircle size={14} weight="fill" className="text-[var(--brand)]" />
+                  <Link
+                    className="font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
+                    href={`/organizers/${organizer.id}`}
+                  >
+                    {organizer.name}
+                  </Link>
+                  {organizer.verified ? (
+                    <CheckCircle size={14} weight="fill" className="text-[var(--brand)]" />
+                  ) : null}
                 </div>
-                <p className="text-xs text-[var(--text-secondary)]">Verified organizer · 47 events hosted</p>
-                <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">One of Accra's leading event curators, bringing world-class experiences to the city since 2019.</p>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  {organizer.followersLabel} · {organizer.eventsLabel}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)]">
+                  {organizer.tag}. Hosting events in {organizer.city} with a dedicated profile
+                  page for their audience, listings, and recent event activity.
+                </p>
               </div>
             </div>
-            <Link className="mt-3 block w-full rounded-lg border border-[var(--home-border)] py-2 text-center text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]" href="#">
+            <Link
+              className="mt-3 block w-full rounded-lg border border-[var(--home-border)] py-2 text-center text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              href={`/organizers/${organizer.id}`}
+            >
               Visit host page →
             </Link>
           </div>
@@ -337,12 +364,22 @@ function PaneContent({
         <div>
           <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">What people are saying</p>
           <div className="space-y-2.5">
-            {SOCIAL_POSTS.map((post) => (
+            {EVENT_COMMUNITY_POSTS.map((post) => (
               <div key={post.handle} className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)]">{post.avatar}</div>
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">{post.user}</p>
+                  <Link
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)] transition hover:scale-105"
+                    href={`/dashboard/user/${post.userId}`}
+                  >
+                    {post.avatar}
+                  </Link>
+                  <div className="min-w-0">
+                    <Link
+                      className="text-xs font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
+                      href={`/dashboard/user/${post.userId}`}
+                    >
+                      {post.user}
+                    </Link>
                     <p className="text-[0.65rem] text-[var(--text-tertiary)]">{post.handle} · {post.time}</p>
                   </div>
                 </div>
@@ -424,10 +461,20 @@ function PaneFooter({
 // ── Main component ────────────────────────────────────────────────────────────
 export function EventSidePane({
   event,
+  organizer = getOrganizerById(event.organizerId) ?? {
+    id: event.organizerId,
+    name: "GoOutside Host",
+    tag: "Community host",
+    city: event.city,
+    verified: false,
+    followersLabel: "Community host",
+    eventsLabel: "Active event page",
+  },
   onClose,
   onWidthChange,
 }: {
   event: EventItem;
+  organizer?: Organizer;
   onClose: () => void;
   onWidthChange?: (w: number) => void;
 }) {
@@ -583,6 +630,7 @@ export function EventSidePane({
           <div className="flex-1 overflow-y-auto overscroll-contain">
             <PaneContent
               event={event}
+              organizer={organizer}
               images={images}
               onClose={onClose}
               onSetPhotoModal={setPhotoModal}
@@ -612,7 +660,7 @@ export function EventSidePane({
               time: event.timeLabel,
               venue: event.venue,
               imageUrl: images[0],
-              organizer: "GoOutside",
+              organizer: organizer.name,
               ticketTypes: event.priceValue === 0
                 ? [{ id: "free", name: "General Admission", price: 0, priceType: "free" as const, description: "Free entry", remaining: 100, maxPerUser: 4 }]
                 : event.ticketTypes.map((t, i) => ({
@@ -670,6 +718,7 @@ export function EventSidePane({
         <div className="flex-1 overflow-y-auto">
           <PaneContent
             event={event}
+            organizer={organizer}
             images={images}
             onClose={onClose}
             onSetPhotoModal={setPhotoModal}
@@ -699,7 +748,7 @@ export function EventSidePane({
             time: event.timeLabel,
             venue: event.venue,
             imageUrl: images[0],
-            organizer: "GoOutside",
+            organizer: organizer.name,
             ticketTypes: event.priceValue === 0
               ? [{ id: "free", name: "General Admission", price: 0, priceType: "free" as const, description: "Free entry", remaining: 100, maxPerUser: 4 }]
               : event.ticketTypes.map((t, i) => ({

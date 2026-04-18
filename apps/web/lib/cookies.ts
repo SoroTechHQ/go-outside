@@ -30,6 +30,15 @@ export interface OnboardingDraft {
     username?:   string;
     phone?:      string;
     city?:       string;
+    location?: {
+      place_id: string;
+      city_name: string;
+      region: string;
+      country: string;
+      formatted_address: string;
+      lat: number;
+      lng: number;
+    } | null;
   };
   vibe?:         Record<string, unknown>;
   pastEventIds?: string[];
