@@ -12,6 +12,7 @@ import {
   type LandmarkEvent,
 } from "@/lib/landmark-events";
 import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
+import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 
 const CATEGORY_COLORS: Record<string, string> = {
   music:       "#7c3aed",
@@ -76,6 +77,7 @@ export default function OnboardingHistoryPage() {
   const [selected, setSelected]   = useState<Set<string>>(new Set());
   const [shownIds, setShownIds]    = useState<string[]>(INITIAL_LANDMARK_IDS);
   const [submitting, setSubmitting]= useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Restore draft on mount
   useEffect(() => {
@@ -113,26 +115,53 @@ export default function OnboardingHistoryPage() {
 
   async function handleContinue() {
     setSubmitting(true);
+    setError(null);
     const events = [...selected].map((id) => {
       const e = LANDMARK_BY_ID.get(id)!;
       return { name: e.name, category: e.category, year: e.year };
     });
 
-    await fetch("/api/onboarding/history", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ events }),
-    });
+    try {
+      const res = await fetch("/api/onboarding/history", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ events }),
+      });
 
-    await user?.update({
-      unsafeMetadata: {
-        ...(user.unsafeMetadata ?? {}),
-        pastEventIds: [...selected],
-        onboardingStep: 4,
-      },
-    });
+      if (!res.ok) throw new Error("Failed to save your event history");
 
-    router.push("/onboarding/interests");
+      await updateOnboardingProgress({
+        unsafeMetadata: {
+          ...(user?.unsafeMetadata ?? {}),
+          pastEventIds: [...selected],
+          onboardingStep: 4,
+        },
+      });
+
+      router.push("/onboarding/interests");
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSkip() {
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await updateOnboardingProgress({
+        unsafeMetadata: {
+          ...(user?.unsafeMetadata ?? {}),
+          onboardingStep: 4,
+        },
+      });
+
+      router.push("/onboarding/interests");
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
   }
 
   const shownEvents = shownIds
@@ -195,16 +224,18 @@ export default function OnboardingHistoryPage() {
           </button>
 
           <button
-            onClick={() => {
-              void user?.update({
-                unsafeMetadata: { ...(user.unsafeMetadata ?? {}), onboardingStep: 4 },
-              });
-              router.push("/onboarding/interests");
-            }}
+            onClick={handleSkip}
+            disabled={submitting}
             className="block w-full py-2 text-center text-[13px] text-[#4A6A4A] transition hover:text-[#6B8C6B]"
           >
             Skip for now
           </button>
+
+          {error && (
+            <p className="rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-[12px] text-red-400">
+              {error}
+            </p>
+          )}
         </div>
       </div>
     </div>

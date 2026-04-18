@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
+import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -108,13 +109,11 @@ export default function OnboardingProfilePage() {
         },
       });
 
-      // Advance Clerk metadata — username is saved to Supabase only,
-      // updating it via Clerk requires extra verification and is unnecessary here
-      await user?.update({
+      await updateOnboardingProgress({
         firstName: values.first_name,
         lastName:  values.last_name,
         unsafeMetadata: {
-          ...(user.unsafeMetadata ?? {}),
+          ...(user?.unsafeMetadata ?? {}),
           onboardingStep: 2,
         },
       });

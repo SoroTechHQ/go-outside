@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { clearOnboardingDraft } from "@/lib/cookies";
+import { clearOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 import { motion, AnimatePresence } from "framer-motion";
 import { computeStartingScore, getTierFromScore, getTierSlug } from "@/lib/onboarding-utils";
 import type { VibeData } from "@/lib/onboarding-utils";
@@ -43,16 +42,18 @@ function useCountUp(target: number, duration: number, active: boolean) {
 
 export default function OnboardingPulsePage() {
   const router   = useRouter();
-  const { user } = useUser();
   const [phase,      setPhase]      = useState<Phase>("loading");
   const [textIdx,    setTextIdx]    = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const confettiFired = useRef(false);
 
-  // Compute score from Clerk metadata
-  const interests   = (user?.unsafeMetadata?.interests as string[])  ?? [];
-  const pastEvents  = (user?.unsafeMetadata?.pastEventIds as string[]) ?? [];
-  const vibe        = (user?.unsafeMetadata?.vibe as VibeData | null) ?? null;
+  const draft = typeof window === "undefined" ? {} : getOnboardingDraft();
+
+  // Compute score from the client-side onboarding draft so this page
+  // doesn't depend on Clerk metadata having revalidated yet.
+  const interests  = draft.interests ?? [];
+  const pastEvents = draft.pastEventIds ?? [];
+  const vibe       = (draft.vibe as VibeData | undefined) ?? null;
 
   const score = computeStartingScore({ interests, pastEvents, vibe });
   const tier  = getTierFromScore(score);
