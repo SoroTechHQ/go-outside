@@ -137,7 +137,11 @@ export default function OnboardingVibePage() {
         body:    JSON.stringify({ vibe }),
       });
 
-      if (!profileRes.ok) throw new Error("Failed to save your vibe");
+      if (!profileRes.ok) {
+        const body = await profileRes.json().catch(() => ({}));
+        if (profileRes.status === 401) throw new Error("Session expired — please refresh and try again.");
+        throw new Error(body?.error ?? "Failed to save your vibe. Please try again.");
+      }
 
       await updateOnboardingProgress({
         unsafeMetadata: {

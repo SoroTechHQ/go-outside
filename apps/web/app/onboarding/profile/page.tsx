@@ -95,7 +95,12 @@ export default function OnboardingProfilePage() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to save profile");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error("Session expired — please refresh and try again.");
+        if (res.status === 409) throw new Error("That username is already taken. Try a different one.");
+        throw new Error(body?.error ?? `Something went wrong (${res.status}). Please try again.`);
+      }
 
       // Save to draft so back-navigation restores these values
       saveOnboardingDraft({
