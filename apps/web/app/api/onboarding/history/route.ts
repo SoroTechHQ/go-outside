@@ -38,9 +38,14 @@ export async function POST(req: NextRequest) {
     year:       e.year,
   }));
 
-  await supabaseAdmin
+  const { error: pastErr } = await supabaseAdmin
     .from("onboarding_past_events")
     .upsert(pastRows, { onConflict: "user_id,event_name" });
+
+  if (pastErr) {
+    console.error("[POST /api/onboarding/history] past_events upsert", pastErr);
+    return NextResponse.json({ error: pastErr.message }, { status: 500 });
+  }
 
   // Write graph_edges for events that have a real UUID in our DB
   const edgeRows = events
@@ -57,9 +62,10 @@ export async function POST(req: NextRequest) {
     }));
 
   if (edgeRows.length > 0) {
-    await supabaseAdmin
+    const { error: edgeErr } = await supabaseAdmin
       .from("graph_edges")
       .upsert(edgeRows, { onConflict: "from_id,to_id,edge_type" });
+    if (edgeErr) console.error("[POST /api/onboarding/history] graph_edges upsert", edgeErr);
   }
 
   return NextResponse.json({ ok: true, written: pastRows.length });

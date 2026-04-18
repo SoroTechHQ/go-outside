@@ -92,7 +92,12 @@ export default function OnboardingInterestsPage() {
         body:    JSON.stringify({ interests }),
       });
 
-      if (!userRes.ok) throw new Error("Failed to save your interests");
+      if (!userRes.ok) {
+        const body = await userRes.json().catch(() => ({}));
+        if (userRes.status === 401) throw new Error("Session expired — please refresh and try again.");
+        if (userRes.status === 404) throw new Error("Account not found. Please sign out and sign back in.");
+        throw new Error(body?.error ?? "Failed to save your interests. Please try again.");
+      }
 
       const vectorRes = await fetch("/api/onboarding/interests", {
         method:  "POST",
@@ -100,7 +105,11 @@ export default function OnboardingInterestsPage() {
         body:    JSON.stringify({ interests, vector }),
       });
 
-      if (!vectorRes.ok) throw new Error("Failed to save your interests");
+      if (!vectorRes.ok) {
+        const body = await vectorRes.json().catch(() => ({}));
+        if (vectorRes.status === 401) throw new Error("Session expired — please refresh and try again.");
+        throw new Error(body?.error ?? "Failed to save your interests. Please try again.");
+      }
 
       await updateOnboardingProgress({
         unsafeMetadata: {

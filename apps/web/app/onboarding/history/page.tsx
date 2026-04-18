@@ -128,7 +128,12 @@ export default function OnboardingHistoryPage() {
         body:    JSON.stringify({ events }),
       });
 
-      if (!res.ok) throw new Error("Failed to save your event history");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error("Session expired — please refresh and try again.");
+        if (res.status === 404) throw new Error("Account not found. Please sign out and sign back in.");
+        throw new Error(body?.error ?? "Failed to save your event history. Please try again.");
+      }
 
       await updateOnboardingProgress({
         unsafeMetadata: {

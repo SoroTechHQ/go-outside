@@ -16,12 +16,17 @@ export async function POST(req: NextRequest) {
 
   if (!sbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  await supabaseAdmin
+  const { error: vectorErr } = await supabaseAdmin
     .from("user_interest_vectors")
     .upsert(
       { user_id: sbUser.id, vector, computed_at: new Date().toISOString() },
       { onConflict: "user_id" }
     );
+
+  if (vectorErr) {
+    console.error("[POST /api/onboarding/interests] vector upsert", vectorErr);
+    return NextResponse.json({ error: vectorErr.message }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
