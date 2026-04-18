@@ -16,9 +16,5 @@ export default async function EventDetailPage({
 
   if (!event) notFound();
 
-  return (
-    <div className="min-h-screen bg-[var(--bg-card)]">
-      <EventDetailClient event={event} />
-    </div>
-  );
+  return <EventDetailClient event={event} />;
 }

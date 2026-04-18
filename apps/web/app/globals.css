@@ -383,3 +383,9 @@ a {
 .profile-tab-bar::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Toast spinner animation ─────────────────────────────────────────────── */
+@keyframes go-spin {
+  0%   { opacity: 1; }
+  100% { opacity: 0.15; }
+}
