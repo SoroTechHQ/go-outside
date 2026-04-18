@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_BY_ID } from "@/lib/landmark-events";
 import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
+import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 
 const CATEGORIES = [
   { slug: "music",       name: "Music",        emoji: "🎵" },
@@ -26,6 +27,7 @@ export default function OnboardingInterestsPage() {
 
   const [selected,   setSelected]   = useState<Set<CategorySlug>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Auto-highlight categories from past event selections (Step 3)
   const [historyCategories, setHistoryCategories] = useState<Set<string>>(new Set());
@@ -78,33 +80,60 @@ export default function OnboardingInterestsPage() {
   async function handleContinue() {
     if (!enoughSelected) return;
     setSubmitting(true);
+    setError(null);
 
     const interests = [...selected];
     const vector    = Object.fromEntries(interests.map((s) => [s, 0.6]));
 
-    // Update users.interests
-    await fetch("/api/users/me", {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ interests }),
-    });
+    try {
+      const userRes = await fetch("/api/users/me", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ interests }),
+      });
 
-    // Upsert user_interest_vectors
-    await fetch("/api/onboarding/interests", {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ interests, vector }),
-    });
+      if (!userRes.ok) throw new Error("Failed to save your interests");
 
-    await user?.update({
-      unsafeMetadata: {
-        ...(user.unsafeMetadata ?? {}),
-        interests,
-        onboardingStep: 5,
-      },
-    });
+      const vectorRes = await fetch("/api/onboarding/interests", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ interests, vector }),
+      });
 
-    router.push("/onboarding/pulse");
+      if (!vectorRes.ok) throw new Error("Failed to save your interests");
+
+      await updateOnboardingProgress({
+        unsafeMetadata: {
+          ...(user?.unsafeMetadata ?? {}),
+          interests,
+          onboardingStep: 5,
+        },
+      });
+
+      router.push("/onboarding/pulse");
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSkip() {
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await updateOnboardingProgress({
+        unsafeMetadata: {
+          ...(user?.unsafeMetadata ?? {}),
+          onboardingStep: 5,
+        },
+      });
+
+      router.push("/onboarding/pulse");
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -200,16 +229,18 @@ export default function OnboardingInterestsPage() {
           </button>
 
           <button
-            onClick={() => {
-              void user?.update({
-                unsafeMetadata: { ...(user.unsafeMetadata ?? {}), onboardingStep: 5 },
-              });
-              router.push("/onboarding/pulse");
-            }}
+            onClick={handleSkip}
+            disabled={submitting}
             className="block w-full py-2 text-center text-[13px] text-[#4A6A4A] transition hover:text-[#6B8C6B]"
           >
             Skip for now
           </button>
+
+          {error && (
+            <p className="rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-[12px] text-red-400">
+              {error}
+            </p>
+          )}
         </div>
       </div>
 

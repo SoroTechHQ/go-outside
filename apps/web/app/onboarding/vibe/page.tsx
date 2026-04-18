@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import type { VibeData } from "@/lib/onboarding-utils";
 import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
+import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 
 /* ── Question data ─────────────────────────────────────────────────────────── */
 
@@ -83,6 +84,7 @@ export default function OnboardingVibePage() {
   const { user }   = useUser();
   const [vibe, setVibe] = useState<Partial<VibeData>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Restore draft on mount
   useEffect(() => {
@@ -126,22 +128,30 @@ export default function OnboardingVibePage() {
   async function handleContinue() {
     if (!allAnswered) return;
     setSubmitting(true);
+    setError(null);
 
-    await fetch("/api/users/me", {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ vibe }),
-    });
+    try {
+      const profileRes = await fetch("/api/users/me", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ vibe }),
+      });
 
-    await user?.update({
-      unsafeMetadata: {
-        ...(user.unsafeMetadata ?? {}),
-        vibe,
-        onboardingStep: 3,
-      },
-    });
+      if (!profileRes.ok) throw new Error("Failed to save your vibe");
 
-    router.push("/onboarding/history");
+      await updateOnboardingProgress({
+        unsafeMetadata: {
+          ...(user?.unsafeMetadata ?? {}),
+          vibe,
+          onboardingStep: 3,
+        },
+      });
+
+      router.push("/onboarding/history");
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -211,6 +221,12 @@ export default function OnboardingVibePage() {
         {!allAnswered && (
           <p className="mt-6 text-center text-[12px] text-[#3a5a3a]">
             Answer all questions to continue
+          </p>
+        )}
+
+        {error && (
+          <p className="mt-4 rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-[12px] text-red-400">
+            {error}
           </p>
         )}
       </div>
