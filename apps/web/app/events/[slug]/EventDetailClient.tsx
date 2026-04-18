@@ -21,6 +21,8 @@ import {
 } from "@phosphor-icons/react";
 import { getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
 import type { events } from "@gooutside/demo-data";
+import { SearchBar } from "../../../components/search/SearchBar";
+import { useAppShell } from "../../../components/layout/AppShellContext";
 
 type EventItem = (typeof events)[number];
 
@@ -121,7 +123,8 @@ export function EventDetailClient({ event }: { event: EventItem }) {
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
-  const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const { sidebarWidth } = useAppShell();
 
   const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
   const reviewCount = 48 + ((event.id?.charCodeAt(1) ?? 66) % 80);
@@ -131,72 +134,87 @@ export function EventDetailClient({ event }: { event: EventItem }) {
   const mapLon = (-0.187 + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018).toFixed(4);
   const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${(Number(mapLon) - 0.022).toFixed(4)}%2C${(Number(mapLat) - 0.015).toFixed(4)}%2C${(Number(mapLon) + 0.022).toFixed(4)}%2C${(Number(mapLat) + 0.015).toFixed(4)}&layer=mapnik&marker=${mapLat}%2C${mapLon}`;
 
-  useEffect(() => {
-    const onScroll = () => setHeaderScrolled(window.scrollY > 380);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <>
-      {/* ── Floating top bar ─────────────────────────────────────────────────── */}
       <div
-        className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4 transition-all duration-300"
-        style={{
-          background: headerScrolled
-            ? "rgba(var(--bg-card-rgb), 0.95)"
-            : "transparent",
-          borderBottom: headerScrolled ? "1px solid var(--home-border)" : "none",
-          backdropFilter: headerScrolled ? "blur(16px)" : "none",
-        }}
+        className="fixed right-0 top-0 z-50 hidden md:block"
+        style={{ left: sidebarWidth > 0 ? sidebarWidth : 0 }}
       >
-        <Link
-          href="/home"
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
-            headerScrolled
-              ? "text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
-              : "bg-white/90 text-gray-900 shadow-md hover:bg-white"
-          }`}
-        >
-          <ArrowLeft size={16} weight="bold" />
-          Back
-        </Link>
+        <div className="border-b border-[var(--home-border)] bg-white px-6 py-3 shadow-[0_10px_30px_rgba(15,17,15,0.06)]">
+          <div className="mx-auto w-full max-w-[1320px]">
+            <SearchBar
+              isCompact={false}
+              isFocused={searchFocused}
+              isMini={false}
+              onFocusChange={setSearchFocused}
+            />
+          </div>
+        </div>
 
-        {headerScrolled && (
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)] max-w-[40vw]">
+        <div className="border-b border-[var(--home-border)] bg-white px-6 py-3">
+          <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-4">
+            <Link
+              href="/home"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+            >
+              <ArrowLeft size={16} weight="bold" />
+              Back
+            </Link>
+
+            <p className="min-w-0 flex-1 truncate text-center text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+              {event.title}
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+                type="button"
+              >
+                <PaperPlaneTilt size={14} weight="bold" />
+                Share
+              </button>
+              <button
+                className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold transition hover:bg-[var(--bg-surface)] ${
+                  saved ? "text-rose-500" : "text-[var(--text-primary)]"
+                }`}
+                onClick={() => setSaved(v => !v)}
+                type="button"
+              >
+                <HeartStraight size={14} weight={saved ? "fill" : "bold"} />
+                {saved ? "Saved" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--home-border)] bg-white px-4 py-3 shadow-[0_10px_30px_rgba(15,17,15,0.06)] md:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <Link
+            href="/home"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)]"
+          >
+            <ArrowLeft size={14} weight="bold" />
+            Back
+          </Link>
+          <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-[var(--text-primary)]">
             {event.title}
           </p>
-        )}
-
-        <div className="flex items-center gap-2">
           <button
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
-              headerScrolled
-                ? "text-[var(--text-primary)] hover:bg-[var(--bg-surface)] underline"
-                : "bg-white/90 text-gray-900 shadow-md hover:bg-white"
+            className={`flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] ${
+              saved ? "text-rose-500" : "text-[var(--text-primary)]"
             }`}
-            type="button"
-          >
-            <PaperPlaneTilt size={14} weight="bold" />
-            Share
-          </button>
-          <button
-            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${
-              headerScrolled
-                ? "text-[var(--text-primary)] hover:bg-[var(--bg-surface)] underline"
-                : "bg-white/90 text-gray-900 shadow-md hover:bg-white"
-            } ${saved ? "text-rose-500" : ""}`}
             onClick={() => setSaved(v => !v)}
             type="button"
           >
-            <HeartStraight size={14} weight={saved ? "fill" : "bold"} />
-            {saved ? "Saved" : "Save"}
+            <HeartStraight size={16} weight={saved ? "fill" : "regular"} />
           </button>
         </div>
       </div>
 
       {/* ── Photo grid (Airbnb-style) ─────────────────────────────────────────── */}
-      <div className="relative grid h-[68vh] min-h-[420px] max-h-[680px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden">
+      <div className="px-4 pt-[74px] md:px-6 md:pt-[148px]">
+      <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">
         {/* Main hero — spans 2 cols × 2 rows */}
         <button
           className="relative col-span-2 row-span-2 overflow-hidden"
@@ -227,8 +245,22 @@ export function EventDetailClient({ event }: { event: EventItem }) {
         ))}
       </div>
 
+      <button
+        className="relative block h-[54vw] min-h-[240px] max-h-[360px] w-full overflow-hidden rounded-[24px] md:hidden"
+        onClick={() => setLightboxIdx(0)}
+        type="button"
+      >
+        <img src={images[0]} alt={event.title} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/8 to-transparent" />
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-white/70 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900">
+          <Images size={12} />
+          Show all photos
+        </div>
+      </button>
+      </div>
+
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-10">
+      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-10">
         <div className="grid gap-16 lg:grid-cols-[1fr_380px]">
 
           {/* ── Left column ─────────────────────────────────────────────────── */}
@@ -418,7 +450,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
           </div>
 
           {/* ── Right column — sticky ticket card ──────────────────────────── */}
-          <aside className="lg:sticky lg:top-24 lg:self-start">
+          <aside className="lg:sticky lg:top-[168px] lg:self-start">
             <div className="overflow-hidden rounded-3xl border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
               {/* Price header */}
               <div className="border-b border-[var(--home-border)] px-6 pt-6 pb-5">

@@ -299,7 +299,7 @@ export function HomeClient() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setPeekPanelWidth } = useAppShell();
+  const { setPeekPanelWidth, setHeaderPeekPanelWidth } = useAppShell();
 
   const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
   const [paneWidth, setPaneWidth] = useState(520);
@@ -345,8 +345,16 @@ export function HomeClient() {
 
   // Sync pane width to AppShellContext so header adjusts
   useEffect(() => {
-    setPeekPanelWidth(selectedEvent ? paneWidth : 0);
-  }, [selectedEvent, paneWidth, setPeekPanelWidth]);
+    setPeekPanelWidth(selectedEvent ? Math.min(360, Math.round(paneWidth * 0.72)) : 0);
+    setHeaderPeekPanelWidth(selectedEvent ? paneWidth : 0);
+  }, [selectedEvent, paneWidth, setHeaderPeekPanelWidth, setPeekPanelWidth]);
+
+  useEffect(() => {
+    return () => {
+      setPeekPanelWidth(0);
+      setHeaderPeekPanelWidth(0);
+    };
+  }, [setHeaderPeekPanelWidth, setPeekPanelWidth]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -373,10 +381,7 @@ export function HomeClient() {
 
   return (
     <>
-      <div
-        className="w-full overflow-x-hidden transition-[padding-right] duration-300 ease-in-out"
-        style={{ paddingRight: selectedEvent ? paneWidth : 0 }}
-      >
+      <div className="w-full overflow-x-hidden">
         <main className="page-grid min-h-screen overflow-x-hidden pb-32 md:pb-16">
           <div className="px-3 pt-4 md:hidden">
             <HomeSearchHero mode="mobile" />
@@ -490,7 +495,7 @@ export function HomeClient() {
             </div>
 
             {/* Sidebar */}
-            <aside className="space-y-4 xl:sticky xl:top-[118px] xl:self-start">
+            <aside className="space-y-4 xl:sticky xl:top-[118px] xl:self-start xl:max-h-[calc(100vh-142px)] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
               <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
