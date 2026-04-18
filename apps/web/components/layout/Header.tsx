@@ -29,7 +29,7 @@ function getInitials(name: string) {
 export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
   const pathname = usePathname();
   const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
-  const { peekPanelWidth } = useAppShell();
+  const { peekPanelWidth, headerPeekPanelWidth } = useAppShell();
   const [isFocused, setIsFocused] = useState(false);
   const { totalCount, openCart } = useCart();
   const stableSidebarOffset = 88;
@@ -37,11 +37,15 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   const isMessages = pathname === "/messages" || pathname === "/dashboard/messages";
   const isWallets  = pathname === "/wallets" || pathname.startsWith("/wallets/") || pathname.startsWith("/dashboard/wallets");
   const isProfile  = pathname === "/profile" || pathname.startsWith("/profile/") || pathname.startsWith("/dashboard/profile");
+  const isEventDetail = pathname.startsWith("/events/");
   const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
   const easedHomeProgress =
     totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
+  const reservedPanelWidth = isHome
+    ? Math.max(peekPanelWidth, headerPeekPanelWidth)
+    : peekPanelWidth;
 
-  if (isMessages || isWallets || isProfile) return null;
+  if (isMessages || isWallets || isProfile || isEventDetail) return null;
 
   if (appShell) {
     return (
@@ -51,7 +55,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             <div
               className="pointer-events-none absolute top-0 px-4 md:px-6"
               style={{
-                width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
+                width: `calc(100vw - ${stableSidebarOffset}px - ${reservedPanelWidth}px)`,
                 marginLeft: `${stableSidebarOffset}px`,
                 transition: "width 0.3s ease-in-out",
               }}
@@ -94,7 +98,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
           <div
             className="pointer-events-auto flex justify-center px-4 md:px-6"
             style={{
-              width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
+              width: `calc(100vw - ${stableSidebarOffset}px - ${reservedPanelWidth}px)`,
               marginLeft: `${stableSidebarOffset}px`,
               transition: "width 0.3s ease-in-out",
             }}

@@ -79,7 +79,7 @@ const ORG_AVATARS = [
   "https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&w=80&h=80&fit=crop&crop=faces",
 ];
 
-const DEFAULT_WIDTH = 540;
+const DEFAULT_WIDTH = 480;
 const MIN_WIDTH = 420;
 const MAX_WIDTH = 960;
 
