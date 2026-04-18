@@ -22,6 +22,7 @@ import {
   events,
   getCategoryEmoji,
   getEventImage,
+  getOrganizerById,
 } from "@gooutside/demo-data";
 import HomeSearchHero from "../search/HomeSearchHero";
 import { EventSidePane } from "./EventSidePane";
@@ -602,6 +603,7 @@ export function HomeClient() {
       {selectedEvent && (
         <EventSidePane
           event={selectedEvent}
+          organizer={getOrganizerById(selectedEvent.organizerId) ?? undefined}
           onClose={() => setSelectedEvent(null)}
           onWidthChange={setPaneWidth}
         />

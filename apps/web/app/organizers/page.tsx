@@ -1,9 +1,11 @@
+import { organizers as demoOrganizers } from "@gooutside/demo-data";
 import { getOrganizers } from "../../lib/db/organizers";
 import { Button, SectionHeader, ShellCard } from "@gooutside/ui";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 
 export default async function OrganizersPage() {
   const organizers = await getOrganizers();
+  const visibleOrganizers = organizers.length > 0 ? organizers : demoOrganizers;
 
   return (
     <main className="page-grid min-h-screen pb-24">
@@ -16,7 +18,7 @@ export default async function OrganizersPage() {
         />
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {organizers.map((org) => (
+          {visibleOrganizers.map((org) => (
             <ShellCard key={org.id} className="flex flex-col gap-5">
               <div className="flex items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-sm font-semibold text-[var(--text-primary)]">

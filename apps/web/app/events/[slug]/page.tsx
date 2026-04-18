@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
-import { events } from "@gooutside/demo-data";
+import {
+  events,
+  getOrganizerById as getDemoOrganizerById,
+  type Organizer,
+} from "@gooutside/demo-data";
 import { getEventBySlug } from "../../../lib/db/events";
+import { getOrganizerByUserId } from "../../../lib/db/organizers";
 import { EventDetailClient } from "./EventDetailClient";
 
 export default async function EventDetailPage({
@@ -16,5 +21,18 @@ export default async function EventDetailPage({
 
   if (!event) notFound();
 
-  return <EventDetailClient event={event} />;
+  const organizer =
+    (await getOrganizerByUserId(event.organizerId).catch(() => null)) ??
+    getDemoOrganizerById(event.organizerId) ??
+    ({
+      id: event.organizerId,
+      name: "GoOutside Host",
+      tag: "Community host",
+      city: event.city,
+      verified: false,
+      followersLabel: "Community host",
+      eventsLabel: "Active event page",
+    } satisfies Organizer);
+
+  return <EventDetailClient event={event} organizer={organizer} />;
 }

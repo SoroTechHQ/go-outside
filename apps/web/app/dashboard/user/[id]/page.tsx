@@ -13,50 +13,12 @@ import {
   DotsThreeVertical,
   Fire,
 } from "@phosphor-icons/react";
+import { getEventImage } from "@gooutside/demo-data";
 import { Avatar, AvatarImage, AvatarFallback, AvatarStatus } from "../../../../components/ui/avatar";
-import { FollowButton } from "../../../../components/social/FollowButton";
-
-// ── Mock profile data ─────────────────────────────────────────────────────────
-const MOCK_USER = {
-  id: "user-456",
-  name: "Ama Owusu",
-  handle: "@ama.owusu",
-  bio: "Festival lover 🎵 | Foodie 🍲 | Accra born, Accra raised | Chasing experiences not things",
-  location: "Accra, Ghana",
-  avatarUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b5bd?auto=format&w=160&h=160&fit=crop&crop=faces",
-  coverUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=1200&fit=crop",
-  joinedAt: "March 2024",
-  eventsAttended: 18,
-  friendCount: 42,
-  followingCount: 76,
-  pulseScore: 2840,
-  pulseTier: "Insider",
-  isOnline: true,
-  topCategories: ["Music", "Food", "Culture"],
-  pastEvents: [
-    {
-      id: "e1",
-      title: "Afrobeats Night",
-      date: "Apr 5, 2025",
-      imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&w=400&fit=crop",
-      category: "Music",
-    },
-    {
-      id: "e2",
-      title: "Chale Wote 2024",
-      date: "Aug 20, 2024",
-      imageUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&w=400&fit=crop",
-      category: "Culture",
-    },
-    {
-      id: "e3",
-      title: "Accra Food Festival",
-      date: "Dec 12, 2024",
-      imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&w=400&fit=crop",
-      category: "Food",
-    },
-  ],
-};
+import {
+  getCommunityPastEvents,
+  getCommunityProfileById,
+} from "../../../../lib/mock-community";
 
 type Tab = "been_there" | "friends" | "following";
 
@@ -64,9 +26,18 @@ export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("been_there");
+  const [isFollowing, setIsFollowing] = useState(false);
 
-  const userId = typeof params.id === "string" ? params.id : MOCK_USER.id;
-  const user = MOCK_USER; // TODO: fetch real user by userId
+  const userId = typeof params.id === "string" ? params.id : "ama-k";
+  const user = getCommunityProfileById(userId) ?? getCommunityProfileById("ama-k")!;
+  const pastEvents = getCommunityPastEvents(user.id).map((event) => ({
+    id: event.id,
+    slug: event.slug,
+    title: event.title,
+    date: event.dateLabel,
+    imageUrl: getEventImage(undefined, event.categorySlug),
+    category: event.eyebrow,
+  }));
 
   return (
     <main className="page-grid min-h-screen pb-24">
@@ -165,12 +136,22 @@ export default function UserProfilePage() {
                   <div className="flex items-center gap-2 self-start lg:self-end">
                     <button
                       className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] active:scale-95"
-                      onClick={() => router.push("/messages")}
+                      onClick={() => router.push("/dashboard/messages")}
                       type="button"
                     >
                       <ChatCircleDots size={18} weight="regular" />
                     </button>
-                    <FollowButton userId={userId} size="sm" />
+                    <button
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+                        isFollowing
+                          ? "border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-secondary)]"
+                          : "bg-[var(--brand)] text-black"
+                      }`}
+                      onClick={() => setIsFollowing((value) => !value)}
+                      type="button"
+                    >
+                      {isFollowing ? "Following" : "Follow"}
+                    </button>
                   </div>
                 </div>
 
@@ -250,11 +231,11 @@ export default function UserProfilePage() {
                 <div className="rounded-[28px] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] md:p-5">
                   {tab === "been_there" && (
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      {user.pastEvents.map((event) => (
+                      {pastEvents.map((event) => (
                         <button
                           key={event.id}
                           className="group relative aspect-[0.95] overflow-hidden rounded-[24px] text-left"
-                          onClick={() => router.push(`/`)}
+                          onClick={() => router.push(`/events/${event.slug}`)}
                           type="button"
                         >
                           <img

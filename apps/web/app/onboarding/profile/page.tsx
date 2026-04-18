@@ -62,7 +62,7 @@ export default function OnboardingProfilePage() {
       last_name:  draft.profile?.last_name  ?? user.lastName  ?? "",
       username:   draft.profile?.username   ?? (user.username ?? "").toLowerCase(),
       phone:      draft.profile?.phone      ?? user.phoneNumbers?.[0]?.phoneNumber ?? "",
-      location:   null,
+      location:   draft.profile?.location ?? null,
     });
   }, [isLoaded, user, reset]);
 
@@ -104,6 +104,7 @@ export default function OnboardingProfilePage() {
           username:   values.username,
           phone:      values.phone,
           city:       values.location?.city_name,
+          location:   values.location,
         },
       });
 

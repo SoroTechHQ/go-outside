@@ -1,4 +1,9 @@
 import { notFound } from "next/navigation";
+import {
+  categories as demoCategories,
+  events as demoEvents,
+  getOrganizerById as getDemoOrganizerById,
+} from "@gooutside/demo-data";
 import { getOrganizerByUserId } from "../../../lib/db/organizers";
 import { getEventsByOrganizer } from "../../../lib/db/events";
 import { getCategories } from "../../../lib/db/categories";
@@ -12,6 +17,76 @@ export default async function OrganizerProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  const demoOrganizer = getDemoOrganizerById(id);
+  if (demoOrganizer) {
+    const organizerEvents = demoEvents.filter((event) => event.organizerId === id);
+    const categoryMap = new Map<string, Category>(demoCategories.map((c) => [c.slug, c]));
+
+    return (
+      <main className="page-grid min-h-screen pb-24">
+        <section className="container-shell py-10">
+          <ShellCard className="mb-8">
+            <div className="flex flex-wrap items-start gap-6">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-lg font-semibold text-[var(--text-primary)]">
+                {demoOrganizer.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="font-display text-5xl italic text-[var(--text-primary)]">
+                    {demoOrganizer.name}
+                  </h1>
+                  {demoOrganizer.verified && (
+                    <ShieldCheck size={22} className="text-[var(--neon)]" weight="fill" />
+                  )}
+                </div>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{demoOrganizer.tag}</p>
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">{demoOrganizer.city}</p>
+                <div className="mt-3 flex gap-4 text-xs text-[var(--text-tertiary)]">
+                  <span>{demoOrganizer.followersLabel}</span>
+                  <span>{demoOrganizer.eventsLabel}</span>
+                </div>
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+                  {demoOrganizer.name} curates the kind of gatherings people bookmark early:
+                  clear hospitality, strong venue choices, and event pages that keep a loyal
+                  community coming back.
+                </p>
+              </div>
+            </div>
+          </ShellCard>
+
+          <div className="mb-6">
+            <h2 className="font-display text-3xl italic text-[var(--text-primary)]">
+              Events by {demoOrganizer.name}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              {organizerEvents.length} listing{organizerEvents.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+            {organizerEvents.map((event) => {
+              const category = categoryMap.get(event.categorySlug) ?? {
+                slug: event.categorySlug,
+                name: event.eyebrow,
+                iconKey: "calendar",
+                description: "",
+              };
+
+              return (
+                <EventCard
+                  key={event.id}
+                  category={category}
+                  event={event}
+                  organizer={demoOrganizer}
+                />
+              );
+            })}
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   const [organizer, organizerEvents, categories] = await Promise.all([
     getOrganizerByUserId(id),
