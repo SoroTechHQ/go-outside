@@ -7,8 +7,6 @@ type AppShellContextValue = {
   setSidebarWidth: (width: number) => void;
   peekPanelWidth: number;
   setPeekPanelWidth: (width: number) => void;
-  headerPeekPanelWidth: number;
-  setHeaderPeekPanelWidth: (width: number) => void;
 };
 
 const AppShellContext = createContext<AppShellContextValue | null>(null);
@@ -16,7 +14,6 @@ const AppShellContext = createContext<AppShellContextValue | null>(null);
 export function AppShellProvider({ children }: { children: ReactNode }) {
   const [sidebarWidth, setSidebarWidth] = useState(72);
   const [peekPanelWidth, setPeekPanelWidth] = useState(0);
-  const [headerPeekPanelWidth, setHeaderPeekPanelWidth] = useState(0);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--app-shell-offset", `${sidebarWidth}px`);
@@ -33,15 +30,8 @@ export function AppShellProvider({ children }: { children: ReactNode }) {
   }, [peekPanelWidth]);
 
   const value = useMemo(
-    () => ({
-      sidebarWidth,
-      setSidebarWidth,
-      peekPanelWidth,
-      setPeekPanelWidth,
-      headerPeekPanelWidth,
-      setHeaderPeekPanelWidth,
-    }),
-    [sidebarWidth, peekPanelWidth, headerPeekPanelWidth],
+    () => ({ sidebarWidth, setSidebarWidth, peekPanelWidth, setPeekPanelWidth }),
+    [sidebarWidth, peekPanelWidth],
   );
 
   return <AppShellContext.Provider value={value}>{children}</AppShellContext.Provider>;
@@ -55,8 +45,6 @@ export function useAppShell() {
       setSidebarWidth: () => undefined,
       peekPanelWidth: 0,
       setPeekPanelWidth: () => undefined,
-      headerPeekPanelWidth: 0,
-      setHeaderPeekPanelWidth: () => undefined,
     };
   }
   return context;

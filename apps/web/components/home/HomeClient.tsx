@@ -299,7 +299,7 @@ export function HomeClient() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setPeekPanelWidth, setHeaderPeekPanelWidth } = useAppShell();
+  const { setPeekPanelWidth } = useAppShell();
 
   const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
   const [paneWidth, setPaneWidth] = useState(520);
@@ -345,16 +345,14 @@ export function HomeClient() {
 
   // Sync pane width to AppShellContext so header adjusts
   useEffect(() => {
-    setPeekPanelWidth(selectedEvent ? Math.min(360, Math.round(paneWidth * 0.72)) : 0);
-    setHeaderPeekPanelWidth(selectedEvent ? paneWidth : 0);
-  }, [selectedEvent, paneWidth, setHeaderPeekPanelWidth, setPeekPanelWidth]);
+    setPeekPanelWidth(selectedEvent ? paneWidth : 0);
+  }, [selectedEvent, paneWidth, setPeekPanelWidth]);
 
   useEffect(() => {
     return () => {
       setPeekPanelWidth(0);
-      setHeaderPeekPanelWidth(0);
     };
-  }, [setHeaderPeekPanelWidth, setPeekPanelWidth]);
+  }, [setPeekPanelWidth]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
