@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarBlank, ChartBar, Hash, NotePencil, Ticket } from "@phosphor-icons/react";
+import { ArrowLeft, CalendarBlank, ChartBar, Hash, NotePencil, Ticket } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import OrganizerBadge from "./OrganizerBadge";
 
@@ -91,9 +91,17 @@ export function OrganizerShell({
   verified: boolean;
 }) {
   return (
-    <div className="w-full overflow-hidden rounded-[28px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] shadow-[0_30px_90px_rgba(4,12,8,0.16)] xl:h-[calc(100dvh-7.75rem)] xl:min-h-[760px]">
-      <div className="grid min-h-[calc(100dvh-6.5rem)] md:min-h-[calc(100dvh-7rem)] xl:h-full xl:min-h-0 xl:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="border-b border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 xl:h-full xl:overflow-y-auto xl:border-b-0 xl:border-r">
+    <div className="flex h-screen w-full overflow-hidden bg-[var(--bg-elevated)]">
+      <div className="flex h-full w-full md:grid md:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="hidden h-full flex-col overflow-y-auto border-r border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 md:flex">
+          <Link
+            className="mb-4 flex items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-medium text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+            href="/home"
+          >
+            <ArrowLeft size={14} weight="bold" />
+            Back to feed
+          </Link>
+
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand)]/15 text-lg font-bold text-[var(--brand)]">
               G
@@ -129,7 +137,19 @@ export function OrganizerShell({
           </div>
         </aside>
 
-        <section className="min-w-0 bg-[var(--bg-elevated)] xl:h-full xl:overflow-y-auto">
+        <section className="h-full min-w-0 overflow-y-auto bg-[var(--bg-elevated)]">
+          {/* Mobile top bar */}
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
+            <Link
+              className="flex items-center gap-2 text-[13px] font-medium text-[var(--text-secondary)]"
+              href="/home"
+            >
+              <ArrowLeft size={16} weight="bold" />
+              Feed
+            </Link>
+            <p className="text-[13px] font-semibold text-[var(--text-primary)]">Organizer</p>
+            <div className="w-14" />
+          </div>
           {children}
         </section>
       </div>
