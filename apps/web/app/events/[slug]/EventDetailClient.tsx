@@ -140,7 +140,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
         className="fixed right-0 top-0 z-50 hidden md:block"
         style={{ left: sidebarWidth > 0 ? sidebarWidth : 0 }}
       >
-        <div className="border-b border-[var(--home-border)] bg-white px-6 py-3 shadow-[0_10px_30px_rgba(15,17,15,0.06)]">
+        <div className="border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-6 py-3 shadow-[var(--card-shadow)] backdrop-blur-xl">
           <div className="mx-auto w-full max-w-[1320px]">
             <SearchBar
               isCompact={false}
@@ -151,7 +151,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
           </div>
         </div>
 
-        <div className="border-b border-[var(--home-border)] bg-white px-6 py-3">
+        <div className="border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-6 py-3 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-4">
             <Link
               href="/home"
@@ -188,7 +188,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--home-border)] bg-white px-4 py-3 shadow-[0_10px_30px_rgba(15,17,15,0.06)] md:hidden">
+      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-4 py-3 shadow-[var(--card-shadow)] backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/home"
@@ -235,7 +235,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
             {/* "Show all photos" on last cell */}
             {pos === 3 && (
               <div className="absolute inset-0 flex items-end justify-end bg-black/20 p-3">
-                <span className="flex items-center gap-1.5 rounded-lg border border-white/80 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 shadow-sm">
+                <span className="flex items-center gap-1.5 rounded-lg border border-[var(--home-border-strong)] bg-[var(--bg-glass)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-[var(--card-shadow)] backdrop-blur-md">
                   <Images size={13} />
                   Show all photos
                 </span>
@@ -252,7 +252,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
       >
         <img src={images[0]} alt={event.title} className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/8 to-transparent" />
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-white/70 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900">
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-[var(--home-border-strong)] bg-[var(--bg-glass)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-[var(--card-shadow)] backdrop-blur-md">
           <Images size={12} />
           Show all photos
         </div>

@@ -376,6 +376,7 @@ export function HomeClient() {
 
   const clearFilters = () => router.push(pathname, { scroll: false });
   const hasFilters = selectedCategories.length > 0 || query.length > 0 || when.length > 0;
+  const isPaneOpen = selectedEvent !== null;
 
   return (
     <>
@@ -402,7 +403,9 @@ export function HomeClient() {
             )}
           </div>
 
-          <div className="container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)_288px]">
+          <div
+            className={`container-shell grid gap-8 px-4 pt-2 md:px-6 ${isPaneOpen ? "xl:grid-cols-[minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_288px]"}`}
+          >
             <div className="min-w-0">
               {sponsoredEvent && (
                 <motion.section
@@ -492,96 +495,106 @@ export function HomeClient() {
               </section>
             </div>
 
-            {/* Sidebar */}
-            <aside className="space-y-4 xl:sticky xl:top-[118px] xl:self-start xl:max-h-[calc(100vh-142px)] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
-              <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--pulse-gold)]">Your Pulse</p>
-                    <h3 className="mt-2 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Scene Kid</h3>
-                    <p className="mt-1 text-sm text-[var(--text-secondary)]">153 pts to City Native</p>
-                  </div>
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--pulse-gold)] bg-white/80 dark:bg-[var(--pulse-gold-soft)]">
-                    <span className="text-[1.3rem] font-semibold text-[var(--pulse-gold)]">847</span>
-                  </div>
-                </div>
-                <div className="mt-5">
-                  <div className="mb-2 flex items-center justify-between text-[0.68rem] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                    <span>Scene Kid</span><span>City Native</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-[rgba(var(--pulse-gold-rgb),0.12)]">
-                    <div className="h-2 w-[62%] rounded-full bg-[var(--pulse-gold)]" />
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {PULSE_BADGES.map((badge) => (
-                    <span key={badge} className="rounded-full border border-[var(--pulse-gold-border)] bg-[var(--pulse-gold-soft)] px-3 py-1 text-[0.68rem] font-semibold text-[var(--pulse-gold)]">{badge}</span>
-                  ))}
-                </div>
-              </section>
-
-              <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">Friendtivities</p>
-                    <h3 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Plans in motion</h3>
-                  </div>
-                  <Link className="text-xs font-medium text-[var(--brand)]" href="/notifications">See all</Link>
-                </div>
-                <div className="space-y-2.5">
-                  {(trendingCards.length > 0 ? trendingCards : events.slice(0, 2)).map((event, index) => {
-                    const cluster = FRIEND_CLUSTERS[index % FRIEND_CLUSTERS.length]!;
-                    return (
-                      <Link key={event.id} className="block rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
-                            <UsersThree size={16} weight="regular" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-[var(--text-primary)]">{cluster.labels.join(", ")}</p>
-                            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{cluster.note}</p>
-                            <p className="mt-2 truncate text-xs font-medium text-[var(--text-primary)]">{event.title}</p>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-
-              <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <TrendUp size={18} weight="bold" className="text-[var(--brand)]" />
-                    <h3 className="text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Trending now</h3>
-                  </div>
-                  <Link className="text-xs font-medium text-[var(--brand)]" href="/events">See all</Link>
-                </div>
-                <div className="space-y-2.5">
-                  {trendingCards.map((event, index) => (
-                    <Link key={event.id} className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
-                      <span className="text-lg font-semibold text-[var(--text-tertiary)]">{index + 1}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
-                        <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.locationLine}</p>
+            <AnimatePresence initial={false}>
+              {!isPaneOpen ? (
+                <motion.aside
+                  key="home-rail"
+                  animate={{ opacity: 1, x: 0 }}
+                  className="space-y-4 xl:sticky xl:top-[118px] xl:self-start xl:max-h-[calc(100vh-142px)] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden"
+                  exit={{ opacity: 0, x: 24 }}
+                  initial={{ opacity: 0, x: 24 }}
+                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--pulse-gold)]">Your Pulse</p>
+                        <h3 className="mt-2 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Scene Kid</h3>
+                        <p className="mt-1 text-sm text-[var(--text-secondary)]">153 pts to City Native</p>
                       </div>
-                      <Fire size={15} weight="fill" className="text-[var(--brand)]" />
-                    </Link>
-                  ))}
-                </div>
-              </section>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--pulse-gold)] bg-white/80 dark:bg-[var(--pulse-gold-soft)]">
+                        <span className="text-[1.3rem] font-semibold text-[var(--pulse-gold)]">847</span>
+                      </div>
+                    </div>
+                    <div className="mt-5">
+                      <div className="mb-2 flex items-center justify-between text-[0.68rem] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                        <span>Scene Kid</span><span>City Native</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[rgba(var(--pulse-gold-rgb),0.12)]">
+                        <div className="h-2 w-[62%] rounded-full bg-[var(--pulse-gold)]" />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {PULSE_BADGES.map((badge) => (
+                        <span key={badge} className="rounded-full border border-[var(--pulse-gold-border)] bg-[var(--pulse-gold-soft)] px-3 py-1 text-[0.68rem] font-semibold text-[var(--pulse-gold)]">{badge}</span>
+                      ))}
+                    </div>
+                  </section>
 
-              <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/notifications">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
-                  <ChatCircleDots size={20} weight="regular" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Messages</p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">4 unread conversations</p>
-                </div>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand)] text-[11px] font-semibold text-white">4</div>
-              </Link>
-            </aside>
+                  <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">Friendtivities</p>
+                        <h3 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Plans in motion</h3>
+                      </div>
+                      <Link className="text-xs font-medium text-[var(--brand)]" href="/notifications">See all</Link>
+                    </div>
+                    <div className="space-y-2.5">
+                      {(trendingCards.length > 0 ? trendingCards : events.slice(0, 2)).map((event, index) => {
+                        const cluster = FRIEND_CLUSTERS[index % FRIEND_CLUSTERS.length]!;
+                        return (
+                          <Link key={event.id} className="block rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
+                                <UsersThree size={16} weight="regular" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-[var(--text-primary)]">{cluster.labels.join(", ")}</p>
+                                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{cluster.note}</p>
+                                <p className="mt-2 truncate text-xs font-medium text-[var(--text-primary)]">{event.title}</p>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <TrendUp size={18} weight="bold" className="text-[var(--brand)]" />
+                        <h3 className="text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Trending now</h3>
+                      </div>
+                      <Link className="text-xs font-medium text-[var(--brand)]" href="/events">See all</Link>
+                    </div>
+                    <div className="space-y-2.5">
+                      {trendingCards.map((event, index) => (
+                        <Link key={event.id} className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
+                          <span className="text-lg font-semibold text-[var(--text-tertiary)]">{index + 1}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
+                            <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.locationLine}</p>
+                          </div>
+                          <Fire size={15} weight="fill" className="text-[var(--brand)]" />
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
+
+                  <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/notifications">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
+                      <ChatCircleDots size={20} weight="regular" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Messages</p>
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">4 unread conversations</p>
+                    </div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand)] text-[11px] font-semibold text-white">4</div>
+                  </Link>
+                </motion.aside>
+              ) : null}
+            </AnimatePresence>
           </div>
         </main>
       </div>
