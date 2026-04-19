@@ -99,6 +99,38 @@
   --pulse-gold-rgb: 191 145 80;
   --pulse-gold-soft: rgba(191, 145, 80, 0.12);
   --pulse-gold-border: rgba(191, 145, 80, 0.24);
+
+  /* ── Onboarding theme tokens (light defaults) ── */
+  --ob-bg: #f0f5f0;
+  --ob-overlay: rgba(240, 245, 240, 0.18);
+  --ob-card-bg: rgba(255, 255, 255, 0.97);
+  --ob-card-border: 1px solid rgba(47, 143, 69, 0.14);
+  --ob-card-shadow: 0 32px 80px rgba(0,0,0,0.10), 0 0 0 1px rgba(47,143,69,0.06);
+  --ob-input-bg: #f0f5ef;
+  --ob-input-text: #0f110f;
+  --ob-input-placeholder: #9ab09a;
+  --ob-input-border: rgba(47, 143, 69, 0.2);
+  --ob-input-focus-border: rgba(47, 143, 69, 0.5);
+  --ob-input-focus-ring: rgba(47, 143, 69, 0.12);
+  --ob-label: #4a6a4a;
+  --ob-heading: #0f110f;
+  --ob-text-muted: #5a7a5a;
+  --ob-text-faint: #8aaa8a;
+  --ob-chip-bg: rgba(0, 0, 0, 0.04);
+  --ob-chip-bg-sel: rgba(95, 191, 42, 0.10);
+  --ob-chip-border: rgba(95, 191, 42, 0.16);
+  --ob-chip-border-sel: #5FBF2A;
+  --ob-chip-text: rgba(0, 0, 0, 0.65);
+  --ob-chip-text-sel: #2f8f45;
+  --ob-stat-bg: rgba(47, 143, 69, 0.06);
+  --ob-stat-border: rgba(47, 143, 69, 0.12);
+  --ob-stat-text: #0f110f;
+  --ob-question-label: #1a3a1a;
+  --ob-back-btn: #4a6a4a;
+  --ob-step-label: #5a7a5a;
+  --ob-progress-track: rgba(47, 143, 69, 0.15);
+  --ob-loading-text: #5a7a5a;
+  --ob-loading-faint: #8aaa8a;
 }
 
 :root[data-theme="dark"] {
@@ -184,6 +216,38 @@
   --hero-dot-muted: rgba(255, 255, 255, 0.4);
   --card-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
   --card-shadow-hover: 0 18px 40px rgba(0, 0, 0, 0.32);
+
+  /* ── Onboarding theme tokens (dark overrides) ── */
+  --ob-bg: #020702;
+  --ob-overlay: rgba(2, 7, 2, 0.70);
+  --ob-card-bg: #0D1A0D;
+  --ob-card-border: 1px solid rgba(95, 191, 42, 0.12);
+  --ob-card-shadow: 0 32px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(95,191,42,0.06);
+  --ob-input-bg: #131A13;
+  --ob-input-text: #F5FFF0;
+  --ob-input-placeholder: #3a5a3a;
+  --ob-input-border: rgba(95, 191, 42, 0.12);
+  --ob-input-focus-border: rgba(95, 191, 42, 0.4);
+  --ob-input-focus-ring: rgba(95, 191, 42, 0.10);
+  --ob-label: #4A6A4A;
+  --ob-heading: #F5FFF0;
+  --ob-text-muted: #6B8C6B;
+  --ob-text-faint: #3a5a3a;
+  --ob-chip-bg: rgba(255, 255, 255, 0.03);
+  --ob-chip-bg-sel: rgba(95, 191, 42, 0.08);
+  --ob-chip-border: rgba(95, 191, 42, 0.10);
+  --ob-chip-border-sel: #5FBF2A;
+  --ob-chip-text: rgba(255, 255, 255, 0.50);
+  --ob-chip-text-sel: #5FBF2A;
+  --ob-stat-bg: #0D140D;
+  --ob-stat-border: rgba(95, 191, 42, 0.10);
+  --ob-stat-text: #F5FFF0;
+  --ob-question-label: #c8e0c8;
+  --ob-back-btn: #4A6A4A;
+  --ob-step-label: #4A6A4A;
+  --ob-progress-track: rgba(95, 191, 42, 0.20);
+  --ob-loading-text: #6B8C6B;
+  --ob-loading-faint: #3a5a3a;
 }
 
 * {

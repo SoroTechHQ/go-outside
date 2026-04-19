@@ -4,32 +4,41 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  MusicNote,
+  Code,
+  ForkKnife,
+  PaintBrush,
+  Trophy,
+  Users,
+  BookOpen,
+  Buildings,
+  type Icon,
+} from "@phosphor-icons/react";
 import { LANDMARK_BY_ID } from "@/lib/landmark-events";
 import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 
-const CATEGORIES = [
-  { slug: "music",       name: "Music",        emoji: "🎵" },
-  { slug: "tech",        name: "Tech",          emoji: "💻" },
-  { slug: "food-drink",  name: "Food & Drink",  emoji: "🍽️" },
-  { slug: "arts",        name: "Arts",          emoji: "🎨" },
-  { slug: "sports",      name: "Sports",        emoji: "⚽" },
-  { slug: "networking",  name: "Networking",    emoji: "🤝" },
-  { slug: "education",   name: "Education",     emoji: "🎓" },
-  { slug: "community",   name: "Community",     emoji: "🌃" },
-] as const;
+const CATEGORIES: { slug: string; name: string; Icon: Icon }[] = [
+  { slug: "music",       name: "Music",        Icon: MusicNote  },
+  { slug: "tech",        name: "Tech",         Icon: Code       },
+  { slug: "food-drink",  name: "Food & Drink", Icon: ForkKnife  },
+  { slug: "arts",        name: "Arts",         Icon: PaintBrush },
+  { slug: "sports",      name: "Sports",       Icon: Trophy     },
+  { slug: "networking",  name: "Networking",   Icon: Users      },
+  { slug: "education",   name: "Education",    Icon: BookOpen   },
+  { slug: "community",   name: "Community",    Icon: Buildings  },
+];
 
-type CategorySlug = (typeof CATEGORIES)[number]["slug"];
+type CategorySlug = "music" | "tech" | "food-drink" | "arts" | "sports" | "networking" | "education" | "community";
 
 export default function OnboardingInterestsPage() {
   const router   = useRouter();
   const { user } = useUser();
 
-  const [selected,   setSelected]   = useState<Set<CategorySlug>>(new Set());
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Auto-highlight categories from past event selections (Step 3)
+  const [selected,          setSelected]         = useState<Set<CategorySlug>>(new Set());
+  const [submitting,        setSubmitting]        = useState(false);
+  const [error,             setError]             = useState<string | null>(null);
   const [historyCategories, setHistoryCategories] = useState<Set<string>>(new Set());
   const hydrated = useRef(false);
 
@@ -37,13 +46,11 @@ export default function OnboardingInterestsPage() {
     if (hydrated.current) return;
     hydrated.current = true;
 
-    // First restore cookie draft
     const draft = getOnboardingDraft();
     const draftInterests = new Set<CategorySlug>(
       (draft.interests ?? []) as CategorySlug[]
     );
 
-    // Then layer in categories derived from past events (cookie or Clerk)
     const pastIds = draft.pastEventIds
       ?? ((user?.unsafeMetadata?.pastEventIds as string[] | undefined) ?? []);
     const cats = new Set<string>();
@@ -60,7 +67,6 @@ export default function OnboardingInterestsPage() {
     });
   }, [user]);
 
-  // Persist selection to draft on every change
   useEffect(() => {
     const arr = [...selected];
     if (arr.length > 0) saveOnboardingDraft({ interests: arr });
@@ -95,7 +101,6 @@ export default function OnboardingInterestsPage() {
       if (!userRes.ok) {
         const body = await userRes.json().catch(() => ({}));
         if (userRes.status === 401) throw new Error("Session expired — please refresh and try again.");
-        if (userRes.status === 404) throw new Error("Account not found. Please sign out and sign back in.");
         throw new Error(body?.error ?? "Failed to save your interests. Please try again.");
       }
 
@@ -150,49 +155,54 @@ export default function OnboardingInterestsPage() {
       <div>
         <div className="mb-8 text-center">
           <h1
-            className="text-[26px] font-normal italic text-[#F5FFF0]"
-            style={{ fontFamily: "'DM Serif Display', serif" }}
+            className="text-[26px] font-normal italic"
+            style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
           >
             What moves you?
           </h1>
-          <p className="mt-2 text-[14px] font-light text-[#6B8C6B]">
+          <p className="mt-2 text-[14px] font-light" style={{ color: "var(--ob-text-muted)" }}>
             Pick at least 3. Your feed adapts as you explore.
           </p>
         </div>
 
         {historyCategories.size > 0 && (
-          <p className="mb-4 text-center text-[11px] text-[#4A6A4A]">
-            ✓ Pre-selected based on your history
+          <p className="mb-4 flex items-center justify-center gap-1.5 text-center text-[11px] text-[#5FBF2A]">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5FBF2A]" />
+            Pre-selected based on your history
           </p>
         )}
 
-        {/* 4×2 grid */}
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {CATEGORIES.map((cat) => {
-            const isSel      = selected.has(cat.slug);
+            const isSel       = selected.has(cat.slug as CategorySlug);
             const fromHistory = historyCategories.has(cat.slug);
+            const { Icon: CatIcon } = cat;
             return (
               <motion.button
                 key={cat.slug}
                 type="button"
-                onClick={() => toggle(cat.slug)}
+                onClick={() => toggle(cat.slug as CategorySlug)}
                 whileTap={{ scale: 0.96 }}
                 animate={{ scale: isSel ? 1.04 : 1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 className="relative flex flex-col items-center gap-2 rounded-[14px] border px-2 py-4 text-center transition-colors"
                 style={{
-                  background:  isSel ? "rgba(95,191,42,0.10)" : "rgba(255,255,255,0.03)",
-                  borderColor: isSel ? "#5FBF2A" : "rgba(95,191,42,0.10)",
+                  background:  isSel ? "var(--ob-chip-bg-sel)"     : "var(--ob-chip-bg)",
+                  borderColor: isSel ? "var(--ob-chip-border-sel)"  : "var(--ob-chip-border)",
                   boxShadow:   isSel ? "0 0 12px rgba(95,191,42,0.12)" : "none",
                 }}
               >
                 {fromHistory && !isSel && (
                   <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#5FBF2A]/40" />
                 )}
-                <span className="text-[24px] leading-none">{cat.emoji}</span>
+                <CatIcon
+                  size={24}
+                  weight={isSel ? "fill" : "regular"}
+                  style={{ color: isSel ? "var(--ob-chip-text-sel)" : "var(--ob-chip-text)" }}
+                />
                 <span
                   className="text-[11px] font-medium"
-                  style={{ color: isSel ? "#5FBF2A" : "#6B8C6B" }}
+                  style={{ color: isSel ? "var(--ob-chip-text-sel)" : "var(--ob-text-muted)" }}
                 >
                   {cat.name}
                 </span>
@@ -201,46 +211,48 @@ export default function OnboardingInterestsPage() {
           })}
         </div>
 
-        {/* Counter */}
         <div className="mt-5 text-center">
           <p
             className="text-[14px] font-semibold transition-colors"
-            style={{ color: enoughSelected ? "#5FBF2A" : "#4A6A4A" }}
+            style={{ color: enoughSelected ? "#5FBF2A" : "var(--ob-label)" }}
           >
             {selected.size} selected
           </p>
           {!enoughSelected && (
-            <p className="mt-1 text-[12px] text-[#3a5a3a]">Select at least 3</p>
+            <p className="mt-1 text-[12px]" style={{ color: "var(--ob-text-faint)" }}>
+              Select at least 3
+            </p>
           )}
         </div>
 
-        {/* CTA */}
         <div className="mt-6 space-y-3">
-          <button
-            onClick={handleContinue}
-            disabled={!enoughSelected || submitting}
-            className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full text-[14px] font-bold transition"
-            style={{
-              background:  enoughSelected && !submitting ? "#5FBF2A" : "rgba(255,255,255,0.04)",
-              color:       enoughSelected && !submitting ? "#020702" : "#4A6A4A",
-              boxShadow:   enoughSelected && !submitting ? "0 0 18px rgba(95,191,42,0.25)" : "none",
-              cursor:      enoughSelected && !submitting ? "pointer" : "not-allowed",
-            }}
-          >
-            {submitting ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Saving…
-              </>
-            ) : (
-              "Continue →"
+          <AnimatePresence>
+            {enoughSelected && (
+              <motion.button
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                onClick={handleContinue}
+                disabled={submitting}
+                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.25)] transition disabled:opacity-50"
+              >
+                {submitting ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#020702] border-t-transparent" />
+                    Saving…
+                  </>
+                ) : (
+                  "Continue →"
+                )}
+              </motion.button>
             )}
-          </button>
+          </AnimatePresence>
 
           <button
             onClick={handleSkip}
             disabled={submitting}
-            className="block w-full py-2 text-center text-[13px] text-[#4A6A4A] transition hover:text-[#6B8C6B]"
+            className="block w-full py-2 text-center text-[13px] transition"
+            style={{ color: "var(--ob-label)" }}
           >
             Skip for now
           </button>
@@ -252,7 +264,6 @@ export default function OnboardingInterestsPage() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

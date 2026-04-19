@@ -8,7 +8,7 @@ import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Image from "next/image";
+import { UserCircle } from "@phosphor-icons/react";
 import { LocationAutocomplete, type PlaceResult } from "../../../components/ui/LocationAutocomplete";
 
 const schema = z.object({
@@ -33,9 +33,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const inputCls =
-  "w-full rounded-[12px] border border-[rgba(95,191,42,0.12)] bg-[#131A13] px-4 py-3 text-[14px] text-[#F5FFF0] placeholder-[#3a5a3a] outline-none transition focus:border-[rgba(95,191,42,0.4)] focus:ring-1 focus:ring-[rgba(95,191,42,0.1)]";
+  "w-full rounded-[12px] border border-[var(--ob-input-border)] bg-[var(--ob-input-bg)] px-4 py-3 text-[14px] text-[var(--ob-input-text)] placeholder-[var(--ob-input-placeholder)] outline-none transition focus:border-[var(--ob-input-focus-border)] focus:ring-1 focus:ring-[var(--ob-input-focus-ring)]";
 
-const labelCls = "mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-[#4A6A4A]";
+const labelCls = "mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ob-label)]";
 
 export default function OnboardingProfilePage() {
   const router = useRouter();
@@ -54,7 +54,6 @@ export default function OnboardingProfilePage() {
     },
   });
 
-  // Pre-fill from Clerk user + cookie draft once loaded
   useEffect(() => {
     if (!isLoaded || !user) return;
     const draft = getOnboardingDraft();
@@ -84,7 +83,6 @@ export default function OnboardingProfilePage() {
         location_formatted:  loc.formatted_address,
         location_place_id:   loc.place_id,
         location_source:     "onboarding",
-        // PostGIS point sent as WKT; API will handle conversion
         ...(loc.lat && loc.lng
           ? { location_lat: loc.lat, location_lng: loc.lng }
           : {}),
@@ -98,11 +96,9 @@ export default function OnboardingProfilePage() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (res.status === 401) throw new Error("Session expired — please refresh and try again.");
-        if (res.status === 409) throw new Error("That username is already taken. Try a different one.");
         throw new Error(body?.error ?? `Something went wrong (${res.status}). Please try again.`);
       }
 
-      // Save to draft so back-navigation restores these values
       saveOnboardingDraft({
         profile: {
           first_name: values.first_name,
@@ -144,40 +140,27 @@ export default function OnboardingProfilePage() {
         {/* Avatar */}
         <div className="mb-8 flex flex-col items-center gap-3">
           <div className="relative">
-            {user?.imageUrl ? (
-              <Image
-                src={user.imageUrl}
-                alt="Avatar"
-                width={80}
-                height={80}
-                className="h-20 w-20 rounded-full object-cover ring-2 ring-[rgba(95,191,42,0.3)]"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#152a1a] ring-2 ring-[rgba(95,191,42,0.3)]">
-                <span
-                  className="text-[28px] font-bold text-[#5FBF2A]"
-                  style={{ fontFamily: "'DM Serif Display', serif" }}
-                >
-                  {(user?.firstName?.[0] ?? "?").toUpperCase()}
-                </span>
-              </div>
-            )}
+            <div
+              className="flex h-20 w-20 items-center justify-center rounded-full ring-2 ring-[rgba(95,191,42,0.3)]"
+              style={{ background: "var(--ob-stat-bg)" }}
+            >
+              <UserCircle size={52} weight="duotone" className="text-[#5FBF2A]" />
+            </div>
           </div>
           <div className="text-center">
             <h1
-              className="text-[28px] font-normal italic text-[#F5FFF0]"
-              style={{ fontFamily: "'DM Serif Display', serif" }}
+              className="text-[28px] font-normal italic"
+              style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
             >
               Is this you?
             </h1>
-            <p className="mt-1 text-[14px] font-light text-[#6B8C6B]">
+            <p className="mt-1 text-[14px] font-light" style={{ color: "var(--ob-text-muted)" }}>
               Confirm your details before we personalise your experience
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Name row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>First name</label>
@@ -195,11 +178,13 @@ export default function OnboardingProfilePage() {
             </div>
           </div>
 
-          {/* Username */}
           <div>
             <label className={labelCls}>Username</label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[13px] text-[#3a5a3a]">
+              <span
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[13px]"
+                style={{ color: "var(--ob-text-faint)" }}
+              >
                 @
               </span>
               <input
@@ -213,13 +198,16 @@ export default function OnboardingProfilePage() {
             )}
           </div>
 
-          {/* Phone */}
           <div>
-            <label className={labelCls}>Phone <span className="text-[#3a5a3a] normal-case">(optional)</span></label>
+            <label className={labelCls}>
+              Phone{" "}
+              <span className="normal-case" style={{ color: "var(--ob-text-faint)" }}>
+                (optional)
+              </span>
+            </label>
             <input {...register("phone")} type="tel" className={inputCls} placeholder="+233 XX XXX XXXX" />
           </div>
 
-          {/* City — Google Places autocomplete */}
           <div>
             <label className={labelCls}>Your city</label>
             <Controller
