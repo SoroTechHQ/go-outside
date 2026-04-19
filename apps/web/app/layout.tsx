@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeScript } from "@gooutside/ui";
 import NextTopLoader from "nextjs-toploader";
+import "stream-chat-react/dist/css/v2/index.css";
 import { ConditionalChrome } from "../components/layout/ConditionalChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
 import { Providers } from "./providers";

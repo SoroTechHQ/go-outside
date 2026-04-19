@@ -305,6 +305,8 @@ export function HomeClient() {
   const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
   const [paneWidth, setPaneWidth] = useState(520);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const spacerRef = useRef<HTMLDivElement>(null);
+  const [asidePos, setAsidePos] = useState<{ right: number; width: number } | null>(null);
 
   const selectedCategories = useMemo(
     () => searchParams.get("category")?.split(",").filter(Boolean) ?? [],
@@ -405,7 +407,7 @@ export function HomeClient() {
           </div>
 
           <div
-            className={`container-shell grid gap-8 px-4 pt-2 md:px-6 ${isPaneOpen ? "xl:grid-cols-[minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_288px]"}`}
+            className={`container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
           >
             <div className="min-w-0">
               {sponsoredEvent && (
@@ -501,7 +503,7 @@ export function HomeClient() {
                 <motion.aside
                   key="home-rail"
                   animate={{ opacity: 1, x: 0 }}
-                  className="space-y-4 xl:sticky xl:top-[118px] xl:self-start xl:max-h-[calc(100vh-142px)] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden"
+                  className="space-y-4 xl:fixed xl:top-[118px] xl:right-6 xl:w-[288px] xl:max-h-[calc(100vh-134px)] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden"
                   exit={{ opacity: 0, x: 24 }}
                   initial={{ opacity: 0, x: 24 }}
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
