@@ -117,7 +117,7 @@ export function HomeEventCard({
         className="object-cover transition duration-500 group-hover:scale-[1.06]"
         fill
         sizes={isFeatured ? "640px" : isGrid ? "280px" : "360px"}
-        src={getEventImage(undefined, event.categorySlug)}
+        src={event.bannerUrl || getEventImage(undefined, event.categorySlug)}
       />
 
       {/* Base gradient — strong enough to keep always-visible text readable */}

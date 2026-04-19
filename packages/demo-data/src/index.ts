@@ -53,6 +53,7 @@ export type EventItem = {
   saved: boolean;
   rating: string;
   bannerTone: string;
+  bannerUrl: string | null;
   ticketTypes: TicketType[];
   gallery: string[];
   tags: string[];
