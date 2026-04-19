@@ -8,8 +8,6 @@ import type { VibeData } from "@/lib/onboarding-utils";
 import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 
-/* ── Question data ─────────────────────────────────────────────────────────── */
-
 const QUESTIONS = [
   {
     key:     "frequency" as keyof VibeData,
@@ -38,24 +36,22 @@ const QUESTIONS = [
     label:   "What time do you come alive?",
     multi:   true,
     options: [
-      { value: "afternoon",    label: "Afternoon" },
-      { value: "early_evening",label: "Early evening" },
-      { value: "late_night",   label: "Late night" },
-      { value: "whenever",     label: "Whenever" },
+      { value: "afternoon",     label: "Afternoon" },
+      { value: "early_evening", label: "Early evening" },
+      { value: "late_night",    label: "Late night" },
+      { value: "whenever",      label: "Whenever" },
     ],
   },
 ] as const;
-
-/* ── Chip component ────────────────────────────────────────────────────────── */
 
 function Chip({
   label,
   selected,
   onClick,
 }: {
-  label:   string;
+  label:    string;
   selected: boolean;
-  onClick: () => void;
+  onClick:  () => void;
 }) {
   return (
     <motion.button
@@ -66,18 +62,16 @@ function Chip({
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
       className="rounded-[12px] border px-4 py-3 text-[13px] font-medium transition-colors"
       style={{
-        background:   selected ? "rgba(95,191,42,0.12)" : "rgba(255,255,255,0.03)",
-        borderColor:  selected ? "#5FBF2A" : "rgba(95,191,42,0.12)",
-        color:        selected ? "#5FBF2A" : "rgba(255,255,255,0.5)",
-        boxShadow:    selected ? "0 0 12px rgba(95,191,42,0.12)" : "none",
+        background:  selected ? "var(--ob-chip-bg-sel)"    : "var(--ob-chip-bg)",
+        borderColor: selected ? "var(--ob-chip-border-sel)": "var(--ob-chip-border)",
+        color:       selected ? "var(--ob-chip-text-sel)"  : "var(--ob-chip-text)",
+        boxShadow:   selected ? "0 0 12px rgba(95,191,42,0.12)" : "none",
       }}
     >
       {label}
     </motion.button>
   );
 }
-
-/* ── Page ──────────────────────────────────────────────────────────────────── */
 
 export default function OnboardingVibePage() {
   const router     = useRouter();
@@ -86,7 +80,6 @@ export default function OnboardingVibePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Restore draft on mount
   useEffect(() => {
     const draft = getOnboardingDraft();
     if (draft.vibe && Object.keys(draft.vibe).length > 0) {
@@ -94,7 +87,6 @@ export default function OnboardingVibePage() {
     }
   }, []);
 
-  // Persist draft whenever vibe changes
   useEffect(() => {
     if (Object.keys(vibe).length > 0) {
       saveOnboardingDraft({ vibe: vibe as Record<string, unknown> });
@@ -163,12 +155,12 @@ export default function OnboardingVibePage() {
       <div>
         <div className="mb-8 text-center">
           <h1
-            className="text-[26px] font-normal italic text-[#F5FFF0]"
-            style={{ fontFamily: "'DM Serif Display', serif" }}
+            className="text-[26px] font-normal italic"
+            style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
           >
             Tell us about yourself
           </h1>
-          <p className="mt-2 text-[14px] font-light text-[#6B8C6B]">
+          <p className="mt-2 text-[14px] font-light" style={{ color: "var(--ob-text-muted)" }}>
             Helps us find your kind of scene
           </p>
         </div>
@@ -181,7 +173,12 @@ export default function OnboardingVibePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: qi * 0.15, ease: "easeOut" }}
             >
-              <p className="mb-3 text-[13px] font-semibold text-[#c8e0c8]">{q.label}</p>
+              <p
+                className="mb-3 text-[13px] font-semibold"
+                style={{ color: "var(--ob-question-label)" }}
+              >
+                {q.label}
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {q.options.map((opt) => (
                   <Chip
@@ -223,7 +220,7 @@ export default function OnboardingVibePage() {
         </AnimatePresence>
 
         {!allAnswered && (
-          <p className="mt-6 text-center text-[12px] text-[#3a5a3a]">
+          <p className="mt-6 text-center text-[12px]" style={{ color: "var(--ob-text-faint)" }}>
             Answer all questions to continue
           </p>
         )}

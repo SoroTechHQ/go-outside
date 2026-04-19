@@ -6,7 +6,6 @@ import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle } from "@phosphor-icons/react";
 import {
-  LANDMARK_EVENTS,
   INITIAL_LANDMARK_IDS,
   LANDMARK_BY_ID,
   type LandmarkEvent,
@@ -15,14 +14,14 @@ import { saveOnboardingDraft, getOnboardingDraft } from "@/lib/cookies";
 import { updateOnboardingProgress } from "@/lib/onboarding-progress";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  music:       "#7c3aed",
-  tech:        "#2563eb",
-  "food-drink":"#d97706",
-  arts:        "#be185d",
-  sports:      "#059669",
-  networking:  "#0891b2",
-  education:   "#b45309",
-  community:   "#5b21b6",
+  music:        "#7c3aed",
+  tech:         "#2563eb",
+  "food-drink": "#d97706",
+  arts:         "#be185d",
+  sports:       "#059669",
+  networking:   "#0891b2",
+  education:    "#b45309",
+  community:    "#5b21b6",
 };
 
 function EventChip({
@@ -45,26 +44,28 @@ function EventChip({
       onClick={onToggle}
       className="relative flex items-start gap-3 rounded-[14px] border px-4 py-3 text-left transition-colors"
       style={{
-        background:  selected ? "rgba(95,191,42,0.08)" : "rgba(255,255,255,0.03)",
-        borderColor: selected ? "#5FBF2A" : "rgba(95,191,42,0.10)",
+        background:  selected ? "var(--ob-chip-bg-sel)" : "var(--ob-chip-bg)",
+        borderColor: selected ? "var(--ob-chip-border-sel)" : "var(--ob-chip-border)",
         boxShadow:   selected ? "0 0 10px rgba(95,191,42,0.1)" : "none",
       }}
     >
-      {/* Category dot */}
       <span
         className="mt-0.5 h-3 w-3 shrink-0 rounded-full"
         style={{ backgroundColor: dot }}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium text-[#c8e0c8]">{event.name}</p>
-        <p className="mt-0.5 text-[11px] text-[#3a5a3a]">{event.year}</p>
+        <p
+          className="truncate text-[13px] font-medium"
+          style={{ color: "var(--ob-question-label)" }}
+        >
+          {event.name}
+        </p>
+        <p className="mt-0.5 text-[11px]" style={{ color: "var(--ob-text-faint)" }}>
+          {event.year}
+        </p>
       </div>
       {selected && (
-        <CheckCircle
-          size={16}
-          weight="fill"
-          className="shrink-0 text-[#5FBF2A]"
-        />
+        <CheckCircle size={16} weight="fill" className="shrink-0 text-[#5FBF2A]" />
       )}
     </motion.button>
   );
@@ -74,12 +75,11 @@ export default function OnboardingHistoryPage() {
   const router   = useRouter();
   const { user } = useUser();
 
-  const [selected, setSelected]   = useState<Set<string>>(new Set());
-  const [shownIds, setShownIds]    = useState<string[]>(INITIAL_LANDMARK_IDS);
-  const [submitting, setSubmitting]= useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [selected,  setSelected]   = useState<Set<string>>(new Set());
+  const [shownIds,  setShownIds]    = useState<string[]>(INITIAL_LANDMARK_IDS);
+  const [submitting,setSubmitting]  = useState(false);
+  const [error,     setError]       = useState<string | null>(null);
 
-  // Restore draft on mount
   useEffect(() => {
     const draft = getOnboardingDraft();
     if (draft.pastEventIds && draft.pastEventIds.length > 0) {
@@ -87,7 +87,6 @@ export default function OnboardingHistoryPage() {
     }
   }, []);
 
-  // Persist selection to draft
   useEffect(() => {
     const ids = [...selected];
     if (ids.length > 0) saveOnboardingDraft({ pastEventIds: ids });
@@ -100,7 +99,6 @@ export default function OnboardingHistoryPage() {
         next.delete(id);
       } else {
         next.add(id);
-        // Expand grid with related events not yet shown
         const event = LANDMARK_BY_ID.get(id);
         if (event) {
           setShownIds((prevShown) => {
@@ -178,21 +176,17 @@ export default function OnboardingHistoryPage() {
       <div>
         <div className="mb-6 text-center">
           <h1
-            className="text-[24px] font-normal italic text-[#F5FFF0]"
-            style={{ fontFamily: "'DM Serif Display', serif" }}
+            className="text-[24px] font-normal italic"
+            style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
           >
             Events you&apos;ve been to
           </h1>
-          <p className="mt-2 text-[13px] font-light text-[#6B8C6B]">
+          <p className="mt-2 text-[13px] font-light" style={{ color: "var(--ob-text-muted)" }}>
             Select any you&apos;ve attended. We use this to personalise your score.
           </p>
         </div>
 
-        {/* Grid */}
-        <motion.div
-          layout
-          className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-        >
+        <motion.div layout className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <AnimatePresence mode="popLayout">
             {shownEvents.map((event) => (
               <EventChip
@@ -205,7 +199,6 @@ export default function OnboardingHistoryPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Footer */}
         <div className="mt-6 space-y-3">
           {selected.size > 0 && (
             <p className="text-center text-[12px] text-[#5FBF2A]">
@@ -231,7 +224,8 @@ export default function OnboardingHistoryPage() {
           <button
             onClick={handleSkip}
             disabled={submitting}
-            className="block w-full py-2 text-center text-[13px] text-[#4A6A4A] transition hover:text-[#6B8C6B]"
+            className="block w-full py-2 text-center text-[13px] transition"
+            style={{ color: "var(--ob-label)" }}
           >
             Skip for now
           </button>
@@ -246,3 +240,4 @@ export default function OnboardingHistoryPage() {
     </div>
   );
 }
+

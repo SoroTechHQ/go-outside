@@ -3,7 +3,8 @@ export function ThemeScript() {
     (() => {
       const key = 'gooutside-theme';
       const stored = window.localStorage.getItem(key);
-      const theme = stored === 'dark' ? 'dark' : 'light';
+      let theme;
+      theme = (stored === 'dark' || stored === 'light') ? stored : 'light';
       document.documentElement.dataset.theme = theme;
     })();
   `;

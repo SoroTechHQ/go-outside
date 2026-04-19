@@ -17,9 +17,9 @@ const LOADING_TEXTS = [
 ];
 
 const STATS = [
-  { value: "89K+", label: "People going out" },
+  { value: "89K+", label: "People going out"  },
   { value: "340+", label: "Events this month" },
-  { value: "28",   label: "Cities active" },
+  { value: "28",   label: "Cities active"     },
 ];
 
 function useCountUp(target: number, duration: number, active: boolean) {
@@ -29,7 +29,7 @@ function useCountUp(target: number, duration: number, active: boolean) {
     if (!active || target === 0) return;
     const start = performance.now();
     function tick(now: number) {
-      const p = Math.min((now - start) / duration, 1);
+      const p     = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - p, 3);
       setCount(Math.round(eased * target));
       if (p < 1) raf.current = requestAnimationFrame(tick);
@@ -41,7 +41,7 @@ function useCountUp(target: number, duration: number, active: boolean) {
 }
 
 export default function OnboardingPulsePage() {
-  const router   = useRouter();
+  const router = useRouter();
   const [phase,      setPhase]      = useState<Phase>("loading");
   const [textIdx,    setTextIdx]    = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -49,17 +49,14 @@ export default function OnboardingPulsePage() {
 
   const draft = typeof window === "undefined" ? {} : getOnboardingDraft();
 
-  // Compute score from the client-side onboarding draft so this page
-  // doesn't depend on Clerk metadata having revalidated yet.
-  const interests  = draft.interests ?? [];
+  const interests  = draft.interests  ?? [];
   const pastEvents = draft.pastEventIds ?? [];
   const vibe       = (draft.vibe as VibeData | undefined) ?? null;
 
-  const score = computeStartingScore({ interests, pastEvents, vibe });
-  const tier  = getTierFromScore(score);
+  const score     = computeStartingScore({ interests, pastEvents, vibe });
+  const tier      = getTierFromScore(score);
   const displayed = useCountUp(score, 1600, phase === "reveal");
 
-  // Rotate loading text
   useEffect(() => {
     const iv = setInterval(() => {
       setTextIdx((i) => (i + 1) % LOADING_TEXTS.length);
@@ -71,7 +68,6 @@ export default function OnboardingPulsePage() {
     return () => { clearInterval(iv); clearTimeout(t); };
   }, []);
 
-  // Fire confetti on reveal
   useEffect(() => {
     if (phase !== "reveal" || confettiFired.current) return;
     confettiFired.current = true;
@@ -105,15 +101,12 @@ export default function OnboardingPulsePage() {
       return;
     }
 
-    // Onboarding done — clear the draft cookie
     clearOnboardingDraft();
-
-    // Hard navigation so the server component re-reads fresh Clerk metadata + go_done cookie
     window.location.href = "/home";
   }
 
   return (
-    <div className="text-center">
+    <div className="flex flex-col items-center text-center">
       <AnimatePresence mode="wait">
         {phase === "loading" ? (
           <motion.div
@@ -140,7 +133,9 @@ export default function OnboardingPulsePage() {
             </div>
 
             <div>
-              <p className="text-[13px] font-light text-[#6B8C6B]">Personalising your GoOutside…</p>
+              <p className="text-[13px] font-light" style={{ color: "var(--ob-loading-text)" }}>
+                Personalising your GoOutside…
+              </p>
               <AnimatePresence mode="wait">
                 <motion.p
                   key={textIdx}
@@ -148,7 +143,8 @@ export default function OnboardingPulsePage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.25 }}
-                  className="mt-1 text-[12px] text-[#3a5a3a]"
+                  className="mt-1 text-[12px]"
+                  style={{ color: "var(--ob-loading-faint)" }}
                 >
                   {LOADING_TEXTS[textIdx]}
                 </motion.p>
@@ -161,25 +157,28 @@ export default function OnboardingPulsePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="flex w-full max-w-sm flex-col items-center gap-4"
+            className="flex w-full flex-col items-center gap-4"
           >
             {/* Score */}
             <motion.p
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 16, delay: 0.1 }}
-              className="font-display leading-none"
               style={{
                 fontFamily: "'DM Serif Display', serif",
                 fontStyle:  "italic",
                 fontSize:   "clamp(64px, 14vw, 80px)",
                 color:      "#5FBF2A",
+                lineHeight: 1,
               }}
             >
               {displayed}
             </motion.p>
 
-            <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-[#6B8C6B]">
+            <p
+              className="text-[13px] font-medium uppercase tracking-[0.1em]"
+              style={{ color: "var(--ob-text-muted)" }}
+            >
               Your Pulse Score
             </p>
 
@@ -192,12 +191,12 @@ export default function OnboardingPulsePage() {
             </span>
 
             <p
-              className="mt-2 text-[20px] font-normal italic text-[#F5FFF0]"
-              style={{ fontFamily: "'DM Serif Display', serif" }}
+              className="mt-2 text-[20px] font-normal italic"
+              style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
             >
               Accra&apos;s been waiting.
             </p>
-            <p className="text-[13px] font-light leading-relaxed text-[#4A6A4A]">
+            <p className="text-[13px] font-light leading-relaxed" style={{ color: "var(--ob-label)" }}>
               Go out more. Your score grows with every event.
             </p>
 
@@ -209,33 +208,39 @@ export default function OnboardingPulsePage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + i * 0.1 }}
-                  className="rounded-[12px] border border-[rgba(95,191,42,0.1)] bg-[#0D140D] px-3 py-3"
+                  className="rounded-[12px] border px-3 py-3"
+                  style={{
+                    background:  "var(--ob-stat-bg)",
+                    borderColor: "var(--ob-stat-border)",
+                  }}
                 >
                   <p
-                    className="text-[18px] font-normal italic text-[#F5FFF0]"
-                    style={{ fontFamily: "'DM Serif Display', serif" }}
+                    className="text-[18px] font-normal italic"
+                    style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-stat-text)" }}
                   >
                     {stat.value}
                   </p>
-                  <p className="mt-1 text-[10px] text-[#4A6A4A]">{stat.label}</p>
+                  <p className="mt-1 text-[10px]" style={{ color: "var(--ob-label)" }}>
+                    {stat.label}
+                  </p>
                 </motion.div>
               ))}
             </div>
 
             {enterError && (
-              <p className="w-full max-w-xs rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-center text-[12px] text-red-400">
+              <p className="w-full rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-center text-[12px] text-red-400">
                 {enterError}
               </p>
             )}
 
-            {/* CTA */}
+            {/* CTA — full width to match stats row */}
             <motion.button
               onClick={handleEnter}
               disabled={submitting}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-4 flex h-[46px] w-full max-w-xs items-center justify-center gap-2 rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.3)] transition disabled:opacity-50"
+              className="mt-2 flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.3)] transition disabled:opacity-50"
             >
               {submitting ? (
                 <>
