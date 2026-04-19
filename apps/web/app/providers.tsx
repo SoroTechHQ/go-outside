@@ -25,9 +25,10 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
-        {children}
-        <CartDrawer />
-        <Toaster />
+        <Toaster>
+          {children}
+          <CartDrawer />
+        </Toaster>
       </CartProvider>
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
