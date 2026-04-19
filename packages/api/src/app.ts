@@ -18,6 +18,7 @@ import { createPaymentsRouter } from './routes/payments.js';
 import { createPreviewRouter } from './routes/preview.js';
 import { createSessionsRouter } from './routes/sessions.js';
 import { createTicketsRouter } from './routes/tickets.js';
+import { createChatRouter } from './routes/chat.js';
 import { MemoryStore } from './store.js';
 
 export function createApp(options?: {
@@ -29,7 +30,14 @@ export function createApp(options?: {
 
   const app = new Hono();
 
-  app.use('*', cors());
+  app.use(
+    '*',
+    cors({
+      allowHeaders: ['Authorization', 'Content-Type'],
+      allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      origin: '*'
+    })
+  );
 
   app.onError((error, c) => {
     if (error instanceof ApiError) {
@@ -65,6 +73,7 @@ export function createApp(options?: {
   app.route('/sessions', createSessionsRouter(store, services));
   app.route('/friends', createFriendsRouter(store, services));
   app.route('/activity', createActivityRouter(store, services));
+  app.route('/chat', createChatRouter());
 
   return { app, store, services };
 }
