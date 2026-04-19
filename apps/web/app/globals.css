@@ -326,8 +326,15 @@ a {
 
 /* ── Stream Chat Shell ──────────────────────────────────────────────────── */
 
+/* Full-viewport page wrapper for the messages route */
+.go-stream-page {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .go-stream-frame {
   height: 100%;
+  overflow: hidden;
 }
 
 .go-stream-inner {
@@ -356,12 +363,17 @@ a {
   --str-chat__active-primary-color: var(--brand);
   --str-chat__border-radius-circle: 999px;
   --str-chat__font-family: var(--font-body);
-  --str-chat__message-bubble-color: #e9e9eb;
   --str-chat__overlay-color: rgba(15, 17, 15, 0.42);
   --str-chat__primary-color: var(--brand);
   --str-chat__secondary-color: var(--bg-surface);
   --str-chat__avatar-background-color: #dfe8df;
   --str-chat__message-max-width: min(76%, 560px);
+  /* Incoming message bubble = iMessage grey */
+  --str-chat__message-bubble-background: #e9e9eb;
+  --str-chat__message-bubble-color: #151515;
+  /* Outgoing message bubble = GoOutside green */
+  --str-chat__own-message-bubble-background: var(--brand);
+  --str-chat__own-message-bubble-color: #ffffff;
   background: transparent;
 }
 
@@ -658,11 +670,11 @@ a {
 }
 
 .go-stream-chat__thread .str-chat__message-bubble {
-  background: #e9e9eb;
-  border: none;
-  border-radius: 20px 20px 20px 6px;
-  box-shadow: none;
-  color: #151515;
+  background: #e9e9eb !important;
+  border: none !important;
+  border-radius: 20px 20px 20px 6px !important;
+  box-shadow: none !important;
+  color: #151515 !important;
   font-size: 0.96rem;
   line-height: 1.42;
   padding: 0.72rem 0.92rem;
@@ -676,10 +688,12 @@ a {
   line-height: inherit;
 }
 
-.go-stream-chat__thread .str-chat__message--me .str-chat__message-bubble {
-  background: var(--brand);
-  border-radius: 20px 20px 6px 20px;
-  color: #fff;
+/* Outgoing messages — both --me and --mine cover different Stream versions */
+.go-stream-chat__thread .str-chat__message--me .str-chat__message-bubble,
+.go-stream-chat__thread .str-chat__message--mine .str-chat__message-bubble {
+  background: var(--brand) !important;
+  border-radius: 20px 20px 6px 20px !important;
+  color: #fff !important;
 }
 
 .go-stream-chat__thread .str-chat__message-data {
@@ -1007,17 +1021,17 @@ a {
 }
 
 :root[data-theme="dark"] .go-stream-chat__thread .str-chat__message-bubble {
-  background: #2f3136;
-  color: #f3f4f6;
+  background: #2f3136 !important;
+  color: #f3f4f6 !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 6px 18px rgba(0, 0, 0, 0.16);
+    0 6px 18px rgba(0, 0, 0, 0.16) !important;
 }
 
-:root[data-theme="dark"] .go-stream-chat__thread .str-chat__message--me .str-chat__message-bubble {
-  background:
-    linear-gradient(180deg, rgba(var(--brand-rgb), 0.98), rgba(var(--brand-rgb), 0.88));
-  color: #061008;
+:root[data-theme="dark"] .go-stream-chat__thread .str-chat__message--me .str-chat__message-bubble,
+:root[data-theme="dark"] .go-stream-chat__thread .str-chat__message--mine .str-chat__message-bubble {
+  background: var(--brand) !important;
+  color: #ffffff !important;
   font-weight: 600;
   text-shadow: none;
 }

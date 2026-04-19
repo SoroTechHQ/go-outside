@@ -57,6 +57,16 @@ export async function getOrCreateSupabaseUser(): Promise<SupabaseUser | null> {
     .single();
 
   if (error) {
+    // Email already exists (seeded row with different clerk_id) — claim it
+    if (error.code === "23505") {
+      const { data: claimed } = await supabaseAdmin
+        .from("users")
+        .update({ clerk_id: clerkUser.id })
+        .eq("email", primaryEmail?.emailAddress ?? "")
+        .select("*")
+        .single();
+      if (claimed) return claimed as SupabaseUser;
+    }
     console.error("[getOrCreateSupabaseUser]", error);
     return null;
   }

@@ -7,6 +7,7 @@ import Avatar from "boring-avatars";
 import {
   MapPin,
   PencilSimple,
+  SignOut,
   X,
   CalendarBlank,
   CheckCircle,
@@ -15,9 +16,9 @@ import {
   Users,
   UserCheck,
   Lightning,
-  PencilLine,
   MagnifyingGlass,
 } from "@phosphor-icons/react";
+import { useClerk } from "@clerk/nextjs";
 import type { AttendeeTicket, EventItem } from "@gooutside/demo-data";
 import type { UserProfile } from "./types";
 import { getTierInfo } from "./types";
@@ -294,6 +295,7 @@ const SIDEBAR_FOLLOWING = [
 
 export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
   const router = useRouter();
+  const { signOut } = useClerk();
   const [activeTab,      setActiveTab]      = useState<TabId>("been-there");
   const [editOpen,       setEditOpen]       = useState(false);
   const [pulseOpen,      setPulseOpen]      = useState(false);
@@ -373,15 +375,24 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
               ringClass={tierInfo.ringClass}
               borderClass="border-[3px] border-[var(--bg-base)]"
             />
-            {/* Mobile edit button */}
+            {/* Mobile edit + sign out buttons */}
             {currentProfile.isOwnProfile && (
-              <button
-                onClick={() => setEditOpen(true)}
-                className="mb-1 flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97] md:hidden"
-              >
-                <PencilSimple size={13} />
-                Edit
-              </button>
+              <div className="mb-1 flex items-center gap-2 md:hidden">
+                <button
+                  onClick={() => setEditOpen(true)}
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97]"
+                >
+                  <PencilSimple size={13} />
+                  Edit
+                </button>
+                <button
+                  onClick={() => signOut(() => router.push("/"))}
+                  className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-red-400 shadow-sm transition hover:bg-red-500/20 active:scale-[0.97]"
+                >
+                  <SignOut size={13} />
+                  Sign Out
+                </button>
+              </div>
             )}
           </div>
 
@@ -396,15 +407,24 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
                   @{currentProfile.handle}
                 </p>
               </div>
-              {/* Desktop edit button */}
+              {/* Desktop edit + sign out buttons */}
               {currentProfile.isOwnProfile && (
-                <button
-                  onClick={() => setEditOpen(true)}
-                  className="hidden items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97] md:flex"
-                >
-                  <PencilSimple size={13} />
-                  Edit Profile
-                </button>
+                <div className="hidden items-center gap-2 md:flex">
+                  <button
+                    onClick={() => setEditOpen(true)}
+                    className="flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97]"
+                  >
+                    <PencilSimple size={13} />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => signOut(() => router.push("/"))}
+                    className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-red-400 shadow-sm transition hover:bg-red-500/20 active:scale-[0.97]"
+                  >
+                    <SignOut size={13} />
+                    Sign Out
+                  </button>
+                </div>
               )}
             </div>
 
