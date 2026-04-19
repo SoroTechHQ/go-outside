@@ -1,11 +1,10 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight,
   BookmarkSimple,
   CalendarBlank,
   ChatCircleDots,
@@ -16,20 +15,21 @@ import {
   MapPin,
   TrendUp,
   UsersThree,
+  Warning,
 } from "@phosphor-icons/react";
-import {
-  categories,
-  events,
-  getCategoryEmoji,
-  getEventImage,
-  getOrganizerById,
-} from "@gooutside/demo-data";
+import { categories, getCategoryEmoji } from "@gooutside/demo-data";
 import HomeSearchHero from "../search/HomeSearchHero";
 import { EventSidePane } from "./EventSidePane";
 import { useAppShell } from "../layout/AppShellContext";
-import { useInfiniteEvents, getFilteredEvents } from "../../hooks/useEventsQuery";
+import {
+  useInfiniteEvents,
+  useSaveEvent,
+  useSavedEvents,
+  getFilteredEvents,
+  type FeedEventItem,
+} from "../../hooks/useEventsQuery";
 
-// ── Unsplash avatar pool ──────────────────────────────────────────────────────
+// ── Unsplash avatar pool (social proof) ──────────────────────────────────────
 const AVATAR_POOL = [
   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&w=64&h=64&fit=crop&crop=faces",
   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&w=64&h=64&fit=crop&crop=faces",
@@ -52,17 +52,6 @@ const SOCIAL_PROOF_SETS = [
   { text: "Akosua + Kwame going", avatarCount: 2 },
 ];
 
-const URGENCY_SETS: (string | null)[] = [
-  "24 tickets left",
-  null,
-  "Selling fast",
-  null,
-  "Only 12 left!",
-  null,
-  "Almost sold out",
-  null,
-];
-
 const FRIEND_CLUSTERS = [
   { labels: ["Ama", "Yaw"], note: "bought tickets together" },
   { labels: ["Kofi", "Esi"], note: "saved this event" },
@@ -79,22 +68,66 @@ const FEED_SECTIONS = [
   { eyebrow: "You'll love this", title: "Things you'll like" },
 ];
 
-const ALL_CATEGORY_SLUGS = [
-  "music", "food", "sports", "arts", "tech", "nightlife", "culture", "outdoors",
-];
+// ── Scarcity pill from DB data ────────────────────────────────
 
-function getEventImages(event: (typeof events)[number]): [string, string, string, string, string] {
-  const baseIdx = Math.max(0, ALL_CATEGORY_SLUGS.indexOf(event.categorySlug));
-  return Array.from({ length: 5 }, (_, i) =>
-    getEventImage(undefined, ALL_CATEGORY_SLUGS[(baseIdx + i) % ALL_CATEGORY_SLUGS.length]),
-  ) as [string, string, string, string, string];
+function ScarcityBadge({ scarcity }: { scarcity: FeedEventItem["scarcity"] }) {
+  if (!scarcity || scarcity.state === "normal") return null;
+
+  const styles = {
+    critical: "bg-red-500 text-white",
+    low:      "bg-orange-500 text-white",
+    sold_out: "bg-[var(--text-tertiary)] text-white",
+  } as const;
+
+  const icon = scarcity.state === "sold_out" ? "🚫" : "🎫";
+  const label = scarcity.state === "sold_out"
+    ? "Sold out"
+    : scarcity.label ?? (scarcity.ticketsRemaining != null ? `${scarcity.ticketsRemaining} left` : "Selling fast");
+
+  return (
+    <div className="mb-2">
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.63rem] font-bold shadow-sm ${styles[scarcity.state as keyof typeof styles] ?? styles.low}`}>
+        {icon} {label}
+      </span>
+    </div>
+  );
 }
 
-function buildResultList(source: typeof events, limit: number, excludeSlugs: string[] = []) {
-  return source.filter((e) => !excludeSlugs.includes(e.slug)).slice(0, limit);
+// ── Save button — connected to TanStack mutation ───────────────
+
+function SaveButton({ event, className = "" }: { event: FeedEventItem; className?: string }) {
+  const { mutate: toggleSave, isPending } = useSaveEvent();
+  const { data: savedEvents } = useSavedEvents();
+  const isSaved = savedEvents?.some((e) => e.id === event.id) ?? event.saved;
+
+  const handleSave = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleSave({ eventId: event.id, saved: !isSaved });
+    },
+    [event.id, isSaved, toggleSave]
+  );
+
+  return (
+    <button
+      aria-label={isSaved ? "Remove from saved" : "Save event"}
+      className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition hover:bg-[var(--brand)] ${isPending ? "opacity-50" : ""} ${className}`}
+      disabled={isPending}
+      onClick={handleSave}
+      type="button"
+    >
+      <BookmarkSimple
+        size={14}
+        weight={isSaved ? "fill" : "regular"}
+        className={isSaved ? "text-[var(--brand)]" : ""}
+      />
+    </button>
+  );
 }
 
-function CardHoverActions() {
+// ── Card hover actions ─────────────────────────────────────────
+
+function CardHoverActions({ event }: { event: FeedEventItem }) {
   return (
     <div className="absolute right-3 top-3 z-10 flex gap-1.5 opacity-0 transition duration-200 group-hover:opacity-100">
       <button
@@ -104,29 +137,28 @@ function CardHoverActions() {
       >
         <HeartStraight size={14} weight="regular" />
       </button>
-      <button
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition hover:bg-[var(--brand)]"
-        onClick={(e) => e.stopPropagation()}
-        type="button"
-      >
-        <BookmarkSimple size={14} weight="regular" />
-      </button>
+      <SaveButton event={event} />
     </div>
   );
 }
+
+// ── ImageCard — main event card with real DB banner ───────────
 
 function ImageCard({
   event,
   feedIndex = 0,
   onCardClick,
 }: {
-  event: (typeof events)[number];
+  event: FeedEventItem;
   feedIndex?: number;
   onCardClick?: () => void;
 }) {
-  const images = getEventImages(event);
+  // Real banner from Supabase Storage, with category-colour fallback
+  const bannerUrl = event.bannerUrl || event.gallery?.[0];
+  // Gallery images from DB (up to 4 extra slots)
+  const galleryImages = event.gallery?.slice(1, 5) ?? [];
+
   const socialProof = SOCIAL_PROOF_SETS[feedIndex % SOCIAL_PROOF_SETS.length]!;
-  const urgency = URGENCY_SETS[feedIndex % URGENCY_SETS.length];
   const synopsis = event.shortDescription ?? "";
   const truncated = synopsis.length > 120 ? synopsis.slice(0, 120).trimEnd() + "…" : synopsis;
 
@@ -147,15 +179,24 @@ function ImageCard({
       {/* ── Photo grid ── */}
       <div className="relative flex aspect-[3/2] overflow-hidden rounded-t-[var(--radius-card-lg)] sm:aspect-[8/3]">
 
-        {/* Hero image — full width on mobile, left 56% on sm+ */}
+        {/* Hero image — full-width on mobile, left 56% on sm+ */}
         <div className="relative w-full shrink-0 overflow-hidden sm:w-[56%]">
-          <div
-            aria-label={event.title}
-            className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
-            role="img"
-            style={{ backgroundImage: `url(${images[0]})` }}
-          />
-          {/* Gradient */}
+          {bannerUrl ? (
+            <div
+              aria-label={event.title}
+              className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
+              role="img"
+              style={{ backgroundImage: `url(${bannerUrl})` }}
+            />
+          ) : (
+            // Category-colour fallback — always beautiful with no image
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${event.bannerTone}`}
+              role="img"
+              aria-label={event.title}
+            />
+          )}
+          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.93)_0%,rgba(0,0,0,0.5)_42%,rgba(0,0,0,0.06)_68%,transparent_100%)]" />
 
           {/* Category pill */}
@@ -163,9 +204,9 @@ function ImageCard({
             {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
           </div>
 
-          {/* Bottom text block — grows upward on hover */}
+          {/* Bottom text block */}
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-            {/* Social proof: stacked avatars + text */}
+            {/* Social proof */}
             <div className="mb-2 flex items-center gap-1.5">
               <div className="flex items-center">
                 {avatars.map((url, i) => (
@@ -182,14 +223,8 @@ function ImageCard({
               </span>
             </div>
 
-            {/* Urgency */}
-            {urgency && (
-              <div className="mb-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-500 px-2.5 py-0.5 text-[0.63rem] font-bold text-white shadow-sm">
-                  🎫 {urgency}
-                </span>
-              </div>
-            )}
+            {/* Real scarcity badge from DB */}
+            <ScarcityBadge scarcity={event.scarcity} />
 
             {/* Title */}
             <p className="text-[1.1rem] font-semibold leading-tight tracking-[-0.03em] sm:text-[1.3rem]">
@@ -210,7 +245,7 @@ function ImageCard({
               </div>
             )}
 
-            {/* Date / time */}
+            {/* Date / time — real from DB */}
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.78rem] text-white/80">
               <span className="inline-flex items-center gap-1">
                 <CalendarBlank size={11} weight="regular" />
@@ -224,30 +259,37 @@ function ImageCard({
           </div>
         </div>
 
-        {/* 2×2 image grid — hidden on mobile, right 44% on sm+ */}
+        {/* 2×2 image grid — real gallery from DB */}
         <div className="hidden sm:grid flex-1 grid-cols-2 grid-rows-2 gap-0.5">
-          {([images[1], images[2], images[3], images[4]] as string[]).map((img, i) => (
-            <div key={i} className="relative overflow-hidden">
-              <div
-                className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
-                style={{ backgroundImage: `url(${img})` }}
-              />
-              {i === 3 && (
-                <div className="absolute inset-0 flex items-end justify-end bg-black/32 p-1.5">
-                  <span className="inline-flex items-center gap-0.5 rounded-full border border-white/25 bg-white/15 px-1.5 py-0.5 text-[0.58rem] font-semibold text-white backdrop-blur-sm">
-                    <Images size={8} weight="regular" />
-                    All photos
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
+          {Array.from({ length: 4 }, (_, i) => {
+            const img = galleryImages[i] ?? bannerUrl;
+            return (
+              <div key={i} className="relative overflow-hidden">
+                {img ? (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
+                    style={{ backgroundImage: `url(${img})` }}
+                  />
+                ) : (
+                  <div className={`absolute inset-0 bg-gradient-to-br ${event.bannerTone} opacity-80`} />
+                )}
+                {i === 3 && (
+                  <div className="absolute inset-0 flex items-end justify-end bg-black/32 p-1.5">
+                    <span className="inline-flex items-center gap-0.5 rounded-full border border-white/25 bg-white/15 px-1.5 py-0.5 text-[0.58rem] font-semibold text-white backdrop-blur-sm">
+                      <Images size={8} weight="regular" />
+                      All photos
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <CardHoverActions />
+        <CardHoverActions event={event} />
       </div>
 
-      {/* ── Card body — venue + price only ── */}
+      {/* ── Card body — venue + price ── */}
       <div className="flex items-center justify-between gap-3 px-3.5 py-3">
         <div className="min-w-0">
           <p className="truncate text-[0.95rem] font-semibold text-[var(--text-primary)]">{event.venue}</p>
@@ -264,30 +306,40 @@ function ImageCard({
   );
 }
 
-function SponsoredAdCard({ event }: { event: (typeof events)[number] }) {
-  const imageUrl = getEventImage(undefined, event.categorySlug);
+// ── Sponsored ad card ──────────────────────────────────────────
+
+function SponsoredAdCard({ event }: { event: FeedEventItem }) {
+  const bannerUrl = event.gallery?.[0] ?? (event as FeedEventItem & { bannerUrl?: string }).bannerUrl;
   return (
     <Link
       className="group block overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow-strong)] active:scale-[0.99]"
       href={`/events/${event.slug}`}
     >
       <div className="relative min-h-[180px] overflow-hidden sm:min-h-[220px] md:aspect-[4/1] md:min-h-0">
-        <div
-          aria-label={event.title}
-          className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
-          role="img"
-          style={{ backgroundImage: `url(${imageUrl})`, aspectRatio: "3/1" }}
-        />
+        {bannerUrl ? (
+          <div
+            aria-label={event.title}
+            className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
+            role="img"
+            style={{ backgroundImage: `url(${bannerUrl})`, aspectRatio: "3/1" }}
+          />
+        ) : (
+          <div className={`absolute inset-0 bg-gradient-to-br ${event.bannerTone}`} />
+        )}
         <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(5,8,6,0.82)_0%,rgba(5,8,6,0.38)_60%,rgba(5,8,6,0.14)_100%)] md:bg-[linear-gradient(90deg,rgba(5,8,6,0.76)_0%,rgba(5,8,6,0.42)_42%,rgba(5,8,6,0.18)_100%)]" />
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-7">
           <div className="mb-2.5 flex flex-wrap items-center gap-2 md:mb-4 md:gap-3">
-            <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">Sponsored</span>
-            <span className="rounded-full border border-[var(--brand)] bg-[rgba(47,143,69,0.18)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8bd98f] md:px-4 md:py-2 md:text-[0.74rem]">Tech</span>
+            {event.featured && (
+              <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">Featured</span>
+            )}
+            <span className="rounded-full border border-[var(--brand)] bg-[rgba(47,143,69,0.18)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8bd98f] md:px-4 md:py-2 md:text-[0.74rem]">
+              {event.eyebrow}
+            </span>
           </div>
           <h3 className="text-[1.25rem] font-semibold leading-tight tracking-[-0.03em] text-white md:max-w-[540px] md:text-[1.85rem]">{event.title}</h3>
           <p className="mt-1.5 text-[0.8rem] text-white/75 md:mt-2 md:text-[0.92rem]">{event.dateLabel} · {event.venue}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-5 md:gap-3">
-            <span className="rounded-full border border-white/20 bg-white/12 px-3.5 py-2 text-[0.82rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2.5 md:text-[0.95rem]">{event.priceValue === 0 ? "Free" : event.priceLabel}</span>
+            <span className="rounded-full border border-white/20 bg-white/12 px-3.5 py-2 text-[0.82rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2.5 md:text-[0.95rem]">{event.priceLabel}</span>
             <span className="rounded-full bg-[#7ed03d] px-4 py-2 text-[0.82rem] font-semibold text-white md:px-6 md:py-2.5 md:text-[0.95rem]">Get Tickets →</span>
           </div>
         </div>
@@ -296,17 +348,38 @@ function SponsoredAdCard({ event }: { event: (typeof events)[number] }) {
   );
 }
 
+// ── Feed skeleton ──────────────────────────────────────────────
+
+function FeedSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="animate-pulse overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)]">
+          <div className="aspect-[8/3] w-full bg-[var(--bg-muted)]" />
+          <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+            <div className="space-y-2">
+              <div className="h-4 w-48 rounded-full bg-[var(--bg-muted)]" />
+              <div className="h-3 w-32 rounded-full bg-[var(--bg-muted)]" />
+            </div>
+            <div className="h-8 w-20 rounded-full bg-[var(--bg-muted)]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Main HomeClient component ──────────────────────────────────
+
 export function HomeClient() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setPeekPanelWidth } = useAppShell();
 
-  const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
   const [paneWidth, setPaneWidth] = useState(520);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const spacerRef = useRef<HTMLDivElement>(null);
-  const [asidePos, setAsidePos] = useState<{ right: number; width: number } | null>(null);
 
   const selectedCategories = useMemo(
     () => searchParams.get("category")?.split(",").filter(Boolean) ?? [],
@@ -320,51 +393,42 @@ export function HomeClient() {
     [selectedCategories, query, when],
   );
 
-  const { data, fetchNextPage } = useInfiniteEvents(filters);
+  // ── Real data from Supabase via TanStack Query ────────────────
+  const { data, fetchNextPage, isFetchingNextPage, isLoading, isError } = useInfiniteEvents(filters);
 
   const visibleEvents = useMemo(
     () => data?.pages.flatMap((p) => p.items) ?? [],
     [data],
   );
 
-  // Sidebar widgets — prefer real DB events from the feed, fall back to demo data
-  const filteredEvents = useMemo(() => getFilteredEvents(filters), [filters]);
+  // Filtered events for sidebar widgets (same source, client-side filter)
+  const filteredEvents = useMemo(() => getFilteredEvents(filters, visibleEvents), [filters, visibleEvents]);
 
-  const sponsoredEvent =
-    visibleEvents.find((e) => e.categorySlug === "tech") ??
-    visibleEvents[0] ??
-    filteredEvents.find((e) => e.categorySlug === "tech") ??
-    filteredEvents[0] ??
-    events[0];
-
-  const trendingCards = buildResultList(
-    visibleEvents.filter((e) => e.trending).length > 0
-      ? visibleEvents.filter((e) => e.trending)
-      : filteredEvents.filter((e) => e.trending).length > 0
-      ? filteredEvents.filter((e) => e.trending)
-      : events.filter((e) => e.trending),
-    2,
+  // Featured / sponsored card — first featured event in the feed
+  const sponsoredEvent = useMemo(
+    () => visibleEvents.find((e) => e.featured) ?? visibleEvents[0],
+    [visibleEvents],
   );
 
-  // Sync pane width to AppShellContext so header adjusts
-  useEffect(() => {
-    setPeekPanelWidth(selectedEvent ? paneWidth : 0);
-  }, [selectedEvent, paneWidth, setPeekPanelWidth]);
+  // Trending cards for sidebar
+  const trendingCards = useMemo(
+    () => visibleEvents.filter((e) => e.trending).slice(0, 3),
+    [visibleEvents],
+  );
 
-  useEffect(() => {
-    return () => {
-      setPeekPanelWidth(0);
-    };
-  }, [setPeekPanelWidth]);
+  // Sync pane width to AppShellContext
+  useEffect(() => { setPeekPanelWidth(selectedEvent ? paneWidth : 0); }, [selectedEvent, paneWidth, setPeekPanelWidth]);
+  useEffect(() => () => { setPeekPanelWidth(0); }, [setPeekPanelWidth]);
 
+  // Infinite scroll sentinel
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const el = sentinelRef.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) fetchNextPage(); },
+      (entries) => { if (entries[0]?.isIntersecting) void fetchNextPage(); },
       { rootMargin: "400px" },
     );
-    observer.observe(sentinel);
+    observer.observe(el);
     return () => observer.disconnect();
   }, [fetchNextPage]);
 
@@ -410,7 +474,8 @@ export function HomeClient() {
             className={`container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
           >
             <div className="min-w-0">
-              {sponsoredEvent && (
+              {/* Featured ad banner — real DB event */}
+              {sponsoredEvent && !isLoading && (
                 <motion.section
                   className="mt-4"
                   initial={{ opacity: 0, y: 12 }}
@@ -421,7 +486,7 @@ export function HomeClient() {
                 </motion.section>
               )}
 
-              {/* Category filters */}
+              {/* Category filter chips — from @gooutside/demo-data (matches DB slugs) */}
               <section className="mt-5">
                 <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
                   <button
@@ -447,9 +512,18 @@ export function HomeClient() {
                 </div>
               </section>
 
-              {/* Infinite scroll feed with section headings */}
+              {/* Infinite scroll feed */}
               <section className="mt-4 space-y-4">
-                {visibleEvents.map((event, idx) => {
+                {isLoading && <FeedSkeleton />}
+
+                {isError && (
+                  <div className="flex flex-col items-center gap-3 py-16 text-center">
+                    <Warning size={32} className="text-[var(--text-tertiary)]" />
+                    <p className="text-sm text-[var(--text-secondary)]">Couldn't load events. Try refreshing.</p>
+                  </div>
+                )}
+
+                {!isLoading && visibleEvents.map((event, idx) => {
                   const isFirstInSection = idx % CARDS_PER_SECTION === 0;
                   const sectionIdx = Math.floor(idx / CARDS_PER_SECTION);
                   const section = FEED_SECTIONS[sectionIdx % FEED_SECTIONS.length]!;
@@ -488,16 +562,27 @@ export function HomeClient() {
                   );
                 })}
 
+                {/* Loading more spinner */}
+                {isFetchingNextPage && (
+                  <div className="flex justify-center py-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                  </div>
+                )}
+
+                {/* Intersection sentinel */}
                 <div ref={sentinelRef} className="flex items-center justify-center py-6">
-                  <span className="inline-flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-                    <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:0ms]" />
-                    <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:150ms]" />
-                    <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:300ms]" />
-                  </span>
+                  {!isFetchingNextPage && visibleEvents.length > 0 && (
+                    <span className="inline-flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                      <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:0ms]" />
+                      <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:150ms]" />
+                      <span className="h-1 w-1 animate-bounce rounded-full bg-[var(--text-tertiary)] [animation-delay:300ms]" />
+                    </span>
+                  )}
                 </div>
               </section>
             </div>
 
+            {/* ── Right sidebar ── */}
             <AnimatePresence initial={false}>
               {!isPaneOpen ? (
                 <motion.aside
@@ -508,6 +593,7 @@ export function HomeClient() {
                   initial={{ opacity: 0, x: 24 }}
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
+                  {/* Pulse score widget */}
                   <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -534,6 +620,7 @@ export function HomeClient() {
                     </div>
                   </section>
 
+                  {/* Friendtivities — real events from feed */}
                   <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <div>
@@ -543,7 +630,7 @@ export function HomeClient() {
                       <Link className="text-xs font-medium text-[var(--brand)]" href="/notifications">See all</Link>
                     </div>
                     <div className="space-y-2.5">
-                      {(trendingCards.length > 0 ? trendingCards : events.slice(0, 2)).map((event, index) => {
+                      {(trendingCards.length > 0 ? trendingCards : visibleEvents).slice(0, 2).map((event, index) => {
                         const cluster = FRIEND_CLUSTERS[index % FRIEND_CLUSTERS.length]!;
                         return (
                           <Link key={event.id} className="block rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
@@ -563,37 +650,40 @@ export function HomeClient() {
                     </div>
                   </section>
 
-                  <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <TrendUp size={18} weight="bold" className="text-[var(--brand)]" />
-                        <h3 className="text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Trending now</h3>
+                  {/* Trending now — real feed data */}
+                  {trendingCards.length > 0 && (
+                    <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <TrendUp size={18} weight="bold" className="text-[var(--brand)]" />
+                          <h3 className="text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Trending now</h3>
+                        </div>
+                        <Link className="text-xs font-medium text-[var(--brand)]" href="/events">See all</Link>
                       </div>
-                      <Link className="text-xs font-medium text-[var(--brand)]" href="/events">See all</Link>
-                    </div>
-                    <div className="space-y-2.5">
-                      {trendingCards.map((event, index) => (
-                        <Link key={event.id} className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
-                          <span className="text-lg font-semibold text-[var(--text-tertiary)]">{index + 1}</span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
-                            <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.locationLine}</p>
-                          </div>
-                          <Fire size={15} weight="fill" className="text-[var(--brand)]" />
-                        </Link>
-                      ))}
-                    </div>
-                  </section>
+                      <div className="space-y-2.5">
+                        {trendingCards.map((event, index) => (
+                          <Link key={event.id} className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
+                            <span className="text-lg font-semibold text-[var(--text-tertiary)]">{index + 1}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
+                              <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.locationLine}</p>
+                            </div>
+                            <Fire size={15} weight="fill" className="text-[var(--brand)]" />
+                          </Link>
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
-                  <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/notifications">
+                  {/* Messages shortcut */}
+                  <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/dashboard/messages">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
                       <ChatCircleDots size={20} weight="regular" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Messages</p>
-                      <p className="mt-1 text-sm text-[var(--text-secondary)]">4 unread conversations</p>
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">Open your inbox</p>
                     </div>
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand)] text-[11px] font-semibold text-white">4</div>
                   </Link>
                 </motion.aside>
               ) : null}
@@ -605,7 +695,7 @@ export function HomeClient() {
       {selectedEvent && (
         <EventSidePane
           event={selectedEvent}
-          organizer={getOrganizerById(selectedEvent.organizerId) ?? undefined}
+          organizer={undefined}
           onClose={() => setSelectedEvent(null)}
           onWidthChange={setPaneWidth}
         />

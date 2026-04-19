@@ -21,25 +21,24 @@ import {
   X,
 } from "@phosphor-icons/react";
 import {
-  events,
   getCategoryEmoji,
-  getEventImage,
-  getOrganizerById,
   type Organizer,
 } from "@gooutside/demo-data";
 import { EVENT_COMMUNITY_POSTS } from "../../lib/mock-community";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import type { FeedEventItem } from "../../hooks/useEventsQuery";
 
-type EventItem = (typeof events)[number];
+type EventItem = FeedEventItem;
 
 // ── Image helpers ─────────────────────────────────────────────────────────────
 const ALL_SLUGS = ["music", "food", "sports", "arts", "tech", "nightlife", "culture", "outdoors"];
 
 function getEventImages(event: EventItem): string[] {
-  const base = Math.max(0, ALL_SLUGS.indexOf(event.categorySlug));
-  return Array.from({ length: 9 }, (_, i) =>
-    getEventImage(undefined, ALL_SLUGS[(base + i) % ALL_SLUGS.length]),
-  );
+  const images = [event.bannerUrl, ...(event.gallery || [])].filter(Boolean) as string[];
+  while (images.length < 9) {
+    images.push(`https://source.unsplash.com/800x600/?${event.categorySlug},event&sig=${images.length}`);
+  }
+  return images;
 }
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
@@ -461,7 +460,7 @@ function PaneFooter({
 // ── Main component ────────────────────────────────────────────────────────────
 export function EventSidePane({
   event,
-  organizer = getOrganizerById(event.organizerId) ?? {
+  organizer = {
     id: event.organizerId,
     name: "GoOutside Host",
     tag: "Community host",

@@ -214,6 +214,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
     saved:            false, // overridden per-user in authenticated contexts
     rating:           row.avg_rating != null ? row.avg_rating.toFixed(1) : "—",
     bannerTone:       CATEGORY_BANNER_TONES[cat.slug] ?? "from-[#0e2212] via-[#152a1a] to-[#0b1a10]",
+    bannerUrl:        row.banner_url,
     ticketTypes: tts.map((t) => ({
       name:           t.name,
       priceLabel:     t.price_type === "free" ? "Free" : `GHS ${Number(t.price).toLocaleString()}`,
