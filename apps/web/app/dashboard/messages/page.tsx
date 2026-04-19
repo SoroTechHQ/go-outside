@@ -2,7 +2,7 @@
 
 import { useAuth, useUser } from "@clerk/nextjs";
 import { ChatCircleDots, SpinnerGap } from "@phosphor-icons/react";
-import { startTransition, useEffectEvent, useState } from "react";
+import { startTransition, useCallback, useState } from "react";
 import {
   Channel,
   ChannelHeader,
@@ -118,7 +118,7 @@ function StreamMessagesView({
   const [bootError, setBootError] = useState<string | null>(null);
   const [starterChannelCid, setStarterChannelCid] = useState<string | undefined>();
 
-  const tokenProvider = useEffectEvent(async () => {
+  const tokenProvider = useCallback(async () => {
     const clerkToken = await getClerkToken();
     if (!clerkToken) {
       throw new Error("Your session expired. Sign in again to open chat.");
@@ -152,7 +152,7 @@ function StreamMessagesView({
     });
 
     return payload.token;
-  });
+  }, [getClerkToken, identity.image, identity.name]);
 
   const client = useCreateChatClient({
     apiKey: STREAM_API_KEY,
