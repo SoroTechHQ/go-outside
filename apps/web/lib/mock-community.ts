@@ -305,6 +305,44 @@ const MOCK_USER_SNIPPETS: UserSnippet[] = [
   },
 ];
 
+export type MiniUser = {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUrl: string | null;
+  pulseTier: string;
+  isOnline?: boolean;
+};
+
+const MOCK_FOLLOWERS: Record<string, MiniUser[]> = {
+  "ama-k": [
+    { id: "yaw-darko", name: "Yaw Darko", handle: "@yawdarko", avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&w=80&h=80&fit=crop&crop=faces", pulseTier: "City Native", isOnline: true },
+    { id: "esi-m", name: "Esi Mensah", handle: "@esi.m_accra", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&w=80&h=80&fit=crop&crop=faces", pulseTier: "Scene Kid" },
+    { id: "user-kwame", name: "Kwame Asante", handle: "@kwame.asante", avatarUrl: null, pulseTier: "City Native" },
+    { id: "user-abena", name: "Abena Kyei", handle: "@abena.k", avatarUrl: null, pulseTier: "Regular" },
+    { id: "user-nii", name: "Nii Ofori", handle: "@nii.ofori", avatarUrl: null, pulseTier: "Scene Kid", isOnline: true },
+    { id: "user-akosua", name: "Akosua Mensah", handle: "@akosua.m", avatarUrl: null, pulseTier: "Explorer" },
+    { id: "user-kofi", name: "Kofi Boateng", handle: "@kofi.b", avatarUrl: null, pulseTier: "Legend" },
+  ],
+  "yaw-darko": [
+    { id: "ama-k", name: "Ama Koomson", handle: "@ama.k", avatarUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b5bd?auto=format&w=80&h=80&fit=crop&crop=faces", pulseTier: "Scene Kid", isOnline: true },
+    { id: "esi-m", name: "Esi Mensah", handle: "@esi.m_accra", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&w=80&h=80&fit=crop&crop=faces", pulseTier: "Scene Kid" },
+    { id: "user-kwame", name: "Kwame Asante", handle: "@kwame.asante", avatarUrl: null, pulseTier: "City Native" },
+    { id: "user-kofi", name: "Kofi Boateng", handle: "@kofi.b", avatarUrl: null, pulseTier: "Legend", isOnline: true },
+    { id: "user-ama2", name: "Ama Darko", handle: "@ama.darko", avatarUrl: null, pulseTier: "Regular" },
+    { id: "user-nana", name: "Nana Asare", handle: "@nana.a", avatarUrl: null, pulseTier: "Explorer" },
+    { id: "user-sena", name: "Sena Agyei", handle: "@sena.a", avatarUrl: null, pulseTier: "Scene Kid" },
+    { id: "user-abena", name: "Abena Kyei", handle: "@abena.k", avatarUrl: null, pulseTier: "Regular" },
+  ],
+  "esi-m": [
+    { id: "ama-k", name: "Ama Koomson", handle: "@ama.k", avatarUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b5bd?auto=format&w=80&h=80&fit=crop&crop=faces", pulseTier: "Scene Kid", isOnline: true },
+    { id: "yaw-darko", name: "Yaw Darko", handle: "@yawdarko", avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&w=80&h=80&fit=crop&crop=faces", pulseTier: "City Native" },
+    { id: "user-abena", name: "Abena Kyei", handle: "@abena.k", avatarUrl: null, pulseTier: "Regular" },
+    { id: "user-sena", name: "Sena Agyei", handle: "@sena.a", avatarUrl: null, pulseTier: "Explorer" },
+    { id: "user-akua", name: "Akua Boateng", handle: "@akua.b", avatarUrl: null, pulseTier: "Scene Kid", isOnline: true },
+  ],
+};
+
 export function getCommunityProfileById(id: string): CommunityProfile | null {
   return COMMUNITY_PROFILES.find((profile) => profile.id === id) ?? null;
 }
@@ -324,4 +362,8 @@ export function getUserPosts(userId: string): UserPost[] {
 
 export function getUserSnippets(userId: string): UserSnippet[] {
   return MOCK_USER_SNIPPETS.filter((s) => s.userId === userId);
+}
+
+export function getUserFollowers(userId: string): MiniUser[] {
+  return MOCK_FOLLOWERS[userId] ?? [];
 }
