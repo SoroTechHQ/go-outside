@@ -384,6 +384,12 @@ a {
   display: none;
 }
 
+/* ── Skeleton shimmer animation ──────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ── Toast spinner animation ─────────────────────────────────────────────── */
 @keyframes go-spin {
   0%   { opacity: 1; }

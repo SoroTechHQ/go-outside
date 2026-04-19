@@ -26,6 +26,7 @@ import {
   X,
   Code,
   ForkKnife,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import {
   events as demoEvents,
@@ -131,53 +132,86 @@ const TIER_COLOR: Record<string, string> = {
 function FollowersSheet({
   open, onClose, followerCount,
 }: { open: boolean; onClose: () => void; followerCount: number }) {
+  const [search, setSearch] = useState("");
   const router = useRouter();
+
+  const filtered = MOCK_ORG_FOLLOWERS.filter(
+    (f) =>
+      f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.handle.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
+  const inner = (
+    <>
+      <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15 md:hidden" />
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+        <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">
+          Followers · {followerCount.toLocaleString()}
+        </p>
+        <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
+          <X size={15} weight="bold" />
+        </button>
+      </div>
+      <div className="shrink-0 border-b border-[var(--border-subtle)] px-4 py-2.5">
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2">
+          <MagnifyingGlass size={14} className="shrink-0 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            placeholder="Search followers…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto py-2">
+        {filtered.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => { onClose(); router.push(`/dashboard/user/${f.id}`); }}
+            className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)]"
+          >
+            <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
+              <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
+              <p className="truncate text-[11px] text-[var(--text-tertiary)]">{f.handle}</p>
+            </div>
+            <span
+              className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
+              style={{
+                color: TIER_COLOR[f.pulseTier] ?? "#888",
+                backgroundColor: `${TIER_COLOR[f.pulseTier] ?? "#888"}18`,
+                border: `1px solid ${TIER_COLOR[f.pulseTier] ?? "#888"}30`,
+              }}
+            >
+              {f.pulseTier}
+            </span>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">No results found.</p>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <>
       <div onClick={onClose} className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} />
-      <div className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[75dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out ${open ? "translate-y-0" : "translate-y-full"}`}>
-        <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15" />
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
-          <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">
-            Followers · {followerCount.toLocaleString()}
-          </p>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)]">
-            <X size={15} weight="bold" className="text-[var(--text-tertiary)]" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto py-2">
-          {MOCK_ORG_FOLLOWERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => { onClose(); router.push(`/dashboard/user/${f.id}`); }}
-              className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)]"
-            >
-              <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
-                <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
-              </div>
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
-                <p className="truncate text-[11px] text-[var(--text-tertiary)]">{f.handle}</p>
-              </div>
-              <span
-                className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
-                style={{
-                  color: TIER_COLOR[f.pulseTier] ?? "#888",
-                  backgroundColor: `${TIER_COLOR[f.pulseTier] ?? "#888"}18`,
-                  border: `1px solid ${TIER_COLOR[f.pulseTier] ?? "#888"}30`,
-                }}
-              >
-                {f.pulseTier}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* Mobile: bottom sheet */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${open ? "translate-y-0" : "translate-y-full"}`}>
+        {inner}
+      </div>
+      {/* Desktop: centered modal */}
+      <div className={`fixed left-1/2 top-1/2 z-50 hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"}`}>
+        {inner}
       </div>
     </>
   );
@@ -339,8 +373,8 @@ export default function OrganizerProfilePage() {
       <div className="mx-auto max-w-5xl px-4 md:grid md:grid-cols-[1fr_272px] md:gap-6 md:px-6 lg:grid-cols-[1fr_288px] lg:gap-8 lg:px-8">
         <div className="min-w-0">
 
-          {/* Avatar + CTAs */}
-          <div className="-mt-12 flex items-end justify-between pb-4 md:-mt-14">
+          {/* Avatar — overlaps cover only */}
+          <div className="-mt-12 pb-3 md:-mt-14">
             <div
               className="relative shrink-0 overflow-hidden rounded-[20px] border-4 border-[var(--bg-base)] shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
               style={{ width: 84, height: 84 }}
@@ -354,8 +388,39 @@ export default function OrganizerProfilePage() {
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="mb-1 flex items-center gap-2">
+          {/* Identity + CTAs — fully in content area */}
+          <div className="flex items-start justify-between gap-3 pb-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-display text-[22px] font-bold italic leading-tight text-[var(--text-primary)] md:text-[26px]">
+                  {organizer.name}
+                </h1>
+                {organizer.verified && <ShieldCheck size={20} weight="fill" className="text-[#4a9f63]" />}
+              </div>
+              <p className="mt-0.5 text-[13px] text-[var(--text-secondary)]">{organizer.tag}</p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                {organizer.city && (
+                  <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
+                    <MapPin size={11} />{organizer.city}
+                  </span>
+                )}
+                <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
+                  <CalendarBlank size={11} />Since {meta.foundedAt}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {meta.specialties.slice(0, 3).map((s) => (
+                  <span key={s} className="rounded-full border border-[#4a9f63]/30 bg-[#4a9f63]/10 px-3 py-1 text-[10px] font-medium text-[#4a9f63]">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mt-0.5 flex shrink-0 items-center gap-2">
               <button className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95">
                 <ShareNetwork size={15} />
               </button>
@@ -372,39 +437,17 @@ export default function OrganizerProfilePage() {
               </button>
               <button
                 onClick={() => setTab("events")}
-                className="flex items-center gap-1.5 rounded-full bg-[#4a9f63] px-4 py-2 text-[12px] font-bold text-white shadow-[0_4px_16px_rgba(74,159,99,0.35)] transition hover:bg-[#3a8f53] active:scale-95"
+                className="hidden items-center gap-1.5 rounded-full bg-[#4a9f63] px-4 py-2 text-[12px] font-bold text-white shadow-[0_4px_16px_rgba(74,159,99,0.35)] transition hover:bg-[#3a8f53] active:scale-95 sm:flex"
               >
                 Explore Events
                 <ArrowSquareOut size={13} />
               </button>
-            </div>
-          </div>
-
-          {/* Identity */}
-          <div className="pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-[22px] font-bold italic leading-tight text-[var(--text-primary)] md:text-[26px]">
-                {organizer.name}
-              </h1>
-              {organizer.verified && <ShieldCheck size={20} weight="fill" className="text-[#4a9f63]" />}
-            </div>
-            <p className="mt-0.5 text-[13px] text-[var(--text-secondary)]">{organizer.tag}</p>
-            <div className="mt-2.5 flex flex-wrap items-center gap-3">
-              {organizer.city && (
-                <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
-                  <MapPin size={11} />{organizer.city}
-                </span>
-              )}
-              <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
-                <CalendarBlank size={11} />Since {meta.foundedAt}
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {meta.specialties.slice(0, 3).map((s) => (
-                <span key={s} className="rounded-full border border-[#4a9f63]/30 bg-[#4a9f63]/10 px-3 py-1 text-[10px] font-medium text-[#4a9f63]">
-                  {s}
-                </span>
-              ))}
+              <button
+                onClick={() => setTab("events")}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#4a9f63] text-white shadow-[0_4px_16px_rgba(74,159,99,0.35)] transition hover:bg-[#3a8f53] active:scale-95 sm:hidden"
+              >
+                <ArrowSquareOut size={15} />
+              </button>
             </div>
           </div>
 

@@ -26,6 +26,7 @@ import {
   Lightning,
   X,
   UserCheck,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { getEventImage } from "@gooutside/demo-data";
 import {
@@ -74,12 +75,87 @@ function PeopleSheet({
   title: string;
   people: MiniUser[];
 }) {
+  const [search, setSearch] = useState("");
   const router = useRouter();
+
+  const filtered = people.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.handle.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  const inner = (
+    <>
+      <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15 md:hidden" />
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+        <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">{title}</p>
+        <button
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+        >
+          <X size={15} weight="bold" />
+        </button>
+      </div>
+      <div className="shrink-0 border-b border-[var(--border-subtle)] px-4 py-2.5">
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2">
+          <MagnifyingGlass size={14} className="shrink-0 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            placeholder="Search…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto py-2">
+        {filtered.map((person) => (
+          <button
+            key={person.id}
+            onClick={() => { onClose(); router.push(`/dashboard/user/${person.id}`); }}
+            className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
+          >
+            <div className="relative shrink-0">
+              <div className="overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
+                {person.avatarUrl ? (
+                  <Image src={person.avatarUrl} alt={person.name} width={40} height={40} className="h-full w-full object-cover" />
+                ) : (
+                  <Avatar size={40} name={person.name} variant="beam" colors={AVATAR_COLORS} />
+                )}
+              </div>
+              {person.isOnline && (
+                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[var(--bg-base)] bg-[#4a9f63]" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{person.name}</p>
+              <p className="truncate text-[11px] text-[var(--text-tertiary)]">{person.handle}</p>
+            </div>
+            <span
+              className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
+              style={{
+                color: TIER_COLOR[person.pulseTier] ?? "#888",
+                backgroundColor: `${TIER_COLOR[person.pulseTier] ?? "#888"}18`,
+                border: `1px solid ${TIER_COLOR[person.pulseTier] ?? "#888"}30`,
+              }}
+            >
+              {person.pulseTier}
+            </span>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">
+            {people.length === 0 ? "Nothing here yet." : "No results found."}
+          </p>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -89,60 +165,21 @@ function PeopleSheet({
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
+      {/* Mobile: bottom sheet */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[78dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15" />
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
-          <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">{title}</p>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
-          >
-            <X size={15} weight="bold" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto py-2">
-          {people.map((person) => (
-            <button
-              key={person.id}
-              onClick={() => { onClose(); router.push(`/dashboard/user/${person.id}`); }}
-              className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
-            >
-              <div className="relative shrink-0">
-                <div className="overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
-                  {person.avatarUrl ? (
-                    <Image src={person.avatarUrl} alt={person.name} width={40} height={40} className="h-full w-full object-cover" />
-                  ) : (
-                    <Avatar size={40} name={person.name} variant="beam" colors={AVATAR_COLORS} />
-                  )}
-                </div>
-                {person.isOnline && (
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[var(--bg-base)] bg-[#4a9f63]" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{person.name}</p>
-                <p className="truncate text-[11px] text-[var(--text-tertiary)]">{person.handle}</p>
-              </div>
-              <span
-                className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
-                style={{
-                  color: TIER_COLOR[person.pulseTier] ?? "#888",
-                  backgroundColor: `${TIER_COLOR[person.pulseTier] ?? "#888"}18`,
-                  border: `1px solid ${TIER_COLOR[person.pulseTier] ?? "#888"}30`,
-                }}
-              >
-                {person.pulseTier}
-              </span>
-            </button>
-          ))}
-          {people.length === 0 && (
-            <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">Nothing here yet.</p>
-          )}
-        </div>
+        {inner}
+      </div>
+      {/* Desktop: centered modal */}
+      <div
+        className={`fixed left-1/2 top-1/2 z-50 hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+          open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
+        }`}
+      >
+        {inner}
       </div>
     </>
   );
@@ -442,9 +479,9 @@ export default function UserProfilePage() {
       <div className="mx-auto max-w-5xl px-4 md:grid md:grid-cols-[1fr_272px] md:gap-6 md:px-6 lg:grid-cols-[1fr_288px] lg:gap-8 lg:px-8">
         <div className="min-w-0">
 
-          {/* Avatar + CTAs */}
-          <div className="-mt-11 flex items-end justify-between pb-4 md:-mt-12">
-            <div className="relative shrink-0">
+          {/* Avatar — overlaps cover only */}
+          <div className="-mt-11 pb-3 md:-mt-12">
+            <div className="relative shrink-0 inline-block">
               <div
                 className="overflow-hidden rounded-full"
                 style={{
@@ -460,8 +497,49 @@ export default function UserProfilePage() {
               </div>
               <span className={`absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-[var(--bg-base)] ${user.isOnline ? "bg-[#4a9f63]" : "bg-[#555]"}`} />
             </div>
+          </div>
 
-            <div className="mb-1 flex items-center gap-2">
+          {/* Identity + CTAs — fully in content area */}
+          <div className="flex items-start justify-between gap-3 pb-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-display text-[22px] font-bold italic leading-tight text-[var(--text-primary)] md:text-[26px]">
+                  {user.name}
+                </h1>
+                {user.followerCount > 200 && (
+                  <CheckCircle size={18} weight="fill" className="text-[#4a9f63]" />
+                )}
+              </div>
+              <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">{user.handle}</p>
+
+              {user.bio && (
+                <p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                  {user.bio}
+                </p>
+              )}
+
+              <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                {user.location && (
+                  <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
+                    <MapPin size={11} />{user.location}
+                  </span>
+                )}
+                <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
+                  <CalendarBlank size={11} />Joined {user.joinedAt}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {user.topCategories.map((cat) => (
+                  <span key={cat} className="rounded-full border border-[#4a9f63]/30 bg-[#4a9f63]/10 px-3 py-1 text-[10px] font-medium text-[#4a9f63]">
+                    {cat}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mt-0.5 flex shrink-0 items-center gap-2">
               <button className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95">
                 <ChatCircleDots size={16} />
               </button>
@@ -475,44 +553,6 @@ export default function UserProfilePage() {
               >
                 {isFollowing ? <><UserMinus size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
               </button>
-            </div>
-          </div>
-
-          {/* Identity */}
-          <div className="pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-[22px] font-bold italic leading-tight text-[var(--text-primary)] md:text-[26px]">
-                {user.name}
-              </h1>
-              {user.followerCount > 200 && (
-                <CheckCircle size={18} weight="fill" className="text-[#4a9f63]" />
-              )}
-            </div>
-            <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">{user.handle}</p>
-
-            {user.bio && (
-              <p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                {user.bio}
-              </p>
-            )}
-
-            <div className="mt-2.5 flex flex-wrap items-center gap-3">
-              {user.location && (
-                <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
-                  <MapPin size={11} />{user.location}
-                </span>
-              )}
-              <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
-                <CalendarBlank size={11} />Joined {user.joinedAt}
-              </span>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {user.topCategories.map((cat) => (
-                <span key={cat} className="rounded-full border border-[#4a9f63]/30 bg-[#4a9f63]/10 px-3 py-1 text-[10px] font-medium text-[#4a9f63]">
-                  {cat}
-                </span>
-              ))}
             </div>
           </div>
 

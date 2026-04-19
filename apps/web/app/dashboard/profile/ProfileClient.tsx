@@ -16,6 +16,7 @@ import {
   UserCheck,
   Lightning,
   PencilLine,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import type { AttendeeTicket, EventItem } from "@gooutside/demo-data";
 import type { UserProfile } from "./types";
@@ -118,12 +119,78 @@ function FollowersSheet({
   count: number;
   label: string;
 }) {
+  const [search, setSearch] = useState("");
   const router = useRouter();
+
+  const filtered = MOCK_MY_FOLLOWERS.filter(
+    (f) =>
+      f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.handle.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  const inner = (
+    <>
+      <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15 md:hidden" />
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+        <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">
+          {label} · {count}
+        </p>
+        <button
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+        >
+          <X size={15} weight="bold" />
+        </button>
+      </div>
+      <div className="shrink-0 border-b border-[var(--border-subtle)] px-4 py-2.5">
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2">
+          <MagnifyingGlass size={14} className="shrink-0 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            placeholder="Search…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto py-2">
+        {filtered.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => { onClose(); router.push(`/dashboard/user/${f.id}`); }}
+            className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
+          >
+            <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
+              <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
+              <p className="truncate text-[11px] text-[var(--text-tertiary)]">{f.handle}</p>
+            </div>
+            <span
+              className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
+              style={{
+                color: f.tierColor,
+                backgroundColor: `${f.tierColor}18`,
+                border: `1px solid ${f.tierColor}30`,
+              }}
+            >
+              {f.tier}
+            </span>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">No results found.</p>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -133,50 +200,21 @@ function FollowersSheet({
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
+      {/* Mobile: bottom sheet */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[75dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15" />
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
-          <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">
-            {label} · {count}
-          </p>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
-          >
-            <X size={15} weight="bold" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto py-2">
-          {MOCK_MY_FOLLOWERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => { onClose(); router.push(`/dashboard/user/${f.id}`); }}
-              className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
-            >
-              <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
-                <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
-              </div>
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
-                <p className="truncate text-[11px] text-[var(--text-tertiary)]">{f.handle}</p>
-              </div>
-              <span
-                className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
-                style={{
-                  color: f.tierColor,
-                  backgroundColor: `${f.tierColor}18`,
-                  border: `1px solid ${f.tierColor}30`,
-                }}
-              >
-                {f.tier}
-              </span>
-            </button>
-          ))}
-        </div>
+        {inner}
+      </div>
+      {/* Desktop: centered modal */}
+      <div
+        className={`fixed left-1/2 top-1/2 z-50 hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+          open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
+        }`}
+      >
+        {inner}
       </div>
     </>
   );
