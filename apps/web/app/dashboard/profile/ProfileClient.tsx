@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import Avatar from "boring-avatars";
 import {
   MapPin,
   PencilSimple,
@@ -9,6 +11,11 @@ import {
   CalendarBlank,
   CheckCircle,
   ArrowRight,
+  Ticket,
+  Users,
+  UserCheck,
+  Lightning,
+  PencilLine,
 } from "@phosphor-icons/react";
 import type { AttendeeTicket, EventItem } from "@gooutside/demo-data";
 import type { UserProfile } from "./types";
@@ -41,7 +48,141 @@ type Props = {
   pastEvents: EventItem[];
 };
 
-/* ── Responsive overlay (sheet on mobile, modal on desktop) ──────────────── */
+/* ── Avatar colors for boring-avatars ────────────────────────────────────── */
+
+const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
+
+/* ── Slim stats row (IG/TikTok style) ────────────────────────────────────── */
+
+type StatItem = {
+  icon: React.ElementType;
+  value: number | string;
+  label: string;
+  onClick?: () => void;
+};
+
+function ProfileStats({ stats }: { stats: StatItem[] }) {
+  return (
+    <div className="flex items-stretch border-y border-[var(--border-subtle)]">
+      {stats.map((stat, i, arr) => (
+        <Fragment key={stat.label}>
+          <button
+            onClick={stat.onClick}
+            disabled={!stat.onClick}
+            className="flex flex-1 flex-col items-center gap-0.5 py-4 transition hover:bg-[var(--bg-card)] active:scale-[0.97] disabled:cursor-default"
+          >
+            <div className="flex items-center gap-1.5">
+              <stat.icon size={13} className="text-[var(--text-tertiary)]" />
+              <span className="text-[1.05rem] font-bold leading-none tracking-tight text-[var(--text-primary)]">
+                {typeof stat.value === "number"
+                  ? stat.value >= 1000
+                    ? `${(stat.value / 1000).toFixed(1)}K`
+                    : stat.value
+                  : stat.value}
+              </span>
+            </div>
+            <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+              {stat.label}
+            </span>
+          </button>
+          {i < arr.length - 1 && (
+            <div className="self-center h-7 w-px bg-[var(--border-subtle)]" />
+          )}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+/* ── Followers sheet ─────────────────────────────────────────────────────── */
+
+type MiniFollower = { id: string; name: string; handle: string; tier: string; tierColor: string };
+
+const MOCK_MY_FOLLOWERS: MiniFollower[] = [
+  { id: "ama-k",        name: "Ama Koomson",  handle: "@ama.k",         tier: "Scene Kid",   tierColor: "#4a9f63" },
+  { id: "yaw-darko",    name: "Yaw Darko",    handle: "@yawdarko",       tier: "City Native", tierColor: "#c87c2a" },
+  { id: "esi-m",        name: "Esi Mensah",   handle: "@esi.m_accra",    tier: "Scene Kid",   tierColor: "#4a9f63" },
+  { id: "user-kwame",   name: "Kwame Asante", handle: "@kwame.asante",   tier: "Regular",     tierColor: "#4a9f63" },
+  { id: "user-abena",   name: "Abena Kyei",   handle: "@abena.k",        tier: "Explorer",    tierColor: "#4a9f63" },
+  { id: "user-nii",     name: "Nii Ofori",    handle: "@nii.ofori",      tier: "Scene Kid",   tierColor: "#4a9f63" },
+];
+
+function FollowersSheet({
+  open,
+  onClose,
+  count,
+  label,
+}: {
+  open: boolean;
+  onClose: () => void;
+  count: number;
+  label: string;
+}) {
+  const router = useRouter();
+
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      />
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[75dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out ${
+          open ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15" />
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+          <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)]">
+            {label} · {count}
+          </p>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--bg-card)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+          >
+            <X size={15} weight="bold" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          {MOCK_MY_FOLLOWERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => { onClose(); router.push(`/dashboard/user/${f.id}`); }}
+              className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
+            >
+              <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
+                <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
+                <p className="truncate text-[11px] text-[var(--text-tertiary)]">{f.handle}</p>
+              </div>
+              <span
+                className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
+                style={{
+                  color: f.tierColor,
+                  backgroundColor: `${f.tierColor}18`,
+                  border: `1px solid ${f.tierColor}30`,
+                }}
+              >
+                {f.tier}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ── Overlay (sheet on mobile / modal on desktop) ────────────────────────── */
 
 function Overlay({
   open,
@@ -64,14 +205,12 @@ function Overlay({
 
   return (
     <>
-      {/* Backdrop */}
       <div
         onClick={onClose}
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
-
       {/* Mobile: slide-up sheet */}
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
@@ -80,7 +219,6 @@ function Overlay({
       >
         {children}
       </div>
-
       {/* Desktop: centered modal */}
       <div
         className={`fixed left-1/2 top-1/2 z-50 hidden -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
@@ -95,58 +233,35 @@ function Overlay({
   );
 }
 
-/* ── Sidebar stat chip ────────────────────────────────────────────────────── */
-
-function SidebarStat({
-  value,
-  label,
-  onClick,
-}: {
-  value: number;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center rounded-[14px] border border-[var(--border-card)] bg-[var(--bg-surface)] py-3 transition hover:border-[#4a9f63]/30 hover:bg-[var(--bg-card-hover)] active:scale-[0.96]"
-    >
-      <span className="font-display text-xl font-bold italic text-[var(--text-primary)]">
-        {value}
-      </span>
-      <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-        {label}
-      </span>
-    </button>
-  );
-}
-
-/* ── Sidebar mini friend row ─────────────────────────────────────────────── */
+/* ── Sidebar mini rows ────────────────────────────────────────────────────── */
 
 const SIDEBAR_FRIENDS = [
-  { id: "f1", name: "Ama Darko",    avatarUrl: null, eventsInCommon: 4 },
-  { id: "f2", name: "Kwame Asante", avatarUrl: null, eventsInCommon: 2 },
-  { id: "f3", name: "Abena Kyei",   avatarUrl: null, eventsInCommon: 1 },
+  { id: "ama-k",      name: "Ama Koomson",  avatarUrl: null, eventsInCommon: 4 },
+  { id: "yaw-darko",  name: "Kwame Asante", avatarUrl: null, eventsInCommon: 2 },
+  { id: "user-abena", name: "Abena Kyei",   avatarUrl: null, eventsInCommon: 1 },
 ];
 
 const SIDEBAR_SUGGESTIONS = [
-  { id: "s1", name: "Akua Mensah", avatarUrl: null, mutualCount: 3 },
-  { id: "s2", name: "Koby Appiah", avatarUrl: null, mutualCount: 2 },
+  { id: "user-sug-1", name: "Akua Mensah", avatarUrl: null, mutualCount: 3 },
+  { id: "user-sug-2", name: "Koby Appiah", avatarUrl: null, mutualCount: 2 },
 ];
 
 const SIDEBAR_FOLLOWING = [
-  { id: "o1", name: "Sankofa Sessions",    tag: "Organizer", avatarUrl: null, verified: true },
-  { id: "o2", name: "Build Ghana",          tag: "Organizer", avatarUrl: null, verified: true },
-  { id: "o3", name: "Esi Badu",            tag: "Scene Kid",  avatarUrl: null, verified: false },
+  { id: "org-sankofa-sessions", name: "Sankofa Sessions", tag: "Organizer", verified: true,  isOrg: true },
+  { id: "org-build-ghana",      name: "Build Ghana",      tag: "Organizer", verified: true,  isOrg: true },
+  { id: "esi-m",                name: "Esi Badu",         tag: "Scene Kid", verified: false, isOrg: false },
 ];
 
 /* ── Main component ───────────────────────────────────────────────────────── */
 
 export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
-  const [activeTab,       setActiveTab]       = useState<TabId>("been-there");
-  const [editOpen,        setEditOpen]        = useState(false);
-  const [pulseOpen,       setPulseOpen]       = useState(false);
-  const [currentProfile,  setCurrentProfile]  = useState(profile);
+  const router = useRouter();
+  const [activeTab,      setActiveTab]      = useState<TabId>("been-there");
+  const [editOpen,       setEditOpen]       = useState(false);
+  const [pulseOpen,      setPulseOpen]      = useState(false);
+  const [followersOpen,  setFollowersOpen]  = useState(false);
+  const [followingOpen,  setFollowingOpen]  = useState(false);
+  const [currentProfile, setCurrentProfile] = useState(profile);
 
   const tierInfo = getTierInfo(currentProfile.pulseTier);
 
@@ -156,39 +271,49 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
 
   function goToTab(id: TabId) {
     setActiveTab(id);
-    // Scroll to tabs on mobile
     document.getElementById("profile-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const profileStats: StatItem[] = [
+    { icon: Ticket,    value: currentProfile.eventsAttended, label: "Events",    onClick: () => goToTab("been-there") },
+    { icon: Users,     value: currentProfile.friendCount,    label: "Followers", onClick: () => setFollowersOpen(true) },
+    { icon: UserCheck, value: currentProfile.followingCount, label: "Following", onClick: () => setFollowingOpen(true) },
+    { icon: Lightning, value: currentProfile.pulseScore,     label: "XP",        onClick: () => setPulseOpen(true) },
+  ];
+
   return (
     <>
-      {/* ── Cover — full width ─────────────────────────────────────────────── */}
-      <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10] md:h-52">
+      {/* ── Cover ────────────────────────────────────────────────────────────── */}
+      <div className="relative h-[180px] w-full overflow-hidden md:h-[220px]">
         {currentProfile.coverUrl ? (
-          <Image
-            src={currentProfile.coverUrl}
-            alt="Cover"
-            fill
-            className="object-cover object-center"
-            priority
+          <Image src={currentProfile.coverUrl} alt="Cover" fill className="object-cover object-center" priority />
+        ) : (
+          <div
+            className="h-full w-full bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10]"
+            style={{
+              backgroundImage: [
+                "linear-gradient(135deg,#0e2212 0%,#152a1a 50%,#0b1a10 100%)",
+              ].join(","),
+            }}
           />
-        ) : null}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(74,159,99,0.2),transparent_55%)]" />
+        )}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(74,159,99,0.22),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.4),transparent_65%)]" />
         {!currentProfile.coverUrl && (
           <div
-            className="pointer-events-none absolute inset-0 opacity-[0.05]"
+            className="pointer-events-none absolute inset-0 opacity-[0.04]"
             style={{
-              backgroundImage: "radial-gradient(circle, rgba(74,159,99,0.9) 1px, transparent 1px)",
+              backgroundImage: "radial-gradient(circle,rgba(74,159,99,0.9) 1px,transparent 1px)",
               backgroundSize: "28px 28px",
             }}
           />
         )}
-        {/* Cover actions */}
+
+        {/* Edit cover button */}
         {currentProfile.isOwnProfile && (
           <button
             onClick={() => setEditOpen(true)}
-            className="absolute right-4 bottom-4 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70 backdrop-blur-sm transition hover:bg-black/50 hover:text-white active:scale-[0.97]"
+            className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70 backdrop-blur-sm transition hover:bg-black/55 hover:text-white active:scale-[0.97]"
           >
             <PencilSimple size={12} />
             Edit Profile
@@ -196,10 +321,10 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
         )}
       </div>
 
-      {/* ── Two-column grid ───────────────────────────────────────────────── */}
+      {/* ── Two-column grid ──────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-5xl px-4 md:grid md:grid-cols-[1fr_288px] md:gap-6 md:px-6 lg:grid-cols-[1fr_304px] lg:gap-8 lg:px-8">
 
-        {/* ════ LEFT / MAIN COLUMN ════════════════════════════════════════ */}
+        {/* ════ MAIN COLUMN ═══════════════════════════════════════════════════ */}
         <div className="min-w-0">
 
           {/* Avatar row — overlaps cover */}
@@ -222,8 +347,8 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
             )}
           </div>
 
-          {/* Name, handle, bio, meta, tags */}
-          <div className="pb-5">
+          {/* Identity */}
+          <div className="pb-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h1 className="font-display text-[22px] font-bold italic leading-tight text-[var(--text-primary)] md:text-[26px]">
@@ -264,7 +389,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
               </span>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {currentProfile.topCategories.map((cat) => (
                 <span
                   key={cat}
@@ -276,27 +401,11 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
             </div>
           </div>
 
-          {/* Mobile-only: stats row */}
-          <div className="mb-3 grid grid-cols-4 gap-2 md:hidden">
-            {[
-              { label: "events",    value: currentProfile.eventsAttended, tab: "been-there" as TabId },
-              { label: "friends",   value: currentProfile.friendCount,    tab: "friends"    as TabId },
-              { label: "following", value: currentProfile.followingCount,  tab: "following"  as TabId },
-              { label: "snippets",  value: currentProfile.snippetCount,    tab: "snippets"   as TabId },
-            ].map(({ label, value, tab }) => (
-              <button
-                key={label}
-                onClick={() => goToTab(tab)}
-                className="flex flex-col items-center rounded-[16px] border border-[var(--border-card)] bg-[var(--bg-card)] py-3 text-center shadow-[var(--card-shadow)] transition hover:border-[#4a9f63]/30 active:scale-[0.96]"
-              >
-                <span className="font-display text-lg font-bold italic text-[var(--text-primary)]">{value}</span>
-                <span className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--text-tertiary)]">{label}</span>
-              </button>
-            ))}
-          </div>
+          {/* ── Slim stats row ──────────────────────────────────────────────── */}
+          <ProfileStats stats={profileStats} />
 
           {/* Pulse banner + Scene card */}
-          <div className="space-y-3">
+          <div className="space-y-3 py-4">
             <PulseScoreBanner
               score={currentProfile.pulseScore}
               tier={currentProfile.pulseTier}
@@ -307,8 +416,8 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
             {pastTickets.length >= 2 && <ScenePersonalityCard />}
           </div>
 
-          {/* ── Sticky tab bar ──────────────────────────────────────────── */}
-          <div id="profile-tabs" className="sticky top-0 z-20 -mx-4 bg-[var(--bg-base)] pt-3 md:mx-0">
+          {/* ── Sticky tab bar ──────────────────────────────────────────────── */}
+          <div id="profile-tabs" className="sticky top-0 z-20 -mx-4 bg-[var(--bg-base)] pt-1 md:mx-0">
             <div className="no-scrollbar flex overflow-x-auto border-b border-[var(--border-subtle)] px-4 md:px-0">
               {TABS.map((tab) => (
                 <button
@@ -329,7 +438,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
             </div>
           </div>
 
-          {/* ── Tab content ─────────────────────────────────────────────── */}
+          {/* ── Tab content ─────────────────────────────────────────────────── */}
           <div className="pb-12 pt-4">
             {activeTab === "been-there" && <BeenThereTab tickets={pastTickets} events={pastEvents} />}
             {activeTab === "snippets"   && <SnippetsTab />}
@@ -339,29 +448,41 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
           </div>
         </div>
 
-        {/* ════ RIGHT / SIDEBAR COLUMN (desktop only) ═════════════════════ */}
+        {/* ════ SIDEBAR (desktop only) ════════════════════════════════════════ */}
         <aside className="hidden md:block">
           <div className="sticky top-6 mt-4 space-y-4">
 
-            {/* Stats 2×2 */}
+            {/* Stats */}
             <div className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
-              <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                Activity
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <SidebarStat value={currentProfile.eventsAttended} label="events"    onClick={() => goToTab("been-there")} />
-                <SidebarStat value={currentProfile.friendCount}    label="friends"   onClick={() => goToTab("friends")} />
-                <SidebarStat value={currentProfile.followingCount} label="following" onClick={() => goToTab("following")} />
-                <SidebarStat value={currentProfile.snippetCount}   label="snippets"  onClick={() => goToTab("snippets")} />
+              <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Activity</p>
+              <div className="space-y-2">
+                {profileStats.map((stat) => (
+                  <button
+                    key={stat.label}
+                    onClick={stat.onClick}
+                    disabled={!stat.onClick}
+                    className="flex w-full items-center justify-between rounded-[10px] px-2 py-1.5 transition hover:bg-[var(--bg-surface)] active:scale-[0.98] disabled:cursor-default"
+                  >
+                    <div className="flex items-center gap-2">
+                      <stat.icon size={13} className="text-[var(--text-tertiary)]" />
+                      <span className="text-[12px] text-[var(--text-secondary)]">{stat.label}</span>
+                    </div>
+                    <span className="text-[13px] font-bold text-[var(--text-primary)]">
+                      {typeof stat.value === "number"
+                        ? stat.value >= 1000
+                          ? `${(stat.value / 1000).toFixed(1)}K`
+                          : stat.value
+                        : stat.value}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Friends preview */}
             <div className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                  Friends
-                </p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Friends</p>
                 <button
                   onClick={() => goToTab("friends")}
                   className="flex items-center gap-0.5 text-[10px] font-semibold text-[#4a9f63] hover:underline"
@@ -371,33 +492,31 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
               </div>
               <div className="space-y-2.5">
                 {SIDEBAR_FRIENDS.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2.5">
+                  <button
+                    key={f.id}
+                    onClick={() => router.push(`/dashboard/user/${f.id}`)}
+                    className="flex w-full items-center gap-2.5 transition hover:opacity-80"
+                  >
                     <SmallAvatar name={f.name} avatarUrl={f.avatarUrl} size={32} />
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{f.name}</p>
-                      <p className="text-[10px] text-[var(--text-tertiary)]">
-                        {f.eventsInCommon} events in common
-                      </p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">{f.eventsInCommon} events in common</p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
 
             {/* People you might know */}
             <div className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
-              <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                People you might know
-              </p>
+              <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">People you might know</p>
               <div className="space-y-3">
                 {SIDEBAR_SUGGESTIONS.map((s) => (
                   <div key={s.id} className="flex items-center gap-2.5">
                     <SmallAvatar name={s.name} avatarUrl={s.avatarUrl} size={32} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{s.name}</p>
-                      <p className="text-[10px] text-[var(--text-tertiary)]">
-                        {s.mutualCount} mutual friends
-                      </p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">{s.mutualCount} mutual friends</p>
                     </div>
                     <button className="shrink-0 rounded-full border border-[#4a9f63]/30 bg-[#4a9f63]/10 px-2.5 py-1 text-[9px] font-bold text-[#4a9f63] transition hover:bg-[#4a9f63]/20 active:scale-[0.95]">
                       Add
@@ -410,9 +529,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
             {/* Following preview */}
             <div className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                  Following
-                </p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Following</p>
                 <button
                   onClick={() => goToTab("following")}
                   className="flex items-center gap-0.5 text-[10px] font-semibold text-[#4a9f63] hover:underline"
@@ -422,16 +539,20 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
               </div>
               <div className="space-y-2.5">
                 {SIDEBAR_FOLLOWING.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2.5">
-                    <SmallAvatar name={f.name} avatarUrl={f.avatarUrl} size={32} />
-                    <div className="min-w-0 flex-1">
+                  <button
+                    key={f.id}
+                    onClick={() => router.push(f.isOrg ? `/organizers/${f.id}` : `/dashboard/user/${f.id}`)}
+                    className="flex w-full items-center gap-2.5 transition hover:opacity-80"
+                  >
+                    <SmallAvatar name={f.name} avatarUrl={null} size={32} />
+                    <div className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{f.name}</p>
                       <p className="flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
                         {f.tag}
                         {f.verified && <CheckCircle size={10} weight="fill" className="text-[#4a9f63]" />}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -440,7 +561,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
         </aside>
       </div>
 
-      {/* ── Pulse breakdown overlay ───────────────────────────────────────── */}
+      {/* ── Pulse breakdown overlay ───────────────────────────────────────────── */}
       <Overlay open={pulseOpen} onClose={() => setPulseOpen(false)} title="Pulse Breakdown">
         <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15 md:hidden" />
         <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-5 py-4">
@@ -457,7 +578,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
         </div>
       </Overlay>
 
-      {/* ── Edit profile overlay ──────────────────────────────────────────── */}
+      {/* ── Edit profile overlay ─────────────────────────────────────────────── */}
       <Overlay open={editOpen} onClose={() => setEditOpen(false)} wide>
         <EditProfileSheet
           profile={currentProfile}
@@ -465,6 +586,22 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
           onSave={handleSaveProfile}
         />
       </Overlay>
+
+      {/* ── Followers sheet ───────────────────────────────────────────────────── */}
+      <FollowersSheet
+        open={followersOpen}
+        onClose={() => setFollowersOpen(false)}
+        count={currentProfile.friendCount}
+        label="Followers"
+      />
+
+      {/* ── Following sheet ───────────────────────────────────────────────────── */}
+      <FollowersSheet
+        open={followingOpen}
+        onClose={() => setFollowingOpen(false)}
+        count={currentProfile.followingCount}
+        label="Following"
+      />
     </>
   );
 }
