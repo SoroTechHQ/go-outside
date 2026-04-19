@@ -34,6 +34,7 @@ export default function CheckoutPage() {
 
   function handleProceedToPayment() {
     if (!form.name || !form.email) return;
+    sessionStorage.setItem("checkout-attendee", JSON.stringify({ name: form.name, email: form.email }));
     router.push("/checkout/payment");
   }
 

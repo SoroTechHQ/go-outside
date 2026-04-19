@@ -9,7 +9,9 @@ import {
   SpinnerGap,
   X,
 } from "@phosphor-icons/react";
-import { startTransition, useCallback, useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import type { Channel as StreamChannel, UserFilters, UserResponse, UserSort } from "stream-chat";
 import {
   Channel,
@@ -115,8 +117,7 @@ function formatPresenceCopy(channel: StreamChannel, currentUserId?: string) {
   const users = getChannelUsers(channel, currentUserId);
   const onlineCount = users.filter((user) => Boolean(user.online)).length;
   const memberLabel = users.length === 1 ? "member" : "members";
-  const onlineLabel = onlineCount === 1 ? "online" : "online";
-  return `${users.length} ${memberLabel}, ${onlineCount} ${onlineLabel}`;
+  return `${users.length} ${memberLabel}, ${onlineCount} online`;
 }
 
 function buildChannelId(userA: string, userB: string) {
@@ -126,17 +127,9 @@ function buildChannelId(userA: string, userB: string) {
     .replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
-function FullScreenShell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="page-grid" style={{ height: "100dvh" }}>
-      <div className="flex h-full items-center justify-center p-4">{children}</div>
-    </main>
-  );
-}
-
 function MessagesLoadingState({ label }: { label: string }) {
   return (
-    <FullScreenShell>
+    <div className="flex h-dvh w-full items-center justify-center bg-[var(--bg-base)]">
       <div className="flex max-w-sm flex-col items-center gap-4 rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-8 py-10 text-center shadow-[0_24px_80px_rgba(0,0,0,0.07)]">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
           <SpinnerGap className="animate-spin" size={24} weight="bold" />
@@ -146,13 +139,13 @@ function MessagesLoadingState({ label }: { label: string }) {
           <p className="mt-1 text-[14px] text-[var(--text-tertiary)]">{label}</p>
         </div>
       </div>
-    </FullScreenShell>
+    </div>
   );
 }
 
 function MessagesConfigError({ detail }: { detail: string }) {
   return (
-    <FullScreenShell>
+    <div className="flex h-dvh w-full items-center justify-center bg-[var(--bg-base)]">
       <div className="flex max-w-md flex-col items-center gap-4 rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-8 py-10 text-center shadow-[0_24px_80px_rgba(0,0,0,0.07)]">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
           <ChatCircleDots size={24} weight="bold" />
@@ -162,7 +155,7 @@ function MessagesConfigError({ detail }: { detail: string }) {
           <p className="mt-1 text-[14px] text-[var(--text-tertiary)]">{detail}</p>
         </div>
       </div>
-    </FullScreenShell>
+    </div>
   );
 }
 
@@ -475,9 +468,11 @@ function ComposeConversation({
 }
 
 function MessagesShell({
+  dmUserId,
   identity,
   starterChannelCid,
 }: {
+  dmUserId?: string;
   identity: ChatIdentity;
   starterChannelCid?: string;
 }) {
@@ -486,6 +481,37 @@ function MessagesShell({
   const [composeOpen, setComposeOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const [selectedChannelCid, setSelectedChannelCid] = useState<string | undefined>(starterChannelCid);
+  const dmOpenedRef = useRef(false);
+
+  // Auto-open DM channel when navigated from a profile page
+  useEffect(() => {
+    if (!dmUserId || !client || dmUserId === identity.id || dmOpenedRef.current) return;
+    dmOpenedRef.current = true;
+
+    const openDm = async () => {
+      const channelId = buildChannelId(identity.id, dmUserId);
+      const channel = client.channel("messaging", channelId, {
+        created_by_id: identity.id,
+        members: [identity.id, dmUserId],
+      });
+
+      try {
+        await channel.create();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message.toLowerCase() : "";
+        if (!msg.includes("already exists")) throw err;
+      }
+
+      await channel.watch();
+      setActiveChannel(channel);
+      startTransition(() => {
+        setSelectedChannelCid(channel.cid);
+        if (isMobile) setMobilePane("thread");
+      });
+    };
+
+    openDm().catch(console.error);
+  }, [dmUserId, client, identity.id, isMobile, setActiveChannel]);
 
   useEffect(() => {
     if (starterChannelCid && !selectedChannelCid) {
@@ -610,7 +636,7 @@ function MessagesShell({
                 showBackButton={isMobile && mobilePane === "thread"}
               />
               <MessageList />
-              <MessageInput additionalTextareaProps={{ placeholder: "Message" }} focus />
+              <MessageInput additionalTextareaProps={{ placeholder: "Message…" }} focus />
             </Window>
             <Thread />
           </Channel>
@@ -631,9 +657,11 @@ function MessagesShell({
 }
 
 function StreamMessagesView({
+  dmUserId,
   identity,
   getClerkToken,
 }: {
+  dmUserId?: string;
   getClerkToken: ReturnType<typeof useAuth>["getToken"];
   identity: ChatIdentity;
 }) {
@@ -678,11 +706,11 @@ function StreamMessagesView({
   if (!client) return <MessagesLoadingState label="Connecting to chat…" />;
 
   return (
-    <main className="page-grid" style={{ height: "100dvh" }}>
-      <div className="go-stream-frame h-full overflow-hidden md:p-3">
-        <div className="go-stream-inner h-full overflow-hidden md:rounded-3xl md:border md:border-[var(--border-subtle)] md:shadow-[0_4px_32px_rgba(0,0,0,0.06)]">
+    <main className="page-grid go-stream-page">
+      <div className="go-stream-frame h-full overflow-hidden">
+        <div className="go-stream-inner h-full overflow-hidden">
           <Chat client={client}>
-            <MessagesShell identity={identity} starterChannelCid={starterChannelCid} />
+            <MessagesShell dmUserId={dmUserId} identity={identity} starterChannelCid={starterChannelCid} />
           </Chat>
         </div>
       </div>
@@ -690,9 +718,11 @@ function StreamMessagesView({
   );
 }
 
-export default function MessagesPage() {
+function MessagesPageInner() {
   const { getToken, isLoaded: authLoaded } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
+  const searchParams = useSearchParams();
+  const dmUserId = searchParams.get("dm") ?? undefined;
 
   if (!STREAM_API_KEY) {
     return <MessagesConfigError detail="Add NEXT_PUBLIC_STREAM_API_KEY in the web app env and restart." />;
@@ -706,8 +736,17 @@ export default function MessagesPage() {
 
   return (
     <StreamMessagesView
+      dmUserId={dmUserId}
       getClerkToken={getToken}
       identity={{ id: user.id, image: user.imageUrl || undefined, name: buildDisplayName(user) }}
     />
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<MessagesLoadingState label="Loading…" />}>
+      <MessagesPageInner />
+    </Suspense>
   );
 }

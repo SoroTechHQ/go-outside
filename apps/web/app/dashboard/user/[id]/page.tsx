@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Avatar from "boring-avatars";
+import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -386,15 +387,66 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "following", label: "Following" },
 ];
 
+// Returns true if the ID looks like a real Clerk user ID (starts with "user_")
+function isClerkId(id: string): boolean {
+  return id.startsWith("user_");
+}
+
 export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const { user: currentUser } = useUser();
   const [tab, setTab] = useState<Tab>("posts");
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
 
   const userId = typeof params.id === "string" ? params.id : "ama-k";
+  const isRealUser = isClerkId(userId);
+  const isOwnProfile = currentUser?.id === userId;
+
+  // Fetch real follow status from Supabase for real Clerk users
+  const { data: followStatus } = useQuery({
+    queryKey: ["follow-status", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/follow/status?targetId=${userId}`);
+      if (!res.ok) return { following: false, followedBy: false, mutual: false };
+      return res.json() as Promise<{ following: boolean; followedBy: boolean; mutual: boolean }>;
+    },
+    enabled: isRealUser && !isOwnProfile,
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (followStatus) setIsFollowing(followStatus.following);
+  }, [followStatus]);
+
+  const handleFollow = useCallback(async () => {
+    if (!isRealUser || followLoading) return;
+    setFollowLoading(true);
+    const next = !isFollowing;
+    setIsFollowing(next);
+    try {
+      await fetch("/api/follow", {
+        method: next ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetClerkId: userId }),
+      });
+    } catch {
+      setIsFollowing(!next); // revert on error
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [isRealUser, followLoading, isFollowing, userId]);
+
+  const handleMessage = useCallback(() => {
+    if (isRealUser) {
+      router.push(`/dashboard/messages?dm=${userId}`);
+    } else {
+      router.push("/dashboard/messages");
+    }
+  }, [isRealUser, router, userId]);
 
   const { data: user } = useQuery({
     queryKey: ["community-profile", userId],
@@ -539,21 +591,31 @@ export default function UserProfilePage() {
             </div>
 
             {/* Action buttons */}
-            <div className="mt-0.5 flex shrink-0 items-center gap-2">
-              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95">
-                <ChatCircleDots size={16} />
-              </button>
-              <button
-                onClick={() => setIsFollowing((v) => !v)}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold shadow-sm transition active:scale-95 ${
-                  isFollowing
-                    ? "border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)]"
-                    : "bg-[#4a9f63] text-white shadow-[0_4px_16px_rgba(74,159,99,0.35)]"
-                }`}
-              >
-                {isFollowing ? <><UserMinus size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
-              </button>
-            </div>
+            {!isOwnProfile && (
+              <div className="mt-0.5 flex shrink-0 items-center gap-2">
+                {/* Show message button when mutual follow or for any real user */}
+                {(isRealUser || followStatus?.mutual) && (
+                  <button
+                    onClick={handleMessage}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95"
+                    title="Send a message"
+                  >
+                    <ChatCircleDots size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={isRealUser ? handleFollow : () => setIsFollowing((v) => !v)}
+                  disabled={followLoading}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold shadow-sm transition active:scale-95 disabled:opacity-60 ${
+                    isFollowing
+                      ? "border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)]"
+                      : "bg-[#4a9f63] text-white shadow-[0_4px_16px_rgba(74,159,99,0.35)]"
+                  }`}
+                >
+                  {isFollowing ? <><UserMinus size={13} /> Following</> : <><UserPlus size={13} /> Follow</>}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── Slim stats row ──────────────────────────────────────────── */}

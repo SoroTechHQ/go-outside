@@ -216,7 +216,10 @@ export function adaptEvent(row: DbEventRow): EventItem {
     bannerTone:       CATEGORY_BANNER_TONES[cat.slug] ?? "from-[#0e2212] via-[#152a1a] to-[#0b1a10]",
     bannerUrl:        row.banner_url,
     ticketTypes: tts.map((t) => ({
+      id:             t.id,
       name:           t.name,
+      price:          Number(t.price),
+      priceType:      t.price_type,
       priceLabel:     t.price_type === "free" ? "Free" : `GHS ${Number(t.price).toLocaleString()}`,
       remainingLabel: t.quantity_total != null
         ? `${(t.quantity_total - t.quantity_sold).toLocaleString()} remaining`

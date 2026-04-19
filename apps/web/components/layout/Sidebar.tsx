@@ -8,13 +8,15 @@ import {
   House,
   MoonStars,
   ShoppingCart,
+  SignOut,
   SunDim,
   TrendUp,
   UserCircle,
   Wallet,
 } from "@phosphor-icons/react";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useClerk } from "@clerk/nextjs";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useAppShell } from "./AppShellContext";
 import { useCart } from "../cart/CartContext";
@@ -44,12 +46,26 @@ function getInitials(name: string) {
 
 export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useClerk();
   const isTabletUp = useMediaQuery("(min-width: 768px)");
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [hovered, setHovered] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const { setSidebarWidth } = useAppShell();
   const { totalCount } = useCart();
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const syncTheme = () => {
@@ -246,34 +262,65 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
             </AnimatePresence>
           </button>
 
-          <Link
-            className={`mt-2 flex h-[56px] items-center transition ${
-              pathname.startsWith("/profile")
-                ? "font-semibold text-[var(--brand)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
-            href="/profile"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center text-[var(--brand)]">
-              {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/profile") ? "fill" : "regular"} />}
-            </div>
+          <div ref={profileRef} className="relative mt-2">
+            <button
+              onClick={() => setProfileMenuOpen((v) => !v)}
+              onContextMenu={(e) => { e.preventDefault(); setProfileMenuOpen(true); }}
+              className={`flex h-[56px] w-full items-center transition ${
+                pathname.startsWith("/profile")
+                  ? "font-semibold text-[var(--brand)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center text-[var(--brand)]">
+                {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/profile") ? "fill" : "regular"} />}
+              </div>
+              <AnimatePresence>
+                {isExpanded ? (
+                  <motion.div
+                    animate={{ opacity: 1, width: "auto" }}
+                    className="min-w-0 overflow-hidden"
+                    exit={{ opacity: 0, width: 0 }}
+                    initial={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <p className="truncate text-sm font-medium text-[var(--text-primary)]">Profile</p>
+                    <span className="mt-1 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+                      {userName}
+                    </span>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </button>
+
             <AnimatePresence>
-              {isExpanded ? (
+              {profileMenuOpen && (
                 <motion.div
-                  animate={{ opacity: 1, width: "auto" }}
-                  className="min-w-0 overflow-hidden"
-                  exit={{ opacity: 0, width: 0 }}
-                  initial={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full left-2 right-2 mb-1 overflow-hidden rounded-[14px] border border-[var(--border-card)] bg-[var(--bg-elevated)] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
                 >
-                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">Profile</p>
-                  <span className="mt-1 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
-                    {userName}
-                  </span>
+                  <button
+                    onClick={() => { setProfileMenuOpen(false); router.push("/dashboard/profile"); }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-[var(--text-primary)] transition hover:bg-[var(--bg-card)]"
+                  >
+                    <UserCircle size={15} className="text-[var(--text-tertiary)]" />
+                    View Profile
+                  </button>
+                  <div className="mx-3 h-px bg-[var(--border-subtle)]" />
+                  <button
+                    onClick={() => signOut(() => router.push("/"))}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-red-400 transition hover:bg-[var(--bg-card)]"
+                  >
+                    <SignOut size={15} />
+                    Sign Out
+                  </button>
                 </motion.div>
-              ) : null}
+              )}
             </AnimatePresence>
-          </Link>
+          </div>
         </div>
       </div>
     </motion.aside>

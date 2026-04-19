@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
 
     await serverClient.upsertUser({ id: clerk.id, name, ...(image ? { image } : {}) });
 
-    const token = serverClient.createToken(clerk.id);
+    // Token valid for 24 h — short enough to limit exposure, long enough for a session
+    const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+    const token = serverClient.createToken(clerk.id, expiry);
 
     return NextResponse.json({ token, user: { id: clerk.id, name, image: image ?? null } });
   } catch (err) {

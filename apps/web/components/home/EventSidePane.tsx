@@ -653,23 +653,21 @@ export function EventSidePane({
         {ticketModalOpen && (
           <GetTicketModal
             event={{
-              id: event.slug,
+              id: event.id,
               title: event.title,
               date: event.dateLabel,
               time: event.timeLabel,
               venue: event.venue,
               imageUrl: images[0],
               organizer: organizer.name,
-              ticketTypes: event.priceValue === 0
-                ? [{ id: "free", name: "General Admission", price: 0, priceType: "free" as const, description: "Free entry", remaining: 100, maxPerUser: 4 }]
-                : event.ticketTypes.map((t, i) => ({
-                    id: `tier-${i}`,
-                    name: t.name,
-                    price: i === 0 ? event.priceValue : Math.round(event.priceValue * (1.5 + i * 0.8)),
-                    priceType: "paid" as const,
-                    description: t.remainingLabel,
-                    maxPerUser: 4,
-                  })),
+              ticketTypes: event.ticketTypes.map((t) => ({
+                id: t.id,
+                name: t.name,
+                price: t.price,
+                priceType: t.priceType,
+                description: t.remainingLabel,
+                maxPerUser: 4,
+              })),
             }}
             onClose={() => setTicketModalOpen(false)}
           />
@@ -741,23 +739,21 @@ export function EventSidePane({
       {ticketModalOpen && (
         <GetTicketModal
           event={{
-            id: event.slug,
+            id: event.id,
             title: event.title,
             date: event.dateLabel,
             time: event.timeLabel,
             venue: event.venue,
             imageUrl: images[0],
             organizer: organizer.name,
-            ticketTypes: event.priceValue === 0
-              ? [{ id: "free", name: "General Admission", price: 0, priceType: "free" as const, description: "Free entry", remaining: 100, maxPerUser: 4 }]
-              : event.ticketTypes.map((t, i) => ({
-                  id: `tier-${i}`,
-                  name: t.name,
-                  price: i === 0 ? event.priceValue : Math.round(event.priceValue * (1.5 + i * 0.8)),
-                  priceType: "paid" as const,
-                  description: t.remainingLabel,
-                  maxPerUser: 4,
-                })),
+            ticketTypes: event.ticketTypes.map((t) => ({
+              id: t.id,
+              name: t.name,
+              price: t.price,
+              priceType: t.priceType,
+              description: t.remainingLabel,
+              maxPerUser: 4,
+            })),
           }}
           onClose={() => setTicketModalOpen(false)}
         />

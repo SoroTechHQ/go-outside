@@ -25,7 +25,10 @@ export type Organizer = {
 };
 
 export type TicketType = {
+  id: string;
   name: string;
+  price: number;
+  priceType: "free" | "paid";
   priceLabel: string;
   remainingLabel: string;
 };

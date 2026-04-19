@@ -31,6 +31,33 @@ export default function PaymentPage() {
     return null;
   }
 
+  async function purchaseTickets() {
+    const attendee = (() => {
+      try { return JSON.parse(sessionStorage.getItem("checkout-attendee") ?? "{}"); } catch { return {}; }
+    })();
+    const body = items.map((item) => ({
+      eventId: item.eventId,
+      tierId: item.tier.id,
+      tierName: item.tier.name,
+      price: item.tier.price,
+      quantity: item.quantity,
+      attendeeName: attendee.name,
+      attendeeEmail: attendee.email,
+    }));
+    const res = await fetch("/api/tickets/purchase", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      console.error("[purchaseTickets] failed:", json);
+    } else {
+      console.log("[purchaseTickets] created ticket IDs:", json.ticketIds);
+    }
+    sessionStorage.removeItem("checkout-attendee");
+  }
+
   function handlePay() {
     setLoading(true);
 
@@ -47,9 +74,11 @@ export default function PaymentPage() {
         channels: method === "mobile_money" ? ["mobile_money"] : method === "card" ? ["card"] : ["bank_transfer"],
         metadata: { phone: momoNumber, network: momoNetwork },
         callback: () => {
-          setLoading(false);
-          setSuccess(true);
-          clearCart();
+          purchaseTickets().then(() => {
+            setLoading(false);
+            setSuccess(true);
+            clearCart();
+          });
         },
         onClose: () => setLoading(false),
       });
@@ -58,7 +87,11 @@ export default function PaymentPage() {
 
     if (totalPrice === 0) {
       // Free event — skip Paystack
-      setTimeout(() => { setLoading(false); setSuccess(true); clearCart(); }, 800);
+      purchaseTickets().then(() => {
+        setLoading(false);
+        setSuccess(true);
+        clearCart();
+      });
       return;
     }
 
