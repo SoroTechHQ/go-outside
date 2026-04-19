@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, ShareNetwork, WarningCircle } from "@phosphor-icons/react/dist/ssr";
-import { getAttendeeTicketById, getEventBySlug, type AttendeeTicket } from "@gooutside/demo-data";
+import type { AttendeeTicket } from "@gooutside/demo-data";
+import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
+import { getTicketById } from "../../../../lib/db/tickets";
+import { getEventBySlug } from "../../../../lib/db/events";
 import { TicketQr } from "../../../../components/ticket-qr";
 import { AtroposTicket } from "../../../../components/wallet/AtroposTicket";
 
@@ -67,10 +70,14 @@ export default async function WalletTicketPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const ticket = getAttendeeTicketById(id);
+
+  const user = await getOrCreateSupabaseUser();
+  if (!user) notFound();
+
+  const ticket = await getTicketById(id, user.id);
   if (!ticket) notFound();
 
-  const event = getEventBySlug(ticket.eventSlug);
+  const event = await getEventBySlug(ticket.eventSlug);
   if (!event) notFound();
 
   const s = getTierStyle(ticket.tier);
@@ -228,7 +235,6 @@ export default async function WalletTicketPage({
         <div className="mt-6 space-y-3">
           {isPast ? (
             <>
-              {/* Expired notice */}
               <div className="flex items-start gap-3 rounded-[16px] border border-orange-500/20 bg-orange-500/6 px-4 py-4">
                 <WarningCircle size={18} className="mt-0.5 shrink-0 text-orange-400" weight="fill" />
                 <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
