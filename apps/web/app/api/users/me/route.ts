@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { humanizeDbError } from "../../../../lib/db-errors";
 
 export async function GET() {
   const clerk = await currentUser();
@@ -67,11 +68,8 @@ export async function PATCH(req: NextRequest) {
 
   if (error) {
     console.error("[PATCH /api/users/me]", error);
-    const isUsernameConflict = error.code === "23505" && error.message.includes("username");
-    return NextResponse.json(
-      { error: isUsernameConflict ? "That username is already taken" : error.message },
-      { status: isUsernameConflict ? 409 : 500 }
-    );
+    const { message, status } = humanizeDbError(error);
+    return NextResponse.json({ error: message }, { status });
   }
 
   return NextResponse.json(data);

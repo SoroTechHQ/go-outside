@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { humanizeDbError } from "../../../../lib/db-errors";
 
 interface PastEventEntry {
   id?:      string;   // UUID if it matches a real event in our DB
@@ -44,7 +45,8 @@ export async function POST(req: NextRequest) {
 
   if (pastErr) {
     console.error("[POST /api/onboarding/history] past_events upsert", pastErr);
-    return NextResponse.json({ error: pastErr.message }, { status: 500 });
+    const { message, status } = humanizeDbError(pastErr);
+    return NextResponse.json({ error: message }, { status });
   }
 
   // Write graph_edges for events that have a real UUID in our DB

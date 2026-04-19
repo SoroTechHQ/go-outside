@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { humanizeDbError } from "../../../../lib/db-errors";
 
 export async function POST(req: NextRequest) {
   const clerk = await currentUser();
@@ -25,7 +26,8 @@ export async function POST(req: NextRequest) {
 
   if (vectorErr) {
     console.error("[POST /api/onboarding/interests] vector upsert", vectorErr);
-    return NextResponse.json({ error: vectorErr.message }, { status: 500 });
+    const { message, status } = humanizeDbError(vectorErr);
+    return NextResponse.json({ error: message }, { status });
   }
 
   return NextResponse.json({ ok: true });

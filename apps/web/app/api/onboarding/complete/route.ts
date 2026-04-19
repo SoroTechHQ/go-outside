@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { humanizeDbError } from "../../../../lib/db-errors";
 
 const COOKIE_OPTS = {
   path:     "/",
@@ -40,10 +41,11 @@ export async function POST(req: NextRequest) {
 
   if (upsertErr || !sbUser) {
     console.error("[/api/onboarding/complete] upsert failed", upsertErr);
-    return NextResponse.json(
-      { error: upsertErr?.message ?? "Failed to finalise your profile. Please try again." },
-      { status: 500 }
-    );
+    if (upsertErr) {
+      const { message, status } = humanizeDbError(upsertErr);
+      return NextResponse.json({ error: message }, { status });
+    }
+    return NextResponse.json({ error: "Failed to finalise your profile. Please try again." }, { status: 500 });
   }
 
   const userId = sbUser.id as string;
