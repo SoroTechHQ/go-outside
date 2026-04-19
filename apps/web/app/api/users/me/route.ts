@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { humanizeDbError } from "../../../../lib/db-errors";
 
@@ -14,6 +14,18 @@ export async function GET() {
     .maybeSingle();
 
   if (error || !data) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  // Silently sync username to Clerk if Supabase has one that Clerk doesn't know about
+  const sbUsername = (data as Record<string, unknown>).username as string | null;
+  if (sbUsername && sbUsername !== clerk.username) {
+    try {
+      const client = await clerkClient();
+      await client.users.updateUser(clerk.id, { username: sbUsername });
+    } catch (e) {
+      console.warn("[GET /api/users/me] clerk username sync skipped:", (e as Error).message);
+    }
+  }
+
   return NextResponse.json(data);
 }
 
@@ -70,6 +82,31 @@ export async function PATCH(req: NextRequest) {
     console.error("[PATCH /api/users/me]", error);
     const { message, status } = humanizeDbError(error);
     return NextResponse.json({ error: message }, { status });
+  }
+
+  // Sync username to Clerk so users can sign in with it
+  const newUsername = typeof body.username === "string" && body.username.trim()
+    ? body.username.trim()
+    : null;
+  if (newUsername) {
+    try {
+      const client = await clerkClient();
+      await client.users.updateUser(clerk.id, { username: newUsername });
+    } catch (clerkErr: unknown) {
+      const msg = clerkErr instanceof Error ? clerkErr.message : String(clerkErr);
+      console.error("[PATCH /api/users/me] clerk username sync failed", msg);
+      // Username took in Supabase but Clerk rejected it (likely already taken in Clerk).
+      // Roll back the Supabase username so both stores stay in sync.
+      await supabaseAdmin
+        .from("users")
+        .update({ username: null, updated_at: new Date().toISOString() })
+        .eq("clerk_id", clerk.id);
+      const taken = msg.toLowerCase().includes("taken") || msg.toLowerCase().includes("already") || msg.toLowerCase().includes("unique");
+      return NextResponse.json(
+        { error: taken ? "That username is already taken. Choose a different one to continue." : "Couldn't save username. Please try again." },
+        { status: 409 }
+      );
+    }
   }
 
   return NextResponse.json(data);
