@@ -33,7 +33,6 @@ type ChatIdentity = {
 };
 
 const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY ?? "";
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3002").replace(/\/$/, "");
 
 function buildDisplayName(user: ReturnType<typeof useUser>["user"]) {
   if (!user) return "GoOutside User";
@@ -125,7 +124,7 @@ function StreamMessagesView({
       throw new Error("Your session expired. Sign in again to open chat.");
     }
 
-    const response = await fetch(`${API_BASE_URL}/chat/token`, {
+    const response = await fetch(`/api/chat/token`, {
       body: JSON.stringify({
         image: identity.image ?? null,
         name: identity.name,

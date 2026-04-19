@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChatTeardrop, MagnifyingGlass, PaperPlaneTilt, X } from "@phosphor-icons/react";
 
@@ -12,6 +13,7 @@ const conversations = [
 
 export function MessagesFAB() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
   const unreadCount = 3;
 
   return (
@@ -101,6 +103,7 @@ export function MessagesFAB() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/[0.04]"
                   initial={{ opacity: 0, y: 8 }}
+                  onClick={() => router.push("/dashboard/messages")}
                   transition={{ delay: index * 0.03, duration: 0.18 }}
                   type="button"
                 >
@@ -121,8 +124,12 @@ export function MessagesFAB() {
             </div>
 
             <div className="border-t border-white/5 px-4 py-3">
-              <button className="flex w-full items-center justify-between rounded-2xl bg-white/[0.03] px-4 py-3 text-left text-sm text-white/72 transition hover:bg-white/[0.05]" type="button">
-                <span>Start a new conversation</span>
+              <button
+                className="flex w-full items-center justify-between rounded-2xl bg-white/[0.03] px-4 py-3 text-left text-sm text-white/72 transition hover:bg-white/[0.05]"
+                onClick={() => router.push("/dashboard/messages")}
+                type="button"
+              >
+                <span>Open full inbox</span>
                 <PaperPlaneTilt size={16} className="text-[var(--brand)]" weight="bold" />
               </button>
             </div>
