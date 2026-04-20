@@ -21,6 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import { getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
 import type { events, Organizer } from "@gooutside/demo-data";
+import { GetTicketModal, type EventForTicket } from "../../../components/tickets/GetTicketModal";
 import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
 import { SearchBar } from "../../../components/search/SearchBar";
 import { useAppShell } from "../../../components/layout/AppShellContext";
@@ -119,12 +120,43 @@ export function EventDetailClient({
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const { sidebarWidth } = useAppShell();
 
   const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
   const reviewCount = 48 + ((event.id?.charCodeAt(1) ?? 66) % 80);
   const lineup = LINEUPS[event.categorySlug] ?? LINEUPS.music ?? [];
+  const ticketEvent: EventForTicket = {
+    id: event.id,
+    title: event.title,
+    date: event.dateLabel,
+    time: event.timeLabel,
+    venue: event.venue,
+    city: event.city,
+    imageUrl: images[0],
+    organizer: organizer.name,
+    ticketTypes:
+      event.ticketTypes.length > 0
+        ? event.ticketTypes.map((ticketType) => ({
+            id: ticketType.id,
+            name: ticketType.name,
+            price: ticketType.price,
+            priceType: ticketType.priceType,
+            description: ticketType.remainingLabel,
+            maxPerUser: 4,
+          }))
+        : [
+            {
+              id: `${event.id}-general`,
+              name: event.priceValue === 0 ? "Free Entry" : "General Admission",
+              price: event.priceValue,
+              priceType: event.priceValue === 0 ? "free" : "paid",
+              description: "Tickets available",
+              maxPerUser: 4,
+            },
+          ],
+  };
 
   const mapLat = (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018).toFixed(4);
   const mapLon = (-0.187 + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018).toFixed(4);
@@ -513,7 +545,11 @@ export function EventDetailClient({
 
               {/* CTAs */}
               <div className="space-y-3 px-6 pb-6">
-                <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]" type="button">
+                <button
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
+                  onClick={() => setTicketModalOpen(true)}
+                  type="button"
+                >
                   <Ticket size={16} weight="bold" />
                   {event.priceValue === 0 ? "Register for Free" : `Get Tickets · ${event.priceLabel}`}
                 </button>
@@ -577,6 +613,10 @@ export function EventDetailClient({
       {/* Lightbox */}
       {lightboxIdx !== null && (
         <PhotoLightbox images={images} startIdx={lightboxIdx} onClose={() => setLightboxIdx(null)} />
+      )}
+
+      {ticketModalOpen && (
+        <GetTicketModal event={ticketEvent} onClose={() => setTicketModalOpen(false)} />
       )}
     </>
   );
