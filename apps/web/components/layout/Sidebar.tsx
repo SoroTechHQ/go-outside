@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ChartBar,
   ChatCircleDots,
+  Heart as HeartIcon,
   House,
   MoonStars,
   ShoppingCart,
@@ -15,7 +16,7 @@ import {
   Wallet,
 } from "@phosphor-icons/react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useRef, useState } from "react";
 import { useClerk } from "@clerk/nextjs";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useAppShell } from "./AppShellContext";
@@ -29,8 +30,10 @@ type SidebarProps = {
 };
 
 type NavItem = {
+  activeWeight?: ComponentProps<typeof House>["weight"];
   href: string;
   icon: typeof House;
+  inactiveWeight?: ComponentProps<typeof House>["weight"];
   label: string;
   unread?: boolean;
 };
@@ -90,7 +93,13 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
     { href: "/trending", label: "Trending", icon: TrendUp },
     { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
     { href: "/wallets", label: "Wallets", icon: Wallet },
-    { href: "/activity", label: "Activity", icon: MoonStars },
+    {
+      href: "/activity",
+      label: "Activity",
+      icon: HeartIcon,
+      inactiveWeight: "bold",
+      activeWeight: "fill",
+    },
   ];
 
   if (role === "organizer" || role === "admin") {
@@ -151,6 +160,9 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   ? pathname === "/"
                   : pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
+              const iconWeight = active
+                ? item.activeWeight ?? "fill"
+                : item.inactiveWeight ?? "regular";
 
               return (
                 <Link key={item.href} href={item.href}>
@@ -166,8 +178,8 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                     whileTap={{ scale: 0.97 }}
                   >
                     <Icon
-                      size={24}
-                      weight={active ? "fill" : "regular"}
+                      size={item.href === "/activity" ? 32 : 24}
+                      weight={iconWeight}
                       className={active ? "text-[var(--brand)]" : "text-current"}
                     />
 
