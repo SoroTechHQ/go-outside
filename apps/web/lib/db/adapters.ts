@@ -4,6 +4,7 @@
  */
 
 import type { EventItem, Category, Organizer, AttendeeTicket } from "@gooutside/demo-data";
+import { bannerUrl as withBannerTransform, thumbnailUrl as withThumbnailTransform } from "../image-url";
 
 // ── Category descriptions (DB has no description column) ──────────────────
 
@@ -214,7 +215,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
     saved:            false, // overridden per-user in authenticated contexts
     rating:           row.avg_rating != null ? row.avg_rating.toFixed(1) : "—",
     bannerTone:       CATEGORY_BANNER_TONES[cat.slug] ?? "from-[#0e2212] via-[#152a1a] to-[#0b1a10]",
-    bannerUrl:        row.banner_url,
+    bannerUrl:        withBannerTransform(row.banner_url) ?? row.banner_url,
     ticketTypes: tts.map((t) => ({
       id:             t.id,
       name:           t.name,
@@ -225,7 +226,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
         ? `${(t.quantity_total - t.quantity_sold).toLocaleString()} remaining`
         : "Available",
     })),
-    gallery: row.gallery_urls ?? [],
+    gallery: (row.gallery_urls ?? []).map((url) => withThumbnailTransform(url) ?? url),
     tags:    row.tags ?? [],
     // Extra DB fields used for server-side scoring (not in EventItem type, cast at use site)
     ...({ startDatetime: row.start_datetime, avgRating: row.avg_rating } as unknown as object),

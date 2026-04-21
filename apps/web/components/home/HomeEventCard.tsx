@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -52,6 +52,7 @@ export function HomeEventCard({
   signal,
 }: HomeEventCardProps) {
   const cardRef = useRef<HTMLElement>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
   useViewportTrack(cardRef, { eventId: event.id, source: "feed" });
 
   let longPressTimer: number | undefined;
@@ -79,7 +80,7 @@ export function HomeEventCard({
     <motion.article
       ref={cardRef}
       animate={{ opacity: 1, scale: 1, x: 0 }}
-      className={`group relative overflow-hidden rounded-[24px] cursor-pointer transition-all duration-300 ${sizeClasses} ${
+      className={`group relative overflow-hidden rounded-[24px] cursor-pointer transition-all duration-300 bg-zinc-900 ${sizeClasses} ${
         isActive
           ? "shadow-[0_0_0_2px_var(--brand),0_0_0_5px_rgba(var(--brand-rgb),0.12)]"
           : "hover:-translate-y-0.5"
@@ -117,13 +118,14 @@ export function HomeEventCard({
         </>
       ) : null}
 
-      {/* Full-bleed image */}
+      {/* Full-bleed image — fades in once loaded to avoid hard pop */}
       <Image
         alt={event.title}
-        className="object-cover transition duration-500 group-hover:scale-[1.06]"
+        className={`object-cover transition-all duration-500 group-hover:scale-[1.06] ${imgLoaded ? "opacity-100" : "opacity-0"}`}
         fill
-        sizes={isFeatured ? "640px" : isGrid ? "280px" : "360px"}
+        sizes={isFeatured ? "(max-width: 768px) 100vw, 640px" : isGrid ? "(max-width: 768px) 50vw, 280px" : "(max-width: 768px) 100vw, 360px"}
         src={event.bannerUrl || getEventImage(undefined, event.categorySlug)}
+        onLoad={() => setImgLoaded(true)}
       />
 
       {/* Base gradient — strong enough to keep always-visible text readable */}

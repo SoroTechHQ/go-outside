@@ -4,6 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { bannerUrl as withBannerTransform } from "../../lib/image-url";
+
+// Tiny dark placeholder shown while hero images load (avoids white flash)
+const BLUR_PLACEHOLDER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAARCAAEAAQDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAABQQG/8QAHRAAAQQDAQEAAAAAAAAAAAAAAQIDBBESIf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCp5jHVJe3Z1O5ZhKKl1V3OB7ECgA//2Q==";
 
 export type HeroSlide = {
   id: string;
@@ -31,6 +35,10 @@ export function HeroCarousel({ contextLabel, contextSummary, slides }: HeroCarou
   const touchStartX = useRef<number | null>(null);
   const safeSlides = slides.slice(0, 6);
 
+  // Only mount images that have been (or are about to be) shown.
+  // Starts with slide 0 + slide 1 so the first transition is seamless.
+  const [mountedSlides, setMountedSlides] = useState<Set<number>>(() => new Set([0, 1]));
+
   useEffect(() => {
     if (paused || safeSlides.length < 2) {
       return;
@@ -46,6 +54,18 @@ export function HeroCarousel({ contextLabel, contextSummary, slides }: HeroCarou
   useEffect(() => {
     setActiveIndex(0);
   }, [safeSlides.length]);
+
+  // Preload the next slide's image whenever activeIndex changes.
+  useEffect(() => {
+    if (safeSlides.length < 2) return;
+    const next = (activeIndex + 1) % safeSlides.length;
+    setMountedSlides((prev) => {
+      if (prev.has(next)) return prev;
+      const updated = new Set(prev);
+      updated.add(next);
+      return updated;
+    });
+  }, [activeIndex, safeSlides.length]);
 
   if (safeSlides.length === 0) {
     return (
@@ -105,7 +125,7 @@ export function HeroCarousel({ contextLabel, contextSummary, slides }: HeroCarou
       }}
       tabIndex={0}
     >
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 bg-zinc-900">
         {safeSlides.map((slide, index) => (
           <div
             key={slide.id}
@@ -113,14 +133,18 @@ export function HeroCarousel({ contextLabel, contextSummary, slides }: HeroCarou
               index === activeIndex ? "opacity-100" : "opacity-0"
             }`}
           >
-            <Image
-              alt={slide.title}
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              src={slide.banner_url}
-              className="object-cover"
-            />
+            {mountedSlides.has(index) && (
+              <Image
+                alt={slide.title}
+                fill
+                priority={index === 0}
+                sizes="(max-width: 768px) 100vw, (max-width: 1440px) 100vw, 1440px"
+                src={withBannerTransform(slide.banner_url) ?? slide.banner_url}
+                className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_PLACEHOLDER}
+              />
+            )}
             <div className="absolute inset-0 bg-[image:var(--hero-image-overlay)]" />
           </div>
         ))}
