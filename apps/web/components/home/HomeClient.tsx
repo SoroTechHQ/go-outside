@@ -417,6 +417,14 @@ export function HomeClient() {
   const { setPeekPanelWidth } = useAppShell();
 
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
+
+  const fireInteraction = useCallback((eventId: string, edgeType: string) => {
+    void fetch("/api/interactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId, edgeType }),
+    });
+  }, []);
   const [paneWidth, setPaneWidth] = useState(520);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -615,7 +623,10 @@ export function HomeClient() {
                         <ImageCard
                           event={event}
                           feedIndex={event._feedIndex}
-                          onCardClick={() => setSelectedEvent(event)}
+                          onCardClick={() => {
+                            setSelectedEvent(event);
+                            fireInteraction(event.id, "peek_open");
+                          }}
                         />
                       </motion.div>
                     </Fragment>

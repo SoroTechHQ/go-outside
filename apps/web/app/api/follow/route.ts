@@ -32,23 +32,31 @@ export async function POST(req: NextRequest) {
   if (!fromId) return NextResponse.json({ error: "Your account is not fully set up" }, { status: 400 });
   if (!toId) return NextResponse.json({ error: "Target user not found" }, { status: 404 });
 
-  const { error } = await supabaseAdmin.from("graph_edges").upsert(
-    {
-      from_id: fromId,
-      from_type: "user",
-      to_id: toId,
-      to_type: "user",
-      edge_type: "follows",
-      weight: 1.0,
-      is_active: true,
-    },
-    { onConflict: "from_id,to_id,edge_type", ignoreDuplicates: false },
-  );
+  const [edgeResult] = await Promise.all([
+    supabaseAdmin.from("graph_edges").upsert(
+      { from_id: fromId, from_type: "user", to_id: toId, to_type: "user", edge_type: "follows", weight: 1.0, is_active: true },
+      { onConflict: "from_id,to_id,edge_type", ignoreDuplicates: false },
+    ),
+    // Mirror into follows table for RLS-based queries
+    supabaseAdmin.from("follows").upsert(
+      { follower_id: fromId, following_id: toId },
+      { onConflict: "follower_id,following_id", ignoreDuplicates: true },
+    ),
+  ]);
 
-  if (error) {
-    console.error("[POST /api/follow]", error);
+  if (edgeResult.error) {
+    console.error("[POST /api/follow]", edgeResult.error);
     return NextResponse.json({ error: "Could not follow user" }, { status: 500 });
   }
+
+  // Notify the target — fire and forget
+  void supabaseAdmin.from("notifications").insert({
+    user_id: toId,
+    type: "new_follower",
+    title: "New follower",
+    body: "Someone started following you.",
+    is_read: false,
+  });
 
   return NextResponse.json({ success: true });
 }
@@ -72,15 +80,15 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("graph_edges")
-    .delete()
-    .eq("from_id", fromId)
-    .eq("to_id", toId)
-    .eq("edge_type", "follows");
+  const [edgeResult] = await Promise.all([
+    supabaseAdmin.from("graph_edges").delete()
+      .eq("from_id", fromId).eq("to_id", toId).eq("edge_type", "follows"),
+    supabaseAdmin.from("follows").delete()
+      .eq("follower_id", fromId).eq("following_id", toId),
+  ]);
 
-  if (error) {
-    console.error("[DELETE /api/follow]", error);
+  if (edgeResult.error) {
+    console.error("[DELETE /api/follow]", edgeResult.error);
     return NextResponse.json({ error: "Could not unfollow user" }, { status: 500 });
   }
 
