@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
@@ -141,7 +141,7 @@ function Skeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────────
+// ── Inner search component (needs Suspense for useSearchParams) ───────────────
 const TABS: { id: SearchTab; label: string; icon: typeof MagnifyingGlass }[] = [
   { id: "all",      label: "All",      icon: MagnifyingGlass },
   { id: "events",   label: "Events",   icon: CalendarBlank },
@@ -149,7 +149,7 @@ const TABS: { id: SearchTab; label: string; icon: typeof MagnifyingGlass }[] = [
   { id: "snippets", label: "Snippets", icon: FileText },
 ];
 
-export default function SearchPage() {
+function SearchInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialQ = searchParams.get("q") ?? "";
@@ -352,5 +352,22 @@ export default function SearchPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <main className="page-grid min-h-screen pb-36 md:pb-24">
+        <section className="container-shell px-4 py-6 md:py-10">
+          <div className="mx-auto max-w-2xl">
+            <div className="h-10 w-48 rounded-2xl bg-[var(--bg-muted)] animate-pulse mb-5" />
+            <div className="h-12 rounded-2xl bg-[var(--bg-muted)] animate-pulse" />
+          </div>
+        </section>
+      </main>
+    }>
+      <SearchInner />
+    </Suspense>
   );
 }

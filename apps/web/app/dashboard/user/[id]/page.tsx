@@ -398,11 +398,23 @@ export default function UserProfilePage() {
   const { user: currentUser } = useUser();
   const [tab, setTab] = useState<Tab>("posts");
   const [isFollowing, setIsFollowing] = useState(false);
+
+  const userId = typeof params.id === "string" ? params.id : "ama-k";
+
+  // Redirect Clerk user IDs to /go/[username] if the user has a username
+  useEffect(() => {
+    if (!userId || !userId.startsWith("user_")) return;
+    fetch(`/api/users/${userId}`)
+      .then((r) => r.json())
+      .then((u: { username?: string }) => {
+        if (u.username) router.replace(`/go/${u.username}`);
+      })
+      .catch(() => null);
+  }, [userId, router]);
   const [followLoading, setFollowLoading] = useState(false);
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
 
-  const userId = typeof params.id === "string" ? params.id : "ama-k";
   const isRealUser = isClerkId(userId);
   const isOwnProfile = currentUser?.id === userId;
 
