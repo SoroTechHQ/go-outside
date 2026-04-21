@@ -3,8 +3,10 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { getOrCreateSupabaseUser } from "../../../lib/db/users";
 import { getUserTickets } from "../../../lib/db/tickets";
 import { getEventBySlug } from "../../../lib/db/events";
+import { getUserPulsePoints, getActiveRewards } from "../../../lib/db/rewards";
 import { StackedPastTickets } from "../../../components/wallet/StackedPastTickets";
 import { stackTopMargin } from "../../../components/wallet/stackConfig";
+import { PulseRewardsMini } from "./PulseRewardsMini";
 import type { AttendeeTicket } from "@gooutside/demo-data";
 
 function tierGradient(tier: AttendeeTicket["tier"]) {
@@ -31,11 +33,15 @@ export default async function WalletsPage() {
     );
   }
 
-  const tickets  = await getUserTickets(user.id);
+  const [tickets, pulsePoints, rewards] = await Promise.all([
+    getUserTickets(user.id),
+    getUserPulsePoints(user.id),
+    getActiveRewards(),
+  ]);
+
   const upcoming = tickets.filter((t) => t.status === "active");
   const past      = tickets.filter((t) => t.status === "past");
 
-  // Fetch event data for upcoming tickets
   const upcomingEventMap = new Map(
     await Promise.all(
       upcoming.map(async (t) => {
@@ -49,7 +55,6 @@ export default async function WalletsPage() {
     past.map((t) => getEventBySlug(t.eventSlug).then((ev) => ev ?? undefined))
   );
 
-  // Pulse score from user record (002 migration adds these columns)
   const pulseScore = (user as { pulse_score?: number }).pulse_score ?? 0;
   const pulseTier  = (user as { pulse_tier?: string }).pulse_tier ?? "Explorer";
 
@@ -73,7 +78,7 @@ export default async function WalletsPage() {
               </p>
             </div>
             <Link
-              href="/profile"
+              href="/dashboard/profile"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/60 transition hover:bg-white/12 hover:text-white"
             >
               <ArrowRight size={20} />
@@ -147,6 +152,14 @@ export default async function WalletsPage() {
               </Link>
             </div>
           )}
+        </section>
+
+        {/* ── Pulse Rewards Mini Strip ── */}
+        <section className="mt-9">
+          <PulseRewardsMini
+            balance={pulsePoints.balance}
+            rewards={rewards}
+          />
         </section>
 
         {/* ── Past Tickets ── */}
