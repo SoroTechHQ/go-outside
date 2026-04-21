@@ -12,6 +12,10 @@
     "dev:api": "pnpm --filter @gooutside/api dev",
     "dev:web": "pnpm --filter @gooutside/web dev",
     "dev:admin": "pnpm --filter @gooutside/admin dev",
+    "import:competitor": "node ./apps/web/scripts/import-competitor-events.mjs",
+    "import:competitor:dry": "DRY_RUN=1 node ./apps/web/scripts/import-competitor-events.mjs --dry-run",
+    "import:competitor:retry7": "IMPORT_ONLY_TITLES_FILE='./docs/competitor/retry-7-events.txt' node ./apps/web/scripts/import-competitor-events.mjs",
+    "import:competitor:retry7:dry": "DRY_RUN=1 IMPORT_ONLY_TITLES_FILE='./docs/competitor/retry-7-events.txt' node ./apps/web/scripts/import-competitor-events.mjs --dry-run",
     "test": "pnpm --filter @gooutside/api test",
     "typecheck": "pnpm --filter @gooutside/api typecheck && pnpm --filter @gooutside/demo-data typecheck && pnpm --filter @gooutside/ui typecheck && pnpm --filter @gooutside/web typecheck && pnpm --filter @gooutside/admin typecheck"
   }

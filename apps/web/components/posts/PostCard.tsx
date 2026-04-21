@@ -7,7 +7,7 @@ import Avatar from "boring-avatars";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, Share, Trash, CalendarBlank, LinkSimple } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { avatarUrl as withAvatarTransform } from "../../lib/image-url";
+import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform, getImageUrl } from "../../lib/image-url";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -135,8 +135,14 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
 
       {/* Optional image */}
       {post.image_url && (
-        <div className="relative mt-3 overflow-hidden rounded-xl aspect-[16/9]">
-          <Image src={post.image_url} alt="Post image" fill className="object-cover" />
+        <div className="relative mt-3 overflow-hidden rounded-xl aspect-[16/9] bg-zinc-900">
+          <Image
+            src={getImageUrl(post.image_url, { width: 800, quality: 72, format: "webp" }) ?? post.image_url}
+            alt="Post image"
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="object-cover"
+          />
         </div>
       )}
 
@@ -148,7 +154,12 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
         >
           {post.events.banner_url && (
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg">
-              <Image src={post.events.banner_url} alt={post.events.title} fill className="object-cover" />
+              <Image
+                src={withThumbnailTransform(post.events.banner_url) ?? post.events.banner_url}
+                alt={post.events.title}
+                fill
+                className="object-cover"
+              />
             </div>
           )}
           <div className="min-w-0">

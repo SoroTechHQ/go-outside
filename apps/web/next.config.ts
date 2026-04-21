@@ -79,6 +79,12 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   transpilePackages: ["@gooutside/demo-data", "@gooutside/ui"],
   images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 7,
+    // Srcset breakpoints tuned to the app's actual usage (banners, cards, avatars).
+    // Fewer buckets = fewer network requests and better cache hit rate.
+    deviceSizes: [375, 640, 828, 1080, 1280, 1440, 1920],
+    imageSizes: [36, 64, 128, 256, 384, 512],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "images.pexels.com" },

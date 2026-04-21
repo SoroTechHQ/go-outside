@@ -43,6 +43,26 @@ import {
   type UserSnippet,
 } from "../../../../lib/mock-community";
 
+type RealProfile = {
+  id: string;
+  clerkId: string;
+  name: string;
+  handle: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  pulseScore: number;
+  pulseTier: string;
+  city: string | null;
+  interests: string[];
+  followerCount: number;
+  followingCount: number;
+  ticketsCount: number;
+  isFollowing: boolean;
+  isOwnProfile: boolean;
+  isVerifiedOrganizer: boolean;
+  joinedAt: string;
+};
+
 /* ── Constants ────────────────────────────────────────────────────────────── */
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
@@ -461,10 +481,29 @@ export default function UserProfilePage() {
     }
   }, [isRealUser, router, userId]);
 
-  const { data: user } = useQuery({
+  // Real profile from DB (for Clerk users) — falls back to mock for legacy IDs
+  const { data: realProfile } = useQuery({
+    queryKey: ["user-real-profile", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/profile?clerkId=${userId}`);
+      if (!res.ok) return null;
+      return res.json() as Promise<RealProfile>;
+    },
+    enabled: isRealUser,
+    staleTime: 30_000,
+  });
+
+  // Sync follow state from real profile
+  useEffect(() => {
+    if (realProfile) setIsFollowing(realProfile.isFollowing);
+  }, [realProfile]);
+
+  // Mock profile fallback for non-Clerk IDs
+  const { data: mockProfile } = useQuery({
     queryKey: ["community-profile", userId],
     queryFn: () => getCommunityProfileById(userId) ?? getCommunityProfileById("ama-k")!,
     staleTime: Infinity,
+    enabled: !isRealUser,
   });
 
   const { data: posts = [] } = useQuery({
@@ -492,18 +531,43 @@ export default function UserProfilePage() {
     queryKey: ["user-followers", userId],
     queryFn: () => getUserFollowers(userId),
     staleTime: Infinity,
-    enabled: !!userId,
+    enabled: !!userId && !isRealUser,
   });
 
-  if (!user) return null;
+  // Derive display values — prefer real profile, fall back to mock
+  const displayName    = realProfile?.name ?? mockProfile?.name ?? "User";
+  const displayHandle  = realProfile?.handle ?? mockProfile?.handle ?? "@user";
+  const displayBio     = realProfile?.bio ?? mockProfile?.bio ?? "";
+  const displayAvatar  = realProfile?.avatarUrl ?? mockProfile?.avatarUrl ?? null;
+  const displayCity    = realProfile?.city ?? mockProfile?.location ?? "Accra";
+  const displayPulse   = realProfile?.pulseScore ?? mockProfile?.pulseScore ?? 0;
+  const displayTier    = realProfile?.pulseTier ?? mockProfile?.pulseTier ?? "Explorer";
+  const followerCount  = realProfile?.followerCount ?? mockProfile?.followerCount ?? 0;
+  const followingCount = realProfile?.followingCount ?? mockProfile?.followingCount ?? 0;
+  const ticketsCount   = realProfile?.ticketsCount ?? mockProfile?.eventsAttended ?? 0;
+  const coverUrl       = mockProfile?.coverUrl ?? null;
+  const topCategories  = realProfile?.interests ?? mockProfile?.topCategories ?? [];
+  const joinedAtLabel  = realProfile?.joinedAt
+    ? new Date(realProfile.joinedAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    : (mockProfile?.joinedAt ?? "");
 
-  const tierColor = TIER_COLOR[user.pulseTier] ?? "#4a9f63";
+  if (!realProfile && !mockProfile) return null;
+
+  // Minimal shape for sub-components that still type-expect CommunityProfile
+  const postCardUser = {
+    ...(mockProfile ?? {}),
+    name: displayName,
+    handle: displayHandle,
+    avatarUrl: displayAvatar,
+  } as CommunityProfile;
+
+  const tierColor = TIER_COLOR[displayTier] ?? "#4a9f63";
 
   const profileStats: StatItem[] = [
-    { icon: Ticket,    value: user.eventsAttended, label: "Events",    onClick: () => setTab("been-there") },
-    { icon: Users,     value: user.followerCount,  label: "Followers", onClick: () => setFollowersOpen(true) },
-    { icon: UserCheck, value: user.followingCount, label: "Following", onClick: () => setFollowingOpen(true) },
-    { icon: Lightning, value: user.pulseScore,     label: "XP",        onClick: () => setTab("snippets") },
+    { icon: Ticket,    value: ticketsCount,   label: "Events",    onClick: () => setTab("been-there") },
+    { icon: Users,     value: followerCount,  label: "Followers", onClick: () => setFollowersOpen(true) },
+    { icon: UserCheck, value: followingCount, label: "Following", onClick: () => setFollowingOpen(true) },
+    { icon: Lightning, value: displayPulse,   label: "XP",        onClick: () => setTab("snippets") },
   ];
 
   return (
@@ -511,8 +575,8 @@ export default function UserProfilePage() {
 
       {/* ── Cover header ────────────────────────────────────────────────── */}
       <div className="relative h-[200px] w-full overflow-hidden md:h-[240px]">
-        {user.coverUrl ? (
-          <Image src={user.coverUrl} alt="Cover" fill className="object-cover object-center" priority />
+        {coverUrl ? (
+          <Image src={coverUrl} alt="Cover" fill className="object-cover object-center" priority />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10]" />
         )}
@@ -531,7 +595,7 @@ export default function UserProfilePage() {
               className="rounded-full border border-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm"
               style={{ backgroundColor: `${tierColor}22`, borderColor: `${tierColor}40` }}
             >
-              {user.pulseTier}
+              {displayTier}
             </span>
             <button className="flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 active:scale-95">
               <DotsThreeVertical size={17} weight="bold" />
@@ -554,13 +618,13 @@ export default function UserProfilePage() {
                   boxShadow: `0 0 0 3px var(--bg-base), 0 0 0 5px ${tierColor}55`,
                 }}
               >
-                {user.avatarUrl ? (
-                  <Image src={withAvatarTransform(user.avatarUrl) ?? user.avatarUrl} alt={user.name} width={84} height={84} className="h-full w-full object-cover" />
+                {displayAvatar ? (
+                  <Image src={withAvatarTransform(displayAvatar) ?? displayAvatar} alt={displayName} width={84} height={84} className="h-full w-full object-cover" />
                 ) : (
-                  <Avatar size={84} name={user.name} variant="beam" colors={AVATAR_COLORS} />
+                  <Avatar size={84} name={displayName} variant="beam" colors={AVATAR_COLORS} />
                 )}
               </div>
-              <span className={`absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-[var(--bg-base)] ${user.isOnline ? "bg-[#4a9f63]" : "bg-[#555]"}`} />
+              <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-[var(--bg-base)] bg-[#555]" />
             </div>
           </div>
 
@@ -569,33 +633,35 @@ export default function UserProfilePage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="font-display text-[22px] font-bold italic leading-tight text-[var(--text-primary)] md:text-[26px]">
-                  {user.name}
+                  {displayName}
                 </h1>
-                {user.followerCount > 200 && (
+                {followerCount > 200 && (
                   <CheckCircle size={18} weight="fill" className="text-[#4a9f63]" />
                 )}
               </div>
-              <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">{user.handle}</p>
+              <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">{displayHandle}</p>
 
-              {user.bio && (
+              {displayBio && (
                 <p className="mt-3 max-w-[480px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                  {user.bio}
+                  {displayBio}
                 </p>
               )}
 
               <div className="mt-2.5 flex flex-wrap items-center gap-3">
-                {user.location && (
+                {displayCity && (
                   <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
-                    <MapPin size={11} />{user.location}
+                    <MapPin size={11} />{displayCity}
                   </span>
                 )}
-                <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
-                  <CalendarBlank size={11} />Joined {user.joinedAt}
-                </span>
+                {joinedAtLabel && (
+                  <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
+                    <CalendarBlank size={11} />Joined {joinedAtLabel}
+                  </span>
+                )}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {user.topCategories.map((cat) => (
+                {topCategories.map((cat) => (
                   <span key={cat} className="rounded-full border border-[#4a9f63]/30 bg-[#4a9f63]/10 px-3 py-1 text-[10px] font-medium text-[#4a9f63]">
                     {cat}
                   </span>
@@ -636,7 +702,7 @@ export default function UserProfilePage() {
 
           {/* Pulse card */}
           <div className="py-4">
-            <PulseCard score={user.pulseScore} tier={user.pulseTier} tierColor={tierColor} />
+            <PulseCard score={displayPulse} tier={displayTier} tierColor={tierColor} />
           </div>
 
           {/* ── Tab bar ────────────────────────────────────────────────── */}
@@ -663,7 +729,7 @@ export default function UserProfilePage() {
             {tab === "posts" && (
               <div className="space-y-3">
                 {posts.length > 0 ? (
-                  posts.map((p) => <PostCard key={p.id} post={p} user={user} />)
+                  posts.map((p) => <PostCard key={p.id} post={p} user={postCardUser} />)
                 ) : (
                   <div className="flex flex-col items-center py-16 text-center">
                     <PencilLine size={28} className="text-[var(--text-tertiary)]" />
@@ -797,7 +863,7 @@ export default function UserProfilePage() {
                     onClick={() => setFollowersOpen(true)}
                     className="flex w-full items-center justify-center gap-0.5 pt-1 text-[10px] font-semibold text-[#4a9f63] hover:underline"
                   >
-                    See all {user.followerCount.toLocaleString()} <ArrowRight size={10} />
+                    See all {followerCount.toLocaleString()} <ArrowRight size={10} />
                   </button>
                 )}
               </div>
@@ -807,10 +873,10 @@ export default function UserProfilePage() {
               <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Scene Profile</p>
               <div className="space-y-1.5">
                 {[
-                  { label: "Tier", value: user.pulseTier, color: tierColor },
-                  { label: "Events", value: `${user.eventsAttended} attended`, color: undefined },
-                  { label: "City", value: user.location, color: undefined },
-                  { label: "Status", value: user.isOnline ? "Active" : "Offline", color: user.isOnline ? "#4a9f63" : undefined },
+                  { label: "Tier", value: displayTier, color: tierColor },
+                  { label: "Events", value: `${ticketsCount} attended`, color: undefined },
+                  { label: "City", value: displayCity ?? "Accra", color: undefined },
+                  { label: "Status", value: "Active", color: "#4a9f63" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="flex items-center justify-between">
                     <span className="text-[11px] text-[var(--text-tertiary)]">{label}</span>
@@ -828,13 +894,13 @@ export default function UserProfilePage() {
       <PeopleSheet
         open={followersOpen}
         onClose={() => setFollowersOpen(false)}
-        title={`Followers · ${user.followerCount.toLocaleString()}`}
+        title={`Followers · ${followerCount.toLocaleString()}`}
         people={followers}
       />
       <PeopleSheet
         open={followingOpen}
         onClose={() => setFollowingOpen(false)}
-        title={`Following · ${user.followingCount}`}
+        title={`Following · ${followingCount}`}
         people={MOCK_FOLLOWING.filter((f) => f.type === "person").map((f) => ({
           id: f.id,
           name: f.name,
