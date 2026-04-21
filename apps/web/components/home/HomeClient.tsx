@@ -30,6 +30,7 @@ import {
 } from "../../hooks/useEventsQuery";
 import { WhyThisButton } from "../ai/WhyThisButton";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
+import { useQueryClient } from "@tanstack/react-query";
 
 // ── Unsplash avatar pool (social proof) ──────────────────────────────────────
 const AVATAR_POOL = [
@@ -144,6 +145,33 @@ function CardHoverActions({ event }: { event: FeedEventItem }) {
   );
 }
 
+// ── Hover prefetch for event detail ──────────────────────────
+
+function useHoverPrefetch(slug: string) {
+  const qc = useQueryClient();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const onMouseEnter = () => {
+    timerRef.current = setTimeout(() => {
+      void qc.prefetchQuery({
+        queryKey:  ["event", slug],
+        queryFn:   async () => {
+          const res = await fetch(`/api/events/${slug}`);
+          if (!res.ok) return null;
+          return res.json();
+        },
+        staleTime: 5 * 60_000,
+      });
+    }, 800);
+  };
+
+  const onMouseLeave = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
+
+  return { onMouseEnter, onMouseLeave };
+}
+
 // ── ImageCard — main event card with real DB banner ───────────
 
 function ImageCard({
@@ -155,6 +183,7 @@ function ImageCard({
   feedIndex?: number;
   onCardClick?: () => void;
 }) {
+  const { onMouseEnter, onMouseLeave } = useHoverPrefetch(event.slug);
   // Real banner from Supabase Storage, with category-colour fallback
   const bannerUrl = event.bannerUrl || event.gallery?.[0];
   // Gallery images from DB (up to 4 extra slots)
@@ -175,6 +204,8 @@ function ImageCard({
       className="group w-full min-w-0 cursor-pointer overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)] transition active:scale-[0.99] hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]"
       onClick={onCardClick}
       onKeyDown={(e) => e.key === "Enter" && onCardClick?.()}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       role="button"
       tabIndex={0}
     >
