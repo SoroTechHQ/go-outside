@@ -5,7 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lightning, X } from "@phosphor-icons/react";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabaseBrowser } from "../../lib/supabase-browser";
 
 const TIER_COLOR: Record<string, string> = {
   Newcomer:      "#888888",
@@ -48,12 +48,8 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
   // Supabase Realtime — watch for pulse score changes
   useEffect(() => {
     if (!clerkId) return;
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
 
-    const channel = supabase
+    const channel = supabaseBrowser
       .channel(`pulse:${clerkId}`)
       .on(
         "postgres_changes",
@@ -63,8 +59,8 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
           table: "users",
           filter: `clerk_id=eq.${clerkId}`,
         },
-        (payload) => {
-          const newScore = (payload.new as { pulse_score: number }).pulse_score;
+        (payload: { new: Record<string, unknown> }) => {
+          const newScore = payload.new.pulse_score as number;
           if (prevScore.current !== null && newScore > prevScore.current) {
             const delta = newScore - prevScore.current;
             setFloatDelta(delta);
@@ -78,7 +74,7 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
       )
       .subscribe();
 
-    return () => { void supabase.removeChannel(channel); };
+    return () => { void supabaseBrowser.removeChannel(channel); };
   }, [clerkId, queryClient]);
 
   // Track prevScore after query loads

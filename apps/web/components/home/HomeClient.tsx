@@ -28,6 +28,8 @@ import {
   getFilteredEvents,
   type FeedEventItem,
 } from "../../hooks/useEventsQuery";
+import { WhyThisButton } from "../ai/WhyThisButton";
+import { WeekendAssistant } from "../ai/WeekendAssistant";
 
 // ── Unsplash avatar pool (social proof) ──────────────────────────────────────
 const AVATAR_POOL = [
@@ -298,9 +300,12 @@ function ImageCard({
             {event.locationLine}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-[var(--brand-dim)] px-3.5 py-1.5 text-[0.82rem] font-semibold text-[var(--brand)]">
-          {event.priceLabel}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <WhyThisButton eventId={event.id} variant="overlay" />
+          <span className="rounded-full bg-[var(--brand-dim)] px-3.5 py-1.5 text-[0.82rem] font-semibold text-[var(--brand)]">
+            {event.priceLabel}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -594,6 +599,9 @@ export function HomeClient() {
                   initial={{ opacity: 0, x: 24 }}
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
+                  {/* Weekend AI assistant */}
+                  <WeekendAssistant />
+
                   {/* Pulse score widget */}
                   <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
                     <div className="flex items-center justify-between gap-3">

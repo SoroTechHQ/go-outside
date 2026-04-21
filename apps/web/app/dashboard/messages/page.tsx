@@ -9,7 +9,7 @@ import {
   SpinnerGap,
   X,
 } from "@phosphor-icons/react";
-import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import React, { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import type { Channel as StreamChannel, UserFilters, UserResponse, UserSort } from "stream-chat";
@@ -722,7 +722,7 @@ function StreamMessagesView({
   if (bootError) return <MessagesConfigError detail={bootError} />;
   if (!client) return <MessagesLoadingState label="Connecting to chat…" />;
 
-  const streamTheme = {
+  const streamTheme: React.CSSProperties = {
     "--str-chat__primary-color":                "#5FBF2A",
     "--str-chat__own-message-bubble-color":     "#ffffff",
     "--str-chat__own-message-bubble-background-color": "#5FBF2A",
@@ -730,13 +730,13 @@ function StreamMessagesView({
     "--str-chat__message-bubble-background-color": "#F0F0F0",
     "--str-chat__border-radius-md":             "18px",
     "--str-chat__border-radius-sm":             "12px",
-  };
+  } as React.CSSProperties;
 
   return (
     <main className="page-grid go-stream-page">
       <div className="go-stream-frame h-full overflow-hidden">
-        <div className="go-stream-inner h-full overflow-hidden">
-          <Chat client={client} customStyles={streamTheme}>
+        <div className="go-stream-inner h-full overflow-hidden" style={streamTheme}>
+          <Chat client={client}>
             <MessagesShell dmUserId={dmUserId} identity={identity} starterChannelCid={starterChannelCid} />
           </Chat>
         </div>

@@ -20,10 +20,10 @@ import {
   Ticket,
   Users,
   UsersFour,
-  SealCheck,
 } from "@phosphor-icons/react";
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../../lib/image-url";
 import { getPulseProgress, getNextTier, getTierInfo, type PulseTier } from "../../dashboard/profile/types";
+import { PostFeed } from "../../../components/posts/PostFeed";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -116,18 +116,6 @@ function StatsRow({
   );
 }
 
-// ── Posts tab placeholder ──────────────────────────────────────────────────────
-function PostsTab() {
-  return (
-    <div className="flex flex-col items-center gap-3 py-14 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bg-muted)]">
-        <SealCheck size={24} className="text-[var(--text-tertiary)]" />
-      </div>
-      <p className="text-[14px] font-semibold text-[var(--text-primary)]">No posts yet</p>
-      <p className="text-[12px] text-[var(--text-tertiary)] max-w-[200px]">Posts from this user will appear here.</p>
-    </div>
-  );
-}
 
 // ── Been There tab ─────────────────────────────────────────────────────────────
 function BeenThereTab({ clerkId }: { clerkId: string }) {
@@ -483,7 +471,14 @@ export default function GoProfileClient({
 
         {/* Tab content */}
         <div className="mt-5">
-          {activeTab === "posts"      && <PostsTab />}
+          {activeTab === "posts" && (
+            <PostFeed
+              profileClerkId={clerkId}
+              profileName={name}
+              profileAvatarUrl={avatarUrl}
+              isOwnProfile={isOwnProfile}
+            />
+          )}
           {activeTab === "been-there" && <BeenThereTab clerkId={clerkId} />}
           {activeTab === "about"      && (
             <AboutTab
