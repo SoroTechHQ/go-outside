@@ -227,7 +227,9 @@ export function adaptEvent(row: DbEventRow): EventItem {
     })),
     gallery: row.gallery_urls ?? [],
     tags:    row.tags ?? [],
-  };
+    // Extra DB fields used for server-side scoring (not in EventItem type, cast at use site)
+    ...({ startDatetime: row.start_datetime, avgRating: row.avg_rating } as unknown as object),
+  } as EventItem;
 }
 
 // ── Ticket adapter ───────────────────────────────────────────────────────────

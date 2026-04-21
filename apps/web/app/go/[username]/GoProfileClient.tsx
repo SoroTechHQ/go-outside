@@ -24,6 +24,7 @@ import {
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../../lib/image-url";
 import { getPulseProgress, getNextTier, getTierInfo, type PulseTier } from "../../dashboard/profile/types";
 import { PostFeed } from "../../../components/posts/PostFeed";
+import { useFollowMutation, useFollowStatus } from "../../../hooks/useFollow";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -258,23 +259,13 @@ export default function GoProfileClient({
   const isOwnProfile = currentUser?.id === clerkId;
   const tierColor = TIER_COLOR[pulseTier] ?? "#4a9f63";
   const [copied, setCopied] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("posts");
 
   const resolvedAvatar = withAvatarTransform(avatarUrl);
   const resolvedCover  = withCoverTransform(coverUrl);
 
-  const { data: followStatus } = useQuery({
-    queryKey: ["follow-status", clerkId],
-    queryFn: async () => {
-      const res = await fetch(`/api/follow/status?targetId=${clerkId}`);
-      if (!res.ok) return { following: false, mutual: false };
-      return res.json() as Promise<{ following: boolean; mutual: boolean }>;
-    },
-    enabled: !!currentUser && !isOwnProfile,
-    staleTime: 30_000,
-  });
+  const { data: followStatus } = useFollowStatus(clerkId, !!currentUser && !isOwnProfile);
+  const followMutation = useFollowMutation(clerkId);
 
   const { data: profileStats } = useQuery({
     queryKey: ["profile-stats", clerkId],
@@ -289,25 +280,11 @@ export default function GoProfileClient({
   const resolvedEvents    = profileStats?.events_attended   ?? eventsAttended;
   const resolvedFollowers = profileStats?.followers_count   ?? followersCount;
   const resolvedFollowing = profileStats?.following_count   ?? followingCount;
-  const resolvedFollowing2 = followStatus?.following ?? isFollowing;
+  const isFollowing = followStatus?.following ?? false;
 
-  const handleFollow = useCallback(async () => {
-    if (followLoading) return;
-    setFollowLoading(true);
-    const next = !isFollowing;
-    setIsFollowing(next);
-    try {
-      await fetch("/api/follow", {
-        method: next ? "POST" : "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetClerkId: clerkId }),
-      });
-    } catch {
-      setIsFollowing(!next);
-    } finally {
-      setFollowLoading(false);
-    }
-  }, [clerkId, followLoading, isFollowing]);
+  const handleFollow = useCallback(() => {
+    followMutation.mutate(!isFollowing);
+  }, [followMutation, isFollowing]);
 
   async function handleShare() {
     const url = `https://gooutside.club/go/${username}`;
@@ -400,14 +377,14 @@ export default function GoProfileClient({
                 </button>
                 <button
                   onClick={handleFollow}
-                  disabled={followLoading}
+                  disabled={followMutation.isPending}
                   className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold shadow-sm transition active:scale-95 disabled:opacity-60 ${
-                    (followStatus?.following || isFollowing)
+                    isFollowing
                       ? "border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)]"
                       : "bg-[#4a9f63] text-white shadow-[0_4px_16px_rgba(74,159,99,0.35)]"
                   }`}
                 >
-                  {(followStatus?.following || isFollowing)
+                  {isFollowing
                     ? <><UserMinus size={13} /> Following</>
                     : <><UserPlus size={13} /> Follow</>
                   }
