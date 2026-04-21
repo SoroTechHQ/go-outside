@@ -15,6 +15,7 @@ import {
   BookmarkSimple,
 } from "@phosphor-icons/react";
 import { thumbnailUrl as withThumbnailTransform, bannerUrl as withBannerTransform } from "../../../lib/image-url";
+import MobileUnifiedSearch from "../../../components/search/MobileUnifiedSearch";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type TrendingEvent = {
@@ -184,7 +185,7 @@ export default function TrendingPage() {
 
   return (
     <main className="page-grid min-h-screen pb-28">
-      <div className="container-shell px-4 py-6 md:py-10">
+      <div className="container-shell px-4 pb-6 pt-8 md:py-10">
         <div className="mx-auto max-w-2xl">
 
           {/* Header */}
@@ -201,7 +202,16 @@ export default function TrendingPage() {
           </div>
 
           {/* Search */}
-          <div className="mb-5 flex items-center gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2.5">
+          <div className="mb-5 md:hidden">
+            <MobileUnifiedSearch
+              emptyLabel="Search trending events or topics…"
+              onSearch={setSearch}
+              subtitle="Trending events, organizers, topics"
+              value={search}
+            />
+          </div>
+
+          <div className="mb-5 hidden items-center gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2.5 md:flex">
             <MagnifyingGlass size={15} weight="bold" className="text-[var(--text-tertiary)] shrink-0" />
             <input
               className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"

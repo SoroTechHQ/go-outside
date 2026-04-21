@@ -13,6 +13,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
+import MobileUnifiedSearch from "../../components/search/MobileUnifiedSearch";
 import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform } from "../../lib/image-url";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
@@ -185,7 +186,7 @@ function SearchInner() {
 
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
-      <section className="container-shell px-4 py-6 md:py-10">
+      <section className="container-shell px-4 pb-6 pt-8 md:py-10">
         <div className="mx-auto max-w-3xl">
           <h1 className="font-display text-3xl italic text-[var(--text-primary)] mb-6 md:text-4xl">
             Search
@@ -201,27 +202,18 @@ function SearchInner() {
           </div>
 
           {/* Mobile simple input */}
-          <div className="relative md:hidden mb-6">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const fd = new FormData(e.currentTarget);
-                const q = fd.get("q") as string;
-                router.push(`/search?q=${encodeURIComponent(q)}`);
+          <div className="relative mb-6 md:hidden">
+            <MobileUnifiedSearch
+              emptyLabel="Search events, people, snippets…"
+              onSearch={(nextQuery) => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (nextQuery) params.set("q", nextQuery);
+                else params.delete("q");
+                router.push(params.toString() ? `/search?${params.toString()}` : "/search");
               }}
-            >
-              <div className="flex items-center gap-2.5 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-3 shadow-sm focus-within:border-[#5FBF2A]/40 transition">
-                <MagnifyingGlass size={16} weight="bold" className="text-[var(--text-tertiary)] shrink-0" />
-                <input
-                  name="q"
-                  defaultValue={initialQ}
-                  className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-                  placeholder="Search events, people, snippets…"
-                  type="search"
-                  autoFocus
-                />
-              </div>
-            </form>
+              subtitle="Events, people, snippets"
+              value={initialQ}
+            />
           </div>
 
           {/* Tabs */}

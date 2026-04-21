@@ -12,6 +12,7 @@ import {
 import { categories, events, getCategoryEmoji } from "@gooutside/demo-data";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AnimatedSearchPlaceholder from "./AnimatedSearchPlaceholder";
+import MobileUnifiedSearch from "./MobileUnifiedSearch";
 
 type HomeSearchHeroMode = "expanded" | "compact" | "mini" | "mobile";
 
@@ -315,7 +316,6 @@ export function HomeSearchHero({
   const [where, setWhere] = useState(searchParams.get("q") ?? "");
   const [when, setWhen] = useState(searchParams.get("when") ?? "");
   const [isWhereFocused, setIsWhereFocused] = useState(false);
-  const [mobileOverlayOpen, setMobileOverlayOpen] = useState(false);
 
   useEffect(() => {
     setWhere(searchParams.get("q") ?? "");
@@ -356,10 +356,19 @@ export function HomeSearchHero({
   if (isMobile) {
     return (
       <div className={`w-full ${className}`.trim()}>
-        <MobileSearchPill onOpen={() => setMobileOverlayOpen(true)} />
-        <MobileSearchOverlay
-          open={mobileOverlayOpen}
-          onClose={() => setMobileOverlayOpen(false)}
+        <MobileUnifiedSearch
+          emptyLabel="Search events…"
+          onSearch={(nextQuery) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (nextQuery) params.set("q", nextQuery);
+            else params.delete("q");
+            if (when.trim()) params.set("when", when.trim());
+            else params.delete("when");
+            const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+            router.push(nextUrl, { scroll: false });
+          }}
+          subtitle="Accra · Trending events near you"
+          value={where}
         />
       </div>
     );

@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 // Clean URL rewrites: /messages → /dashboard/messages (URL stays clean)
 const DASHBOARD_REWRITES = [
   "messages",
-  "activity",
   "trending",
   "notifications",
   "saved",
@@ -39,6 +38,20 @@ const nextConfig: NextConfig = {
         destination: `/dashboard/${segment}/:path*`,
       },
     ]);
+  },
+  async redirects() {
+    return [
+      {
+        source: "/activity",
+        destination: "/notifications",
+        permanent: false,
+      },
+      {
+        source: "/dashboard/activity",
+        destination: "/dashboard/notifications",
+        permanent: false,
+      },
+    ];
   },
 };
 

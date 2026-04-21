@@ -485,7 +485,7 @@ export function HomeClient() {
     <>
       <div className="w-full overflow-x-hidden">
         <main className="page-grid min-h-screen overflow-x-hidden pb-32 md:pb-16">
-          <div className="px-3 pt-4 md:hidden">
+          <div className="px-3 pt-5 md:hidden">
             <HomeSearchHero mode="mobile" />
           </div>
 

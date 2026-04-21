@@ -153,7 +153,7 @@ export default async function DashboardPage() {
                 Events you may want to revisit before they sell out.
               </p>
             </div>
-            <Link className="text-sm font-semibold text-[var(--brand)]" href="/activity">
+            <Link className="text-sm font-semibold text-[var(--brand)]" href="/saved">
               See all →
             </Link>
           </div>
