@@ -106,22 +106,17 @@ export function SearchBar({
       className={`relative mx-auto w-full ${isFocused ? "z-50" : ""}`}
       ref={containerRef}
     >
-      <motion.div
-        animate={{
-          height: isFocused ? 64 : isMini ? 50 : isCompact ? 58 : 58,
-          maxWidth: isFocused ? 820 : isMini ? 340 : isCompact ? 680 : 760,
-        }}
-        className={`relative mx-auto flex w-full items-center rounded-full border backdrop-blur-xl transition-colors ${shellBackground} ${shellBorder} ${shellHover} ${
+      <div
+        className={`relative mx-auto flex w-full items-center rounded-full border backdrop-blur-xl transition-[background-color,border-color,box-shadow,max-width,height] duration-300 ease-out ${shellBackground} ${shellBorder} ${shellHover} ${
           isFocused ? "search-focused" : ""
         }`}
         style={{
+          height: isFocused ? 64 : isMini ? 50 : 58,
+          maxWidth: isFocused ? 820 : isMini ? 340 : isCompact ? 680 : 760,
           boxShadow: isFocused
-            ? "0 0 0 4px rgba(var(--brand-rgb),0.10), 0 8px 32px rgba(0,0,0,0.24)"
-            : isSmallState
-              ? "0 16px 36px rgba(0,0,0,0.28), 0 0 0 1px rgba(var(--brand-rgb),0.1), 0 0 28px rgba(var(--brand-rgb),0.12)"
-              : "0 10px 28px rgba(0,0,0,0.24)",
+            ? "0 0 0 3px rgba(var(--brand-rgb),0.10), 0 8px 24px rgba(0,0,0,0.20)"
+            : "0 4px 16px rgba(0,0,0,0.16)",
         }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       >
         <div
           className={`flex shrink-0 items-center justify-center rounded-full transition-all ${
@@ -131,12 +126,6 @@ export function SearchBar({
               ? "bg-[rgba(var(--brand-rgb),0.12)] text-[var(--brand)]"
               : "bg-[var(--bg-muted)] text-[var(--text-tertiary)]"
           }`}
-          style={{
-            boxShadow:
-              isFocused || isSmallState
-                ? "0 0 0 1px rgba(var(--brand-rgb),0.24), 0 0 30px rgba(var(--brand-rgb),0.22), inset 0 0 18px rgba(var(--brand-rgb),0.12)"
-                : "none",
-          }}
         >
           <MagnifyingGlass size={isMini ? 16 : 18} weight="bold" />
         </div>
@@ -196,7 +185,7 @@ export function SearchBar({
             <SlidersHorizontal size={16} weight="bold" />
           </button>
         ) : null}
-      </motion.div>
+      </div>
 
       <AnimatePresence>
         {isFocused ? (
