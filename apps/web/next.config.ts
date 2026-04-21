@@ -23,6 +23,18 @@ function toOrigin(value: string | undefined) {
   }
 }
 
+function getClerkFrontendApiOrigin(): string | null {
+  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+  const match = key.match(/^pk_(?:live|test)_(.+)$/);
+  if (!match?.[1]) return null;
+  try {
+    const decoded = Buffer.from(match[1], "base64").toString("utf8").replace(/\$$/, "");
+    return `https://${decoded}`;
+  } catch {
+    return null;
+  }
+}
+
 function buildContentSecurityPolicy() {
   const connectSources = new Set<string>([
     "'self'",
@@ -46,14 +58,21 @@ function buildContentSecurityPolicy() {
     "https://*.clerk.accounts.dev",
   ]);
 
-  if (process.env.NODE_ENV !== "production") {
-    scriptSources.add("'unsafe-eval'");
-  }
+  // Always allow eval — Clerk's JS SDK requires it in all environments
+  scriptSources.add("'unsafe-eval'");
 
   const supabaseOrigin = toOrigin(process.env.NEXT_PUBLIC_SUPABASE_URL);
   if (supabaseOrigin) {
     connectSources.add(supabaseOrigin);
     frameSources.add(supabaseOrigin);
+  }
+
+  // Clerk custom domain (e.g. clerk.gooutside.club) — derived from publishable key
+  const clerkOrigin = getClerkFrontendApiOrigin();
+  if (clerkOrigin) {
+    frameSources.add(clerkOrigin);
+    scriptSources.add(clerkOrigin);
+    connectSources.add(clerkOrigin);
   }
 
   return [
