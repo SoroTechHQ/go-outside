@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -10,6 +11,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { getEventImage, type Category, type EventItem, type Organizer } from "@gooutside/demo-data";
+import { useViewportTrack } from "../../hooks/useViewportTrack";
 
 export type EventSignal = {
   ticker: string;
@@ -49,6 +51,9 @@ export function HomeEventCard({
   onSave,
   signal,
 }: HomeEventCardProps) {
+  const cardRef = useRef<HTMLElement>(null);
+  useViewportTrack(cardRef, { eventId: event.id, source: "feed" });
+
   let longPressTimer: number | undefined;
 
   const isFeatured = variant === "featured";
@@ -72,6 +77,7 @@ export function HomeEventCard({
 
   return (
     <motion.article
+      ref={cardRef}
       animate={{ opacity: 1, scale: 1, x: 0 }}
       className={`group relative overflow-hidden rounded-[24px] cursor-pointer transition-all duration-300 ${sizeClasses} ${
         isActive

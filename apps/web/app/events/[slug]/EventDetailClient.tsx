@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useEventDwell } from "../../../hooks/useEventDwell";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -117,6 +118,7 @@ export function EventDetailClient({
   event: EventItem;
   organizer: Organizer;
 }) {
+  useEventDwell(event.id);
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
