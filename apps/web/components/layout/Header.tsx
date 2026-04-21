@@ -11,6 +11,7 @@ import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
 import { useAppShell } from "./AppShellContext";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { useCart } from "../cart/CartContext";
+import { PulseScorePillConnected } from "../pulse/PulseScorePill";
 
 type HeaderProps = {
   appShell?: boolean;
@@ -132,6 +133,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
               GoOutside
             </Link>
             <div className="flex items-center gap-1.5">
+              <PulseScorePillConnected />
               <NotificationBell />
               {totalCount > 0 && (
                 <button
@@ -205,6 +207,7 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             GoOutside
           </Link>
           <div className="flex items-center gap-1.5">
+            <PulseScorePillConnected />
             <Link
               className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
               href="/search"
