@@ -13,6 +13,7 @@ import {
   HeartStraight,
   Images,
   MapPin,
+  Sparkle,
   TrendUp,
   UsersThree,
   Warning,
@@ -27,10 +28,10 @@ import {
   useSavedEvents,
   getFilteredEvents,
 } from "../../hooks/useEventsQuery";
-import { WhyThisButton } from "../ai/WhyThisButton";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FeedEventItem } from "../../lib/app-contracts";
+import { pickSectionHeader } from "../../lib/feed-sections";
 
 // ── Unsplash avatar pool (social proof) ──────────────────────────────────────
 const AVATAR_POOL = [
@@ -64,12 +65,6 @@ const FRIEND_CLUSTERS = [
 const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 
 const CARDS_PER_SECTION = 3;
-
-const FEED_SECTIONS = [
-  { eyebrow: "For you", title: "Picked just for you" },
-  { eyebrow: "Happening now", title: "What's happening here" },
-  { eyebrow: "You'll love this", title: "Things you'll like" },
-];
 
 // ── Scarcity pill from DB data ────────────────────────────────
 
@@ -189,13 +184,21 @@ function ImageCard({
   // Gallery images from DB (up to 4 extra slots)
   const galleryImages = event.gallery?.slice(1, 5) ?? [];
 
-  const socialProof = SOCIAL_PROOF_SETS[feedIndex % SOCIAL_PROOF_SETS.length]!;
+  const fallbackProof = SOCIAL_PROOF_SETS[feedIndex % SOCIAL_PROOF_SETS.length]!;
+  const friendNames = event._friendNames ?? [];
+  const socialProofText = friendNames.length > 0
+    ? friendNames.length === 1
+      ? `${friendNames[0]} is going`
+      : `${friendNames[0]} + ${friendNames.length - 1} friend${friendNames.length > 2 ? "s" : ""} going`
+    : fallbackProof.text;
+  const avatarCount = friendNames.length > 0 ? Math.min(friendNames.length, 3) : fallbackProof.avatarCount;
+
   const synopsis = event.shortDescription ?? "";
   const truncated = synopsis.length > 120 ? synopsis.slice(0, 120).trimEnd() + "…" : synopsis;
 
   const avatarStart = (feedIndex * 2) % AVATAR_POOL.length;
   const avatars = Array.from(
-    { length: socialProof.avatarCount },
+    { length: avatarCount },
     (_, i) => AVATAR_POOL[(avatarStart + i) % AVATAR_POOL.length]!,
   );
 
@@ -232,8 +235,9 @@ function ImageCard({
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.93)_0%,rgba(0,0,0,0.5)_42%,rgba(0,0,0,0.06)_68%,transparent_100%)]" />
 
-          {/* Category pill */}
-          <div className="absolute left-3 top-3 rounded-full border border-white/18 bg-black/28 px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
+          {/* Category pill — AI-picked events get a Sparkle accent */}
+          <div className={`absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm ${event._aiPicked ? "border-[var(--brand)]/50 bg-[var(--brand)]/25" : "border-white/18 bg-black/28"}`}>
+            {event._aiPicked && <Sparkle size={9} weight="fill" className="text-[var(--brand)] shrink-0" />}
             {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
           </div>
 
@@ -252,7 +256,7 @@ function ImageCard({
                 ))}
               </div>
               <span className="rounded-full bg-black/52 px-2 py-0.5 text-[0.62rem] font-semibold text-white backdrop-blur-sm">
-                {socialProof.text}
+                {socialProofText}
               </span>
             </div>
 
@@ -332,7 +336,6 @@ function ImageCard({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <WhyThisButton eventId={event.id} variant="overlay" />
           <span className="rounded-full bg-[var(--brand-dim)] px-3.5 py-1.5 text-[0.82rem] font-semibold text-[var(--brand)]">
             {event.priceLabel}
           </span>
@@ -452,6 +455,24 @@ export function HomeClient() {
     [visibleEvents],
   );
 
+  // Dynamic section headers — seeded per page load, stable during scroll
+  const sessionSeed = useMemo(() => Math.floor(Date.now() / 1000 / 60), []);
+  const now = useMemo(() => new Date(), []);
+
+  const sectionHeaders = useMemo(() => {
+    const numSections = Math.ceil(visibleEvents.length / CARDS_PER_SECTION);
+    const hour = now.getHours();
+    const day = now.getDay();
+    return Array.from({ length: numSections }, (_, sectionIdx) => {
+      const sectionEvents = visibleEvents.slice(
+        sectionIdx * CARDS_PER_SECTION,
+        (sectionIdx + 1) * CARDS_PER_SECTION,
+      );
+      const friendNames = [...new Set(sectionEvents.flatMap((e) => e._friendNames ?? []))];
+      return pickSectionHeader(sectionIdx, sessionSeed, friendNames, hour, day);
+    });
+  }, [visibleEvents, sessionSeed, now]);
+
   // Sync pane width to AppShellContext
   useEffect(() => { setPeekPanelWidth(selectedEvent ? paneWidth : 0); }, [selectedEvent, paneWidth, setPeekPanelWidth]);
   useEffect(() => () => { setPeekPanelWidth(0); }, [setPeekPanelWidth]);
@@ -562,10 +583,10 @@ export function HomeClient() {
                 {!isLoading && visibleEvents.map((event, idx) => {
                   const isFirstInSection = idx % CARDS_PER_SECTION === 0;
                   const sectionIdx = Math.floor(idx / CARDS_PER_SECTION);
-                  const section = FEED_SECTIONS[sectionIdx % FEED_SECTIONS.length]!;
+                  const section = sectionHeaders[sectionIdx];
                   return (
                     <Fragment key={event._feedKey}>
-                      {isFirstInSection && (
+                      {isFirstInSection && section && (
                         <motion.div
                           className={idx === 0 ? "mb-1 mt-4" : "mb-1 mt-10"}
                           initial={{ opacity: 0, y: 10 }}
@@ -574,11 +595,14 @@ export function HomeClient() {
                           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                         >
                           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
-                            {section.eyebrow}
+                            {section.resolvedEyebrow}
                           </p>
                           <h2 className="mt-1.5 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-[1.85rem]">
-                            {section.title}
+                            {section.resolvedTitle}
                           </h2>
+                          {section.subtext && (
+                            <p className="mt-1 text-[0.8rem] text-[var(--text-secondary)]">{section.subtext}</p>
+                          )}
                         </motion.div>
                       )}
                       <motion.div
