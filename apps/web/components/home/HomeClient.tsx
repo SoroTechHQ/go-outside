@@ -582,7 +582,8 @@ export function HomeClient() {
               </section>
             </div>
 
-            {/* ── Right sidebar ── */}
+            {/* ── Right sidebar — desktop only (xl+) ── */}
+            <div className="hidden xl:block">
             <AnimatePresence initial={false}>
               {!isPaneOpen ? (
                 <motion.aside
@@ -688,6 +689,7 @@ export function HomeClient() {
                 </motion.aside>
               ) : null}
             </AnimatePresence>
+            </div>
           </div>
         </main>
       </div>
