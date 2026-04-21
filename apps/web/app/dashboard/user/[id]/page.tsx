@@ -30,6 +30,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { getEventImage } from "@gooutside/demo-data";
+import { avatarUrl as withAvatarTransform } from "../../../../lib/image-url";
 import {
   getCommunityPastEvents,
   getCommunityProfileById,
@@ -124,7 +125,7 @@ function PeopleSheet({
             <div className="relative shrink-0">
               <div className="overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
                 {person.avatarUrl ? (
-                  <Image src={person.avatarUrl} alt={person.name} width={40} height={40} className="h-full w-full object-cover" />
+                  <Image src={withAvatarTransform(person.avatarUrl) ?? person.avatarUrl} alt={person.name} width={40} height={40} className="h-full w-full object-cover" />
                 ) : (
                   <Avatar size={40} name={person.name} variant="beam" colors={AVATAR_COLORS} />
                 )}
@@ -290,7 +291,7 @@ function PostCard({ post, user }: { post: UserPost; user: CommunityProfile }) {
       <div className="flex items-start gap-3">
         <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 36, height: 36 }}>
           {user.avatarUrl ? (
-            <Image src={user.avatarUrl} alt={user.name} width={36} height={36} className="h-full w-full object-cover" />
+            <Image src={withAvatarTransform(user.avatarUrl) ?? user.avatarUrl} alt={user.name} width={36} height={36} className="h-full w-full object-cover" />
           ) : (
             <Avatar size={36} name={user.name} variant="beam" colors={AVATAR_COLORS} />
           )}
@@ -554,7 +555,7 @@ export default function UserProfilePage() {
                 }}
               >
                 {user.avatarUrl ? (
-                  <Image src={user.avatarUrl} alt={user.name} width={84} height={84} className="h-full w-full object-cover" />
+                  <Image src={withAvatarTransform(user.avatarUrl) ?? user.avatarUrl} alt={user.name} width={84} height={84} className="h-full w-full object-cover" />
                 ) : (
                   <Avatar size={84} name={user.name} variant="beam" colors={AVATAR_COLORS} />
                 )}
@@ -778,7 +779,7 @@ export default function UserProfilePage() {
                     <div className="relative shrink-0">
                       <div className="overflow-hidden rounded-full" style={{ width: 32, height: 32 }}>
                         {f.avatarUrl ? (
-                          <Image src={f.avatarUrl} alt={f.name} width={32} height={32} className="h-full w-full object-cover" />
+                          <Image src={withAvatarTransform(f.avatarUrl) ?? f.avatarUrl} alt={f.name} width={32} height={32} className="h-full w-full object-cover" />
                         ) : (
                           <Avatar size={32} name={f.name} variant="beam" colors={AVATAR_COLORS} />
                         )}

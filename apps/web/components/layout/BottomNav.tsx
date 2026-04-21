@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChartBar,
@@ -13,27 +14,42 @@ import {
 } from "@phosphor-icons/react";
 
 type BottomNavRole = "attendee" | "organizer" | "admin";
-
-type BottomNavProps = {
-  role?: BottomNavRole;
-};
+type BottomNavProps = { role?: BottomNavRole };
 
 type BottomNavItem = {
-  href: string;
-  icon: typeof House;
-  label: string;
-  unread?: boolean;
+  href:   string;
+  icon:   typeof House;
+  label:  string;
+  badge?: number;
 };
 
+// Reads unread count from a global event dispatched by the Stream chat client.
+// The messages page fires `stream:unread` CustomEvent when the count changes.
+function useStreamUnread() {
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const count = (e as CustomEvent<number>).detail ?? 0;
+      setUnread(count);
+    };
+    window.addEventListener("stream:unread", handler);
+    return () => window.removeEventListener("stream:unread", handler);
+  }, []);
+
+  return unread;
+}
+
 export function BottomNav({ role = "attendee" }: BottomNavProps) {
-  const pathname = usePathname();
+  const pathname   = usePathname();
+  const msgUnread  = useStreamUnread();
 
   const items: BottomNavItem[] = [
-    { href: "/", icon: House, label: "Home" },
-    { href: "/trending", icon: Fire, label: "Trending" },
-    { href: "/messages", icon: ChatCircleDots, label: "Messages", unread: true },
-    { href: "/wallets", icon: Wallet, label: "Wallets" },
-    { href: "/profile", icon: UserCircle, label: "Profile" },
+    { href: "/",         icon: House,         label: "Home" },
+    { href: "/trending", icon: Fire,          label: "Trending" },
+    { href: "/messages", icon: ChatCircleDots, label: "Messages", badge: msgUnread },
+    { href: "/wallets",  icon: Wallet,        label: "Wallets" },
+    { href: "/profile",  icon: UserCircle,    label: "Profile" },
   ];
 
   if (role === "organizer" || role === "admin") {
@@ -49,7 +65,7 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
         {items.map((item) => {
           const active =
             item.href === "/"
-              ? pathname === "/"
+              ? pathname === "/" || pathname === "/home"
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
@@ -78,10 +94,10 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
                 <Icon
                   size={21}
                   weight={active ? "fill" : "regular"}
-                    className={`transition-colors duration-150 ${
-                      active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
-                    }`}
-                  />
+                  className={`transition-colors duration-150 ${
+                    active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
+                  }`}
+                />
                 <span
                   className={`max-w-full truncate text-[9px] font-medium transition-colors duration-150 ${
                     active ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"
@@ -91,9 +107,11 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
                 </span>
               </motion.span>
 
-              {/* Unread dot */}
-              {item.unread && !active ? (
-                <span className="absolute right-[calc(50%-16px)] top-2 h-1.5 w-1.5 rounded-full bg-[#22c55e]" />
+              {/* Unread badge */}
+              {item.badge && item.badge > 0 && !active ? (
+                <span className="absolute right-[calc(50%-18px)] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#5FBF2A] px-1 text-[8px] font-bold text-white">
+                  {item.badge > 99 ? "99+" : item.badge}
+                </span>
               ) : null}
             </Link>
           );

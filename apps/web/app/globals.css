@@ -362,17 +362,19 @@ a {
 .go-stream-chat .str-chat {
   --str-chat__active-primary-color: var(--brand);
   --str-chat__border-radius-circle: 999px;
+  --str-chat__border-radius-md: 18px;
+  --str-chat__border-radius-sm: 12px;
   --str-chat__font-family: var(--font-body);
   --str-chat__overlay-color: rgba(15, 17, 15, 0.42);
-  --str-chat__primary-color: var(--brand);
+  --str-chat__primary-color: #5FBF2A;
   --str-chat__secondary-color: var(--bg-surface);
   --str-chat__avatar-background-color: #dfe8df;
   --str-chat__message-max-width: min(76%, 560px);
-  /* Incoming message bubble = iMessage grey */
-  --str-chat__message-bubble-background: #e9e9eb;
-  --str-chat__message-bubble-color: #151515;
-  /* Outgoing message bubble = GoOutside green */
-  --str-chat__own-message-bubble-background: var(--brand);
+  /* Received message bubble — iMessage grey */
+  --str-chat__message-bubble-background: #F0F0F0;
+  --str-chat__message-bubble-color: #111111;
+  /* Sent message bubble — GoOutside green */
+  --str-chat__own-message-bubble-background: #5FBF2A;
   --str-chat__own-message-bubble-color: #ffffff;
   background: transparent;
 }
@@ -670,11 +672,11 @@ a {
 }
 
 .go-stream-chat__thread .str-chat__message-bubble {
-  background: #e9e9eb !important;
+  background: #F0F0F0 !important;
   border: none !important;
-  border-radius: 20px 20px 20px 6px !important;
+  border-radius: 18px 18px 18px 6px !important;
   box-shadow: none !important;
-  color: #151515 !important;
+  color: #111111 !important;
   font-size: 0.96rem;
   line-height: 1.42;
   padding: 0.72rem 0.92rem;
@@ -691,9 +693,24 @@ a {
 /* Outgoing messages — both --me and --mine cover different Stream versions */
 .go-stream-chat__thread .str-chat__message--me .str-chat__message-bubble,
 .go-stream-chat__thread .str-chat__message--mine .str-chat__message-bubble {
-  background: var(--brand) !important;
-  border-radius: 20px 20px 6px 20px !important;
+  background: #5FBF2A !important;
+  border-radius: 18px 18px 6px 18px !important;
   color: #fff !important;
+}
+
+/* Reaction bar */
+.go-stream-chat__thread .str-chat__message-reactions-list {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Send button green */
+.go-stream-chat__thread .str-chat__send-button,
+.go-stream-chat__thread .str-chat__message-input .rfu-icon-button,
+.go-stream-chat__thread [data-testid="send-button"] {
+  color: #5FBF2A !important;
 }
 
 .go-stream-chat__thread .str-chat__message-data {

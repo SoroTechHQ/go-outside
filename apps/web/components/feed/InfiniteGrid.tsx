@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { type FeedEventCard, useInfiniteFeed } from "@/hooks/useInfiniteFeed";
+import { thumbnailUrl as withThumbnailTransform } from "@/lib/image-url";
 import { SkeletonCard } from "./SkeletonCard";
 import { ScarcityPill } from "./ScarcityPill";
 import { QuickActionButtons } from "./QuickActionButtons";
@@ -41,9 +42,9 @@ function EventGridCard({
 }) {
   const [hovered, setHovered] = useState(false);
 
-  const imageUrl = event.bannerUrl
-    ? `${event.bannerUrl}?auto=format&fit=crop&w=400&q=75`
-    : "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&w=400&q=75";
+  const imageUrl = withThumbnailTransform(event.bannerUrl)
+    ?? event.bannerUrl
+    ?? "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&w=400&q=75";
 
   return (
     <Link href={`/events/${event.slug}`} style={{ textDecoration: "none", display: "block" }}>

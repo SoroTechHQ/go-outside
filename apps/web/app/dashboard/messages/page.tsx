@@ -483,6 +483,20 @@ function MessagesShell({
   const [selectedChannelCid, setSelectedChannelCid] = useState<string | undefined>(starterChannelCid);
   const dmOpenedRef = useRef(false);
 
+  // Broadcast unread count to BottomNav via CustomEvent
+  useEffect(() => {
+    if (!client) return;
+    const broadcast = () => {
+      const total = Object.values(client.activeChannels ?? {}).reduce(
+        (sum, ch) => sum + (ch.countUnread?.() ?? 0), 0
+      );
+      window.dispatchEvent(new CustomEvent("stream:unread", { detail: total }));
+    };
+    const unsub = client.on("notification.message_new", broadcast);
+    const unsub2 = client.on("message.read", broadcast);
+    return () => { unsub.unsubscribe(); unsub2.unsubscribe(); };
+  }, [client]);
+
   // Auto-open DM channel when navigated from a profile page
   useEffect(() => {
     if (!dmUserId || !client || dmUserId === identity.id || dmOpenedRef.current) return;
@@ -635,8 +649,11 @@ function MessagesShell({
                 onBack={() => setMobilePane("list")}
                 showBackButton={isMobile && mobilePane === "thread"}
               />
-              <MessageList />
-              <MessageInput additionalTextareaProps={{ placeholder: "Message…" }} focus />
+              <MessageList reactionDetailsSort={[{ field: "count", direction: -1 }]} />
+              <MessageInput
+                additionalTextareaProps={{ placeholder: "Message…" }}
+                focus
+              />
             </Window>
             <Thread />
           </Channel>
@@ -705,11 +722,21 @@ function StreamMessagesView({
   if (bootError) return <MessagesConfigError detail={bootError} />;
   if (!client) return <MessagesLoadingState label="Connecting to chat…" />;
 
+  const streamTheme = {
+    "--str-chat__primary-color":                "#5FBF2A",
+    "--str-chat__own-message-bubble-color":     "#ffffff",
+    "--str-chat__own-message-bubble-background-color": "#5FBF2A",
+    "--str-chat__message-bubble-color":         "#111111",
+    "--str-chat__message-bubble-background-color": "#F0F0F0",
+    "--str-chat__border-radius-md":             "18px",
+    "--str-chat__border-radius-sm":             "12px",
+  };
+
   return (
     <main className="page-grid go-stream-page">
       <div className="go-stream-frame h-full overflow-hidden">
         <div className="go-stream-inner h-full overflow-hidden">
-          <Chat client={client}>
+          <Chat client={client} customStyles={streamTheme}>
             <MessagesShell dmUserId={dmUserId} identity={identity} starterChannelCid={starterChannelCid} />
           </Chat>
         </div>

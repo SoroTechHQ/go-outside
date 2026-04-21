@@ -97,7 +97,6 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
       href: "/activity",
       label: "Activity",
       icon: HeartIcon,
-      inactiveWeight: "bold",
       activeWeight: "fill",
     },
   ];
@@ -178,7 +177,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                     whileTap={{ scale: 0.97 }}
                   >
                     <Icon
-                      size={item.href === "/activity" ? 32 : 24}
+                      size={24}
                       weight={iconWeight}
                       className={active ? "text-[var(--brand)]" : "text-current"}
                     />
