@@ -27,12 +27,19 @@ export async function POST(req: NextRequest) {
   const supabaseUserId = await getSupabaseUserIdByClerkId(userId);
   if (!supabaseUserId) return jsonError(404, "User not found");
 
-  const { error } = await supabaseAdmin
-    .from("saved_events")
-    .upsert({ user_id: supabaseUserId, event_id: eventId }, { onConflict: "user_id,event_id" });
+  const [saveResult] = await Promise.all([
+    supabaseAdmin
+      .from("saved_events")
+      .upsert({ user_id: supabaseUserId, event_id: eventId }, { onConflict: "user_id,event_id" }),
+    // Write graph edge so the recommendation algo sees this as a strong interest signal
+    supabaseAdmin.from("graph_edges").upsert(
+      { from_id: supabaseUserId, from_type: "user", to_id: eventId, to_type: "event", edge_type: "save", weight: 5.0, is_active: true },
+      { onConflict: "from_id,to_id,edge_type", ignoreDuplicates: false },
+    ),
+  ]);
 
-  if (error) {
-    console.error("[POST /api/events/save]", error);
+  if (saveResult.error) {
+    console.error("[POST /api/events/save]", saveResult.error);
     return jsonError(500, "Could not save event");
   }
 
@@ -60,14 +67,15 @@ export async function DELETE(req: NextRequest) {
   const supabaseUserId = await getSupabaseUserIdByClerkId(userId);
   if (!supabaseUserId) return jsonError(404, "User not found");
 
-  const { error } = await supabaseAdmin
-    .from("saved_events")
-    .delete()
-    .eq("user_id", supabaseUserId)
-    .eq("event_id", eventId);
+  const [deleteResult] = await Promise.all([
+    supabaseAdmin.from("saved_events").delete()
+      .eq("user_id", supabaseUserId).eq("event_id", eventId),
+    supabaseAdmin.from("graph_edges").delete()
+      .eq("from_id", supabaseUserId).eq("to_id", eventId).eq("edge_type", "save"),
+  ]);
 
-  if (error) {
-    console.error("[DELETE /api/events/save]", error);
+  if (deleteResult.error) {
+    console.error("[DELETE /api/events/save]", deleteResult.error);
     return jsonError(500, "Could not update saved state");
   }
 

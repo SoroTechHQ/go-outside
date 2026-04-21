@@ -60,5 +60,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Write graph edge for each unique event purchased — strong signal for recommendations
+  const uniqueEventIds = [...new Set(items.map((i) => i.eventId))];
+  await Promise.all(
+    uniqueEventIds.map((eventId) =>
+      supabaseAdmin.from("graph_edges").upsert(
+        { from_id: user.id, from_type: "user", to_id: eventId, to_type: "event", edge_type: "registered", weight: 10.0, is_active: true },
+        { onConflict: "from_id,to_id,edge_type", ignoreDuplicates: false },
+      )
+    )
+  );
+
   return NextResponse.json({ ticketIds: data.map((r) => r.id) });
 }

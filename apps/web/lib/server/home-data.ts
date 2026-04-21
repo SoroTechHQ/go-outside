@@ -206,16 +206,37 @@ type SocialResult = {
 async function getSocialSignals(userId: string, eventIds: string[]): Promise<SocialResult> {
   if (eventIds.length === 0) return { scores: new Map(), friendNamesByEvent: new Map() };
 
-  const { data: friendRows } = await supabaseAdmin
-    .from("friendships")
-    .select("user_a_id, user_b_id")
-    .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
+  // Collect social peer IDs from three sources:
+  // 1. graph_edges follows (primary — written by /api/follow)
+  // 2. follows table (mirror)
+  // 3. accepted bidirectional friendships
+  const [followEdgeRows, followTableRows, friendshipRows] = await Promise.all([
+    supabaseAdmin
+      .from("graph_edges")
+      .select("to_id")
+      .eq("from_id", userId)
+      .eq("edge_type", "follows")
+      .eq("is_active", true),
+    supabaseAdmin
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", userId),
+    supabaseAdmin
+      .from("friendships")
+      .select("user_a_id, user_b_id")
+      .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
+      .eq("status", "accepted"),
+  ]);
 
-  const friendIds = (friendRows ?? []).map((row: { user_a_id: string; user_b_id: string }) =>
-    row.user_a_id === userId ? row.user_b_id : row.user_a_id,
-  );
+  const peerSet = new Set<string>();
+  for (const row of (followEdgeRows.data ?? []) as { to_id: string }[]) peerSet.add(row.to_id);
+  for (const row of (followTableRows.data ?? []) as { following_id: string }[]) peerSet.add(row.following_id);
+  for (const row of (friendshipRows.data ?? []) as { user_a_id: string; user_b_id: string }[]) {
+    peerSet.add(row.user_a_id === userId ? row.user_b_id : row.user_a_id);
+  }
+  const peerIds = Array.from(peerSet);
 
-  if (friendIds.length === 0) return { scores: new Map(), friendNamesByEvent: new Map() };
+  if (peerIds.length === 0) return { scores: new Map(), friendNamesByEvent: new Map() };
 
   const weights: Record<string, number> = {
     registered: 3,
@@ -230,12 +251,12 @@ async function getSocialSignals(userId: string, eventIds: string[]): Promise<Soc
       .from("graph_edges")
       .select("to_id, edge_type, from_id")
       .in("to_id", eventIds)
-      .in("from_id", friendIds)
+      .in("from_id", peerIds)
       .in("edge_type", Object.keys(weights)),
     supabaseAdmin
       .from("users")
       .select("id, first_name")
-      .in("id", friendIds),
+      .in("id", peerIds),
   ]);
 
   const nameMap = new Map<string, string>();

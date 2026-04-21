@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useOrganizerFollowMutation, useOrganizerFollowStatus } from "../../../hooks/useOrganizerFollow";
 import Image from "next/image";
 import Avatar from "boring-avatars";
 import { useQuery } from "@tanstack/react-query";
@@ -292,10 +293,17 @@ export default function OrganizerProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("events");
-  const [isFollowing, setIsFollowing] = useState(false);
   const [followersOpen, setFollowersOpen] = useState(false);
 
   const id = typeof params.id === "string" ? params.id : "org-sankofa-sessions";
+
+  const { data: followStatus } = useOrganizerFollowStatus(id);
+  const followMutation = useOrganizerFollowMutation(id);
+  const isFollowing = followStatus?.following ?? false;
+
+  const handleFollow = useCallback(() => {
+    followMutation.mutate(!isFollowing);
+  }, [followMutation, isFollowing]);
 
   const { data: organizer } = useQuery({
     queryKey: ["organizer", id],
@@ -425,8 +433,9 @@ export default function OrganizerProfilePage() {
                 <ShareNetwork size={15} />
               </button>
               <button
-                onClick={() => setIsFollowing((v) => !v)}
-                className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] font-bold shadow-sm transition active:scale-95 ${
+                onClick={handleFollow}
+                disabled={followMutation.isPending}
+                className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] font-bold shadow-sm transition active:scale-95 disabled:opacity-60 ${
                   isFollowing
                     ? "border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)]"
                     : "border-[#4a9f63]/40 bg-[var(--bg-card)] text-[#4a9f63]"
@@ -707,7 +716,7 @@ export default function OrganizerProfilePage() {
               <p className="text-[12px] font-semibold text-[var(--text-primary)]">Stay in the loop</p>
               <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Follow {organizer.name} to get notified when new events drop.</p>
               <button
-                onClick={() => setIsFollowing(true)}
+                onClick={handleFollow}
                 className="mt-3 w-full rounded-[12px] bg-[#4a9f63] py-2.5 text-[12px] font-bold text-white shadow-[0_4px_12px_rgba(74,159,99,0.3)] transition hover:bg-[#3a8f53] active:scale-[0.98]"
               >
                 Follow {organizer.name}

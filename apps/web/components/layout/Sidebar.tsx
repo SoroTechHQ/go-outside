@@ -6,6 +6,7 @@ import {
   Bell,
   ChartBar,
   ChatCircleDots,
+  Gift,
   House,
   MoonStars,
   ShoppingCart,
@@ -99,6 +100,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
       icon: Bell,
       activeWeight: "fill",
     },
+    { href: "/dashboard/rewards", label: "Rewards", icon: Gift },
   ];
 
   if (role === "organizer" || role === "admin") {
