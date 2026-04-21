@@ -24,9 +24,9 @@ import {
   getCategoryEmoji,
   type Organizer,
 } from "@gooutside/demo-data";
+import type { FeedEventItem } from "../../lib/app-contracts";
 import { EVENT_COMMUNITY_POSTS } from "../../lib/mock-community";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
-import type { FeedEventItem } from "../../hooks/useEventsQuery";
 
 type EventItem = FeedEventItem;
 

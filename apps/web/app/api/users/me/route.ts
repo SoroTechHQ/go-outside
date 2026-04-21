@@ -1,22 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { enforceRateLimit, enforceSameOrigin, getActorKey, jsonError, jsonNoStore } from "../../../../lib/api-security";
 import { humanizeDbError } from "../../../../lib/db-errors";
+
+const USER_PUBLIC_SELECT = [
+  "first_name",
+  "last_name",
+  "username",
+  "bio",
+  "phone",
+  "role",
+  "avatar_url",
+  "cover_url",
+  "location_city",
+  "location_city_name",
+  "location_region",
+  "location_country",
+  "location_formatted",
+  "location_place_id",
+  "location_source",
+  "interests",
+  "vibe",
+  "pulse_score",
+  "pulse_tier",
+  "onboarding_complete",
+] as const;
+
+type PublicUserDto = Partial<Record<(typeof USER_PUBLIC_SELECT)[number], unknown>>;
 
 export async function GET() {
   const clerk = await currentUser();
-  if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!clerk) return jsonError(401, "Unauthorized");
 
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select("*")
+    .select(USER_PUBLIC_SELECT.join(", "))
     .eq("clerk_id", clerk.id)
     .maybeSingle();
 
-  if (error || !data) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (error || !data) return jsonError(404, "User not found");
 
   // Silently sync username to Clerk if Supabase has one that Clerk doesn't know about
-  const sbUsername = (data as Record<string, unknown>).username as string | null;
+  const sbUsername = (data as unknown as Record<string, unknown>).username as string | null;
   if (sbUsername && sbUsername !== clerk.username) {
     try {
       const client = await clerkClient();
@@ -26,12 +52,23 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json(data);
+  return jsonNoStore(data as PublicUserDto);
 }
 
 export async function PATCH(req: NextRequest) {
   const clerk = await currentUser();
-  if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!clerk) return jsonError(401, "Unauthorized");
+
+  const csrfResponse = enforceSameOrigin(req);
+  if (csrfResponse) return csrfResponse;
+
+  const rateLimitResponse = enforceRateLimit({
+    bucket: "users-me-patch",
+    key: getActorKey(req, clerk.id),
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const body = await req.json() as Record<string, unknown>;
   const { data: existing } = await supabaseAdmin
@@ -48,7 +85,7 @@ export async function PATCH(req: NextRequest) {
     "location_source",
     "interests", "vibe",
     "pulse_score", "pulse_tier", "onboarding_complete",
-    "avatar_url",
+    "avatar_url", "cover_url",
   ] as const;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -75,13 +112,13 @@ export async function PATCH(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("users")
     .upsert({ ...base, ...updates }, { onConflict: "clerk_id" })
-    .select("*")
+    .select(USER_PUBLIC_SELECT.join(", "))
     .single();
 
   if (error) {
     console.error("[PATCH /api/users/me]", error);
     const { message, status } = humanizeDbError(error);
-    return NextResponse.json({ error: message }, { status });
+    return jsonError(status, message);
   }
 
   // Sync username to Clerk so users can sign in with it
@@ -102,12 +139,9 @@ export async function PATCH(req: NextRequest) {
         .update({ username: null, updated_at: new Date().toISOString() })
         .eq("clerk_id", clerk.id);
       const taken = msg.toLowerCase().includes("taken") || msg.toLowerCase().includes("already") || msg.toLowerCase().includes("unique");
-      return NextResponse.json(
-        { error: taken ? "That username is already taken. Choose a different one to continue." : "Couldn't save username. Please try again." },
-        { status: 409 }
-      );
+      return jsonError(409, taken ? "That username is already taken. Choose a different one to continue." : "Couldn't save username. Please try again.");
     }
   }
 
-  return NextResponse.json(data);
+  return jsonNoStore(data as PublicUserDto);
 }

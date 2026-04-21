@@ -1,27 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { enforceRateLimit, enforceSameOrigin, getActorKey, jsonError, jsonNoStore } from "../../../../lib/api-security";
+import { getBucketVisibility, getStorageObjectUrl } from "../../../../lib/storage-media";
 
 export async function POST(req: NextRequest) {
   const clerk = await currentUser();
-  if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!clerk) return jsonError(401, "Unauthorized");
+
+  const csrfResponse = enforceSameOrigin(req);
+  if (csrfResponse) return csrfResponse;
+
+  const rateLimitResponse = enforceRateLimit({
+    bucket: "upload-cover",
+    key: getActorKey(req, clerk.id),
+    limit: 15,
+    windowMs: 60_000,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+  if (!file) return jsonError(400, "No file provided");
 
   const ext = file.name.split(".").pop() ?? "webp";
   const path = `${clerk.id}/${Date.now()}.${ext}`;
+  const bucket = "covers";
 
   const { error } = await supabaseAdmin.storage
-    .from("covers")
+    .from(bucket)
     .upload(path, await file.arrayBuffer(), {
       contentType: file.type || "image/webp",
       upsert: true,
     });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[POST /api/upload/cover]", error);
+    return jsonError(500, "Upload failed");
+  }
 
-  const { data } = supabaseAdmin.storage.from("covers").getPublicUrl(path);
-  return NextResponse.json({ url: data.publicUrl });
+  const url = await getStorageObjectUrl(bucket, path);
+  return jsonNoStore({ url, asset: { bucket, path, visibility: getBucketVisibility(bucket) } });
 }
