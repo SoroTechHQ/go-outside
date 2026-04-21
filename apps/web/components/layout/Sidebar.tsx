@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Bell,
   ChartBar,
   ChatCircleDots,
-  Heart as HeartIcon,
   House,
   MoonStars,
   ShoppingCart,
@@ -94,9 +94,9 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
     { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
     { href: "/wallets", label: "Wallets", icon: Wallet },
     {
-      href: "/activity",
-      label: "Activity",
-      icon: HeartIcon,
+      href: "/notifications",
+      label: "Notifications",
+      icon: Bell,
       activeWeight: "fill",
     },
   ];
