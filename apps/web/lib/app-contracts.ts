@@ -12,6 +12,9 @@ export type SearchParamValue = string | string[] | undefined;
 export type FeedEventItem = EventItem & {
   _feedIndex: number;
   _feedKey: string;
+  _aiPicked?: boolean;
+  _friendNames?: string[];
+  _socialScore?: number;
   scarcity?: {
     state: "normal" | "low" | "critical" | "sold_out";
     label: string;

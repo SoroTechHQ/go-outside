@@ -198,8 +198,13 @@ function toFeedProfile(user: AppUserRow | null): FeedProfile | null {
   };
 }
 
-async function getSocialSignals(userId: string, eventIds: string[]) {
-  if (eventIds.length === 0) return new Map<string, number>();
+type SocialResult = {
+  scores: Map<string, number>;
+  friendNamesByEvent: Map<string, string[]>;
+};
+
+async function getSocialSignals(userId: string, eventIds: string[]): Promise<SocialResult> {
+  if (eventIds.length === 0) return { scores: new Map(), friendNamesByEvent: new Map() };
 
   const { data: friendRows } = await supabaseAdmin
     .from("friendships")
@@ -210,7 +215,7 @@ async function getSocialSignals(userId: string, eventIds: string[]) {
     row.user_a_id === userId ? row.user_b_id : row.user_a_id,
   );
 
-  if (friendIds.length === 0) return new Map<string, number>();
+  if (friendIds.length === 0) return { scores: new Map(), friendNamesByEvent: new Map() };
 
   const weights: Record<string, number> = {
     registered: 3,
@@ -220,20 +225,45 @@ async function getSocialSignals(userId: string, eventIds: string[]) {
     viewed: 0.3,
   };
 
-  const { data: edges } = await supabaseAdmin
-    .from("graph_edges")
-    .select("to_id, edge_type")
-    .in("to_id", eventIds)
-    .in("from_id", friendIds)
-    .in("edge_type", Object.keys(weights));
+  const [edgeResult, nameResult] = await Promise.all([
+    supabaseAdmin
+      .from("graph_edges")
+      .select("to_id, edge_type, from_id")
+      .in("to_id", eventIds)
+      .in("from_id", friendIds)
+      .in("edge_type", Object.keys(weights)),
+    supabaseAdmin
+      .from("users")
+      .select("id, first_name")
+      .in("id", friendIds),
+  ]);
 
-  const map = new Map<string, number>();
-  for (const edge of edges ?? []) {
+  const nameMap = new Map<string, string>();
+  for (const u of (nameResult.data ?? []) as { id: string; first_name: string }[]) {
+    nameMap.set(u.id, u.first_name);
+  }
+
+  const scores = new Map<string, number>();
+  const friendSets = new Map<string, Set<string>>();
+
+  for (const edge of edgeResult.data ?? []) {
     const eventId = edge.to_id as string | null;
     if (!eventId) continue;
-    map.set(eventId, (map.get(eventId) ?? 0) + (weights[edge.edge_type as string] ?? 0));
+    scores.set(eventId, (scores.get(eventId) ?? 0) + (weights[edge.edge_type as string] ?? 0));
+
+    const name = nameMap.get(edge.from_id as string);
+    if (name) {
+      if (!friendSets.has(eventId)) friendSets.set(eventId, new Set());
+      friendSets.get(eventId)!.add(name);
+    }
   }
-  return map;
+
+  const friendNamesByEvent = new Map<string, string[]>();
+  for (const [eventId, names] of friendSets) {
+    friendNamesByEvent.set(eventId, Array.from(names).slice(0, 3));
+  }
+
+  return { scores, friendNamesByEvent };
 }
 
 function computeUrgency(startDatetime: string) {
@@ -304,6 +334,8 @@ function toPublicFeedEvent(
   event: RankedEvent,
   scarcity: ScarcityRow | undefined,
   feedIndex: number,
+  aiPicked: boolean,
+  friendNames: string[],
 ): FeedEventItem {
   const {
     avgRating: _avgRating,
@@ -315,6 +347,8 @@ function toPublicFeedEvent(
     ...publicEvent,
     _feedIndex: feedIndex,
     _feedKey: `${event.id}-${feedIndex}`,
+    _aiPicked: aiPicked,
+    _friendNames: friendNames.length > 0 ? friendNames : undefined,
     scarcity: scarcity
       ? {
           state: scarcity.state,
@@ -343,7 +377,11 @@ export async function loadFeedPage({
   ]);
 
   const eventIds = allEvents.map((event) => event.id);
-  const socialSignals = feedProfile ? await getSocialSignals(feedProfile.id, eventIds) : new Map<string, number>();
+  const socialResult = feedProfile
+    ? await getSocialSignals(feedProfile.id, eventIds)
+    : { scores: new Map<string, number>(), friendNamesByEvent: new Map<string, string[]>() };
+
+  const { scores: socialSignals, friendNamesByEvent } = socialResult;
 
   const filtered = applyFilters(allEvents, filters);
   const source = filtered.length > 0 ? filtered : filters.categories.length > 0 || filters.query || filters.when ? [] : allEvents;
@@ -357,14 +395,24 @@ export async function loadFeedPage({
       scoreEvent(left as RankedEvent, scarcityMap.get(left.id), edgeWeightsMap.get(left.id) ?? 0, socialSignals.get(left.id) ?? 0, interests, city),
   );
 
+  // Mark top 40% of ranked events as AI-picked
+  const aiPickThreshold = Math.ceil(scored.length * 0.4);
+
   const pageLimit = limit > 0 ? limit : page === 0 ? INITIAL_COUNT : PAGE_SIZE;
   const startIndex = limit > 0 ? 0 : page === 0 ? 0 : INITIAL_COUNT + (page - 1) * PAGE_SIZE;
   const hasMore = !featuredOnly && limit < 0 && scored.length > startIndex + pageLimit;
 
   return {
-    items: scored.slice(startIndex, startIndex + pageLimit).map((event, index) =>
-      toPublicFeedEvent(event as RankedEvent, scarcityMap.get(event.id), startIndex + index),
-    ),
+    items: scored.slice(startIndex, startIndex + pageLimit).map((event, index) => {
+      const globalRank = startIndex + index;
+      return toPublicFeedEvent(
+        event as RankedEvent,
+        scarcityMap.get(event.id),
+        globalRank,
+        globalRank < aiPickThreshold,
+        friendNamesByEvent.get(event.id) ?? [],
+      );
+    }),
     nextPage: page + 1,
     hasMore,
     total: scored.length,
