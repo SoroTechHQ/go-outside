@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Avatar from "boring-avatars";
+import { avatarUrl as withCdn } from "../../../../lib/image-url";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -18,9 +19,10 @@ export function UserAvatar({ name, avatarUrl, size, ringClass = "", className = 
   const base = `overflow-hidden rounded-full shrink-0 ${ringClass} ${className}`;
 
   if (avatarUrl) {
+    const src = withCdn(avatarUrl) ?? avatarUrl;
     return (
       <div className={base} style={{ width: size, height: size }}>
-        <Image src={avatarUrl} alt={name} width={size} height={size} className="h-full w-full object-cover" />
+        <Image src={src} alt={name} width={size} height={size} className="h-full w-full object-cover" />
       </div>
     );
   }

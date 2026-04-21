@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { X, Check, Camera } from "@phosphor-icons/react";
 import type { UserProfile } from "../types";
 import { UserAvatar } from "./UserAvatar";
 import { getTierInfo } from "../types";
 import { LocationAutocomplete, type PlaceResult } from "../../../../components/ui/LocationAutocomplete";
+import { compressForUpload } from "../../../../lib/compress-image";
 
 type Props = {
   profile: UserProfile;
@@ -23,8 +24,36 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
       ? { place_id: "", city_name: profile.location, region: "", country: "Ghana", formatted_address: profile.location, lat: 0, lng: 0 }
       : null
   );
-  const [saving,    setSaving]    = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
+  const [saving,      setSaving]      = useState(false);
+  const [error,       setError]       = useState<string | null>(null);
+  const [avatarUrl,   setAvatarUrl]   = useState(profile.avatarUrl);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    setError(null);
+    try {
+      const compressed = await compressForUpload(file, "avatar");
+      const fd = new FormData();
+      fd.append("file", compressed, "avatar.webp");
+      const res = await fetch("/api/upload/avatar", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json() as { url: string };
+      setAvatarUrl(url);
+      await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar_url: url }),
+      });
+    } catch (e) {
+      setError("Failed to upload photo. Try again.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
 
   const bioRemaining = 160 - bio.length;
   const tierInfo     = getTierInfo(profile.pulseTier);
@@ -109,20 +138,38 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
 
         {/* Avatar */}
         <div className="relative flex items-center gap-4 rounded-[16px] border border-white/8 bg-white/4 p-4">
-          <div className="relative">
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+          <button
+            type="button"
+            className="relative"
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={avatarUploading}
+          >
             <UserAvatar
               name={profile.name}
-              avatarUrl={profile.avatarUrl}
+              avatarUrl={avatarUrl}
               size={60}
               ringClass={tierInfo.ringClass}
             />
             <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-[#152a1a] shadow">
-              <Camera size={11} className="text-white/70" />
+              {avatarUploading ? (
+                <span className="h-3 w-3 animate-spin rounded-full border border-white/40 border-t-white" />
+              ) : (
+                <Camera size={11} className="text-white/70" />
+              )}
             </div>
-          </div>
+          </button>
           <div>
             <p className="text-[12px] font-semibold text-white/70">Profile photo</p>
-            <p className="mt-0.5 text-[11px] text-white/30">Synced from your Clerk account</p>
+            <p className="mt-0.5 text-[11px] text-white/30">
+              {avatarUploading ? "Uploading…" : "Tap to change · Compressed to WebP"}
+            </p>
           </div>
         </div>
 

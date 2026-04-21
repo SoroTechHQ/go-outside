@@ -10,6 +10,9 @@ type PurchaseItem = {
   quantity: number;
   attendeeName?: string;
   attendeeEmail?: string;
+  paymentReference?: string;
+  paymentMethod?: string;
+  paymentNetwork?: string | null;
 };
 
 export async function POST(req: NextRequest) {
@@ -31,16 +34,19 @@ export async function POST(req: NextRequest) {
 
   const rows = items.flatMap((item) =>
     Array.from({ length: item.quantity }, () => ({
-      event_id: item.eventId,
-      ticket_type_id: item.tierId,
-      user_id: user.id,
-      qr_code: crypto.randomUUID(),
-      qr_secret_hash: crypto.randomUUID(),
-      status: "active",
-      purchase_price: item.price,
-      currency: "GHS",
-      attendee_name: item.attendeeName ?? `${user.first_name} ${user.last_name}`.trim(),
-      attendee_email: item.attendeeEmail ?? user.email,
+      event_id:          item.eventId,
+      ticket_type_id:    item.tierId,
+      user_id:           user.id,
+      qr_code:           crypto.randomUUID(),
+      qr_secret_hash:    crypto.randomUUID(),
+      status:            item.price === 0 ? "active" : "pending",
+      purchase_price:    item.price,
+      currency:          "GHS",
+      attendee_name:     item.attendeeName ?? `${user.first_name} ${user.last_name}`.trim(),
+      attendee_email:    item.attendeeEmail ?? user.email,
+      payment_reference: item.paymentReference ?? null,
+      payment_method:    item.paymentMethod   ?? null,
+      payment_network:   item.paymentNetwork  ?? null,
     }))
   );
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../../../components/cart/CartContext";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
   ArrowLeft,
   MapPin,
@@ -12,30 +13,84 @@ import {
   Tag,
   User,
   EnvelopeSimple,
-  Phone,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import { Progress } from "../../../components/ui/progress";
 
+// ── Validation ────────────────────────────────────────────────────────────────
+type Errors = { name?: string; email?: string };
+
+function validate(name: string, email: string): Errors {
+  const errors: Errors = {};
+  if (!name.trim() || name.trim().length < 2) errors.name = "Enter your full name";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter a valid email address";
+  return errors;
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const { items, totalPrice, totalCount, clearCart } = useCart();
   const router = useRouter();
+  const { user: clerkUser } = useUser();
+
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", email: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const [touched, setTouched] = useState({ name: false, email: false });
 
-  const discount = promoApplied ? Math.floor(totalPrice * 0.1) : 0;
+  // Pre-fill from Clerk
+  useEffect(() => {
+    if (!clerkUser) return;
+    setForm({
+      name:  clerkUser.fullName ?? `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim(),
+      email: clerkUser.primaryEmailAddress?.emailAddress ?? "",
+    });
+  }, [clerkUser]);
+
+  // Pre-fill from saved checkout details if Clerk fields are empty
+  useEffect(() => {
+    if (form.name || form.email) return;
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then((u) => {
+        if (u.checkout_name || u.checkout_email) {
+          setForm((f) => ({
+            name:  f.name  || u.checkout_name  || "",
+            email: f.email || u.checkout_email || "",
+          }));
+        }
+      })
+      .catch(() => null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const discount   = promoApplied ? Math.floor(totalPrice * 0.1) : 0;
   const finalTotal = totalPrice - discount;
 
   function handleApplyPromo() {
-    if (promoCode.toLowerCase() === "gooutside10") {
-      setPromoApplied(true);
-    }
+    if (promoCode.toLowerCase() === "gooutside10") setPromoApplied(true);
   }
 
-  function handleProceedToPayment() {
-    if (!form.name || !form.email) return;
-    sessionStorage.setItem("checkout-attendee", JSON.stringify({ name: form.name, email: form.email }));
-    router.push("/checkout/payment");
+  function handleBlur(field: "name" | "email") {
+    setTouched((t) => ({ ...t, [field]: true }));
+    setErrors(validate(form.name, form.email));
+  }
+
+  async function handleProceedToPayment() {
+    setTouched({ name: true, email: true });
+    const errs = validate(form.name, form.email);
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    // Persist for faster future checkout
+    fetch("/api/users/me", {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ checkout_name: form.name.trim(), checkout_email: form.email.trim() }),
+    }).catch(() => null);
+
+    sessionStorage.setItem("checkout-attendee", JSON.stringify({ name: form.name.trim(), email: form.email.trim() }));
+    router.push("/dashboard/checkout/payment");
   }
 
   if (items.length === 0) {
@@ -57,11 +112,13 @@ export default function CheckoutPage() {
     );
   }
 
+  const isValid = Object.keys(validate(form.name, form.email)).length === 0;
+
   return (
     <main className="page-grid min-h-screen pb-24">
       <div className="container-shell px-4 py-6 md:py-10">
-        {/* Back + Progress */}
         <div className="mx-auto max-w-2xl">
+          {/* Back + Progress */}
           <button
             className="mb-6 flex items-center gap-2 text-[14px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             onClick={() => router.back()}
@@ -82,58 +139,59 @@ export default function CheckoutPage() {
           <div className="grid gap-6 md:grid-cols-[1fr_340px]">
             {/* Left: contact info */}
             <div className="space-y-5">
-              {/* Contact details */}
               <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
                 <h2 className="mb-4 text-[15px] font-bold text-[var(--text-primary)]">
                   Contact Details
                 </h2>
                 <div className="space-y-3">
+                  {/* Full Name */}
                   <div>
                     <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">
                       Full Name *
                     </label>
-                    <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3.5 py-2.5">
+                    <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${
+                      touched.name && errors.name ? "border-red-400" : "border-[var(--border-default)]"
+                    }`}>
                       <User size={15} className="text-[var(--text-tertiary)] shrink-0" />
                       <input
                         className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                        onBlur={() => handleBlur("name")}
                         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder="Kofi Mensah"
                         type="text"
                         value={form.name}
                       />
                     </div>
+                    {touched.name && errors.name && (
+                      <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400">
+                        <WarningCircle size={11} weight="fill" /> {errors.name}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Email */}
                   <div>
                     <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">
                       Email Address *
                     </label>
-                    <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3.5 py-2.5">
+                    <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${
+                      touched.email && errors.email ? "border-red-400" : "border-[var(--border-default)]"
+                    }`}>
                       <EnvelopeSimple size={15} className="text-[var(--text-tertiary)] shrink-0" />
                       <input
                         className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                        onBlur={() => handleBlur("email")}
                         onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                         placeholder="kofi@example.com"
                         type="email"
                         value={form.email}
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">
-                      Phone Number
-                    </label>
-                    <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-3.5 py-2.5">
-                      <Phone size={15} className="text-[var(--text-tertiary)] shrink-0" />
-                      <input
-                        className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                        placeholder="+233 24 000 0000"
-                        type="tel"
-                        value={form.phone}
-                      />
-                    </div>
+                    {touched.email && errors.email && (
+                      <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400">
+                        <WarningCircle size={11} weight="fill" /> {errors.email}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -239,7 +297,7 @@ export default function CheckoutPage() {
 
                 <button
                   className="mt-4 w-full rounded-2xl bg-[var(--brand)] py-3.5 text-[15px] font-semibold text-white transition hover:bg-[var(--brand-hover)] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
-                  disabled={!form.name || !form.email}
+                  disabled={!isValid}
                   onClick={handleProceedToPayment}
                   type="button"
                 >
