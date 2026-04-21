@@ -1,12 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { enforceRateLimit, enforceSameOrigin, getActorKey, jsonError, jsonNoStore } from "../../../../lib/api-security";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const clerk = await currentUser();
   if (!clerk) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonError(401, "Unauthorized");
   }
+
+  const csrfResponse = enforceSameOrigin(request);
+  if (csrfResponse) return csrfResponse;
+
+  const rateLimitResponse = enforceRateLimit({
+    bucket: "notifications-read-all",
+    key: getActorKey(request, clerk.id),
+    limit: 12,
+    windowMs: 60_000,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const { data: sbUser } = await supabaseAdmin
     .from("users")
@@ -15,7 +27,7 @@ export async function POST() {
     .maybeSingle();
 
   if (!sbUser) {
-    return NextResponse.json({ ok: true });
+    return jsonNoStore({ ok: true });
   }
 
   await supabaseAdmin
@@ -24,5 +36,5 @@ export async function POST() {
     .eq("user_id", sbUser.id)
     .eq("is_read", false);
 
-  return NextResponse.json({ ok: true });
+  return jsonNoStore({ ok: true });
 }

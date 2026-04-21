@@ -1,18 +1,20 @@
 "use client";
 
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { appBootstrapQueryKey, EMPTY_NOTIFICATIONS_PAGE, notificationsQueryKey } from "../lib/app-contracts";
 import type { NotificationsPage } from "../lib/notification-feed";
 
-export const notificationsQueryKey = ["notifications"] as const;
+export { notificationsQueryKey } from "../lib/app-contracts";
 
 async function fetchNotifications(cursor: string | null): Promise<NotificationsPage> {
-  const url = new URL("/api/notifications", window.location.origin);
+  const url = new URL("/api/bootstrap", window.location.origin);
   if (cursor) url.searchParams.set("cursor", cursor);
 
   const res = await fetch(url.toString());
-  if (!res.ok) return { items: [], nextCursor: null, unreadCount: 0 };
+  if (!res.ok) return EMPTY_NOTIFICATIONS_PAGE;
 
-  return res.json() as Promise<NotificationsPage>;
+  const data = await res.json() as { notifications?: NotificationsPage };
+  return data.notifications ?? EMPTY_NOTIFICATIONS_PAGE;
 }
 
 export function useNotifications() {
@@ -34,6 +36,7 @@ export function useMarkNotificationsRead() {
       await fetch("/api/notifications/read-all", { method: "POST" });
     },
     onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: appBootstrapQueryKey });
       void qc.invalidateQueries({ queryKey: notificationsQueryKey });
     },
   });

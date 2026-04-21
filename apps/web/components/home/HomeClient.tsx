@@ -26,11 +26,11 @@ import {
   useSaveEvent,
   useSavedEvents,
   getFilteredEvents,
-  type FeedEventItem,
 } from "../../hooks/useEventsQuery";
 import { WhyThisButton } from "../ai/WhyThisButton";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { useQueryClient } from "@tanstack/react-query";
+import type { FeedEventItem } from "../../lib/app-contracts";
 
 // ── Unsplash avatar pool (social proof) ──────────────────────────────────────
 const AVATAR_POOL = [
@@ -100,8 +100,8 @@ function ScarcityBadge({ scarcity }: { scarcity: FeedEventItem["scarcity"] }) {
 
 function SaveButton({ event, className = "" }: { event: FeedEventItem; className?: string }) {
   const { mutate: toggleSave, isPending } = useSaveEvent();
-  const { data: savedEvents } = useSavedEvents();
-  const isSaved = savedEvents?.some((e) => e.id === event.id) ?? event.saved;
+  const { data: savedEventIds } = useSavedEvents();
+  const isSaved = savedEventIds?.includes(event.id) ?? event.saved;
 
   const handleSave = useCallback(
     (e: React.MouseEvent) => {

@@ -16,49 +16,43 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import type { EventItem } from "@gooutside/demo-data";
-
-// ─── Types ────────────────────────────────────────────────────
-
-export type FeedEventItem = EventItem & {
-  _feedIndex: number;
-  _feedKey: string;
-  /** scarcity from DB scarcity_state table */
-  scarcity?: {
-    state: "normal" | "low" | "critical" | "sold_out";
-    label: string;
-    ticketsRemaining: number | null;
-  };
-};
-
-type Filters = { categories: string[]; query: string; when: string };
-type EventPage = {
-  items: FeedEventItem[];
-  nextPage: number;
-  hasMore: boolean;
-  total: number;
-};
+import {
+  DEFAULT_FEED_FILTERS,
+  eventsFeedQueryKey,
+  normalizeFeedFilters,
+  savedEventsQueryKey,
+  type FeedEventItem,
+  type FeedFilters,
+  type FeedPage,
+} from "../lib/app-contracts";
+import { appBootstrapQueryKey } from "../lib/app-contracts";
 
 // ─── Feed fetcher ─────────────────────────────────────────────
 
-async function fetchEventPage(filters: Filters, page: number): Promise<EventPage> {
-  const params = new URLSearchParams();
-  params.set("page", String(page));
-  if (filters.categories.length > 0) params.set("category", filters.categories.join(","));
-  if (filters.query) params.set("q", filters.query);
-  if (filters.when) params.set("when", filters.when);
+async function fetchEventPage(filters: FeedFilters, page: number, opts?: { featuredOnly?: boolean; limit?: number }) {
+  const res = await fetch("/api/feed/query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      filters: normalizeFeedFilters(filters),
+      page,
+      featuredOnly: opts?.featuredOnly ?? false,
+      limit: opts?.limit,
+    }),
+  });
 
-  const res = await fetch(`/api/events/feed?${params.toString()}`);
   if (!res.ok) throw new Error(`Feed API ${res.status}`);
-  return res.json() as Promise<EventPage>;
+  return res.json() as Promise<FeedPage>;
 }
 
 // ─── useInfiniteEvents — main feed hook ───────────────────────
 
-export function useInfiniteEvents(filters: Filters) {
+export function useInfiniteEvents(filters: FeedFilters) {
+  const normalizedFilters = normalizeFeedFilters(filters);
+
   return useInfiniteQuery({
-    queryKey: ["events", "feed", filters] as const,
-    queryFn: ({ pageParam }) => fetchEventPage(filters, pageParam as number),
+    queryKey: eventsFeedQueryKey(normalizedFilters),
+    queryFn: ({ pageParam }) => fetchEventPage(normalizedFilters, pageParam as number),
     initialPageParam: 0,
     getNextPageParam: (last) => (last.hasMore ? last.nextPage : undefined),
     staleTime: 60_000,         // re-use cached data for 1 min
@@ -68,15 +62,17 @@ export function useInfiniteEvents(filters: Filters) {
 
 // ─── useSavedEvents — what the current user saved ─────────────
 
-async function fetchSavedEvents(): Promise<FeedEventItem[]> {
-  const res = await fetch("/api/events/saved");
+async function fetchSavedEvents(): Promise<string[]> {
+  const res = await fetch("/api/bootstrap", { credentials: "same-origin" });
   if (!res.ok) return [];
-  return res.json() as Promise<FeedEventItem[]>;
+
+  const data = await res.json() as { savedEventIds?: string[] };
+  return data.savedEventIds ?? [];
 }
 
 export function useSavedEvents() {
   return useQuery({
-    queryKey: ["events", "saved"],
+    queryKey: savedEventsQueryKey,
     queryFn: fetchSavedEvents,
     staleTime: 30_000,
     retry: 1,
@@ -105,14 +101,14 @@ export function useSaveEvent() {
 
       // Snapshot current state
       const previousFeed = qc.getQueryData(["events", "feed"]);
-      const previousSaved = qc.getQueryData(["events", "saved"]);
+      const previousSaved = qc.getQueryData(savedEventsQueryKey);
 
       // Optimistically update feed pages
       qc.setQueriesData(
         { queryKey: ["events", "feed"], exact: false },
         (old: unknown) => {
           if (!old || typeof old !== "object" || !("pages" in old)) return old;
-          const data = old as { pages: EventPage[] };
+          const data = old as { pages: FeedPage[] };
           return {
             ...data,
             pages: data.pages.map((page) => ({
@@ -125,18 +121,27 @@ export function useSaveEvent() {
         }
       );
 
+      qc.setQueryData<string[]>(savedEventsQueryKey, (old) => {
+        const current = Array.isArray(old) ? old : [];
+        if (saved) {
+          return current.includes(eventId) ? current : [...current, eventId];
+        }
+        return current.filter((id) => id !== eventId);
+      });
+
       return { previousFeed, previousSaved };
     },
 
     // On error, roll back
     onError: (_err, _vars, ctx) => {
       if (ctx?.previousFeed) qc.setQueryData(["events", "feed"], ctx.previousFeed);
-      if (ctx?.previousSaved) qc.setQueryData(["events", "saved"], ctx.previousSaved);
+      if (ctx?.previousSaved) qc.setQueryData(savedEventsQueryKey, ctx.previousSaved);
     },
 
     // Always sync saved events list
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ["events", "saved"] });
+      void qc.invalidateQueries({ queryKey: savedEventsQueryKey });
+      void qc.invalidateQueries({ queryKey: appBootstrapQueryKey });
     },
   });
 }
@@ -144,10 +149,8 @@ export function useSaveEvent() {
 // ─── useFeaturedEvents — dashboard quick-load ────────────────
 
 async function fetchFeaturedEvents(limit = 4): Promise<FeedEventItem[]> {
-  const params = new URLSearchParams({ page: "0", featured: "true", limit: String(limit) });
-  const res = await fetch(`/api/events/feed?${params.toString()}`);
-  if (!res.ok) return [];
-  const data = (await res.json()) as EventPage;
+  const data = await fetchEventPage(DEFAULT_FEED_FILTERS, 0, { featuredOnly: true, limit });
+  if (!data) return [];
   return data.items ?? [];
 }
 
@@ -162,7 +165,7 @@ export function useFeaturedEvents(limit = 4) {
 
 // ─── useSearchEvents — debounced search ───────────────────────
 
-export function useSearchEvents(filters: Filters, enabled = true) {
+export function useSearchEvents(filters: FeedFilters, enabled = true) {
   return useQuery({
     queryKey: ["events", "search", filters],
     queryFn: () => fetchEventPage(filters, 0).then((p) => p.items),
@@ -176,19 +179,14 @@ export function useSearchEvents(filters: Filters, enabled = true) {
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
-    queryFn: async () => {
-      const res = await fetch("/api/events/feed?page=0&limit=0");
-      // Categories come from DB — use the static list as fallback from demo-data
-      if (!res.ok) return null;
-      return null; // categories are pre-loaded in HomeClient via server component
-    },
+    queryFn: async () => null,
     staleTime: Infinity,
   });
 }
 
 // ─── Compatibility re-export: getFilteredEvents for HomeClient ─
 
-export function getFilteredEvents(filters: Filters, events: FeedEventItem[]): FeedEventItem[] {
+export function getFilteredEvents(filters: FeedFilters, events: FeedEventItem[]): FeedEventItem[] {
   return events.filter((e) => {
     if (filters.categories.length > 0 && !filters.categories.includes(e.categorySlug)) return false;
     if (filters.query) {

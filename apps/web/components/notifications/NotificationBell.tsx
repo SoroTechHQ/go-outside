@@ -17,9 +17,9 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
   useMarkNotificationsRead,
-  useNotifications,
 } from "../../hooks/useNotifications";
 import type { NotificationFeedItem } from "../../lib/notification-feed";
+import { useAppBootstrap } from "../../hooks/useAppBootstrap";
 
 const ICON_MAP: Record<string, React.ComponentType<{ size: number; weight: "fill" | "regular"; className: string }>> = {
   ticket: Ticket,
@@ -46,10 +46,10 @@ export function NotificationBell() {
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
   const ref = useRef<HTMLDivElement>(null);
 
-  const { data } = useNotifications();
+  const { data: bootstrap } = useAppBootstrap();
   const markAllRead = useMarkNotificationsRead();
-  const items = data?.pages.flatMap((page) => page.items) ?? [];
-  const unreadCount = data?.pages[0]?.unreadCount ?? 0;
+  const items = bootstrap?.notifications.items ?? [];
+  const unreadCount = bootstrap?.notifications.unreadCount ?? 0;
 
   useEffect(() => {
     if ("Notification" in window) setBrowserPermission(Notification.permission);
