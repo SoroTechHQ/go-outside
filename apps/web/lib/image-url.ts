@@ -21,7 +21,19 @@ export function getImageUrl(url: string | null | undefined, opts: TransformOptio
   return `${url}${sep}${params.toString()}`;
 }
 
+/**
+ * Build a public Supabase Storage URL from a bucket name and path.
+ * Use this when the DB stores only a relative path instead of the full URL.
+ */
+export function storageUrl(bucket: string, path: string | null | undefined): string | null {
+  if (!path || !SUPABASE_URL) return null;
+  if (path.startsWith("http")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+}
+
 export const avatarUrl  = (url: string | null | undefined) => getImageUrl(url, { width: 400,  format: "webp" });
 export const bannerUrl  = (url: string | null | undefined) => getImageUrl(url, { width: 1200, format: "webp" });
+export const thumbnailUrl = (url: string | null | undefined) => getImageUrl(url, { width: 400, format: "webp" });
+export const coverUrl   = (url: string | null | undefined) => getImageUrl(url, { width: 1600, format: "webp" });
 export const logoUrl    = (url: string | null | undefined) => getImageUrl(url, { width: 400,  format: "webp" });
 export const snippetUrl = (url: string | null | undefined) => getImageUrl(url, { width: 1080, format: "webp" });

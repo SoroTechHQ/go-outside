@@ -14,6 +14,7 @@ import {
   Lightning,
   BookmarkSimple,
 } from "@phosphor-icons/react";
+import { thumbnailUrl as withThumbnailTransform, bannerUrl as withBannerTransform } from "../../../lib/image-url";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type TrendingEvent = {
@@ -110,7 +111,7 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
           <img
             alt={event.title}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            src={`${event.banner_url}?width=160&format=webp`}
+            src={withThumbnailTransform(event.banner_url) ?? event.banner_url}
           />
         )}
         <div className="absolute inset-0 bg-black/10" />
@@ -246,7 +247,7 @@ export default function TrendingPage() {
                       <img
                         alt={filteredEvents[0].title}
                         className="h-40 w-full object-cover"
-                        src={`${filteredEvents[0].banner_url}?width=800&format=webp`}
+                        src={withBannerTransform(filteredEvents[0].banner_url) ?? filteredEvents[0].banner_url}
                       />
                     ) : (
                       <div className="h-40 w-full bg-gradient-to-br from-[#0e2212] to-[#152a1a]" />

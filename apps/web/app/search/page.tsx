@@ -6,13 +6,14 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Avatar from "boring-avatars";
 import {
-  MagnifyingGlass,
   CalendarBlank,
-  X,
   Fire,
   User,
   FileText,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
+import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
+import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform } from "../../lib/image-url";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -22,16 +23,13 @@ type SearchUser    = { clerk_id: string; first_name: string | null; last_name: s
 type SearchSnippet = { id: string; body: string; vibe_tags: string[]; created_at: string };
 type SearchResult  = { events: SearchEvent[]; users: SearchUser[]; snippets: SearchSnippet[]; nextCursor: string | null };
 
-async function fetchSearch(q: string, type: SearchTab, cursor?: string): Promise<SearchResult> {
+async function fetchSearch(q: string, type: SearchTab, categories: string, cursor?: string): Promise<SearchResult> {
   const params = new URLSearchParams({ q, type, limit: "20" });
   if (cursor) params.set("cursor", cursor);
+  if (categories) params.set("categories", categories);
   const res = await fetch(`/api/search?${params}`);
   if (!res.ok) throw new Error("Search failed");
   return res.json() as Promise<SearchResult>;
-}
-
-async function fetchSuggestions(q: string): Promise<SearchResult> {
-  return fetchSearch(q, "all", undefined);
 }
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -57,7 +55,7 @@ function EventResult({ event }: { event: SearchEvent }) {
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
         {event.banner_url && (
-          <Image src={`${event.banner_url}?width=128&format=webp`} alt={event.title} fill className="object-cover" />
+          <Image src={withThumbnailTransform(event.banner_url) ?? event.banner_url} alt={event.title} fill className="object-cover" />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -90,7 +88,7 @@ function UserResult({ user }: { user: SearchUser }) {
     >
       <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 44, height: 44 }}>
         {user.avatar_url ? (
-          <Image src={`${user.avatar_url}?width=88&format=webp`} alt={name} width={44} height={44} className="h-full w-full object-cover" />
+          <Image src={withAvatarTransform(user.avatar_url) ?? user.avatar_url} alt={name} width={44} height={44} className="h-full w-full object-cover" />
         ) : (
           <Avatar size={44} name={name} variant="beam" colors={AVATAR_COLORS} />
         )}
@@ -141,35 +139,30 @@ function Skeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-// ── Inner search component (needs Suspense for useSearchParams) ───────────────
-const TABS: { id: SearchTab; label: string; icon: typeof MagnifyingGlass }[] = [
-  { id: "all",      label: "All",      icon: MagnifyingGlass },
-  { id: "events",   label: "Events",   icon: CalendarBlank },
-  { id: "users",    label: "People",   icon: User },
-  { id: "snippets", label: "Snippets", icon: FileText },
+// ── Tabs ───────────────────────────────────────────────────────────────────────
+const TABS: { id: SearchTab; label: string }[] = [
+  { id: "all",      label: "All" },
+  { id: "events",   label: "Events" },
+  { id: "users",    label: "People" },
+  { id: "snippets", label: "Snippets" },
 ];
 
+// ── Inner search component ────────────────────────────────────────────────────
 function SearchInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialQ = searchParams.get("q") ?? "";
 
-  const [query, setQuery]         = useState(initialQ);
-  const [tab, setTab]             = useState<SearchTab>("all");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const initialQ    = searchParams.get("q") ?? "";
+  const initialCats = searchParams.get("categories") ?? "";
+  const initialWhen = searchParams.get("when") ?? "";
 
-  const debouncedQ = useDebounce(query, 300);
+  const [tab, setTab] = useState<SearchTab>("all");
 
-  // Type-ahead suggestions
-  const { data: suggestions } = useQuery<SearchResult>({
-    queryKey: ["search-suggestions", debouncedQ],
-    queryFn: () => fetchSuggestions(debouncedQ),
-    enabled: debouncedQ.length >= 2 && showSuggestions,
-    staleTime: 30_000,
-  });
+  const debouncedQ    = useDebounce(initialQ, 300);
+  const debouncedCats = useDebounce(initialCats, 300);
 
-  // Full search results
+  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0;
+
   const {
     data,
     isLoading,
@@ -177,11 +170,11 @@ function SearchInner() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<SearchResult>({
-    queryKey: ["search", debouncedQ, tab],
-    queryFn: ({ pageParam }) => fetchSearch(debouncedQ, tab, pageParam as string | undefined),
+    queryKey: ["search", debouncedQ, tab, debouncedCats],
+    queryFn: ({ pageParam }) => fetchSearch(debouncedQ || debouncedCats, tab, debouncedCats, pageParam as string | undefined),
     initialPageParam: undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
-    enabled: debouncedQ.length >= 2,
+    enabled: hasQuery,
     staleTime: 60_000,
   });
 
@@ -190,70 +183,46 @@ function SearchInner() {
   const users    = allPages.flatMap((p) => p.users);
   const snippets = allPages.flatMap((p) => p.snippets);
 
-  const suggestionItems = [
-    ...(suggestions?.events.slice(0, 3).map((e) => ({ label: e.title, href: `/events/${e.slug}` })) ?? []),
-    ...(suggestions?.users.slice(0, 2).map((u) => ({ label: [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || "", href: u.username ? `/go/${u.username}` : `/dashboard/user/${u.clerk_id}` })) ?? []),
-  ].slice(0, 5);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setShowSuggestions(false);
-    router.push(`/search?q=${encodeURIComponent(query)}`);
-  }
-
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
       <section className="container-shell px-4 py-6 md:py-10">
-        <div className="mx-auto max-w-2xl">
-          <h1 className="font-display text-3xl italic text-[var(--text-primary)] mb-5 md:text-4xl">
+        <div className="mx-auto max-w-3xl">
+          <h1 className="font-display text-3xl italic text-[var(--text-primary)] mb-6 md:text-4xl">
             Search
           </h1>
 
-          {/* Search input with type-ahead */}
-          <form onSubmit={handleSubmit} className="relative mb-6">
-            <div className="flex items-center gap-2.5 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-3 shadow-sm focus-within:border-[var(--brand)]/40 transition">
-              <MagnifyingGlass size={16} weight="bold" className="text-[var(--text-tertiary)] shrink-0" />
-              <input
-                ref={inputRef}
-                className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-                onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                placeholder="Search events, people, snippets…"
-                type="search"
-                value={query}
-                autoFocus
-              />
-              {query && (
-                <button type="button" onClick={() => { setQuery(""); inputRef.current?.focus(); }}>
-                  <X size={14} className="text-[var(--text-tertiary)]" />
-                </button>
-              )}
-            </div>
+          {/* Desktop pill */}
+          <div className="relative hidden md:block mb-8">
+            <SearchPillExpanded
+              initialQuery={initialQ}
+              initialCategories={initialCats ? initialCats.split(",") : []}
+              initialWhen={initialWhen}
+            />
+          </div>
 
-            {/* Suggestions dropdown */}
-            {showSuggestions && suggestionItems.length > 0 && query.length >= 2 && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-lg">
-                {suggestionItems.map((item, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onMouseDown={() => router.push(item.href)}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] transition hover:bg-[var(--bg-surface)]"
-                  >
-                    <MagnifyingGlass size={13} className="shrink-0 text-[var(--text-tertiary)]" />
-                    <span className="truncate text-[var(--text-primary)]">{item.label}</span>
-                  </button>
-                ))}
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2.5 border-t border-[var(--border-subtle)] px-4 py-3 text-left text-[12px] font-semibold text-[var(--brand)]"
-                >
-                  See all results for "{query}"
-                </button>
+          {/* Mobile simple input */}
+          <div className="relative md:hidden mb-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData(e.currentTarget);
+                const q = fd.get("q") as string;
+                router.push(`/search?q=${encodeURIComponent(q)}`);
+              }}
+            >
+              <div className="flex items-center gap-2.5 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-3 shadow-sm focus-within:border-[#5FBF2A]/40 transition">
+                <MagnifyingGlass size={16} weight="bold" className="text-[var(--text-tertiary)] shrink-0" />
+                <input
+                  name="q"
+                  defaultValue={initialQ}
+                  className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                  placeholder="Search events, people, snippets…"
+                  type="search"
+                  autoFocus
+                />
               </div>
-            )}
-          </form>
+            </form>
+          </div>
 
           {/* Tabs */}
           <div className="mb-5 flex gap-1 overflow-x-auto no-scrollbar">
@@ -263,7 +232,7 @@ function SearchInner() {
                 onClick={() => setTab(id)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-[12px] font-semibold transition-all ${
                   tab === id
-                    ? "bg-[var(--brand)] text-white"
+                    ? "bg-[#5FBF2A] text-white"
                     : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
                 }`}
               >
@@ -273,17 +242,17 @@ function SearchInner() {
           </div>
 
           {/* Empty state */}
-          {debouncedQ.length < 2 && (
+          {!hasQuery && (
             <div className="flex flex-col items-center gap-3 py-20 text-center">
               <MagnifyingGlass size={36} className="text-[var(--text-tertiary)]" weight="light" />
               <p className="text-[14px] text-[var(--text-tertiary)]">
-                Start typing to search events, people, and snippets
+                Use the search bar above — pick a vibe, date, or let AI surprise you
               </p>
             </div>
           )}
 
           {/* Results */}
-          {debouncedQ.length >= 2 && (
+          {hasQuery && (
             <div className="space-y-6">
               {isLoading ? (
                 <Skeleton />
@@ -292,9 +261,7 @@ function SearchInner() {
                   {(tab === "all" || tab === "events") && events.length > 0 && (
                     <section>
                       {tab === "all" && (
-                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                          Events
-                        </h2>
+                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Events</h2>
                       )}
                       <div className="space-y-2.5">
                         {events.map((e) => <EventResult key={e.id} event={e} />)}
@@ -305,9 +272,7 @@ function SearchInner() {
                   {(tab === "all" || tab === "users") && users.length > 0 && (
                     <section>
                       {tab === "all" && (
-                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                          People
-                        </h2>
+                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">People</h2>
                       )}
                       <div className="space-y-2.5">
                         {users.map((u) => <UserResult key={u.clerk_id} user={u} />)}
@@ -318,9 +283,7 @@ function SearchInner() {
                   {(tab === "all" || tab === "snippets") && snippets.length > 0 && (
                     <section>
                       {tab === "all" && (
-                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                          Snippets
-                        </h2>
+                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Snippets</h2>
                       )}
                       <div className="space-y-2.5">
                         {snippets.map((s) => <SnippetResult key={s.id} snippet={s} />)}
@@ -330,12 +293,11 @@ function SearchInner() {
 
                   {events.length === 0 && users.length === 0 && snippets.length === 0 && (
                     <div className="flex flex-col items-center gap-3 py-16 text-center">
-                      <p className="text-[14px] font-semibold text-[var(--text-primary)]">No results for "{debouncedQ}"</p>
-                      <p className="text-[13px] text-[var(--text-tertiary)]">Try different keywords or check your spelling.</p>
+                      <p className="text-[14px] font-semibold text-[var(--text-primary)]">No results found</p>
+                      <p className="text-[13px] text-[var(--text-tertiary)]">Try different keywords or pick another category.</p>
                     </div>
                   )}
 
-                  {/* Load more */}
                   {hasNextPage && (
                     <button
                       onClick={() => fetchNextPage()}
@@ -360,9 +322,9 @@ export default function SearchPage() {
     <Suspense fallback={
       <main className="page-grid min-h-screen pb-36 md:pb-24">
         <section className="container-shell px-4 py-6 md:py-10">
-          <div className="mx-auto max-w-2xl">
-            <div className="h-10 w-48 rounded-2xl bg-[var(--bg-muted)] animate-pulse mb-5" />
-            <div className="h-12 rounded-2xl bg-[var(--bg-muted)] animate-pulse" />
+          <div className="mx-auto max-w-3xl">
+            <div className="h-10 w-48 rounded-2xl bg-[var(--bg-muted)] animate-pulse mb-6" />
+            <div className="h-16 rounded-full bg-[var(--bg-muted)] animate-pulse mb-8" />
           </div>
         </section>
       </main>
