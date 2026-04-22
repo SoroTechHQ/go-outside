@@ -40,7 +40,7 @@ async function fetchEvents(tsQuery: string, limit: number, _cursor: string | nul
   const { data } = await supabaseAdmin
     .from("events")
     .select("id, title, slug, banner_url, start_datetime, price_label, trending_score")
-    .eq("is_published", true)
+    .eq("status", "published")
     .textSearch("search_vector", tsQuery, { type: "websearch", config: "english" })
     .order("trending_score", { ascending: false })
     .limit(limit);

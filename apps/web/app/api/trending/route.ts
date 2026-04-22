@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       const { data: events } = await supabaseAdmin
         .from("events")
         .select("id, title, slug, banner_url, start_datetime, price_label, trending_score")
-        .eq("is_published", true)
+        .eq("status", "published")
         .order("trending_score", { ascending: false })
         .limit(limit);
       return NextResponse.json({ section, events: events ?? [], topics: [], organizers: [] });
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
       .from("events")
       .select("id, title, slug, banner_url, start_datetime, price_label, trending_score")
       .in("id", topIds)
-      .eq("is_published", true);
+      .eq("status", "published");
 
     const sorted = (events ?? []).sort(
       (a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0),

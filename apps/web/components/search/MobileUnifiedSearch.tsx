@@ -7,6 +7,7 @@ import {
   ClockCounterClockwise,
   Fire,
   MagnifyingGlass,
+  MapPin,
   PaperPlaneTilt,
   Sparkle,
   X,
@@ -14,26 +15,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { categories, events, getCategoryEmoji } from "@gooutside/demo-data";
 import { thumbnailUrl } from "../../lib/image-url";
-
-type PickEvent = {
-  id: string;
-  title: string;
-  slug: string;
-  banner_url: string | null;
-  start_datetime: string;
-} | null;
-
-type AssistantPick = {
-  event_id: string;
-  title: string;
-  reason: string;
-  event: PickEvent;
-};
-
-type WeekendResponse = {
-  intro: string;
-  picks: AssistantPick[];
-};
+import type { AssistantResponse } from "../../lib/ai-assistant";
 
 type MobileUnifiedSearchProps = {
   className?: string;
@@ -50,9 +32,9 @@ const RECENT_SEARCHES = ["Afrofuture 2025", "Osu rooftop", "Jazz under the stars
 const TRENDING_SEARCHES = ["Detty December events", "Rug Tufting Workshop", "Build Ghana Summit"];
 const QUICK_PROMPTS = [
   "Something free and chill tonight",
-  "I want live music",
-  "Fun with friends on Saturday",
-  "Trending events this weekend",
+  "Live music in Osu this weekend",
+  "Best networking event this week",
+  "Date night with good drinks",
 ];
 
 export function MobileUnifiedSearch({
@@ -72,7 +54,7 @@ export function MobileUnifiedSearch({
   const [query, setQuery] = useState(value);
   const [aiQuery, setAiQuery] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<WeekendResponse | null>(null);
+  const [aiResult, setAiResult] = useState<AssistantResponse | null>(null);
 
   useEffect(() => {
     setQuery(value);
@@ -146,12 +128,16 @@ export function MobileUnifiedSearch({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed }),
       });
-      const data = (await res.json()) as WeekendResponse;
+      const data = (await res.json()) as AssistantResponse;
       setAiResult(data);
     } catch {
       setAiResult({
-        intro: "I couldn't pull AI picks right now. Try another prompt in a moment.",
+        intro: "I couldn't pull AI picks right now.",
+        summary: "Try again in a moment and I will pull matching live events from the site.",
+        followUps: [],
         picks: [],
+        totalMatches: 0,
+        searchHref: null,
       });
     } finally {
       setAiLoading(false);
@@ -406,7 +392,7 @@ export function MobileUnifiedSearch({
                             Ask for the vibe, not just keywords
                           </p>
                           <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
-                            Try prompts like “something chill tonight” or “best trending event for a group”.
+                            Try prompts like “rooftop drinks on Friday” or “best networking event this week”.
                           </p>
                         </div>
                       </div>
@@ -441,7 +427,7 @@ export function MobileUnifiedSearch({
                         ref={aiInputRef}
                         className="flex-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-4 py-3 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
                         onChange={(event) => setAiQuery(event.target.value)}
-                        placeholder="Find me the best trending event tonight…"
+                        placeholder="Ask for an event, vibe, date, area, or budget…"
                         value={aiQuery}
                       />
                       <button
@@ -461,12 +447,20 @@ export function MobileUnifiedSearch({
                       <div className="flex items-center gap-2.5 rounded-2xl bg-[var(--bg-muted)] px-4 py-4">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
                         <span className="text-sm text-[var(--text-secondary)]">
-                          Finding a strong match for you…
+                          Pulling matching live events from the site…
                         </span>
                       </div>
                     ) : aiResult ? (
                       <div className="space-y-3">
-                        <p className="text-sm text-[var(--text-secondary)]">{aiResult.intro}</p>
+                        <div className="space-y-1">
+                          <p className="text-sm text-[var(--text-secondary)]">{aiResult.intro}</p>
+                          <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">{aiResult.summary}</p>
+                          {aiResult.totalMatches > 0 && (
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
+                              {aiResult.totalMatches} live match{aiResult.totalMatches === 1 ? "" : "es"}
+                            </p>
+                          )}
+                        </div>
 
                         {aiResult.picks.length === 0 ? (
                           <p className="rounded-2xl bg-[var(--bg-muted)] px-4 py-4 text-sm text-[var(--text-secondary)]">
@@ -503,10 +497,60 @@ export function MobileUnifiedSearch({
                                 <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-secondary)]">
                                   {pick.reason}
                                 </p>
+                                {pick.event && (
+                                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--text-tertiary)]">
+                                    <span>
+                                      {new Date(pick.event.start_datetime).toLocaleDateString("en-GH", {
+                                        weekday: "short",
+                                        month: "short",
+                                        day: "numeric",
+                                      })}
+                                    </span>
+                                    {pick.event.venue_name && (
+                                      <span className="flex items-center gap-1">
+                                        <MapPin size={10} />
+                                        {pick.event.venue_name}
+                                      </span>
+                                    )}
+                                    <span>{pick.event.price_label}</span>
+                                  </div>
+                                )}
                               </div>
                               <ArrowRight size={14} className="shrink-0 text-[var(--text-tertiary)]" />
                             </button>
                           ))
+                        )}
+
+                        {aiResult.followUps.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {aiResult.followUps.map((prompt) => (
+                              <button
+                                key={prompt}
+                                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition active:scale-95"
+                                onClick={() => {
+                                  setAiQuery(prompt);
+                                  void askAssistant(prompt);
+                                }}
+                                type="button"
+                              >
+                                {prompt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {aiResult.searchHref && aiResult.picks.length > 0 && (
+                          <button
+                            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--brand)]"
+                            onClick={() => {
+                              router.push(aiResult.searchHref as string);
+                              closePanel();
+                            }}
+                            type="button"
+                          >
+                            See all matching events
+                            <ArrowRight size={12} />
+                          </button>
                         )}
 
                         <button
