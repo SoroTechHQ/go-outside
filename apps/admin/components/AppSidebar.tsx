@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleSwitch } from "./theme-controls";
@@ -143,11 +144,25 @@ export function AppSidebar({ mode }: { mode: "admin" | "organizer" }) {
         <div className={`flex h-16 shrink-0 items-center border-b border-[var(--border-subtle)] px-5 ${wide ? "justify-start" : "justify-center"}`}>
           {wide ? (
             <div>
-              <div className="font-display text-2xl italic text-[var(--text-primary)]">{title}</div>
-              <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{subtitle}</div>
+              <Image
+                src="/logo-full.png"
+                alt="GoOutside"
+                width={120}
+                height={34}
+                style={{ objectFit: "contain" }}
+                priority
+              />
+              <div className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{subtitle}</div>
             </div>
           ) : (
-            <div className="font-display text-xl italic text-[var(--accent-cyan)]">G</div>
+            <Image
+              src="/logo-mini.png"
+              alt="GoOutside"
+              width={32}
+              height={32}
+              style={{ objectFit: "contain" }}
+              priority
+            />
           )}
         </div>
 

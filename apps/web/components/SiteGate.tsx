@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Warning, ArrowRight, Lock } from "@phosphor-icons/react";
 
 export default function SiteGate() {
@@ -42,16 +43,15 @@ export default function SiteGate() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
 
         {/* Logo */}
-        <div className="flex items-center gap-2.5 mb-12">
-          <span className="w-9 h-9 rounded-xl bg-[#0f110f] dark:bg-white/10 flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="4.5" fill="#2f8f45" />
-              <circle cx="10" cy="10" r="8.5" stroke="white" strokeWidth="1.5" />
-            </svg>
-          </span>
-          <span className="text-[18px] font-bold tracking-tight text-[#0f110f] dark:text-white">
-            GoOutside
-          </span>
+        <div className="mb-12">
+          <Image
+            src="/logo-full.png"
+            alt="GoOutside"
+            width={160}
+            height={46}
+            style={{ objectFit: "contain" }}
+            priority
+          />
         </div>
 
         {/* Construction icon */}

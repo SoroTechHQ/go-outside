@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { InstagramLogo, TiktokLogo, TwitterLogo } from "@phosphor-icons/react";
@@ -99,8 +100,14 @@ export function Footer() {
 
               {/* Powered by + logo */}
               <div className="text-center">
-                <Link href="/" className="font-display text-2xl italic text-[var(--text-primary)]">
-                  GoOutside
+                <Link href="/" className="inline-block">
+                  <Image
+                    src="/logo-full.png"
+                    alt="GoOutside"
+                    width={140}
+                    height={40}
+                    style={{ objectFit: "contain" }}
+                  />
                 </Link>
                 <p className="mt-2 text-xs text-[var(--text-tertiary)]">
                   Social-first event discovery in Ghana.

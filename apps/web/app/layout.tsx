@@ -25,6 +25,15 @@ const interDisplay = Inter({
 export const metadata: Metadata = {
   title: "GoOutside",
   description: "Social-first event discovery and platform for Ghana.",
+  icons: {
+    icon: "/favicon-icon.png",
+    apple: "/favicon-icon.png",
+  },
+  openGraph: {
+    title: "GoOutside",
+    description: "Social-first event discovery and platform for Ghana.",
+    images: [{ url: "/logo-full.png" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
