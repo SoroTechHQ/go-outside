@@ -127,15 +127,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           {/* Top — logo */}
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Image
-              src="/logo-full.png"
+              src="/favicon-icon.png"
               alt="GoOutside"
-              width={140}
-              height={40}
-              style={{ objectFit: "contain" }}
+              width={36}
+              height={36}
+              style={{ borderRadius: "10px" }}
               priority
             />
+            <span style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>
+              GoOutside
+            </span>
           </div>
 
           {/* Bottom — tagline + card */}
@@ -200,15 +203,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div
             style={{
               position: "absolute", bottom: "18px", left: "20px",
+              display: "flex", alignItems: "center", gap: "8px",
             }}
           >
             <Image
-              src="/logo-mini.png"
+              src="/favicon-icon.png"
               alt="GoOutside"
-              width={36}
-              height={36}
-              style={{ objectFit: "contain" }}
+              width={28}
+              height={28}
+              style={{ borderRadius: "7px" }}
             />
+            <span style={{ fontSize: "17px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>
+              GoOutside
+            </span>
           </div>
         </div>
 
