@@ -1,9 +1,15 @@
 "use client";
 
 import { TICKER_EVENTS, CATEGORY_COLORS } from "../../lib/landing-data";
+import type { TickerEvent } from "../../lib/landing-data";
 
-export function TickerBar() {
-  const items = [...TICKER_EVENTS, ...TICKER_EVENTS];
+interface TickerBarProps {
+  events?: TickerEvent[];
+}
+
+export function TickerBar({ events }: TickerBarProps) {
+  const source = events && events.length > 0 ? events : TICKER_EVENTS;
+  const items  = [...source, ...source];
 
   return (
     <div className="relative w-full overflow-hidden border-y border-black/[0.06] bg-[#f8faf8]" style={{ height: 48 }}>

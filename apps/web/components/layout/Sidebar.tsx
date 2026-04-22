@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -132,23 +133,25 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
     >
       <div className="flex h-full flex-col py-4">
         <div className={`flex items-center ${isExpanded ? "gap-3 px-4 py-5" : "justify-center px-0 py-5"}`}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--brand)]/30 bg-[var(--brand)]/20">
-            <span className="text-lg font-bold text-[var(--brand)]">G</span>
-          </div>
-
-          <AnimatePresence>
-            {isExpanded ? (
-              <motion.span
-                animate={{ opacity: 1, width: "auto", x: 0 }}
-                className="whitespace-nowrap text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]"
-                exit={{ opacity: 0, width: 0, x: -8 }}
-                initial={{ opacity: 0, width: 0, x: -8 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-              >
-                GoOutside
-              </motion.span>
-            ) : null}
-          </AnimatePresence>
+          {isExpanded ? (
+            <Image
+              src="/logo-full.png"
+              alt="GoOutside"
+              width={120}
+              height={34}
+              style={{ objectFit: "contain" }}
+              priority
+            />
+          ) : (
+            <Image
+              src="/logo-mini.png"
+              alt="GoOutside"
+              width={32}
+              height={32}
+              style={{ objectFit: "contain" }}
+              priority
+            />
+          )}
         </div>
 
         <div className="flex min-h-0 flex-1 items-center">

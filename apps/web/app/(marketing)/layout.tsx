@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { InstagramLogo, TwitterLogo, TiktokLogo } from "@phosphor-icons/react/dist/ssr";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
@@ -14,21 +15,24 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(16px)" }}
       >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.08)]">
-            <span
-              className="text-[14px] italic leading-none text-[#2f8f45]"
-              style={{ fontFamily: "'DM Serif Display', serif" }}
-            >
-              G
-            </span>
-          </div>
-          <span
-            className="hidden text-[17px] italic text-[#0f110f] sm:block"
-            style={{ fontFamily: "'DM Serif Display', serif" }}
-          >
-            GoOutside
-          </span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logo-mini.png"
+            alt="GoOutside"
+            width={36}
+            height={36}
+            className="block sm:hidden"
+            priority
+          />
+          <Image
+            src="/logo-full.png"
+            alt="GoOutside"
+            width={140}
+            height={40}
+            className="hidden sm:block"
+            priority
+            style={{ objectFit: "contain" }}
+          />
         </Link>
 
         {/* Right CTAs */}
@@ -56,21 +60,14 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-3">
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-[rgba(47,143,69,0.25)] bg-[rgba(47,143,69,0.08)]">
-                <span
-                  className="text-[14px] italic leading-none text-[#2f8f45]"
-                  style={{ fontFamily: "'DM Serif Display', serif" }}
-                >
-                  G
-                </span>
-              </div>
-              <span
-                className="text-[17px] italic text-[#0f110f]"
-                style={{ fontFamily: "'DM Serif Display', serif" }}
-              >
-                GoOutside
-              </span>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo-full.png"
+                alt="GoOutside"
+                width={140}
+                height={40}
+                style={{ objectFit: "contain" }}
+              />
             </Link>
             <p className="text-[14px] font-light text-[#6f6f6f]">Your city is waiting.</p>
             <div className="flex gap-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { MagnifyingGlass, ShoppingCart } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
@@ -129,8 +130,8 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
 
         <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="text-[1.15rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-              GoOutside
+            <Link href="/">
+              <Image src="/logo-mini.png" alt="GoOutside" width={32} height={32} style={{ objectFit: "contain" }} />
             </Link>
             <div className="flex items-center gap-1.5">
               <PulseScorePillConnected />
@@ -165,8 +166,8 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
     <>
       <header className="sticky top-0 z-40 hidden border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.82)] backdrop-blur-xl md:flex">
         <div className="container-shell flex w-full items-center justify-between gap-6 py-4">
-          <Link href="/" className="text-[1.2rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            GoOutside
+          <Link href="/">
+            <Image src="/logo-full.png" alt="GoOutside" width={120} height={34} style={{ objectFit: "contain" }} />
           </Link>
           <div className="flex-1">
             <SearchBar
@@ -203,8 +204,8 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
 
       <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="text-[1.15rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            GoOutside
+          <Link href="/">
+            <Image src="/logo-mini.png" alt="GoOutside" width={32} height={32} style={{ objectFit: "contain" }} />
           </Link>
           <div className="flex items-center gap-1.5">
             <PulseScorePillConnected />

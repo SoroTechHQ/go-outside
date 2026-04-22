@@ -127,23 +127,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           }}
         >
           {/* Top — logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-            <span
-              style={{
-                width: "30px", height: "30px", borderRadius: "8px",
-                background: "#0f110f",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-                <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.5" />
-              </svg>
-            </span>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>
-              GoOutside
-            </span>
+          <div>
+            <Image
+              src="/logo-full.png"
+              alt="GoOutside"
+              width={140}
+              height={40}
+              style={{ objectFit: "contain" }}
+              priority
+            />
           </div>
 
           {/* Bottom — tagline + card */}
@@ -208,24 +200,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div
             style={{
               position: "absolute", bottom: "18px", left: "20px",
-              display: "flex", alignItems: "center", gap: "8px",
             }}
           >
-            <span
-              style={{
-                width: "22px", height: "22px", borderRadius: "6px",
-                background: "#0f110f",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}
-            >
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-                <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.5" />
-              </svg>
-            </span>
-            <span style={{ fontSize: "19px", fontWeight: 700, color: "#ffffff", letterSpacing: "-0.02em" }}>
-              GoOutside
-            </span>
+            <Image
+              src="/logo-mini.png"
+              alt="GoOutside"
+              width={36}
+              height={36}
+              style={{ objectFit: "contain" }}
+            />
           </div>
         </div>
 

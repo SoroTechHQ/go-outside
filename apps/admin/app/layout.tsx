@@ -21,6 +21,10 @@ const dmSerif = DM_Serif_Display({
 export const metadata: Metadata = {
   title: "GoOutside Admin",
   description: "Organizer and platform admin frontend for GoOutside.",
+  icons: {
+    icon: "/favicon-icon.png",
+    apple: "/favicon-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
