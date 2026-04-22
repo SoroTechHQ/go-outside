@@ -66,6 +66,36 @@ const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 
 const CARDS_PER_SECTION = 3;
 
+type SponsoredSpotlight = {
+  href: string;
+  external?: boolean;
+  label: string;
+  eyebrow: string;
+  title: string;
+  teaser: string;
+  dateLabel: string;
+  venue: string;
+  locationLine: string;
+  priceLabel: string;
+  bannerUrl: string | null;
+  bannerTone: string;
+};
+
+const SUPERCAR_SPECTACLE_SPOTLIGHT: SponsoredSpotlight = {
+  href: "https://supercarspectacle.com/",
+  external: true,
+  label: "Sponsored",
+  eyebrow: "Motorsport Showcase",
+  title: "Supercar Spectacle 2026",
+  teaser: "Supercars, drifting, vendors, merch, car registration, and a full fan experience coming to Accra.",
+  dateLabel: "December 2026",
+  venue: "Borteyman Sports Complex",
+  locationLine: "Borteyman Sports Complex, Accra",
+  priceLabel: "Tickets & Registration",
+  bannerUrl: "https://szobygsvdlzypuspcafu.supabase.co/storage/v1/object/public/event-banners/sponsored/supercar-spectacle-hero.jpg",
+  bannerTone: "from-[#20120a] via-[#111111] to-[#050505]",
+};
+
 // ── Scarcity pill from DB data ────────────────────────────────
 
 function ScarcityBadge({ scarcity }: { scarcity: FeedEventItem["scarcity"] }) {
@@ -347,43 +377,59 @@ function ImageCard({
 
 // ── Sponsored ad card ──────────────────────────────────────────
 
-function SponsoredAdCard({ event }: { event: FeedEventItem }) {
-  const bannerUrl = event.gallery?.[0] ?? (event as FeedEventItem & { bannerUrl?: string }).bannerUrl;
+function SponsoredAdCard({ spotlight }: { spotlight: SponsoredSpotlight }) {
+  const bannerUrl = spotlight.bannerUrl;
   return (
-    <Link
+    <a
       className="group block overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow-strong)] active:scale-[0.99]"
-      href={`/events/${event.slug}`}
+      href={spotlight.href}
+      rel={spotlight.external ? "noreferrer noopener" : undefined}
+      target={spotlight.external ? "_blank" : undefined}
     >
       <div className="relative min-h-[180px] overflow-hidden sm:min-h-[220px] md:aspect-[4/1] md:min-h-0">
         {bannerUrl ? (
           <div
-            aria-label={event.title}
+            aria-label={spotlight.title}
             className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
             role="img"
             style={{ backgroundImage: `url(${bannerUrl})`, aspectRatio: "3/1" }}
           />
         ) : (
-          <div className={`absolute inset-0 bg-gradient-to-br ${event.bannerTone}`} />
+          <div className={`absolute inset-0 bg-gradient-to-br ${spotlight.bannerTone}`} />
         )}
         <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(5,8,6,0.82)_0%,rgba(5,8,6,0.38)_60%,rgba(5,8,6,0.14)_100%)] md:bg-[linear-gradient(90deg,rgba(5,8,6,0.76)_0%,rgba(5,8,6,0.42)_42%,rgba(5,8,6,0.18)_100%)]" />
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-7">
           <div className="mb-2.5 flex flex-wrap items-center gap-2 md:mb-4 md:gap-3">
-            {event.featured && (
-              <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">Featured</span>
-            )}
+            <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">
+              {spotlight.label}
+            </span>
             <span className="rounded-full border border-[var(--brand)] bg-[rgba(47,143,69,0.18)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8bd98f] md:px-4 md:py-2 md:text-[0.74rem]">
-              {event.eyebrow}
+              {spotlight.eyebrow}
             </span>
           </div>
-          <h3 className="text-[1.25rem] font-semibold leading-tight tracking-[-0.03em] text-white md:max-w-[540px] md:text-[1.85rem]">{event.title}</h3>
-          <p className="mt-1.5 text-[0.8rem] text-white/75 md:mt-2 md:text-[0.92rem]">{event.dateLabel} · {event.venue}</p>
+          <h3 className="text-[1.25rem] font-semibold leading-tight tracking-[-0.03em] text-white md:max-w-[540px] md:text-[1.85rem]">
+            {spotlight.title}
+          </h3>
+          <p className="mt-2 max-w-[720px] text-[0.8rem] leading-relaxed text-white/82 md:text-[0.95rem]">
+            {spotlight.teaser}
+          </p>
+          <p className="mt-1.5 text-[0.8rem] text-white/75 md:mt-2 md:text-[0.92rem]">
+            {spotlight.dateLabel} · {spotlight.venue}
+          </p>
+          <p className="mt-1 text-[0.78rem] text-white/68 md:text-[0.9rem]">
+            {spotlight.locationLine}
+          </p>
           <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-5 md:gap-3">
-            <span className="rounded-full border border-white/20 bg-white/12 px-3.5 py-2 text-[0.82rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2.5 md:text-[0.95rem]">{event.priceLabel}</span>
-            <span className="rounded-full bg-[#7ed03d] px-4 py-2 text-[0.82rem] font-semibold text-white md:px-6 md:py-2.5 md:text-[0.95rem]">Get Tickets →</span>
+            <span className="rounded-full border border-white/20 bg-white/12 px-3.5 py-2 text-[0.82rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2.5 md:text-[0.95rem]">
+              {spotlight.priceLabel}
+            </span>
+            <span className="rounded-full bg-[#7ed03d] px-4 py-2 text-[0.82rem] font-semibold text-white md:px-6 md:py-2.5 md:text-[0.95rem]">
+              View Event →
+            </span>
           </div>
         </div>
       </div>
-    </Link>
+    </a>
   );
 }
 
@@ -451,11 +497,7 @@ export function HomeClient() {
   // Filtered events for sidebar widgets (same source, client-side filter)
   const filteredEvents = useMemo(() => getFilteredEvents(filters, visibleEvents), [filters, visibleEvents]);
 
-  // Featured / sponsored card — first featured event in the feed
-  const sponsoredEvent = useMemo(
-    () => visibleEvents.find((e) => e.featured) ?? visibleEvents[0],
-    [visibleEvents],
-  );
+  const sponsoredSpotlight = SUPERCAR_SPECTACLE_SPOTLIGHT;
 
   // Trending cards for sidebar
   const trendingCards = useMemo(
@@ -539,15 +581,15 @@ export function HomeClient() {
             className={`container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
           >
             <div className="min-w-0">
-              {/* Featured ad banner — real DB event */}
-              {sponsoredEvent && !isLoading && (
+              {/* Sponsored banner */}
+              {!isLoading && (
                 <motion.section
                   className="mt-4"
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <SponsoredAdCard event={sponsoredEvent} />
+                  <SponsoredAdCard spotlight={sponsoredSpotlight} />
                 </motion.section>
               )}
 
