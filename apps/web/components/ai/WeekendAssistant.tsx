@@ -9,42 +9,24 @@ import {
   PaperPlaneTilt,
   CaretDown,
   CalendarBlank,
+  MapPin,
   ArrowRight,
 } from "@phosphor-icons/react";
 import { thumbnailUrl } from "../../lib/image-url";
-
-type PickEvent = {
-  id: string;
-  title: string;
-  slug: string;
-  banner_url: string | null;
-  start_datetime: string;
-} | null;
-
-type Pick = {
-  event_id: string;
-  title: string;
-  reason: string;
-  event: PickEvent;
-};
-
-type WeekendResponse = {
-  intro: string;
-  picks: Pick[];
-};
+import type { AssistantResponse } from "../../lib/ai-assistant";
 
 const QUICK_PROMPTS = [
   "Something free and chill tonight",
-  "I want live music",
-  "Fun with friends on Saturday",
-  "Afrobeats vibes",
+  "Live music in Osu this weekend",
+  "Best networking event this week",
+  "Date night with good drinks",
 ];
 
 export function WeekendAssistant() {
   const [open, setOpen]       = useState(false);
   const [input, setInput]     = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult]   = useState<WeekendResponse | null>(null);
+  const [result, setResult]   = useState<AssistantResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function ask(message: string) {
@@ -57,10 +39,17 @@ export function WeekendAssistant() {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ message }),
       });
-      const data = await res.json() as WeekendResponse;
+      const data = await res.json() as AssistantResponse;
       setResult(data);
     } catch {
-      setResult({ intro: "Couldn't load suggestions right now. Try again!", picks: [] });
+      setResult({
+        intro: "Couldn't load suggestions right now.",
+        summary: "Try again in a moment and I will pull matching live events from the site.",
+        followUps: [],
+        picks: [],
+        totalMatches: 0,
+        searchHref: null,
+      });
     } finally {
       setLoading(false);
     }
@@ -80,15 +69,15 @@ export function WeekendAssistant() {
         className="flex w-full items-center justify-between gap-3 px-5 py-4 transition hover:bg-[var(--bg-muted)]"
         type="button"
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)]/15">
-            <Sparkle size={16} weight="fill" className="text-[var(--brand)]" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)]/15">
+              <Sparkle size={16} weight="fill" className="text-[var(--brand)]" />
+            </div>
+            <div className="text-left">
+              <p className="text-[13px] font-bold text-[var(--text-primary)]">Event Assistant</p>
+              <p className="text-[11px] text-[var(--text-tertiary)]">Ask for live plans, vibes, and event picks</p>
+            </div>
           </div>
-          <div className="text-left">
-            <p className="text-[13px] font-bold text-[var(--text-primary)]">Weekend Assistant</p>
-            <p className="text-[11px] text-[var(--text-tertiary)]">Ask me what to do this weekend</p>
-          </div>
-        </div>
         <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
           <CaretDown size={15} className="text-[var(--text-tertiary)]" />
         </motion.div>
@@ -125,7 +114,7 @@ export function WeekendAssistant() {
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="e.g. Something free and chill this Friday…"
+                  placeholder="e.g. Rooftop vibes in East Legon on Friday…"
                   className="flex-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition focus:border-[var(--brand)]/40 focus:ring-2 focus:ring-[var(--brand)]/15"
                 />
                 <button
@@ -141,7 +130,7 @@ export function WeekendAssistant() {
               {loading && (
                 <div className="mt-5 flex items-center gap-2.5">
                   <div className="h-4 w-4 rounded-full border-2 border-[var(--brand)] border-t-transparent animate-spin" />
-                  <span className="text-[13px] text-[var(--text-tertiary)]">Finding the best vibes for you…</span>
+                  <span className="text-[13px] text-[var(--text-tertiary)]">Pulling the strongest live matches from the site…</span>
                 </div>
               )}
 
@@ -153,7 +142,15 @@ export function WeekendAssistant() {
                   transition={{ duration: 0.22 }}
                   className="mt-4 space-y-3"
                 >
-                  <p className="text-[13px] text-[var(--text-secondary)]">{result.intro}</p>
+                  <div className="space-y-1">
+                    <p className="text-[13px] text-[var(--text-secondary)]">{result.intro}</p>
+                    <p className="text-[12px] text-[var(--text-tertiary)]">{result.summary}</p>
+                    {result.totalMatches > 0 && (
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+                        {result.totalMatches} live match{result.totalMatches === 1 ? "" : "es"}
+                      </p>
+                    )}
+                  </div>
 
                   {result.picks.length === 0 && (
                     <p className="text-[13px] text-[var(--text-tertiary)]">No events found. Try a different search.</p>
@@ -184,14 +181,23 @@ export function WeekendAssistant() {
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{pick.title}</p>
                             <p className="mt-0.5 text-[11px] text-[var(--text-secondary)] line-clamp-2">{pick.reason}</p>
-                            {pick.event.start_datetime && (
-                              <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
-                                <CalendarBlank size={10} />
-                                {new Date(pick.event.start_datetime).toLocaleDateString("en-GH", {
-                                  weekday: "short", month: "short", day: "numeric",
-                                })}
-                              </div>
-                            )}
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--text-tertiary)]">
+                              {pick.event.start_datetime && (
+                                <span className="flex items-center gap-1">
+                                  <CalendarBlank size={10} />
+                                  {new Date(pick.event.start_datetime).toLocaleDateString("en-GH", {
+                                    weekday: "short", month: "short", day: "numeric",
+                                  })}
+                                </span>
+                              )}
+                              {pick.event.venue_name && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={10} />
+                                  {pick.event.venue_name}
+                                </span>
+                              )}
+                              <span>{pick.event.price_label}</span>
+                            </div>
                           </div>
                           <ArrowRight size={14} className="shrink-0 text-[var(--text-tertiary)] transition group-hover:text-[var(--brand)] group-hover:translate-x-0.5" />
                         </Link>
@@ -203,6 +209,31 @@ export function WeekendAssistant() {
                       )}
                     </motion.div>
                   ))}
+
+                  {result.followUps.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {result.followUps.map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => void ask(prompt)}
+                          className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/30 hover:text-[var(--brand)] active:scale-95"
+                          type="button"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {result.searchHref && result.picks.length > 0 && (
+                    <Link
+                      href={result.searchHref}
+                      className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--brand)] transition hover:opacity-70"
+                    >
+                      See all matching events
+                      <ArrowRight size={12} />
+                    </Link>
+                  )}
 
                   <button
                     onClick={() => { setResult(null); inputRef.current?.focus(); }}
