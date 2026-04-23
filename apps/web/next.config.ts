@@ -41,12 +41,14 @@ function buildContentSecurityPolicy() {
     "https:",
     "wss:",
     "blob:",
+    "https://challenges.cloudflare.com",
   ]);
 
   const frameSources = new Set<string>([
     "'self'",
     "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
+    "https://challenges.cloudflare.com",
   ]);
 
   const scriptSources = new Set<string>([
@@ -56,6 +58,7 @@ function buildContentSecurityPolicy() {
     "https://maps.gstatic.com",
     "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
+    "https://challenges.cloudflare.com",
   ]);
 
   // Always allow eval — Clerk's JS SDK requires it in all environments
