@@ -129,7 +129,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Top — logo */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Image
-              src="/favicon-icon.png"
+              src="/logo-mini.png"
               alt="GoOutside"
               width={36}
               height={36}
@@ -207,7 +207,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             }}
           >
             <Image
-              src="/favicon-icon.png"
+              src="/logo-mini.png"
               alt="GoOutside"
               width={28}
               height={28}
