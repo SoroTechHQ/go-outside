@@ -2,18 +2,16 @@
 
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Avatar from "boring-avatars";
 import {
   CalendarBlank,
   Fire,
-  User,
-  FileText,
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
-import MobileUnifiedSearch from "../../components/search/MobileUnifiedSearch";
+import { AIChatPanel } from "../../components/search/AIChatPanel";
 import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform } from "../../lib/image-url";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
@@ -24,10 +22,12 @@ type SearchUser    = { clerk_id: string; first_name: string | null; last_name: s
 type SearchSnippet = { id: string; body: string; vibe_tags: string[]; created_at: string };
 type SearchResult  = { events: SearchEvent[]; users: SearchUser[]; snippets: SearchSnippet[]; nextCursor: string | null };
 
-async function fetchSearch(q: string, type: SearchTab, categories: string, cursor?: string): Promise<SearchResult> {
-  const params = new URLSearchParams({ q, type, limit: "20" });
+async function fetchSearch(q: string, type: SearchTab, categories: string, when: string, cursor?: string): Promise<SearchResult> {
+  const params = new URLSearchParams({ type, limit: "20" });
+  if (q) params.set("q", q);
   if (cursor) params.set("cursor", cursor);
   if (categories) params.set("categories", categories);
+  if (when) params.set("when", when);
   const res = await fetch(`/api/search?${params}`);
   if (!res.ok) throw new Error("Search failed");
   return res.json() as Promise<SearchResult>;
@@ -158,11 +158,17 @@ function SearchInner() {
   const initialWhen = searchParams.get("when") ?? "";
 
   const [tab, setTab] = useState<SearchTab>("all");
+  const [showAI, setShowAI] = useState(initialQ.length >= 2);
 
   const debouncedQ    = useDebounce(initialQ, 300);
   const debouncedCats = useDebounce(initialCats, 300);
 
-  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0;
+  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0;
+
+  // Show AI panel whenever there's a text query
+  useEffect(() => {
+    if (initialQ.length >= 2) setShowAI(true);
+  }, [initialQ]);
 
   const {
     data,
@@ -171,8 +177,9 @@ function SearchInner() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<SearchResult>({
-    queryKey: ["search", debouncedQ, tab, debouncedCats],
-    queryFn: ({ pageParam }) => fetchSearch(debouncedQ || debouncedCats, tab, debouncedCats, pageParam as string | undefined),
+    queryKey: ["search", debouncedQ, tab, debouncedCats, initialWhen],
+    queryFn: ({ pageParam }) =>
+      fetchSearch(debouncedQ, tab, debouncedCats, initialWhen, pageParam as string | undefined),
     initialPageParam: undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: hasQuery,
@@ -187,37 +194,42 @@ function SearchInner() {
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
       <section className="container-shell px-4 pb-6 pt-8 md:py-10">
-        <div className="mx-auto max-w-3xl">
-          <h1 className="font-display text-3xl italic text-[var(--text-primary)] mb-6 md:text-4xl">
-            Search
-          </h1>
+        <div className="mx-auto max-w-3xl space-y-6">
 
-          {/* Desktop pill */}
-          <div className="relative hidden md:block mb-8">
-            <SearchPillExpanded
+          {/* ── Search bar (search page owns this; header hides its pill on /search) ── */}
+          <SearchPillExpanded
+            initialQuery={initialQ}
+            initialCategories={initialCats ? initialCats.split(",") : []}
+            initialWhen={initialWhen}
+          />
+
+          {/* ── AI Chat Panel ── */}
+          {showAI && initialQ.length >= 2 && (
+            <AIChatPanel
               initialQuery={initialQ}
-              initialCategories={initialCats ? initialCats.split(",") : []}
-              initialWhen={initialWhen}
+              onDismiss={() => setShowAI(false)}
             />
-          </div>
+          )}
 
-          {/* Mobile simple input */}
-          <div className="relative mb-6 md:hidden">
-            <MobileUnifiedSearch
-              emptyLabel="Search events, people, snippets…"
-              onSearch={(nextQuery) => {
-                const params = new URLSearchParams(searchParams.toString());
-                if (nextQuery) params.set("q", nextQuery);
-                else params.delete("q");
-                router.push(params.toString() ? `/search?${params.toString()}` : "/search");
-              }}
-              subtitle="Events, people, snippets"
-              value={initialQ}
-            />
-          </div>
+          {/* ── Trigger AI if hidden ── */}
+          {!showAI && initialQ.length >= 2 && (
+            <button
+              type="button"
+              onClick={() => setShowAI(true)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#5FBF2A]/40 bg-[#f0fae6] px-4 py-3 text-left transition hover:bg-[#e6f7d9]"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5FBF2A]">
+                <span className="text-white text-sm">✨</span>
+              </div>
+              <div>
+                <p className="text-[12px] font-semibold text-[#3E9E1A]">Ask AI about "{initialQ}"</p>
+                <p className="text-[11px] text-[#3E9E1A]/70">Get personalized picks based on your history</p>
+              </div>
+            </button>
+          )}
 
-          {/* Tabs */}
-          <div className="mb-5 flex gap-1 overflow-x-auto no-scrollbar">
+          {/* ── Tabs ── */}
+          <div className="flex gap-1 overflow-x-auto no-scrollbar">
             {TABS.map(({ id, label }) => (
               <button
                 key={id}
@@ -233,7 +245,7 @@ function SearchInner() {
             ))}
           </div>
 
-          {/* Empty state */}
+          {/* ── Empty state ── */}
           {!hasQuery && (
             <div className="flex flex-col items-center gap-3 py-20 text-center">
               <MagnifyingGlass size={36} className="text-[var(--text-tertiary)]" weight="light" />
@@ -243,7 +255,7 @@ function SearchInner() {
             </div>
           )}
 
-          {/* Results */}
+          {/* ── Results ── */}
           {hasQuery && (
             <div className="space-y-6">
               {isLoading ? (
@@ -314,9 +326,9 @@ export default function SearchPage() {
     <Suspense fallback={
       <main className="page-grid min-h-screen pb-36 md:pb-24">
         <section className="container-shell px-4 py-6 md:py-10">
-          <div className="mx-auto max-w-3xl">
-            <div className="h-10 w-48 rounded-2xl bg-[var(--bg-muted)] animate-pulse mb-6" />
-            <div className="h-16 rounded-full bg-[var(--bg-muted)] animate-pulse mb-8" />
+          <div className="mx-auto max-w-3xl space-y-6">
+            <div className="h-16 rounded-full bg-[var(--bg-muted)] animate-pulse" />
+            <div className="h-64 rounded-3xl bg-[var(--bg-muted)] animate-pulse" />
           </div>
         </section>
       </main>

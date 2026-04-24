@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
 import { MagnifyingGlass, ShoppingCart } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
 import { usePathname } from "next/navigation";
 import HomeSearchHero from "../search/HomeSearchHero";
-import SearchBar from "../search/SearchBar";
+import { SearchPillExpanded } from "../search/SearchPillExpanded";
 import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
 import { useAppShell } from "./AppShellContext";
 import { NotificationBell } from "../notifications/NotificationBell";
@@ -32,13 +31,13 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
   const pathname = usePathname();
   const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
   const { peekPanelWidth } = useAppShell();
-  const [isFocused, setIsFocused] = useState(false);
   const { totalCount, openCart } = useCart();
   const stableSidebarOffset = 88;
-  const isHome     = pathname === "/";
-  const isMessages = pathname === "/messages" || pathname === "/dashboard/messages";
-  const isWallets  = pathname === "/wallets" || pathname.startsWith("/wallets/") || pathname.startsWith("/dashboard/wallets");
-  const isProfile  = pathname === "/profile" || pathname.startsWith("/profile/") || pathname.startsWith("/dashboard/profile");
+  const isHome      = pathname === "/";
+  const isSearch    = pathname === "/search";
+  const isMessages  = pathname === "/messages" || pathname === "/dashboard/messages";
+  const isWallets   = pathname === "/wallets" || pathname.startsWith("/wallets/") || pathname.startsWith("/dashboard/wallets");
+  const isProfile   = pathname === "/profile" || pathname.startsWith("/profile/") || pathname.startsWith("/dashboard/profile");
   const isEventDetail = pathname.startsWith("/events/");
   const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
   const easedHomeProgress =
@@ -104,9 +103,9 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
             <div
               className={`flex w-full justify-center transition-[height,padding,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHome ? "items-start" : "items-center"}`}
               style={{
-                height: isHome ? `${160 - easedHomeProgress * 52}px` : isFocused ? 110 : isCompact ? 72 : 84,
-                paddingTop: isHome ? `${28 - easedHomeProgress * 11}px` : isFocused ? 26 : isCompact ? 16 : 18,
-                paddingBottom: isHome ? `${22 - easedHomeProgress * 10}px` : isFocused ? 20 : isCompact ? 10 : 14,
+                height: isHome ? `${160 - easedHomeProgress * 52}px` : isCompact ? 72 : 84,
+                paddingTop: isHome ? `${28 - easedHomeProgress * 11}px` : isCompact ? 16 : 18,
+                paddingBottom: isHome ? `${22 - easedHomeProgress * 10}px` : isCompact ? 10 : 14,
                 transform: isHome ? `translateY(${8 - easedHomeProgress * 4}px)` : undefined,
               }}
             >
@@ -116,14 +115,11 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
                   miniProgress={miniProgress}
                   mode={isMini ? "mini" : isCompact ? "compact" : "expanded"}
                 />
-              ) : (
-                <SearchBar
-                  isCompact={isCompact}
-                  isFocused={isFocused}
-                  isMini={isMini}
-                  onFocusChange={setIsFocused}
-                />
-              )}
+              ) : !isSearch ? (
+                <div className="w-full max-w-2xl mx-auto">
+                  <SearchPillExpanded compact={isCompact} />
+                </div>
+              ) : null}
             </div>
           </div>
         </header>
@@ -169,14 +165,11 @@ export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderPro
           <Link href="/">
             <Image src="/logo-full.png" alt="GoOutside" width={120} height={34} style={{ objectFit: "contain" }} />
           </Link>
-          <div className="flex-1">
-            <SearchBar
-              isCompact={false}
-              isFocused={isFocused}
-              isMini={false}
-              onFocusChange={setIsFocused}
-            />
-          </div>
+          {!isSearch && (
+            <div className="flex-1 max-w-2xl">
+              <SearchPillExpanded compact={isCompact} />
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <NotificationBell />
             {totalCount > 0 && (

@@ -131,16 +131,20 @@ type ActiveSegment = "what" | "when" | "lucky" | null;
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
+type Suggestion = { id: string; title: string; slug: string; type: "event" | "user"; subtitle?: string };
+
 export function SearchPillExpanded({
   initialQuery = "",
   initialCategories = [] as string[],
   initialWhen = "",
   className = "",
+  compact = false,
 }: {
   initialQuery?: string;
   initialCategories?: string[];
   initialWhen?: string;
   className?: string;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const pillRef = useRef<HTMLDivElement>(null);
@@ -153,6 +157,9 @@ export function SearchPillExpanded({
   const [surpriseLoading, setSurpriseLoading] = useState(false);
   const [surpriseDone, setSurpriseDone] = useState(false);
   const [query, setQuery] = useState(initialQuery);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const suggestDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -206,19 +213,46 @@ export function SearchPillExpanded({
     }
   };
 
+  // Debounced typeahead — runs while user types in the "What" input
+  const fetchSuggestions = useCallback((q: string) => {
+    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
+    if (q.trim().length < 2) { setSuggestions([]); return; }
+
+    suggestDebounceRef.current = setTimeout(async () => {
+      setSuggestionsLoading(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=all&limit=6`);
+        if (res.ok) {
+          const data = await res.json() as {
+            events: { id: string; title: string; slug: string }[];
+            users: { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null }[];
+          };
+          const eventSuggestions: Suggestion[] = (data.events ?? []).map((e) => ({
+            id: e.id, title: e.title, slug: e.slug, type: "event" as const,
+          }));
+          const userSuggestions: Suggestion[] = (data.users ?? []).slice(0, 2).map((u) => ({
+            id: u.clerk_id,
+            title: [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || "User",
+            slug: u.username ? `/go/${u.username}` : `/dashboard/user/${u.clerk_id}`,
+            type: "user" as const,
+            subtitle: u.username ? `@${u.username}` : undefined,
+          }));
+          setSuggestions([...eventSuggestions, ...userSuggestions].slice(0, 7));
+        }
+      } catch { /* ignore */ } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 240);
+  }, []);
+
+  // AI-powered "Surprise me" — routes to search page and lets the AI panel handle it
   const handleSurprise = async () => {
     setSurpriseLoading(true);
+    setActive(null);
     try {
-      const res = await fetch("/api/search?q=&type=events&limit=20");
-      if (res.ok) {
-        const data = await res.json() as { events: { slug: string }[] };
-        const events = data.events ?? [];
-        if (events.length > 0) {
-          const pick = events[Math.floor(Math.random() * events.length)];
-          setSurpriseDone(true);
-          setTimeout(() => router.push(`/events/${pick.slug}`), 600);
-        }
-      }
+      const params = new URLSearchParams({ q: "Surprise me with something perfect based on my vibe" });
+      setSurpriseDone(true);
+      setTimeout(() => router.push(`/search?${params.toString()}`), 400);
     } catch {
       setSurpriseDone(false);
     } finally {
@@ -236,19 +270,25 @@ export function SearchPillExpanded({
   };
 
   // Display values in pill segments
-  const whatDisplay = selectedCats.length > 0
-    ? selectedCats.map((s) => CATEGORIES.find((c) => c.slug === s)?.label ?? s).join(", ")
-    : null;
+  const whatDisplay = query.trim()
+    ? query.trim()
+    : selectedCats.length > 0
+      ? selectedCats.map((s) => CATEGORIES.find((c) => c.slug === s)?.label ?? s).join(", ")
+      : null;
 
   const whenDisplay = whenChip
     ? DATE_CHIPS.find((c) => c.value === whenChip)?.label ?? whenChip
     : (rangeStart && rangeEnd ? `${MONTHS_SHORT[new Date().getMonth()]} ${rangeStart}–${rangeEnd}` : null);
 
+  const pillH = compact ? "h-12" : "h-16";
+  const segPx = compact ? "px-4" : "px-6";
+  const showLabels = !compact;
+
   return (
     <div ref={pillRef} className={`relative w-full ${className}`}>
       {/* ── Pill ── */}
       <div
-        className={`flex h-16 items-stretch overflow-hidden rounded-full border transition-shadow ${
+        className={`flex ${pillH} items-stretch overflow-hidden rounded-full border transition-all duration-300 ${
           active
             ? "border-[var(--border-default)] shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
             : "border-[var(--border-subtle)] shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
@@ -258,15 +298,17 @@ export function SearchPillExpanded({
         <button
           type="button"
           onClick={() => setActive(active === "what" ? null : "what")}
-          className={`relative flex min-w-0 flex-1 flex-col justify-center px-6 text-left transition-colors ${
+          className={`relative flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors ${
             active === "what" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)/60]"
           }`}
         >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-            What
-          </span>
-          <span className={`mt-0.5 truncate text-[13px] font-medium ${whatDisplay ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] font-normal"}`}>
-            {whatDisplay ?? "Music, Tech, Food…"}
+          {showLabels && (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+              What
+            </span>
+          )}
+          <span className={`${showLabels ? "mt-0.5" : ""} truncate text-[13px] font-medium ${whatDisplay ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] font-normal"}`}>
+            {whatDisplay ?? (compact ? "Search events, people…" : "Search or pick a vibe…")}
           </span>
         </button>
 
@@ -277,14 +319,16 @@ export function SearchPillExpanded({
         <button
           type="button"
           onClick={() => setActive(active === "when" ? null : "when")}
-          className={`relative flex min-w-0 flex-1 flex-col justify-center px-6 text-left transition-colors ${
+          className={`relative flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors ${
             active === "when" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)/60]"
           }`}
         >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-            When
-          </span>
-          <span className={`mt-0.5 truncate text-[13px] font-medium ${whenDisplay ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] font-normal"}`}>
+          {showLabels && (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+              When
+            </span>
+          )}
+          <span className={`${showLabels ? "mt-0.5" : ""} truncate text-[13px] font-medium ${whenDisplay ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] font-normal"}`}>
             {whenDisplay ?? "Add dates"}
           </span>
         </button>
@@ -296,14 +340,16 @@ export function SearchPillExpanded({
         <button
           type="button"
           onClick={() => setActive(active === "lucky" ? null : "lucky")}
-          className={`relative flex min-w-0 flex-1 flex-col justify-center px-6 text-left transition-colors ${
+          className={`relative flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors ${
             active === "lucky" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)/60]"
           }`}
         >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-            Feeling lucky
-          </span>
-          <span className="mt-0.5 text-[13px] font-normal text-[var(--text-tertiary)]">
+          {showLabels && (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+              Feeling lucky
+            </span>
+          )}
+          <span className={`${showLabels ? "mt-0.5" : ""} text-[13px] font-normal text-[var(--text-tertiary)]`}>
             Surprise me
           </span>
         </button>
@@ -313,7 +359,7 @@ export function SearchPillExpanded({
           <button
             type="button"
             onClick={handleSearch}
-            className="flex h-12 items-center gap-2 rounded-full bg-[#5FBF2A] px-5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(95,191,42,0.35)] transition hover:bg-[#4da823] active:scale-[0.97]"
+            className={`flex ${compact ? "h-9" : "h-12"} items-center gap-2 rounded-full bg-[#5FBF2A] px-5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(95,191,42,0.35)] transition hover:bg-[#4da823] active:scale-[0.97]`}
           >
             <MagnifyingGlass size={15} weight="bold" />
             <span className="hidden sm:inline">Search</span>
@@ -340,7 +386,54 @@ export function SearchPillExpanded({
                   active === "what" ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
               >
-                <p className="mb-3 text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Choose your vibe</p>
+                {/* Free-text query input + typeahead */}
+                <div className="mb-3">
+                  <input
+                    autoFocus={active === "what"}
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      fetchSuggestions(e.target.value);
+                    }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSearch(); } }}
+                    placeholder="e.g. I'm bored, what can I do tonight?"
+                    className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[#5FBF2A]/60 caret-[#5FBF2A] transition"
+                  />
+                  {/* Typeahead suggestions */}
+                  {suggestions.length > 0 && (
+                    <div className="mt-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-lg overflow-hidden">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            if (s.type === "user") {
+                              router.push(s.slug);
+                            } else {
+                              setQuery(s.title);
+                              setSuggestions([]);
+                              handleSearch();
+                            }
+                          }}
+                          className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-[var(--bg-muted)] transition"
+                        >
+                          <span className="text-[11px]">{s.type === "event" ? "🎟" : "👤"}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-medium text-[var(--text-primary)] truncate">{s.title}</p>
+                            {s.subtitle && <p className="text-[10px] text-[var(--text-tertiary)]">{s.subtitle}</p>}
+                          </div>
+                          <span className="shrink-0 text-[10px] text-[var(--text-tertiary)]">
+                            {s.type === "event" ? "Event" : "Person"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {suggestionsLoading && query.trim().length >= 2 && suggestions.length === 0 && (
+                    <p className="mt-1 text-[11px] text-[var(--text-tertiary)] px-1">Searching…</p>
+                  )}
+                </div>
+                <p className="mb-2 text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Or pick a vibe</p>
                 <div className="grid grid-cols-2 gap-2">
                   {CATEGORIES.map((cat) => {
                     const sel = selectedCats.includes(cat.slug);
