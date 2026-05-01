@@ -114,6 +114,39 @@ export async function searchEvents(opts: {
   return results;
 }
 
+// Collision-resistant event slug (no nanoid dependency)
+function shortId(): string {
+  return Math.random().toString(36).slice(2, 6);
+}
+
+export async function createUniqueEventSlug(title: string): Promise<string> {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 60);
+
+  const { data: existing } = await supabaseAdmin
+    .from("events")
+    .select("slug")
+    .like("slug", `${base}%`);
+
+  const existingSlugs = new Set((existing ?? []).map((e: { slug: string }) => e.slug));
+
+  if (!existingSlugs.has(base)) return base;
+
+  let candidate: string;
+  let attempts = 0;
+  do {
+    candidate = `${base}-${shortId()}`;
+    attempts++;
+    if (attempts > 20) throw new Error("Could not generate unique slug after 20 attempts");
+  } while (existingSlugs.has(candidate));
+
+  return candidate;
+}
+
 // Events by organizer user ID
 export async function getEventsByOrganizer(organizerUserId: string): Promise<EventItem[]> {
   const { data, error } = await supabaseAdmin
