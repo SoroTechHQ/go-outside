@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -40,12 +41,80 @@ function resolveWhen(when: string): { from: string; to: string } | null {
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     return { from: startOfDay(now), to: endOfDay(end) };
   }
-  // Try ISO date string (YYYY-MM-DD)
+  // "YYYY-MM-DD:YYYY-MM-DD" range from calendar
+  if (/^\d{4}-\d{2}-\d{2}:\d{4}-\d{2}-\d{2}$/.test(when)) {
+    const [fromDate, toDate] = when.split(":") as [string, string];
+    return { from: startOfDay(new Date(fromDate)), to: endOfDay(new Date(toDate)) };
+  }
+  // ISO date string (YYYY-MM-DD)
   if (/^\d{4}-\d{2}-\d{2}$/.test(when)) {
     const d = new Date(when);
     return { from: startOfDay(d), to: endOfDay(d) };
   }
   return null;
+}
+
+// User interest profile for personalized ranking
+type UserInterests = {
+  topCategories: string[];
+  interests: string[];
+  pulseScore: number;
+};
+
+async function loadUserInterests(clerkId: string): Promise<UserInterests | null> {
+  try {
+    const { data } = await supabaseAdmin
+      .from("users")
+      .select("vibe, interests, pulse_score")
+      .eq("clerk_id", clerkId)
+      .single();
+
+    if (!data) return null;
+
+    const vibe = (data.vibe as { categories?: string[] } | null) ?? {};
+    const topCategories = (vibe.categories ?? []).slice(0, 5);
+    const interests = ((data.interests as string[] | null) ?? []).slice(0, 10);
+    const pulseScore = (data.pulse_score as number | null) ?? 0;
+
+    return { topCategories, interests, pulseScore };
+  } catch {
+    return null;
+  }
+}
+
+// Rank events by user interest match
+function rankByInterests(events: EventRow[], userInterests: UserInterests | null): EventRow[] {
+  if (!userInterests || (userInterests.topCategories.length === 0 && userInterests.interests.length === 0)) {
+    return events;
+  }
+
+  const catSet = new Set(userInterests.topCategories.map((c) => c.toLowerCase()));
+  const interestTerms = userInterests.interests.map((i) => i.toLowerCase());
+
+  return [...events].sort((a, b) => {
+    return computePersonalScore(b, catSet, interestTerms) - computePersonalScore(a, catSet, interestTerms);
+  });
+}
+
+function computePersonalScore(
+  event: EventRow,
+  catSet: Set<string>,
+  interestTerms: string[],
+): number {
+  const tags = (event.tags ?? []).map((t) => t.toLowerCase());
+  let score = (event.trending_score ?? 0) * 0.5;
+
+  for (const tag of tags) {
+    if (catSet.has(tag)) score += 20;
+  }
+
+  for (const term of interestTerms) {
+    for (const tag of tags) {
+      if (tag.includes(term) || term.includes(tag)) { score += 8; break; }
+    }
+  }
+
+  return score;
 }
 
 export async function GET(req: NextRequest) {
@@ -66,9 +135,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ events: [], users: [], snippets: [], nextCursor: null });
   }
 
+  // Load user interests for personalized ranking (non-blocking)
+  let userInterests: UserInterests | null = null;
+  try {
+    const clerk = await currentUser();
+    if (clerk) {
+      userInterests = await loadUserInterests(clerk.id);
+    }
+  } catch {
+    // Non-fatal — proceed without personalization
+  }
+
   const [events, users, snippets] = await Promise.all([
     type === "all" || type === "events"
-      ? fetchEvents(q, categories, dateRange, limit, cursor)
+      ? fetchEvents(q, categories, dateRange, limit, cursor, userInterests)
       : Promise.resolve([]),
     type === "all" || type === "users"
       ? fetchUsers(q, limit, cursor)
@@ -93,90 +173,82 @@ export async function GET(req: NextRequest) {
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
+type EventRow = {
+  id: string;
+  title: string;
+  slug: string;
+  banner_url: string | null;
+  start_datetime: string | null;
+  price_label: string | null;
+  trending_score: number | null;
+  tags: string[] | null;
+  description: string | null;
+};
+
+const EVENT_SELECT = "id, title, slug, banner_url, start_datetime, price_label, trending_score, tags, description";
+const NOW_ISO = () => new Date().toISOString();
+
 async function fetchEvents(
   q: string,
   categories: string[],
   dateRange: { from: string; to: string } | null,
   limit: number,
   _cursor: string | null,
-) {
-  // Build base query
-  let query = supabaseAdmin
-    .from("events")
-    .select("id, title, slug, banner_url, start_datetime, price_label, trending_score, tags, description")
-    .eq("status", "published")
-    .order("trending_score", { ascending: false })
-    .limit(limit);
+  userInterests: UserInterests | null,
+): Promise<EventRow[]> {
+  const fromDate = dateRange?.from ?? NOW_ISO();
+  const toDate   = dateRange?.to;
 
-  if (dateRange) {
-    query = query
-      .gte("start_datetime", dateRange.from)
-      .lte("start_datetime", dateRange.to);
-  } else {
-    // Only show future events by default
-    query = query.gte("start_datetime", new Date().toISOString());
+  // Short queries (1–2 chars): fast prefix matching for typeahead autocomplete
+  if (q && q.length <= 2) {
+    let q1 = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+      .ilike("title", `${q}%`).gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+    if (toDate) q1 = q1.lte("start_datetime", toDate);
+    const { data } = await q1;
+    return rankByInterests(applyTagFilter((data ?? []) as EventRow[], categories), userInterests);
   }
 
-  // Apply text search
   if (q) {
-    // Try full-text first; fall back to ilike if search_vector is missing
-    const { data: ftsData, error: ftsError } = await (query as typeof query)
-      .textSearch("search_vector", buildTsQuery(q), { type: "plain", config: "english" });
+    // 1. Full-text search with prefix tokens
+    let ftsQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+      .textSearch("search_vector", buildTsQuery(q), { type: "plain", config: "english" })
+      .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+    if (toDate) ftsQ = ftsQ.lte("start_datetime", toDate);
+    const { data: ftsData, error: ftsError } = await ftsQ;
 
     if (!ftsError && ftsData && ftsData.length > 0) {
-      return applyTagFilter(ftsData, categories);
+      return rankByInterests(applyTagFilter(ftsData as EventRow[], categories), userInterests);
     }
 
-    // Fallback: case-insensitive ilike search across title, tags
-    const terms = q.split(/\s+/).filter(Boolean);
-    let ilikeQuery = supabaseAdmin
-      .from("events")
-      .select("id, title, slug, banner_url, start_datetime, price_label, trending_score, tags, description")
-      .eq("status", "published")
-      .order("trending_score", { ascending: false })
-      .limit(limit);
+    // 2. Multi-field OR ilike for better partial coverage
+    const terms = q.split(/\s+/).filter(Boolean).slice(0, 3);
+    const orFilter = terms.map((t) => `title.ilike.%${t}%,description.ilike.%${t}%`).join(",");
+    let orQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+      .or(orFilter).gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+    if (toDate) orQ = orQ.lte("start_datetime", toDate);
+    const { data: orData } = await orQ;
 
-    if (dateRange) {
-      ilikeQuery = ilikeQuery
-        .gte("start_datetime", dateRange.from)
-        .lte("start_datetime", dateRange.to);
-    } else {
-      ilikeQuery = ilikeQuery.gte("start_datetime", new Date().toISOString());
+    if (orData && orData.length > 0) {
+      return rankByInterests(applyTagFilter(orData as EventRow[], categories), userInterests);
     }
 
-    // Use OR filter for each term against title
-    for (const term of terms.slice(0, 3)) {
-      ilikeQuery = ilikeQuery.ilike("title", `%${term}%`);
-    }
+    // 3. Last resort: broader title match
+    let prefixQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+      .ilike("title", `%${q}%`).gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+    if (toDate) prefixQ = prefixQ.lte("start_datetime", toDate);
+    const { data: prefixData } = await prefixQ;
 
-    const { data: ilikeData } = await ilikeQuery;
-
-    // If ilike on title returned results, use them
-    if (ilikeData && ilikeData.length > 0) {
-      return applyTagFilter(ilikeData, categories);
-    }
-
-    // Last resort: description search
-    const descTerms = terms.slice(0, 2).join(" ");
-    const { data: descData } = await supabaseAdmin
-      .from("events")
-      .select("id, title, slug, banner_url, start_datetime, price_label, trending_score, tags, description")
-      .eq("status", "published")
-      .gte("start_datetime", dateRange?.from ?? new Date().toISOString())
-      .ilike("description", `%${descTerms}%`)
-      .order("trending_score", { ascending: false })
-      .limit(limit);
-
-    return applyTagFilter(descData ?? [], categories);
+    return rankByInterests(applyTagFilter((prefixData ?? []) as EventRow[], categories), userInterests);
   }
 
   // No text query — filter by date or category only
-  if (categories.length > 0) {
-    query = query.overlaps("tags", categories);
-  }
+  let query = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+    .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+  if (toDate) query = query.lte("start_datetime", toDate);
+  if (categories.length > 0) query = query.overlaps("tags", categories);
 
   const { data } = await query;
-  return data ?? [];
+  return rankByInterests(applyTagFilter((data ?? []) as EventRow[], categories), userInterests);
 }
 
 function buildTsQuery(q: string): string {
@@ -188,10 +260,7 @@ function buildTsQuery(q: string): string {
     .join(" & ");
 }
 
-function applyTagFilter<T extends { tags: string[] | null }>(
-  data: T[],
-  categories: string[],
-): T[] {
+function applyTagFilter(data: EventRow[], categories: string[]): EventRow[] {
   if (categories.length === 0) return data;
   return data.filter(
     (e) => !e.tags || e.tags.length === 0 || e.tags.some((t) => categories.includes(t)),
@@ -202,6 +271,16 @@ function applyTagFilter<T extends { tags: string[] | null }>(
 
 async function fetchUsers(q: string, limit: number, _cursor: string | null) {
   if (!q) return [];
+
+  // Short query: prefix match on username
+  if (q.length <= 2) {
+    const { data } = await supabaseAdmin
+      .from("users")
+      .select("clerk_id, first_name, last_name, username, avatar_url, pulse_tier, pulse_score")
+      .or(`username.ilike.${q}%,first_name.ilike.${q}%`)
+      .limit(limit);
+    return data ?? [];
+  }
 
   // Try full-text search
   const { data: ftsData, error: ftsError } = await supabaseAdmin
@@ -237,7 +316,6 @@ async function fetchSnippets(q: string, limit: number, _cursor: string | null) {
     .limit(limit);
 
   if (error?.message?.includes("search_vector") || error?.message?.includes("column")) {
-    // Fallback: ilike on body
     const { data: fallback } = await supabaseAdmin
       .from("snippets")
       .select("id, body, vibe_tags, created_at, user_id")

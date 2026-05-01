@@ -3,18 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  CalendarBlank,
   ClockCounterClockwise,
   Fire,
   MagnifyingGlass,
   Sparkle,
+  Ticket,
   X,
 } from "@phosphor-icons/react";
 import { categories, events, getCategoryEmoji } from "@gooutside/demo-data";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AnimatedSearchPlaceholder from "./AnimatedSearchPlaceholder";
 import MobileUnifiedSearch from "./MobileUnifiedSearch";
+import { SearchPillExpanded } from "./SearchPillExpanded";
 
 type HomeSearchHeroMode = "expanded" | "compact" | "mini" | "mobile";
+type ActiveSegment = "what" | "when" | "lucky" | null;
 
 type HomeSearchHeroProps = {
   mode: HomeSearchHeroMode;
@@ -88,7 +92,6 @@ function MobileSearchOverlay({
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             animate={{ opacity: 1 }}
             className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
@@ -98,7 +101,6 @@ function MobileSearchOverlay({
             transition={{ duration: 0.2 }}
           />
 
-          {/* Sheet */}
           <motion.div
             animate={{ y: 0, opacity: 1 }}
             className="fixed inset-x-0 top-0 z-[61] flex flex-col overflow-hidden rounded-b-[28px] bg-[var(--bg-card)] shadow-[0_8px_48px_rgba(0,0,0,0.28)]"
@@ -107,7 +109,6 @@ function MobileSearchOverlay({
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Input row */}
             <div className="flex items-center gap-3 px-4 py-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
                 <MagnifyingGlass size={18} weight="bold" />
@@ -144,7 +145,6 @@ function MobileSearchOverlay({
 
             <div className="h-px bg-[var(--border-subtle)]" />
 
-            {/* Results / suggestions */}
             <div className="max-h-[70vh] overflow-y-auto px-4 py-3">
               <AnimatePresence mode="wait">
                 {query.trim() ? (
@@ -171,7 +171,7 @@ function MobileSearchOverlay({
                             type="button"
                           >
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-muted)] text-[var(--text-tertiary)]">
-                              <MagnifyingGlass size={14} />
+                              <Ticket size={14} weight="duotone" />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
@@ -198,7 +198,6 @@ function MobileSearchOverlay({
                     transition={{ duration: 0.15 }}
                     className="space-y-5"
                   >
-                    {/* Recent */}
                     <div>
                       <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Recent</p>
                       <div className="space-y-0.5">
@@ -216,7 +215,6 @@ function MobileSearchOverlay({
                       </div>
                     </div>
 
-                    {/* Trending */}
                     <div>
                       <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Trending</p>
                       <div className="space-y-0.5">
@@ -234,7 +232,6 @@ function MobileSearchOverlay({
                       </div>
                     </div>
 
-                    {/* Categories */}
                     <div>
                       <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Browse</p>
                       <div className="flex flex-wrap gap-2">
@@ -261,6 +258,115 @@ function MobileSearchOverlay({
             </div>
 
             <div className="h-4" />
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ── Airbnb-style Mini pill shown when scrolled ─────────────────────────────────
+function MiniSearchPill({ onSegmentClick }: { onSegmentClick: (seg: ActiveSegment) => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.94, y: -4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.94, y: -4 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="mx-auto flex h-[52px] items-stretch overflow-hidden rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_4px_20px_rgba(0,0,0,0.12)]"
+      style={{ maxWidth: 520 }}
+    >
+      {/* What */}
+      <motion.button
+        type="button"
+        onClick={() => onSegmentClick("what")}
+        whileHover={{ backgroundColor: "rgba(var(--bg-muted-rgb, 240,240,240), 0.6)" }}
+        whileTap={{ scale: 0.97 }}
+        className="flex flex-1 items-center justify-center gap-2 px-4 transition-colors"
+      >
+        <Ticket size={15} weight="duotone" className="shrink-0 text-[var(--brand)]" />
+        <span className="text-[13px] font-semibold text-[var(--text-primary)]">What</span>
+      </motion.button>
+
+      <div className="self-center h-5 w-px bg-[var(--border-subtle)]" />
+
+      {/* When */}
+      <motion.button
+        type="button"
+        onClick={() => onSegmentClick("when")}
+        whileHover={{ backgroundColor: "rgba(var(--bg-muted-rgb, 240,240,240), 0.6)" }}
+        whileTap={{ scale: 0.97 }}
+        className="flex flex-1 items-center justify-center gap-2 px-4 transition-colors"
+      >
+        <CalendarBlank size={15} weight="duotone" className="shrink-0 text-[var(--text-secondary)]" />
+        <span className="text-[13px] font-semibold text-[var(--text-secondary)]">When</span>
+      </motion.button>
+
+      <div className="self-center h-5 w-px bg-[var(--border-subtle)]" />
+
+      {/* Surprise Me */}
+      <motion.button
+        type="button"
+        onClick={() => onSegmentClick("lucky")}
+        whileHover={{ backgroundColor: "rgba(var(--bg-muted-rgb, 240,240,240), 0.6)" }}
+        whileTap={{ scale: 0.97 }}
+        className="flex flex-1 items-center justify-center gap-2 px-4 transition-colors"
+      >
+        <Sparkle size={15} weight="fill" className="shrink-0 text-[var(--brand)]" />
+        <span className="text-[13px] font-semibold text-[var(--text-secondary)]">Surprise Me</span>
+      </motion.button>
+
+      {/* Search icon button */}
+      <div className="flex items-center pr-2 pl-1">
+        <motion.button
+          type="button"
+          onClick={() => onSegmentClick("what")}
+          whileTap={{ scale: 0.93 }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-[0_2px_10px_rgba(95,191,42,0.35)] transition hover:bg-[var(--brand-hover)]"
+        >
+          <MagnifyingGlass size={15} weight="bold" />
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Mini-pill expansion modal ──────────────────────────────────────────────────
+function MiniExpandModal({
+  open,
+  initialActive,
+  onClose,
+}: {
+  open: boolean;
+  initialActive: ActiveSegment;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            key="mini-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-[3px]"
+            onClick={onClose}
+          />
+          <motion.div
+            key="mini-modal"
+            initial={{ opacity: 0, y: -16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.97 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-x-4 top-16 z-[56] mx-auto md:inset-x-[10%]"
+            style={{ maxWidth: 860 }}
+          >
+            <SearchPillExpanded
+              initialActive={initialActive}
+              className="w-full"
+            />
           </motion.div>
         </>
       )}
@@ -317,6 +423,10 @@ export function HomeSearchHero({
   const [when, setWhen] = useState(searchParams.get("when") ?? "");
   const [isWhereFocused, setIsWhereFocused] = useState(false);
 
+  // Mini pill expansion state
+  const [miniExpanded, setMiniExpanded] = useState(false);
+  const [miniActiveSegment, setMiniActiveSegment] = useState<ActiveSegment>(null);
+
   useEffect(() => {
     setWhere(searchParams.get("q") ?? "");
     setWhen(searchParams.get("when") ?? "");
@@ -337,8 +447,16 @@ export function HomeSearchHero({
   };
 
   const handleSurpriseMe = () => {
-    const choice = events[Math.floor(Math.random() * events.length)];
-    if (choice) router.push(`/events/${choice.slug}`);
+    router.push(`/search?q=Surprise me with something perfect for my vibe&surprise=1`);
+  };
+
+  const handleMiniSegmentClick = (seg: ActiveSegment) => {
+    if (seg === "lucky") {
+      handleSurpriseMe();
+    } else {
+      setMiniActiveSegment(seg);
+      setMiniExpanded(true);
+    }
   };
 
   const totalProgress = smoothStep(Math.min(1, compactProgress * 0.6 + miniProgress * 0.4));
@@ -369,6 +487,26 @@ export function HomeSearchHero({
           }}
           subtitle="Accra · Trending events near you"
           value={where}
+        />
+      </div>
+    );
+  }
+
+  // ── Mini mode (scrolled past threshold): Airbnb-style pill ──
+  if (isMini && miniProgress > 0.85) {
+    return (
+      <div className={`w-full ${className}`.trim()}>
+        <AnimatePresence mode="wait">
+          <MiniSearchPill key="mini-pill" onSegmentClick={handleMiniSegmentClick} />
+        </AnimatePresence>
+
+        <MiniExpandModal
+          open={miniExpanded}
+          initialActive={miniActiveSegment}
+          onClose={() => {
+            setMiniExpanded(false);
+            setMiniActiveSegment(null);
+          }}
         />
       </div>
     );

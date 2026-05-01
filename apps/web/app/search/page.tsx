@@ -9,6 +9,7 @@ import {
   CalendarBlank,
   Fire,
   MagnifyingGlass,
+  Sparkle,
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
 import { AIChatPanel } from "../../components/search/AIChatPanel";
@@ -156,19 +157,25 @@ function SearchInner() {
   const initialQ    = searchParams.get("q") ?? "";
   const initialCats = searchParams.get("categories") ?? "";
   const initialWhen = searchParams.get("when") ?? "";
+  const isSurprise  = searchParams.get("surprise") === "1";
+
+  // For "Surprise Me" flow: show AI panel with a cleaner prompt
+  const aiQuery = isSurprise
+    ? "Surprise me with something perfect for my vibe and Pulse Score tonight"
+    : initialQ;
 
   const [tab, setTab] = useState<SearchTab>("all");
-  const [showAI, setShowAI] = useState(initialQ.length >= 2);
+  const [showAI, setShowAI] = useState(initialQ.length >= 2 || isSurprise);
 
-  const debouncedQ    = useDebounce(initialQ, 300);
+  const debouncedQ    = useDebounce(isSurprise ? "" : initialQ, 300);
   const debouncedCats = useDebounce(initialCats, 300);
 
-  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0;
+  const hasQuery = !isSurprise && (debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0);
 
   // Show AI panel whenever there's a text query
   useEffect(() => {
-    if (initialQ.length >= 2) setShowAI(true);
-  }, [initialQ]);
+    if (initialQ.length >= 2 || isSurprise) setShowAI(true);
+  }, [initialQ, isSurprise]);
 
   const {
     data,
@@ -191,6 +198,45 @@ function SearchInner() {
   const users    = allPages.flatMap((p) => p.users);
   const snippets = allPages.flatMap((p) => p.snippets);
 
+  // ── Surprise Me mode: show only AI panel ──────────────────────────────────
+  if (isSurprise) {
+    return (
+      <main className="page-grid min-h-screen pb-36 md:pb-24">
+        <section className="container-shell px-4 pb-6 pt-8 md:py-10">
+          <div className="mx-auto max-w-3xl space-y-5">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3E9E1A] to-[#5FBF2A] shadow-[0_4px_16px_rgba(95,191,42,0.35)]">
+                <Sparkle size={18} weight="fill" className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+                  Your AI Pick for Tonight
+                </h1>
+                <p className="text-[12px] text-[var(--text-tertiary)]">
+                  Personalized for you based on your vibe and Pulse Score
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push("/search")}
+                className="ml-auto rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--text-secondary)] transition hover:bg-[var(--bg-card)]"
+              >
+                Browse all
+              </button>
+            </div>
+
+            {/* AI Chat Panel — auto-fires surprise query */}
+            <AIChatPanel
+              initialQuery={aiQuery}
+              onDismiss={() => router.push("/search")}
+            />
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
       <section className="container-shell px-4 pb-6 pt-8 md:py-10">
@@ -206,7 +252,7 @@ function SearchInner() {
           {/* ── AI Chat Panel ── */}
           {showAI && initialQ.length >= 2 && (
             <AIChatPanel
-              initialQuery={initialQ}
+              initialQuery={aiQuery}
               onDismiss={() => setShowAI(false)}
             />
           )}
@@ -219,7 +265,7 @@ function SearchInner() {
               className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#5FBF2A]/40 bg-[#f0fae6] px-4 py-3 text-left transition hover:bg-[#e6f7d9]"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5FBF2A]">
-                <span className="text-white text-sm">✨</span>
+                <Sparkle size={14} weight="fill" className="text-white" />
               </div>
               <div>
                 <p className="text-[12px] font-semibold text-[#3E9E1A]">Ask AI about "{initialQ}"</p>
