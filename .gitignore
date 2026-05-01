@@ -11,3 +11,5 @@ coverage/
 .DS_Store
 CLAUDE.md
 *.tsbuildinfo
+CLIENT_MEETING_PREP.md
+supabase/

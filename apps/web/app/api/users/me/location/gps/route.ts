@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../../../lib/supabase";
+import { isMissingLocationPointColumn, toLocationPoint } from "../../../../../../lib/location-point";
 
 export async function POST(req: NextRequest) {
   const clerk = await currentUser();
@@ -46,20 +47,30 @@ export async function POST(req: NextRequest) {
   }
 
   // Persist to DB
-  const { error } = await supabaseAdmin
-    .from("users")
-    .update({
-      location_point:     `SRID=4326;POINT(${lng} ${lat})`,
-      location_city:      city_name,
-      location_city_name: city_name,
-      location_region:    region,
-      location_country:   country,
-      location_formatted: formatted,
-      location_place_id:  place_id,
-      location_source:    "gps",
-      updated_at:         new Date().toISOString(),
-    })
-    .eq("clerk_id", clerk.id);
+  const updates = {
+    location_point:     toLocationPoint(lat, lng),
+    location_city:      city_name,
+    location_city_name: city_name,
+    location_region:    region,
+    location_country:   country,
+    location_formatted: formatted,
+    location_place_id:  place_id,
+    location_source:    "gps",
+    updated_at:         new Date().toISOString(),
+  };
+
+  const runUpdate = (payload: Omit<typeof updates, "location_point"> | typeof updates) =>
+    supabaseAdmin
+      .from("users")
+      .update(payload)
+      .eq("clerk_id", clerk.id);
+
+  let { error } = await runUpdate(updates);
+
+  if (error && isMissingLocationPointColumn(error)) {
+    const { location_point: _ignored, ...updatesWithoutLocationPoint } = updates;
+    ({ error } = await runUpdate(updatesWithoutLocationPoint));
+  }
 
   if (error) {
     console.error("[POST /api/users/me/location/gps]", error);
