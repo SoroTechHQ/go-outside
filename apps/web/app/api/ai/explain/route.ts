@@ -87,7 +87,7 @@ Explain in 2 sentences why this is a great match.`;
 
   try {
     const completion = await groq.chat.completions.create({
-      model:       "llama3-8b-8192",
+      model:       "llama-3.1-8b-instant",
       messages:    [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
       max_tokens:  120,
       temperature: 0.7,

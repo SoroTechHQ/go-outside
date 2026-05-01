@@ -167,7 +167,12 @@ function SearchInner() {
   const [tab, setTab] = useState<SearchTab>("all");
   const [showAI, setShowAI] = useState(initialQ.length >= 2 || isSurprise);
 
-  const debouncedQ    = useDebounce(isSurprise ? "" : initialQ, 300);
+  // localQ tracks live typing via onQueryChange — updates results without router.push
+  const [localQ, setLocalQ] = useState(initialQ);
+  // Sync back when URL changes (e.g. user navigates with Back or hits Search button)
+  useEffect(() => { setLocalQ(initialQ); }, [initialQ]);
+
+  const debouncedQ    = useDebounce(isSurprise ? "" : localQ, 300);
   const debouncedCats = useDebounce(initialCats, 300);
 
   const hasQuery = !isSurprise && (debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0);
@@ -247,10 +252,11 @@ function SearchInner() {
             initialQuery={initialQ}
             initialCategories={initialCats ? initialCats.split(",") : []}
             initialWhen={initialWhen}
+            onQueryChange={setLocalQ}
           />
 
           {/* ── AI Chat Panel ── */}
-          {showAI && initialQ.length >= 2 && (
+          {showAI && localQ.length >= 2 && (
             <AIChatPanel
               initialQuery={aiQuery}
               onDismiss={() => setShowAI(false)}
@@ -258,7 +264,7 @@ function SearchInner() {
           )}
 
           {/* ── Trigger AI if hidden ── */}
-          {!showAI && initialQ.length >= 2 && (
+          {!showAI && localQ.length >= 2 && (
             <button
               type="button"
               onClick={() => setShowAI(true)}
@@ -268,7 +274,7 @@ function SearchInner() {
                 <Sparkle size={14} weight="fill" className="text-white" />
               </div>
               <div>
-                <p className="text-[12px] font-semibold text-[#3E9E1A]">Ask AI about "{initialQ}"</p>
+                <p className="text-[12px] font-semibold text-[#3E9E1A]">Ask AI about "{localQ}"</p>
                 <p className="text-[11px] text-[#3E9E1A]/70">Get personalized picks based on your history</p>
               </div>
             </button>
