@@ -25,7 +25,7 @@ const NO_FOOTER_ROUTES = [
   "/messages",
   "/activity",
   "/notifications",
-  "/tickets",
+  "/cart",
   "/saved",
   "/profile",
   "/trending",

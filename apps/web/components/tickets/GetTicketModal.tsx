@@ -78,7 +78,7 @@ export function GetTicketModal({ event, onClose }: GetTicketModalProps) {
       toastHook.message({
         text: `${quantity} ticket${quantity !== 1 ? "s" : ""} added to cart`,
         action: "Go to checkout",
-        onAction: () => router.push("/tickets"),
+        onAction: () => router.push("/cart"),
       });
     }, 2000);
   }
