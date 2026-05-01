@@ -7,7 +7,7 @@ const DASHBOARD_REWRITES = [
   "notifications",
   "saved",
   "profile",
-  "tickets",
+  "cart",
   "wallets",
   "checkout",
   "user",
@@ -70,6 +70,16 @@ const nextConfig: NextConfig = {
       {
         source: "/activity",
         destination: "/notifications",
+        permanent: false,
+      },
+      {
+        source: "/tickets",
+        destination: "/cart",
+        permanent: false,
+      },
+      {
+        source: "/tickets/:path*",
+        destination: "/cart/:path*",
         permanent: false,
       },
       {

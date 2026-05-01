@@ -216,16 +216,16 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
         <div className="px-2 pt-4">
           <Link
             className={`relative flex h-[52px] w-full items-center transition ${
-              pathname.startsWith("/tickets")
+              pathname.startsWith("/cart")
                 ? "font-semibold text-[var(--brand)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}
-            href="/tickets"
+            href="/cart"
           >
             <ShoppingCart
               size={24}
-              weight={pathname.startsWith("/tickets") ? "fill" : "regular"}
-              className={pathname.startsWith("/tickets") ? "text-[var(--brand)]" : "text-current"}
+              weight={pathname.startsWith("/cart") ? "fill" : "regular"}
+              className={pathname.startsWith("/cart") ? "text-[var(--brand)]" : "text-current"}
             />
             <AnimatePresence>
               {isExpanded ? (
@@ -236,7 +236,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   initial={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  My Tickets
+                  Cart
                 </motion.span>
               ) : null}
             </AnimatePresence>
