@@ -48,7 +48,7 @@ create table if not exists public.event_image_assets (
   unique (event_id, kind, sort_order)
 );
 
-create index if not exists idx_event_image_assets_event_id
+create index if not exists w
   on public.event_image_assets (event_id);
 
 create table if not exists public.event_import_candidates (

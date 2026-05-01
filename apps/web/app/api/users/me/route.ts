@@ -3,6 +3,7 @@ import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { enforceRateLimit, enforceSameOrigin, getActorKey, jsonError, jsonNoStore } from "../../../../lib/api-security";
 import { humanizeDbError } from "../../../../lib/db-errors";
+import { hasValidCoordinates, isMissingLocationPointColumn, toLocationPoint } from "../../../../lib/location-point";
 
 const USER_PUBLIC_SELECT = [
   "first_name",
@@ -93,11 +94,10 @@ export async function PATCH(req: NextRequest) {
     if (key in body) updates[key] = body[key];
   }
 
-  // PostGIS point: convert lat/lng floats → EWKT string Supabase accepts
   const lat = body.location_lat as number | undefined;
   const lng = body.location_lng as number | undefined;
-  if (lat != null && lng != null && lat !== 0 && lng !== 0) {
-    updates.location_point = `SRID=4326;POINT(${lng} ${lat})`;
+  if (hasValidCoordinates(lat, lng)) {
+    updates.location_point = toLocationPoint(lat, lng as number);
   }
 
   // Upsert — creates the row if the Clerk webhook hasn't fired yet
@@ -109,11 +109,19 @@ export async function PATCH(req: NextRequest) {
     role:       (existing?.role as "admin" | "organizer" | "attendee" | undefined) ?? "attendee",
   };
 
-  const { data, error } = await supabaseAdmin
-    .from("users")
-    .upsert({ ...base, ...updates }, { onConflict: "clerk_id" })
-    .select(USER_PUBLIC_SELECT.join(", "))
-    .single();
+  const runUpsert = (payload: Record<string, unknown>) =>
+    supabaseAdmin
+      .from("users")
+      .upsert(payload, { onConflict: "clerk_id" })
+      .select(USER_PUBLIC_SELECT.join(", "))
+      .single();
+
+  let { data, error } = await runUpsert({ ...base, ...updates });
+
+  if (error && isMissingLocationPointColumn(error) && "location_point" in updates) {
+    const { location_point: _ignored, ...updatesWithoutLocationPoint } = updates;
+    ({ data, error } = await runUpsert({ ...base, ...updatesWithoutLocationPoint }));
+  }
 
   if (error) {
     console.error("[PATCH /api/users/me]", error);
