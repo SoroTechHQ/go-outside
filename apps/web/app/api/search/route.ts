@@ -209,9 +209,9 @@ async function fetchEvents(
   }
 
   if (q) {
-    // 1. Full-text search with prefix tokens
+    // 1. websearch FTS — handles phrases, tolerates natural-language input
     let ftsQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .textSearch("search_vector", buildTsQuery(q), { type: "plain", config: "english" })
+      .textSearch("search_vector", buildWebsearchQuery(q), { type: "websearch", config: "english" })
       .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
     if (toDate) ftsQ = ftsQ.lte("start_datetime", toDate);
     const { data: ftsData, error: ftsError } = await ftsQ;
@@ -220,7 +220,19 @@ async function fetchEvents(
       return rankByInterests(applyTagFilter(ftsData as EventRow[], categories), userInterests);
     }
 
-    // 2. Multi-field OR ilike for better partial coverage
+    // 2. Prefix FTS — handles partial words as the user types (e.g. "Jazz Fes")
+    const prefixTsQuery = buildPrefixTsQuery(q);
+    let prefixFtsQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+      .textSearch("search_vector", prefixTsQuery, { type: "plain", config: "english" })
+      .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+    if (toDate) prefixFtsQ = prefixFtsQ.lte("start_datetime", toDate);
+    const { data: prefixFtsData, error: prefixFtsError } = await prefixFtsQ;
+
+    if (!prefixFtsError && prefixFtsData && prefixFtsData.length > 0) {
+      return rankByInterests(applyTagFilter(prefixFtsData as EventRow[], categories), userInterests);
+    }
+
+    // 3. Multi-field OR ilike — catches anything FTS misses (venue names, partial titles)
     const terms = q.split(/\s+/).filter(Boolean).slice(0, 3);
     const orFilter = terms.map((t) => `title.ilike.%${t}%,description.ilike.%${t}%`).join(",");
     let orQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
@@ -232,13 +244,12 @@ async function fetchEvents(
       return rankByInterests(applyTagFilter(orData as EventRow[], categories), userInterests);
     }
 
-    // 3. Last resort: broader title match
-    let prefixQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .ilike("title", `%${q}%`).gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
-    if (toDate) prefixQ = prefixQ.lte("start_datetime", toDate);
-    const { data: prefixData } = await prefixQ;
+    // 4. Last resort: full-title substring match regardless of date (catch past events in typeahead)
+    let lastQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
+      .ilike("title", `%${q}%`).order("trending_score", { ascending: false }).limit(limit);
+    const { data: lastData } = await lastQ;
 
-    return rankByInterests(applyTagFilter((prefixData ?? []) as EventRow[], categories), userInterests);
+    return rankByInterests(applyTagFilter((lastData ?? []) as EventRow[], categories), userInterests);
   }
 
   // No text query — filter by date or category only
@@ -251,7 +262,13 @@ async function fetchEvents(
   return rankByInterests(applyTagFilter((data ?? []) as EventRow[], categories), userInterests);
 }
 
-function buildTsQuery(q: string): string {
+// websearch_to_tsquery handles phrases, and is far more tolerant than plainto_tsquery.
+// We also build a prefix fallback for partial-word typeahead (e.g. "Jazz Fes" → "Jazz:* & Fes:*").
+function buildWebsearchQuery(q: string): string {
+  return q.trim();
+}
+
+function buildPrefixTsQuery(q: string): string {
   return q
     .trim()
     .split(/\s+/)
@@ -286,7 +303,7 @@ async function fetchUsers(q: string, limit: number, _cursor: string | null) {
   const { data: ftsData, error: ftsError } = await supabaseAdmin
     .from("users")
     .select("clerk_id, first_name, last_name, username, avatar_url, pulse_tier, pulse_score")
-    .textSearch("search_vector", buildTsQuery(q), { type: "plain", config: "english" })
+    .textSearch("search_vector", buildWebsearchQuery(q), { type: "websearch", config: "english" })
     .limit(limit);
 
   if (!ftsError && ftsData && ftsData.length > 0) return ftsData;
@@ -311,7 +328,7 @@ async function fetchSnippets(q: string, limit: number, _cursor: string | null) {
   const { data, error } = await supabaseAdmin
     .from("snippets")
     .select("id, body, vibe_tags, created_at, user_id")
-    .textSearch("search_vector", buildTsQuery(q), { type: "plain", config: "english" })
+    .textSearch("search_vector", buildWebsearchQuery(q), { type: "websearch", config: "english" })
     .order("created_at", { ascending: false })
     .limit(limit);
 
