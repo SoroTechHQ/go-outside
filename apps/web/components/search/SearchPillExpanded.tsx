@@ -119,6 +119,7 @@ export function SearchPillExpanded({
   initialActive = null as ActiveSegment,
   className = "",
   compact = false,
+  onQueryChange,
 }: {
   initialQuery?: string;
   initialCategories?: string[];
@@ -126,6 +127,7 @@ export function SearchPillExpanded({
   initialActive?: ActiveSegment;
   className?: string;
   compact?: boolean;
+  onQueryChange?: (q: string) => void;
 }) {
   const router = useRouter();
   const pillRef = useRef<HTMLDivElement>(null);
@@ -290,7 +292,7 @@ export function SearchPillExpanded({
               <input
                 ref={whatInputRef}
                 value={query}
-                onChange={(e) => { setQuery(e.target.value); fetchSuggestions(e.target.value); }}
+                onChange={(e) => { setQuery(e.target.value); fetchSuggestions(e.target.value); onQueryChange?.(e.target.value); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") { e.preventDefault(); handleSearch(); }
                   if (e.key === "Escape") setActive(null);
@@ -302,7 +304,7 @@ export function SearchPillExpanded({
                 className={`${showLabels ? "mt-0.5" : ""} w-full bg-transparent text-[13px] font-medium text-[var(--text-primary)] outline-none caret-[#5FBF2A] placeholder:text-[var(--text-tertiary)] placeholder:font-normal`}
               />
               {query && (
-                <button type="button" onClick={() => { setQuery(""); setSuggestions([]); whatInputRef.current?.focus(); }} className="ml-2 shrink-0 text-[var(--text-tertiary)] transition hover:text-[var(--text-secondary)]">
+                <button type="button" onClick={() => { setQuery(""); setSuggestions([]); whatInputRef.current?.focus(); onQueryChange?.(""); }} className="ml-2 shrink-0 text-[var(--text-tertiary)] transition hover:text-[var(--text-secondary)]">
                   <X size={13} />
                 </button>
               )}
@@ -434,8 +436,8 @@ export function SearchPillExpanded({
                             type="button"
                             tabIndex={0}
                             onClick={() => {
-                              if (s.type === "user") { router.push(s.slug); setActive(null); }
-                              else { setQuery(s.title); setSuggestions([]); handleSearch(); }
+                              if (s.type === "user") { router.push(s.slug); setActive(null); setSuggestions([]); }
+                              else { router.push(`/events/${s.slug}`); setActive(null); setSuggestions([]); }
                             }}
                             className="flex w-full items-center gap-3 px-5 py-2.5 text-left transition hover:bg-[var(--bg-muted)] focus:bg-[var(--bg-muted)] focus:outline-none"
                           >
@@ -455,8 +457,27 @@ export function SearchPillExpanded({
                     )}
                   </AnimatePresence>
 
-                  {/* Divider only when suggestions exist */}
-                  {suggestions.length > 0 && <div className="mx-5 h-px bg-[var(--border-subtle)]" />}
+                  {/* "Search for X" — always shown when there's a query */}
+                  {query.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => { router.push(`/search?q=${encodeURIComponent(query.trim())}`); setActive(null); setSuggestions([]); }}
+                      className="flex w-full items-center gap-3 px-5 py-2.5 text-left transition hover:bg-[var(--bg-muted)] focus:bg-[var(--bg-muted)] focus:outline-none"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-muted)] text-[var(--text-secondary)]">
+                        <MagnifyingGlass size={14} weight="bold" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium text-[var(--text-primary)]">Search for &ldquo;{query.trim()}&rdquo;</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-[var(--bg-muted)] px-2.5 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
+                        Search
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Divider when suggestions or search suggestion exist */}
+                  {(suggestions.length > 0 || query.trim()) && <div className="mx-5 h-px bg-[var(--border-subtle)]" />}
 
                   {/* Category chips */}
                   <div className="p-4">

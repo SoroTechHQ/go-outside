@@ -24,7 +24,7 @@ import { getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
 import type { events, Organizer } from "@gooutside/demo-data";
 import { GetTicketModal, type EventForTicket } from "../../../components/tickets/GetTicketModal";
 import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
-import { SearchBar } from "../../../components/search/SearchBar";
+import { SearchPillExpanded } from "../../../components/search/SearchPillExpanded";
 import { useAppShell } from "../../../components/layout/AppShellContext";
 
 type EventItem = (typeof events)[number];
@@ -123,7 +123,6 @@ export function EventDetailClient({
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
   const { sidebarWidth } = useAppShell();
 
   const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
@@ -172,12 +171,7 @@ export function EventDetailClient({
       >
         <div className="border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-6 py-3 shadow-[var(--card-shadow)] backdrop-blur-xl">
           <div className="mx-auto w-full max-w-[1320px]">
-            <SearchBar
-              isCompact={false}
-              isFocused={searchFocused}
-              isMini={false}
-              onFocusChange={setSearchFocused}
-            />
+            <SearchPillExpanded compact />
           </div>
         </div>
 

@@ -197,91 +197,75 @@ async function fetchEvents(
   userInterests: UserInterests | null,
 ): Promise<EventRow[]> {
   const fromDate = dateRange?.from ?? NOW_ISO();
-  const toDate   = dateRange?.to;
+  const toDate   = dateRange?.to ?? null;
 
-  // Short queries (1–2 chars): fast prefix matching for typeahead autocomplete
-  if (q && q.length <= 2) {
-    let q1 = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .ilike("title", `${q}%`).gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
+  // No text query — return trending/upcoming filtered by date or category
+  if (!q) {
+    let query = supabaseAdmin
+      .from("events")
+      .select(EVENT_SELECT)
+      .eq("status", "published")
+      .gte("start_datetime", fromDate)
+      .order("trending_score", { ascending: false })
+      .limit(limit);
+
+    if (toDate) query = query.lte("start_datetime", toDate);
+    if (categories.length > 0) query = query.overlaps("tags", categories);
+
+    const { data } = await query;
+    return rankByInterests((data ?? []) as EventRow[], userInterests);
+  }
+
+  // Short queries (1–2 chars): fast prefix ilike for typeahead
+  if (q.length <= 2) {
+    let q1 = supabaseAdmin
+      .from("events")
+      .select(EVENT_SELECT)
+      .eq("status", "published")
+      .ilike("title", `${q}%`)
+      .gte("start_datetime", fromDate)
+      .order("trending_score", { ascending: false })
+      .limit(limit);
     if (toDate) q1 = q1.lte("start_datetime", toDate);
+    if (categories.length > 0) q1 = q1.overlaps("tags", categories);
     const { data } = await q1;
-    return rankByInterests(applyTagFilter((data ?? []) as EventRow[], categories), userInterests);
+    return rankByInterests((data ?? []) as EventRow[], userInterests);
   }
 
-  if (q) {
-    // 1. websearch FTS — handles phrases, tolerates natural-language input
-    let ftsQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .textSearch("search_vector", buildWebsearchQuery(q), { type: "websearch", config: "english" })
-      .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
-    if (toDate) ftsQ = ftsQ.lte("start_datetime", toDate);
-    const { data: ftsData, error: ftsError } = await ftsQ;
+  // Use the RPC: websearch FTS + prefix :* + ilike — all in one DB round-trip
+  // with date + category filters applied inside Postgres (see docs/012_search_fix.sql)
+  const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
+    "search_events_prefix",
+    {
+      q,
+      p_categories: categories.length > 0 ? categories : [],
+      p_from: fromDate,
+      p_to: toDate,
+      p_limit: limit,
+    },
+  );
 
-    if (!ftsError && ftsData && ftsData.length > 0) {
-      return rankByInterests(applyTagFilter(ftsData as EventRow[], categories), userInterests);
-    }
-
-    // 2. Prefix FTS — handles partial words as the user types (e.g. "Jazz Fes")
-    const prefixTsQuery = buildPrefixTsQuery(q);
-    let prefixFtsQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .textSearch("search_vector", prefixTsQuery, { type: "plain", config: "english" })
-      .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
-    if (toDate) prefixFtsQ = prefixFtsQ.lte("start_datetime", toDate);
-    const { data: prefixFtsData, error: prefixFtsError } = await prefixFtsQ;
-
-    if (!prefixFtsError && prefixFtsData && prefixFtsData.length > 0) {
-      return rankByInterests(applyTagFilter(prefixFtsData as EventRow[], categories), userInterests);
-    }
-
-    // 3. Multi-field OR ilike — catches anything FTS misses (venue names, partial titles)
-    const terms = q.split(/\s+/).filter(Boolean).slice(0, 3);
-    const orFilter = terms.map((t) => `title.ilike.%${t}%,description.ilike.%${t}%`).join(",");
-    let orQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .or(orFilter).gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
-    if (toDate) orQ = orQ.lte("start_datetime", toDate);
-    const { data: orData } = await orQ;
-
-    if (orData && orData.length > 0) {
-      return rankByInterests(applyTagFilter(orData as EventRow[], categories), userInterests);
-    }
-
-    // 4. Last resort: full-title substring match regardless of date (catch past events in typeahead)
-    let lastQ = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-      .ilike("title", `%${q}%`).order("trending_score", { ascending: false }).limit(limit);
-    const { data: lastData } = await lastQ;
-
-    return rankByInterests(applyTagFilter((lastData ?? []) as EventRow[], categories), userInterests);
+  if (!rpcError && rpcData && rpcData.length > 0) {
+    return rankByInterests(rpcData as EventRow[], userInterests);
   }
 
-  // No text query — filter by date or category only
-  let query = supabaseAdmin.from("events").select(EVENT_SELECT).eq("status", "published")
-    .gte("start_datetime", fromDate).order("trending_score", { ascending: false }).limit(limit);
-  if (toDate) query = query.lte("start_datetime", toDate);
-  if (categories.length > 0) query = query.overlaps("tags", categories);
+  // Hard fallback: title ilike without date filter (maximises recall for typeahead)
+  let fallback = supabaseAdmin
+    .from("events")
+    .select(EVENT_SELECT)
+    .eq("status", "published")
+    .ilike("title", `%${q}%`)
+    .order("trending_score", { ascending: false })
+    .limit(limit);
+  if (categories.length > 0) fallback = fallback.overlaps("tags", categories);
 
-  const { data } = await query;
-  return rankByInterests(applyTagFilter((data ?? []) as EventRow[], categories), userInterests);
+  const { data: fallbackData } = await fallback;
+  return rankByInterests((fallbackData ?? []) as EventRow[], userInterests);
 }
 
-// websearch_to_tsquery handles phrases, and is far more tolerant than plainto_tsquery.
-// We also build a prefix fallback for partial-word typeahead (e.g. "Jazz Fes" → "Jazz:* & Fes:*").
+// websearch_to_tsquery wrapper — used by fetchUsers and fetchSnippets
 function buildWebsearchQuery(q: string): string {
   return q.trim();
-}
-
-function buildPrefixTsQuery(q: string): string {
-  return q
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => `${w}:*`)
-    .join(" & ");
-}
-
-function applyTagFilter(data: EventRow[], categories: string[]): EventRow[] {
-  if (categories.length === 0) return data;
-  return data.filter(
-    (e) => !e.tags || e.tags.length === 0 || e.tags.some((t) => categories.includes(t)),
-  );
 }
 
 // ── Users ─────────────────────────────────────────────────────────────────────
