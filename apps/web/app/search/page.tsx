@@ -6,6 +6,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Avatar from "boring-avatars";
 import {
+  ArrowRight,
   CalendarBlank,
   Fire,
   MagnifyingGlass,
@@ -165,7 +166,8 @@ function SearchInner() {
     : initialQ;
 
   const [tab, setTab] = useState<SearchTab>("all");
-  const [showAI, setShowAI] = useState(initialQ.length >= 2 || isSurprise);
+  const [showAI, setShowAI] = useState(isSurprise);
+  const aiPanelRef = useRef<HTMLDivElement>(null);
 
   // localQ tracks live typing via onQueryChange — updates results without router.push
   const [localQ, setLocalQ] = useState(initialQ);
@@ -176,11 +178,6 @@ function SearchInner() {
   const debouncedCats = useDebounce(initialCats, 300);
 
   const hasQuery = !isSurprise && (debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0);
-
-  // Show AI panel whenever there's a text query
-  useEffect(() => {
-    if (initialQ.length >= 2 || isSurprise) setShowAI(true);
-  }, [initialQ, isSurprise]);
 
   const {
     data,
@@ -255,31 +252,6 @@ function SearchInner() {
             onQueryChange={setLocalQ}
           />
 
-          {/* ── AI Chat Panel ── */}
-          {showAI && localQ.length >= 2 && (
-            <AIChatPanel
-              initialQuery={aiQuery}
-              onDismiss={() => setShowAI(false)}
-            />
-          )}
-
-          {/* ── Trigger AI if hidden ── */}
-          {!showAI && localQ.length >= 2 && (
-            <button
-              type="button"
-              onClick={() => setShowAI(true)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#5FBF2A]/40 bg-[#f0fae6] px-4 py-3 text-left transition hover:bg-[#e6f7d9]"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5FBF2A]">
-                <Sparkle size={14} weight="fill" className="text-white" />
-              </div>
-              <div>
-                <p className="text-[12px] font-semibold text-[#3E9E1A]">Ask AI about "{localQ}"</p>
-                <p className="text-[11px] text-[#3E9E1A]/70">Get personalized picks based on your history</p>
-              </div>
-            </button>
-          )}
-
           {/* ── Tabs ── */}
           <div className="flex gap-1 overflow-x-auto no-scrollbar">
             {TABS.map(({ id, label }) => (
@@ -296,6 +268,36 @@ function SearchInner() {
               </button>
             ))}
           </div>
+
+          {/* ── AI banner / chat panel — shown after results ── */}
+          {localQ.length >= 2 && (
+            <div ref={aiPanelRef}>
+              {showAI ? (
+                <AIChatPanel
+                  initialQuery={aiQuery}
+                  onDismiss={() => setShowAI(false)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAI(true);
+                    setTimeout(() => aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
+                  }}
+                  className="flex w-full items-center gap-4 rounded-2xl border border-dashed border-[#5FBF2A]/50 bg-[#f0fae6] px-5 py-4 text-left transition hover:bg-[#e6f7d9] active:scale-[0.99]"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3E9E1A] to-[#5FBF2A] shadow-[0_4px_14px_rgba(95,191,42,0.32)]">
+                    <Sparkle size={16} weight="fill" className="text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-[#1a5c0a]">Not finding what you&rsquo;re looking for?</p>
+                    <p className="text-[12px] text-[#3E9E1A]/80">Ask our personalized AI — it knows your vibe</p>
+                  </div>
+                  <ArrowRight size={16} weight="bold" className="shrink-0 text-[#5FBF2A]" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* ── Empty state ── */}
           {!hasQuery && (
