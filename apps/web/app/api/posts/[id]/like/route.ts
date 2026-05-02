@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../../lib/supabase";
+import { insertNotification } from "../../../../../lib/db/insert-notification";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -51,6 +52,40 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   // Increment like_count
   await supabaseAdmin.rpc("increment_post_likes", { post_id_arg: postId });
+
+  // Notify post owner — fire and forget, skip if self-like
+  const [postRow, likerRow] = await Promise.all([
+    supabaseAdmin
+      .from("posts")
+      .select("user_id, body")
+      .eq("id", postId)
+      .maybeSingle()
+      .then((r) => r.data as { user_id: string; body: string } | null),
+    supabaseAdmin
+      .from("users")
+      .select("first_name, last_name, username, avatar_url")
+      .eq("id", userId)
+      .maybeSingle()
+      .then((r) => r.data as { first_name: string; last_name: string; username: string | null; avatar_url: string | null } | null),
+  ]);
+
+  if (postRow && postRow.user_id !== userId) {
+    const actorName = likerRow
+      ? `${likerRow.first_name} ${likerRow.last_name}`.trim()
+      : "Someone";
+    insertNotification({
+      userId: postRow.user_id,
+      type: "post_like",
+      title: `${actorName} liked your post`,
+      body: postRow.body.slice(0, 80),
+      data: {
+        actor_id:         userId,
+        actor_name:       actorName,
+        actor_avatar_url: likerRow?.avatar_url ?? null,
+      },
+      actionHref: likerRow?.username ? `/go/${likerRow.username}` : undefined,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

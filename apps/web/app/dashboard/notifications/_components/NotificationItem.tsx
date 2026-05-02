@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -7,10 +8,10 @@ import { AppIcon } from "@gooutside/ui";
 import type { NotificationAccentTone, NotificationFeedItem } from "../../../../lib/notification-feed";
 
 const ACCENT_CLASSES: Record<NotificationAccentTone, string> = {
-  brand: "bg-[var(--brand)]/10 text-[var(--brand)]",
-  gold: "bg-amber-500/10 text-amber-400",
-  red: "bg-red-500/10 text-red-400",
-  blue: "bg-sky-500/10 text-sky-400",
+  brand:  "bg-[var(--brand)]/10 text-[var(--brand)]",
+  gold:   "bg-amber-500/10 text-amber-400",
+  red:    "bg-red-500/10 text-red-400",
+  blue:   "bg-sky-500/10 text-sky-400",
   purple: "bg-violet-500/10 text-violet-400",
 };
 
@@ -33,19 +34,39 @@ export function NotificationItem({ item, index }: NotificationItemProps) {
           : "border-[var(--border-subtle)] hover:border-[var(--brand)]/20"
       }`}
     >
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${ACCENT_CLASSES[item.accentTone]}`}
-      >
-        <AppIcon name={item.iconKey} size={18} weight="bold" />
-      </div>
+      {/* Avatar or icon */}
+      {item.actorAvatarUrl ? (
+        <div className="relative shrink-0">
+          <Image
+            src={item.actorAvatarUrl}
+            alt={item.actorName ?? ""}
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-2xl object-cover"
+          />
+          <span
+            className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[var(--bg-card)] ${ACCENT_CLASSES[item.accentTone]}`}
+          >
+            <AppIcon name={item.iconKey} size={10} weight="bold" />
+          </span>
+        </div>
+      ) : (
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${ACCENT_CLASSES[item.accentTone]}`}
+        >
+          <AppIcon name={item.iconKey} size={18} weight="bold" />
+        </div>
+      )}
 
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold leading-snug text-[var(--text-primary)]">
           {item.title}
         </p>
-        <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-          {item.subtitle}
-        </p>
+        {item.subtitle && (
+          <p className="mt-0.5 line-clamp-1 text-xs text-[var(--text-secondary)]">
+            {item.subtitle}
+          </p>
+        )}
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5">

@@ -16,7 +16,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import type { OrganizerDashboardData } from "../_lib/dashboard";
 import EventCardMini from "./EventCardMini";
-import OrganizerBadge from "./OrganizerBadge";
+import { OrganizerIdentityCardClient } from "./OrganizerIdentityCardClient";
 
 const TAB_ITEMS = ["Overview", "Events", "Audience", "Ad Campaigns", "Posts & Reels"];
 
@@ -54,17 +54,17 @@ function MetricCard({
   icon: ReactNode;
 }) {
   return (
-    <article className="rounded-[28px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-          {label}
-        </p>
-        <span className="text-[var(--brand)]">{icon}</span>
+    <article className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+      <div className="flex items-start justify-between gap-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand)]/12 text-[var(--brand)]">
+          {icon}
+        </span>
       </div>
-      <p className="mt-4 font-display text-[2rem] italic leading-none text-[var(--text-primary)]">
+      <p className="mt-4 text-[1.6rem] font-bold tabular-nums leading-none text-[var(--text-primary)]">
         {value}
       </p>
-      <p className="mt-3 text-[12px] text-[var(--text-secondary)]">{delta}</p>
+      <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{label}</p>
+      <p className="mt-2 text-[11px] text-[var(--text-secondary)]">{delta}</p>
     </article>
   );
 }
@@ -132,7 +132,7 @@ export function OrganizerUpgradeGate({ firstName }: { firstName: string }) {
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)]">
           Organizer Mode
         </p>
-        <h1 className="mt-4 font-display text-[2.7rem] italic leading-none text-[var(--text-primary)]">
+        <h1 className="mt-4 text-[1.4rem] font-bold tracking-tight text-[var(--text-primary)]">
           Turn {firstName}&apos;s account into an organizer workspace
         </h1>
         <p className="mt-4 max-w-[680px] text-[15px] leading-8 text-[var(--text-secondary)]">
@@ -190,15 +190,15 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-[2.2rem] italic leading-none text-[var(--text-primary)]">
+                <h1 className="text-[1.4rem] font-bold tracking-tight text-[var(--text-primary)]">
                   Dashboard
                 </h1>
                 <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
                   Live workspace
                 </span>
               </div>
-              <p className="mt-3 max-w-[680px] text-[14px] leading-7 text-[var(--text-secondary)]">
-                Track sales, shape audience growth, and keep your next event cycle moving without leaving the app.
+              <p className="mt-2 max-w-[680px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                Track sales, shape audience growth, and keep your next event cycle moving.
               </p>
             </div>
 
@@ -367,34 +367,7 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
       </div>
 
       <div className="space-y-4">
-        <article className="rounded-[28px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Organizer identity</p>
-              <p className="mt-1 text-[12px] text-[var(--text-secondary)]">
-                Public profile footprint and account signals.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <OrganizerBadge />
-          </div>
-
-          <h2 className="mt-4 font-display text-[1.65rem] italic text-[var(--text-primary)]">
-            {organizer.name}
-          </h2>
-          <p className="mt-3 text-[13px] leading-6 text-[var(--text-secondary)]">{organizer.bio}</p>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1.5 text-[12px] text-[var(--text-secondary)]">
-              {organizer.city}
-            </span>
-            <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1.5 text-[12px] text-[var(--text-secondary)]">
-              {organizer.totalEvents} hosted
-            </span>
-          </div>
-        </article>
+        <OrganizerIdentityCardClient organizer={organizer} />
 
         <article className="rounded-[28px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
           <div className="flex items-center justify-between gap-3">

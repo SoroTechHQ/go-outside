@@ -29,6 +29,7 @@ import {
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../lib/image-url";
 import { getPulseProgress, getNextTier, type PulseTier } from "../dashboard/profile/types";
 import { PostFeed } from "../../components/posts/PostFeed";
+import { SnippetComposer } from "../../components/posts/SnippetComposer";
 import { useFollowMutation, useFollowStatus } from "../../hooks/useFollow";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
@@ -298,8 +299,49 @@ function PeopleSheet({
   );
 }
 
+// ── Single snippet card ────────────────────────────────────────────────────────
+function SnippetCard({ snippet }: { snippet: Snippet }) {
+  return (
+    <div className="rounded-[18px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
+      <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{snippet.body}</p>
+      {snippet.vibe_tags && snippet.vibe_tags.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {snippet.vibe_tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-[#4a9f63]/10 px-2.5 py-0.5 text-[10px] font-medium text-[#4a9f63]"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+      <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">
+        {new Date(snippet.created_at).toLocaleDateString("en-GH", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </p>
+    </div>
+  );
+}
+
 // ── Snippets tab ───────────────────────────────────────────────────────────────
-function SnippetsTab({ clerkId }: { clerkId: string }) {
+function SnippetsTab({
+  clerkId,
+  isOwnProfile,
+  name,
+  avatarUrl,
+}: {
+  clerkId: string;
+  isOwnProfile: boolean;
+  name: string;
+  avatarUrl: string | null;
+}) {
+  const { user: currentUser } = useUser();
+  const [localSnippets, setLocalSnippets] = useState<Snippet[]>([]);
+
   const { data, isLoading } = useQuery({
     queryKey: ["profile-snippets", clerkId],
     queryFn: async () => {
@@ -310,57 +352,42 @@ function SnippetsTab({ clerkId }: { clerkId: string }) {
     staleTime: 3 * 60_000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3 pt-2">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="animate-pulse rounded-2xl bg-[var(--bg-muted)] h-24" />
-        ))}
-      </div>
-    );
-  }
-
-  const snippets = data?.snippets ?? [];
-
-  if (snippets.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-14 text-center">
-        <Quotes size={28} className="text-[var(--text-tertiary)]" weight="light" />
-        <p className="text-[14px] font-semibold text-[var(--text-primary)]">No snippets yet</p>
-        <p className="text-[12px] text-[var(--text-tertiary)]">Vibes, takes, and moments will appear here.</p>
-      </div>
-    );
-  }
+  const remoteSnippets = data?.snippets ?? [];
+  const allSnippets = [
+    ...localSnippets,
+    ...remoteSnippets.filter((s) => !localSnippets.some((l) => l.id === s.id)),
+  ];
 
   return (
-    <div className="space-y-3 pt-2">
-      {snippets.map((s) => (
-        <div
-          key={s.id}
-          className="rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]"
-        >
-          <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{s.body}</p>
-          {s.vibe_tags && s.vibe_tags.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {s.vibe_tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-[#4a9f63]/10 px-2.5 py-0.5 text-[10px] font-medium text-[#4a9f63]"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-          <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">
-            {new Date(s.created_at).toLocaleDateString("en-GH", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+    <div className="space-y-3">
+      {isOwnProfile && currentUser && (
+        <SnippetComposer
+          clerkId={clerkId}
+          name={name}
+          avatarUrl={avatarUrl}
+          onPosted={(s) => setLocalSnippets((prev) => [s, ...prev])}
+        />
+      )}
+
+      {isLoading && (
+        <div className="space-y-3 pt-1">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="animate-pulse rounded-[18px] bg-[var(--bg-muted)] h-24" />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && allSnippets.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-14 text-center">
+          <Quotes size={28} className="text-[var(--text-tertiary)]" weight="light" />
+          <p className="text-[14px] font-semibold text-[var(--text-primary)]">No snippets yet</p>
+          <p className="text-[12px] text-[var(--text-tertiary)]">
+            {isOwnProfile ? "Drop a quick take on an event." : "Vibes, takes, and moments will appear here."}
           </p>
         </div>
-      ))}
+      )}
+
+      {!isLoading && allSnippets.map((s) => <SnippetCard key={s.id} snippet={s} />)}
     </div>
   );
 }
@@ -879,7 +906,14 @@ export default function GoProfileClient({
               isOwnProfile={isOwnProfile}
             />
           )}
-          {activeTab === "snippets"   && <SnippetsTab clerkId={clerkId} />}
+          {activeTab === "snippets" && (
+            <SnippetsTab
+              clerkId={clerkId}
+              isOwnProfile={isOwnProfile}
+              name={name}
+              avatarUrl={avatarUrl}
+            />
+          )}
           {activeTab === "been-there" && <BeenThereTab clerkId={clerkId} />}
           {activeTab === "media"      && <MediaTab clerkId={clerkId} />}
           {activeTab === "about"      && (
