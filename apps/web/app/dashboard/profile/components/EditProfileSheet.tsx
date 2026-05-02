@@ -29,6 +29,9 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
   const [avatarUrl,   setAvatarUrl]   = useState(profile.avatarUrl);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [coverUrl,    setCoverUrl]    = useState(profile.coverUrl);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -52,6 +55,31 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
       setError("Failed to upload photo. Try again.");
     } finally {
       setAvatarUploading(false);
+    }
+  }
+
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverUploading(true);
+    setError(null);
+    try {
+      const compressed = await compressForUpload(file, "banner");
+      const fd = new FormData();
+      fd.append("file", compressed, "cover.webp");
+      const res = await fetch("/api/upload/cover", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json() as { url: string };
+      setCoverUrl(url);
+      await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cover_url: url }),
+      });
+    } catch {
+      setError("Failed to upload cover. Try again.");
+    } finally {
+      setCoverUploading(false);
     }
   }
 
@@ -85,10 +113,12 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
       if (!res.ok) throw new Error("Failed to save");
 
       onSave({
-        name:     `${firstName} ${lastName}`.trim(),
-        handle:   handle.replace(/^@/, ""),
-        bio:      bio.trim(),
-        location: locationPlace?.city_name ?? "",
+        name:      `${firstName} ${lastName}`.trim(),
+        handle:    handle.replace(/^@/, ""),
+        bio:       bio.trim(),
+        location:  locationPlace?.city_name ?? "",
+        avatarUrl,
+        coverUrl,
       });
       onClose();
     } catch (e) {
@@ -118,20 +148,34 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
         {/* Cover photo */}
         <div className="relative overflow-hidden rounded-[16px] border border-white/8">
-          <div className="h-20 w-full bg-gradient-to-br from-[var(--brand)]/40 to-[#256f36]/20 flex items-center justify-center">
-            {profile.coverUrl ? (
-              <img alt="cover" className="h-full w-full object-cover" src={profile.coverUrl} />
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleCoverChange}
+          />
+          <div className="relative h-24 w-full overflow-hidden bg-gradient-to-br from-[var(--brand)]/40 to-[#256f36]/20 flex items-center justify-center">
+            {coverUrl ? (
+              <img alt="cover" className="h-full w-full object-cover" src={coverUrl} />
             ) : (
               <p className="text-[11px] text-white/30">No cover image</p>
+            )}
+            {coverUploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              </div>
             )}
           </div>
           <button
             className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
             type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={coverUploading}
           >
             <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-sm">
               <Camera size={12} />
-              Change Cover
+              {coverUploading ? "Uploading…" : "Change Cover"}
             </div>
           </button>
         </div>

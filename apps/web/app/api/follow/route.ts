@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../lib/supabase";
+import { insertNotification } from "../../../lib/db/insert-notification";
 
 async function getSupabaseUserId(clerkId: string): Promise<string | null> {
   const { data } = await supabaseAdmin
@@ -60,18 +61,32 @@ export async function POST(req: NextRequest) {
   if (!toId) return NextResponse.json({ error: "Target user not found" }, { status: 404 });
 
   // Write to both tables — INSERT ignoring duplicates (resilient with or without unique constraint)
-  await Promise.all([
+  const [, , followerData] = await Promise.all([
     safeInsertEdge(fromId, toId),
     safeInsertFollow(fromId, toId),
+    supabaseAdmin
+      .from("users")
+      .select("first_name, last_name, username, avatar_url")
+      .eq("id", fromId)
+      .maybeSingle()
+      .then((r) => r.data),
   ]);
 
-  // Notify the target — fire and forget
-  void supabaseAdmin.from("notifications").insert({
-    user_id: toId,
+  const actorName = followerData
+    ? `${followerData.first_name} ${followerData.last_name}`.trim()
+    : "Someone";
+
+  insertNotification({
+    userId: toId,
     type: "new_follower",
-    title: "New follower",
-    body: "Someone started following you.",
-    is_read: false,
+    title: `${actorName} started following you`,
+    body: followerData?.username ? `@${followerData.username}` : "Check out their profile",
+    data: {
+      actor_id:         fromId,
+      actor_name:       actorName,
+      actor_avatar_url: followerData?.avatar_url ?? null,
+    },
+    actionHref: followerData?.username ? `/go/${followerData.username}` : `/dashboard/user/${fromId}`,
   });
 
   return NextResponse.json({ success: true });

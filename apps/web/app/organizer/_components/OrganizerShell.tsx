@@ -102,22 +102,24 @@ export function OrganizerShell({
             Back to feed
           </Link>
 
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand)]/15 text-lg font-bold text-[var(--brand)]">
-              G
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--brand)]/15">
+              <span className="text-sm font-bold text-[var(--brand)]">G</span>
             </div>
             <div>
-              <p className="font-display text-[1.1rem] italic text-[var(--text-primary)]">GoOutside</p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
-                Organizer
-              </p>
+              <p className="text-[13px] font-bold text-[var(--text-primary)]">GoOutside</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)]">Creator Studio</p>
             </div>
           </div>
 
-          <div className="mt-6 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
-            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{organizerName}</p>
+          <div className="mt-5 rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
+            <p className="truncate text-[15px] font-semibold text-[var(--text-primary)]">{organizerName}</p>
             <div className="mt-2">
-              {verified ? <OrganizerBadge compact /> : <span className="text-[12px] text-[var(--text-secondary)]">Organizer tools available after approval</span>}
+              {verified ? <OrganizerBadge compact /> : (
+                <span className="inline-flex items-center rounded-full bg-[var(--bg-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                  Pending approval
+                </span>
+              )}
             </div>
           </div>
 

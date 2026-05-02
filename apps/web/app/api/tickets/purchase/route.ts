@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { insertNotification } from "../../../../lib/db/insert-notification";
 
 type PurchaseItem = {
   eventId: string;
@@ -62,14 +63,35 @@ export async function POST(req: NextRequest) {
 
   // Write graph edge for each unique event purchased — strong signal for recommendations
   const uniqueEventIds = [...new Set(items.map((i) => i.eventId))];
-  await Promise.all(
-    uniqueEventIds.map((eventId) =>
-      supabaseAdmin.from("graph_edges").upsert(
-        { from_id: user.id, from_type: "user", to_id: eventId, to_type: "event", edge_type: "registered", weight: 10.0, is_active: true },
-        { onConflict: "from_id,to_id,edge_type", ignoreDuplicates: false },
+  const [, eventRows] = await Promise.all([
+    Promise.all(
+      uniqueEventIds.map((eventId) =>
+        supabaseAdmin.from("graph_edges").upsert(
+          { from_id: user.id, from_type: "user", to_id: eventId, to_type: "event", edge_type: "registered", weight: 10.0, is_active: true },
+          { onConflict: "from_id,to_id,edge_type", ignoreDuplicates: false },
+        )
       )
-    )
-  );
+    ),
+    supabaseAdmin
+      .from("events")
+      .select("id, title, slug")
+      .in("id", uniqueEventIds)
+      .then((r) => r.data ?? []),
+  ]);
+
+  const eventMap = new Map((eventRows as { id: string; title: string; slug: string }[]).map((e) => [e.id, e]));
+
+  for (const eventId of uniqueEventIds) {
+    const ev = eventMap.get(eventId);
+    insertNotification({
+      userId: user.id,
+      type: "ticket_purchase",
+      title: ev ? `You're going to ${ev.title}` : "Ticket confirmed",
+      body: "Your ticket has been confirmed. Tap to view.",
+      data: { event_id: eventId, event_title: ev?.title ?? null },
+      actionHref: "/dashboard/tickets",
+    });
+  }
 
   return NextResponse.json({ ticketIds: data.map((r) => r.id) });
 }

@@ -20,9 +20,9 @@ export default async function OrganizerHashtagsPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
           Growth
         </p>
-        <h1 className="mt-3 font-display text-[2.2rem] italic text-[var(--text-primary)]">Hashtag Performance</h1>
-        <p className="mt-3 max-w-[680px] text-[14px] leading-7 text-[var(--text-secondary)]">
-          Trending tags and per-tag reach benchmarks, matching the PRD&apos;s organizer hashtag workspace.
+        <h1 className="mt-1 text-[1.4rem] font-bold tracking-tight text-[var(--text-primary)]">Hashtag Performance</h1>
+        <p className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+          Trending tags and per-tag reach benchmarks across your events.
         </p>
       </section>
 

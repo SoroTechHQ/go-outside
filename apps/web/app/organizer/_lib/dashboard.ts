@@ -43,8 +43,10 @@ export type OrganizerDashboardData = {
     initials: string;
     bio: string;
     city: string;
+    logoUrl: string | null;
     websiteUrl: string | null;
     socialLinks: Array<{ label: string; href: string }>;
+    social_links: Record<string, string> | null;
     verified: boolean;
     totalEvents: number;
   };
@@ -287,8 +289,10 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
         organizerProfile.bio?.trim() ||
         "Verified organizer account on GoOutside. Publish events, grow your following, and manage the full attendee experience from one place.",
       city: organizerProfile.users?.location_city ?? "Accra",
+      logoUrl: organizerProfile.logo_url,
       websiteUrl: organizerProfile.website_url,
       socialLinks: buildSocialLinks(organizerProfile.social_links),
+      social_links: organizerProfile.social_links,
       verified: organizerProfile.status === "approved",
       totalEvents: eventCount,
     },

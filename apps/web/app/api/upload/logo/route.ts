@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const path = `${clerk.id}/${Date.now()}.${ext}`;
 
   const { error } = await supabaseAdmin.storage
-    .from("organizer-assets")
+    .from("organizer-logos")
     .upload(path, await file.arrayBuffer(), {
       contentType: file.type || "image/webp",
       upsert: true,
@@ -22,6 +22,6 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const { data } = supabaseAdmin.storage.from("organizer-assets").getPublicUrl(path);
+  const { data } = supabaseAdmin.storage.from("organizer-logos").getPublicUrl(path);
   return NextResponse.json({ url: data.publicUrl });
 }

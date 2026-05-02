@@ -132,7 +132,7 @@ async function loadNotificationsPage(
 
   let notificationsQuery = supabaseAdmin
     .from("notifications")
-    .select("id, type, title, body, is_read, created_at")
+    .select("id, type, title, body, is_read, created_at, data")
     .eq("user_id", supabaseUserId)
     .order("created_at", { ascending: false })
     .limit(safeLimit);
