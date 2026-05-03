@@ -451,3 +451,56 @@ export function getOrganizerHashtagPerformance(
     totalEngagements: 480 - index * 52,
   }));
 }
+
+export type OrganizerEventListItem = {
+  id: string;
+  slug: string;
+  title: string;
+  dateLabel: string;
+  rawDate: string;
+  statusLabel: "Live" | "Draft" | "Sold Out" | "Past";
+  statusTone: "live" | "draft" | "sold";
+  category: string;
+  venue: string;
+  sold: number;
+  capacity: number | null;
+  soldRatio: number;
+  revenue: number;
+  snippets: number;
+};
+
+export async function getOrganizerAllEvents(userId: string, revenue: number, totalSold: number): Promise<OrganizerEventListItem[]> {
+  const { data: events } = await supabaseAdmin
+    .from("events")
+    .select(`
+      id, slug, title, start_datetime, tickets_sold, total_capacity,
+      status, saves_count, tags, custom_location,
+      categories (name, slug),
+      venues (name, city)
+    `)
+    .eq("organizer_id", userId)
+    .order("start_datetime", { ascending: false });
+
+  return (events ?? [] as unknown as OrganizerEventRow[]).map((event: unknown) => {
+    const ev = event as OrganizerEventRow;
+    const statusLabel = getEventStatus(ev);
+    const capacity = ev.total_capacity;
+    const soldRatio = capacity ? clamp(Math.round((ev.tickets_sold / capacity) * 100), 0, 100) : 0;
+    return {
+      id: ev.id,
+      slug: ev.slug,
+      title: ev.title,
+      dateLabel: formatDateLabel(ev.start_datetime),
+      rawDate: ev.start_datetime,
+      statusLabel,
+      statusTone: getStatusTone(statusLabel),
+      category: (ev.categories as { name: string } | null)?.name ?? "Event",
+      venue: (ev.venues as { name: string; city: string } | null)?.name ?? ev.custom_location ?? "Accra",
+      sold: ev.tickets_sold,
+      capacity,
+      soldRatio,
+      revenue: Math.round((ev.tickets_sold * Math.max(80, revenue / Math.max(totalSold, 1))) / 10) * 10,
+      snippets: Math.max(0, Math.round(ev.saves_count / 2)),
+    };
+  });
+}

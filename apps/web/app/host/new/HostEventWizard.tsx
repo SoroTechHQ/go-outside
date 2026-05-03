@@ -12,6 +12,7 @@ import {
   CheckCircle,
   ArrowLeft,
 } from "@phosphor-icons/react";
+import { DateTimePicker } from "../../../components/ui/DateTimePicker";
 
 type Step = 1 | 2 | 3;
 
@@ -63,15 +64,12 @@ function StepBasics({ form, set }: { form: FormState; set: (k: keyof FormState, 
       </div>
 
       <div>
-        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-          <CalendarBlank className="mr-1.5 inline" size={12} weight="bold" />
-          Date & Time
-        </label>
-        <input
-          type="datetime-local"
+        <DateTimePicker
+          label="Date & Time"
+          placeholder="Pick event date and time…"
           value={form.start_datetime}
-          onChange={(e) => set("start_datetime", e.target.value)}
-          className={`${inputCls} [color-scheme:dark]`}
+          onChange={(val) => set("start_datetime", val)}
+          showTime
         />
       </div>
 

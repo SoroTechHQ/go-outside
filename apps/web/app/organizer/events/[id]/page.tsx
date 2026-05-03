@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, PencilSimple, ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, PencilSimple, ArrowSquareOut, ChatCircle } from "@phosphor-icons/react/dist/ssr";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
+import { CopyLinkButton } from "./CopyLinkButton";
 
 function formatMoney(n: number) {
   return new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 0 }).format(n);
@@ -10,6 +11,15 @@ function formatMoney(n: number) {
 
 function formatDate(s: string) {
   return new Date(s).toLocaleDateString("en-GH", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+function formatRelative(s: string) {
+  const diff = Date.now() - new Date(s).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 export default async function OrganizerEventDetailPage({
@@ -21,7 +31,7 @@ export default async function OrganizerEventDetailPage({
   const user = await getOrCreateSupabaseUser();
   if (!user) return notFound();
 
-  const [{ data: event }, { data: ticketTypes }, { data: snippets }] = await Promise.all([
+  const [{ data: event }, { data: ticketTypes }, { data: snippets }, { data: posts }] = await Promise.all([
     supabaseAdmin
       .from("events")
       .select(`
@@ -45,6 +55,12 @@ export default async function OrganizerEventDetailPage({
       .eq("event_id", id)
       .order("created_at", { ascending: false })
       .limit(6),
+    supabaseAdmin
+      .from("posts")
+      .select("id, body, like_count, created_at, users (first_name, last_name)")
+      .eq("event_id", id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   if (!event || event.organizer_id !== user.id) return notFound();
@@ -77,7 +93,7 @@ export default async function OrganizerEventDetailPage({
   return (
     <div className="p-5 md:p-7 space-y-6">
       {/* Back + actions */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           className="flex items-center gap-2 text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           href="/organizer/events"
@@ -85,7 +101,8 @@ export default async function OrganizerEventDetailPage({
           <ArrowLeft size={16} weight="bold" />
           All events
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CopyLinkButton slug={ev.slug} />
           <Link
             className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
             href={`/events/${ev.slug}`}
@@ -93,7 +110,7 @@ export default async function OrganizerEventDetailPage({
             target="_blank"
           >
             <ArrowSquareOut size={14} />
-            Preview public page
+            Preview page
           </Link>
           <Link
             className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-3 py-1.5 text-[13px] font-semibold text-black transition hover:bg-[#4fa824]"
@@ -245,6 +262,50 @@ export default async function OrganizerEventDetailPage({
             </p>
           )}
         </div>
+      </div>
+
+      {/* Comments / posts tagged to this event */}
+      <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+        <div className="flex items-center gap-2">
+          <ChatCircle size={16} className="text-[var(--brand)]" weight="fill" />
+          <p className="text-[15px] font-semibold text-[var(--text-primary)]">Comments & posts</p>
+        </div>
+        <p className="mt-1 text-[12px] text-[var(--text-secondary)]">
+          Posts your community tagged to this event.
+        </p>
+
+        {posts && posts.length > 0 ? (
+          <div className="mt-4 space-y-3">
+            {posts.map((post) => {
+              const pu = post.users as unknown as { first_name: string; last_name: string } | null;
+              const name = pu ? `${pu.first_name} ${pu.last_name[0] ?? ""}.` : "User";
+              return (
+                <div key={post.id} className="rounded-[16px] bg-[var(--bg-elevated)] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[12px] font-bold text-[var(--brand)]">
+                        {name[0]}
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-semibold text-[var(--text-primary)]">{name}</p>
+                        <p className="text-[11px] text-[var(--text-tertiary)]">{formatRelative(post.created_at)}</p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-[12px] text-[var(--text-tertiary)]">♡ {post.like_count ?? 0}</span>
+                  </div>
+                  <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">{post.body}</p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-col items-center py-8 text-center">
+            <ChatCircle size={28} className="text-[var(--text-tertiary)]" weight="thin" />
+            <p className="mt-3 text-[13px] text-[var(--text-secondary)]">
+              No comments yet — they appear when attendees post about your event.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Trash } from "@phosphor-icons/react";
 import { useWizard } from "../WizardContext";
 import type { TicketTypeInput } from "../WizardContext";
+import { DateTimePicker } from "../../../../../components/ui/DateTimePicker";
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -145,28 +146,21 @@ export function Step4Tickets() {
                 onChange={(e) => setForm({ ...form, capacity: e.target.value })}
               />
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                Sale opens (optional)
-              </label>
-              <input
-                className="mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none [color-scheme:dark]"
-                type="datetime-local"
-                value={form.saleStartsAt}
-                onChange={(e) => setForm({ ...form, saleStartsAt: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                Sale closes (optional)
-              </label>
-              <input
-                className="mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none [color-scheme:dark]"
-                type="datetime-local"
-                value={form.saleEndsAt}
-                onChange={(e) => setForm({ ...form, saleEndsAt: e.target.value })}
-              />
-            </div>
+            <DateTimePicker
+              label="Sale opens (optional)"
+              placeholder="When does sale open?"
+              value={form.saleStartsAt}
+              onChange={(val) => setForm({ ...form, saleStartsAt: val })}
+              showTime
+            />
+            <DateTimePicker
+              label="Sale closes (optional)"
+              placeholder="When does sale close?"
+              value={form.saleEndsAt}
+              onChange={(val) => setForm({ ...form, saleEndsAt: val })}
+              minDate={form.saleStartsAt || undefined}
+              showTime
+            />
           </div>
 
           <div className="flex gap-2">

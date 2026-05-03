@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarBlank, CheckCircle, Clock } from "@phosphor-icons/react";
 import { useWizard } from "../WizardContext";
+import { DateTimePicker } from "../../../../../components/ui/DateTimePicker";
 
 export function Step6Publish() {
   const { state, setField } = useWizard();
@@ -155,20 +156,13 @@ export function Step6Publish() {
       </div>
 
       {!state.publishNow && (
-        <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-            Schedule publish date (optional)
-          </label>
-          <div className="flex items-center gap-2 mt-2">
-            <CalendarBlank className="text-[var(--text-tertiary)]" size={16} />
-            <input
-              className="flex-1 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none [color-scheme:dark]"
-              type="datetime-local"
-              value={state.scheduledFor ?? ""}
-              onChange={(e) => setField("scheduledFor", e.target.value || null)}
-            />
-          </div>
-        </div>
+        <DateTimePicker
+          label="Schedule publish date (optional)"
+          placeholder="Pick when to go live…"
+          value={state.scheduledFor ?? ""}
+          onChange={(val) => setField("scheduledFor", val || null)}
+          showTime
+        />
       )}
 
       {error && (
