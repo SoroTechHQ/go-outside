@@ -41,9 +41,29 @@ export function CreatePostModal({ organizerName, ownEvents, open, onClose }: Pro
   const [success, setSuccess] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const DRAFT_KEY = "go_post_draft_v1";
+
+  // Load draft on first open
   useEffect(() => {
-    if (open && state === "closed") setState("open");
+    if (open && state === "closed") {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d.body) setBody(d.body);
+          if (d.hashtags?.length) setHashtags(d.hashtags);
+        }
+      } catch {}
+      setState("open");
+    }
   }, [open, state]);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (body || hashtags.length > 0) {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ body, hashtags })); } catch {}
+    }
+  }, [body, hashtags]);
 
   useEffect(() => {
     document.body.style.overflow = state === "open" ? "hidden" : "";
@@ -111,6 +131,7 @@ export function CreatePostModal({ organizerName, ownEvents, open, onClose }: Pro
         }),
       });
       if (!res.ok) throw new Error("Failed to publish post");
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
       setSuccess(true);
       setTimeout(() => handleClose(), 1500);
     } catch (err) {

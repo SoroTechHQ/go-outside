@@ -97,6 +97,8 @@ export async function POST(req: NextRequest) {
       online_link:       onlineLink,
       custom_location:   resolvedCustomLoc,
       venue_id:          venueId,
+      latitude:          body.venueLat != null ? Number(body.venueLat) : null,
+      longitude:         body.venueLng != null ? Number(body.venueLng) : null,
       status:            body.publish ? "published" : "draft",
       published_at:      body.publish ? new Date().toISOString() : null,
     })

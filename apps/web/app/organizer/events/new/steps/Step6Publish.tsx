@@ -7,7 +7,7 @@ import { useWizard } from "../WizardContext";
 import { DateTimePicker } from "../../../../../components/ui/DateTimePicker";
 
 export function Step6Publish() {
-  const { state, setField } = useWizard();
+  const { state, setField, clearDraft } = useWizard();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,35 +51,46 @@ export function Step6Publish() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/organizer/events", {
+      // If a Supabase draft already exists, update + publish it; otherwise create fresh
+      const url = state.draftId
+        ? `/api/organizer/events/${state.draftId}/publish`
+        : "/api/organizer/events";
+
+      const payload = {
+        title: state.title,
+        categoryId: state.categoryId,
+        shortDescription: state.shortDescription,
+        tags: state.tags,
+        startDatetime: state.startDatetime,
+        endDatetime: state.endDatetime,
+        timezone: state.timezone,
+        venueId: state.venueId,
+        customLocation: state.customLocation,
+        venueLat: state.venueLat,
+        venueLng: state.venueLng,
+        isOnline: state.isOnline,
+        onlinePlatform: state.onlinePlatform,
+        onlineLink: state.onlineLink,
+        ticketTypes: state.ticketTypes,
+        bannerUrl: state.bannerUrl,
+        galleryUrls: state.galleryUrls,
+        videoUrl: state.videoUrl,
+        publish,
+        scheduledFor: !publish ? state.scheduledFor : null,
+      };
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: state.title,
-          categoryId: state.categoryId,
-          shortDescription: state.shortDescription,
-          tags: state.tags,
-          startDatetime: state.startDatetime,
-          endDatetime: state.endDatetime,
-          timezone: state.timezone,
-          venueId: state.venueId,
-          customLocation: state.customLocation,
-          isOnline: state.isOnline,
-          onlineLink: (state as Record<string, unknown>).onlineLink ?? null,
-          ticketTypes: state.ticketTypes,
-          bannerUrl: state.bannerUrl,
-          galleryUrls: state.galleryUrls,
-          videoUrl: state.videoUrl,
-          publish,
-          scheduledFor: !publish ? state.scheduledFor : null,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Failed to create event");
       }
       const data = await res.json();
-      router.push(`/organizer/events/${data.id}`);
+      clearDraft();
+      router.push(`/organizer/events/${state.draftId ?? data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

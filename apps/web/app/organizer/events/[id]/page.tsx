@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, PencilSimple, ArrowSquareOut, ChatCircle } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowSquareOut, ChatCircle } from "@phosphor-icons/react/dist/ssr";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { CopyLinkButton } from "./CopyLinkButton";
+import { EventDetailActions } from "./EventDetailActions";
 
 function formatMoney(n: number) {
   return new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 0 }).format(n);
@@ -57,7 +58,7 @@ export default async function OrganizerEventDetailPage({
       .limit(6),
     supabaseAdmin
       .from("posts")
-      .select("id, body, like_count, created_at, users (first_name, last_name)")
+      .select("id, body, likes_count, created_at, users (first_name, last_name)")
       .eq("event_id", id)
       .order("created_at", { ascending: false })
       .limit(10),
@@ -112,13 +113,14 @@ export default async function OrganizerEventDetailPage({
             <ArrowSquareOut size={14} />
             Preview page
           </Link>
-          <Link
-            className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-3 py-1.5 text-[13px] font-semibold text-black transition hover:bg-[#4fa824]"
-            href={`/organizer/events/new?edit=${ev.id}`}
-          >
-            <PencilSimple size={14} weight="bold" />
-            Edit
-          </Link>
+          <EventDetailActions
+            eventId={ev.id}
+            eventSlug={ev.slug}
+            eventName={ev.title}
+            status={ev.status}
+            ticketsSold={ev.tickets_sold ?? 0}
+            attendeeCount={ev.tickets_sold ?? 0}
+          />
         </div>
       </div>
 
@@ -291,7 +293,7 @@ export default async function OrganizerEventDetailPage({
                         <p className="text-[11px] text-[var(--text-tertiary)]">{formatRelative(post.created_at)}</p>
                       </div>
                     </div>
-                    <span className="shrink-0 text-[12px] text-[var(--text-tertiary)]">♡ {post.like_count ?? 0}</span>
+                    <span className="shrink-0 text-[12px] text-[var(--text-tertiary)]">♡ {post.likes_count ?? 0}</span>
                   </div>
                   <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">{post.body}</p>
                 </div>

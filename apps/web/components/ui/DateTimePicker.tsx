@@ -1,10 +1,16 @@
 "use client";
 
-import { forwardRef, useEffect, useRef, useState } from "react";
+import React from "react";
 import DatePicker from "react-datepicker";
+import { createPortal } from "react-dom";
 import { CalendarBlank, Clock, X } from "@phosphor-icons/react";
 
 import "react-datepicker/dist/react-datepicker.css";
+
+function CalendarPortal(props: { children?: React.ReactNode }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(props.children ?? null, document.body);
+}
 
 /**
  * Converts a datetime-local string ("2025-06-14T19:00") ↔ JS Date.
@@ -79,6 +85,7 @@ export function DateTimePicker({
           minDate={min ?? undefined}
           maxDate={max ?? undefined}
           popperPlacement="bottom-start"
+          popperContainer={CalendarPortal}
           className="go-datepicker__input"
           calendarClassName="go-datepicker__calendar"
           wrapperClassName="go-datepicker__wrapper"

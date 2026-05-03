@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       .insert({
         user_id: sp.organizer_id,
         body: sp.body,
-        image_url: sp.media_urls?.[0] ?? null,
+        media_urls: sp.media_urls ?? [],
         event_id: sp.event_id ?? null,
       })
       .select("id")
