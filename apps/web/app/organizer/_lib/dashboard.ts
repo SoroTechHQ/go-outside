@@ -20,7 +20,7 @@ type OrganizerEventRow = {
   id: string;
   slug: string;
   title: string;
-  start_datetime: string;
+  start_datetime: string | null;
   tickets_sold: number;
   total_capacity: number | null;
   status: string;
@@ -133,11 +133,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function formatDateLabel(value: string) {
-  return new Date(value).toLocaleDateString("en-GH", {
-    month: "short",
-    day: "numeric",
-  });
+function formatDateLabel(value: string | null) {
+  if (!value) return "No date";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "No date";
+  return d.toLocaleDateString("en-GH", { month: "short", day: "numeric" });
 }
 
 function buildSocialLinks(input: Record<string, string> | null | undefined) {
@@ -166,7 +166,7 @@ function buildSalesSeries(totalTickets: number) {
 function getEventStatus(event: OrganizerEventRow): OrganizerDashboardData["recentEvents"][number]["statusLabel"] {
   if (event.status !== "published") return "Draft";
   if (event.total_capacity != null && event.tickets_sold >= event.total_capacity) return "Sold Out";
-  if (new Date(event.start_datetime).getTime() < Date.now()) return "Past";
+  if (event.start_datetime && new Date(event.start_datetime).getTime() < Date.now()) return "Past";
   return "Live";
 }
 
@@ -491,7 +491,7 @@ export async function getOrganizerAllEvents(userId: string, revenue: number, tot
       slug: ev.slug,
       title: ev.title,
       dateLabel: formatDateLabel(ev.start_datetime),
-      rawDate: ev.start_datetime,
+      rawDate: ev.start_datetime ?? "",
       statusLabel,
       statusTone: getStatusTone(statusLabel),
       category: (ev.categories as { name: string } | null)?.name ?? "Event",

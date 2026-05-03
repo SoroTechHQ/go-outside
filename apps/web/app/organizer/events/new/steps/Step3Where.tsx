@@ -1,65 +1,129 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
+import { MapPin, Video, X } from "@phosphor-icons/react";
 import { useWizard } from "../WizardContext";
 
-type Venue = { id: string; name: string; city: string; address?: string };
 type LocationMode = "venue" | "custom" | "online";
+
+type PlaceResult = {
+  name: string;
+  formatted_address: string;
+  lat: number;
+  lng: number;
+};
+
+const ONLINE_PROVIDERS = [
+  { id: "zoom", label: "Zoom" },
+  { id: "meet", label: "Google Meet" },
+  { id: "teams", label: "Microsoft Teams" },
+  { id: "youtube", label: "YouTube Live" },
+  { id: "twitch", label: "Twitch" },
+  { id: "other", label: "Other" },
+];
+
+let googleOptionsSet = false;
+function ensureGoogleOptions() {
+  if (googleOptionsSet) return;
+  googleOptionsSet = true;
+  setOptions({
+    key: process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY ?? "",
+    v: "weekly",
+    libraries: ["places"],
+  });
+}
 
 export function Step3Where() {
   const { state, setField } = useWizard();
   const [mode, setMode] = useState<LocationMode>(
-    state.isOnline ? "online" : state.venueId ? "venue" : state.customLocation ? "custom" : "venue"
+    state.isOnline ? "online" : state.venueAddress ? "venue" : state.customLocation ? "custom" : "venue"
   );
-  const [query, setQuery] = useState("");
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
-  const [searching, setSearching] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Venue search state
+  const inputRef = useRef<HTMLInputElement>(null);
+  const acRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [inputVal, setInputVal] = useState(state.venueName ?? "");
+  const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(
+    state.venueName ? { name: state.venueName, formatted_address: state.venueAddress ?? "", lat: state.venueLat ?? 0, lng: state.venueLng ?? 0 } : null
+  );
 
   useEffect(() => {
     if (mode === "online") {
       setField("isOnline", true);
       setField("venueId", null);
       setField("customLocation", null);
+      setField("venueName", null);
+      setField("venueAddress", null);
+      setField("venueLat", null);
+      setField("venueLng", null);
     } else if (mode === "venue") {
       setField("isOnline", false);
     } else {
       setField("isOnline", false);
       setField("venueId", null);
+      setField("venueName", null);
+      setField("venueAddress", null);
+      setField("venueLat", null);
+      setField("venueLng", null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
+  // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (mode !== "venue" || query.length < 2) {
-      setVenues([]);
-      return;
-    }
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const r = await fetch(`/api/venues/search?q=${encodeURIComponent(query)}`);
-        const data = await r.json();
-        setVenues(data.venues ?? []);
-      } catch {
-        setVenues([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 300);
-  }, [query, mode]);
+    if (mode !== "venue" || !inputRef.current) return;
+    let cancelled = false;
+    ensureGoogleOptions();
 
-  function selectVenue(venue: Venue) {
-    setSelectedVenue(venue);
-    setQuery(venue.name);
-    setVenues([]);
-    setField("venueId", venue.id);
+    importLibrary("places")
+      .then((places) => {
+        if (cancelled || !inputRef.current) return;
+        const PlacesLib = places as unknown as typeof google.maps.places;
+        const ac = new PlacesLib.Autocomplete(inputRef.current, {
+          types: ["establishment", "geocode"],
+          fields: ["name", "formatted_address", "geometry", "place_id"],
+        });
+        acRef.current = ac;
+
+        ac.addListener("place_changed", () => {
+          const place = ac.getPlace();
+          if (!place.geometry?.location) return;
+          const result: PlaceResult = {
+            name: place.name ?? place.formatted_address ?? "",
+            formatted_address: place.formatted_address ?? "",
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          };
+          setSelectedPlace(result);
+          setInputVal(result.name);
+          setField("venueName", result.name);
+          setField("venueAddress", result.formatted_address);
+          setField("customLocation", result.formatted_address);
+          setField("venueLat", result.lat);
+          setField("venueLng", result.lng);
+          setField("venueId", null);
+        });
+      })
+      .catch(console.error);
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  function clearVenue() {
+    setSelectedPlace(null);
+    setInputVal("");
+    setField("venueName", null);
+    setField("venueAddress", null);
     setField("customLocation", null);
+    setField("venueLat", null);
+    setField("venueLng", null);
   }
 
   return (
     <div className="space-y-6">
+      {/* Mode tabs */}
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
           Location type
@@ -76,68 +140,61 @@ export function Step3Where() {
               type="button"
               onClick={() => setMode(m)}
             >
-              {m === "venue" ? "Venue" : m === "custom" ? "Custom location" : "Online"}
+              {m === "venue" ? "Venue / Address" : m === "custom" ? "Custom" : "Online"}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Venue search via Google Places */}
       {mode === "venue" && (
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-            Search venues
+            Search venue or address
           </label>
           <div className="relative mt-2">
+            <MapPin className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-[var(--text-tertiary)]" size={15} />
             <input
-              className="w-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
-              placeholder="Search by venue name or city…"
+              ref={inputRef}
+              className="w-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] py-3 pl-9 pr-9 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+              placeholder="e.g. Labadi Beach Hotel, Accra…"
               type="text"
-              value={query}
+              autoComplete="off"
+              value={inputVal}
               onChange={(e) => {
-                setQuery(e.target.value);
-                if (!e.target.value) {
-                  setSelectedVenue(null);
-                  setField("venueId", null);
-                }
+                setInputVal(e.target.value);
+                if (!e.target.value) clearVenue();
               }}
             />
-            {searching && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
-              </div>
-            )}
-            {venues.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_8px_32px_rgba(5,12,8,0.16)]">
-                {venues.map((v) => (
-                  <button
-                    key={v.id}
-                    className="flex w-full flex-col px-4 py-3 text-left transition hover:bg-[var(--bg-elevated)]"
-                    type="button"
-                    onClick={() => selectVenue(v)}
-                  >
-                    <span className="text-[13px] font-medium text-[var(--text-primary)]">{v.name}</span>
-                    <span className="text-[11px] text-[var(--text-tertiary)]">
-                      {v.city}{v.address ? ` · ${v.address}` : ""}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            {inputVal && (
+              <button
+                type="button"
+                onClick={clearVenue}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+              >
+                <X size={13} />
+              </button>
             )}
           </div>
-          {selectedVenue && (
-            <div className="mt-3 flex items-center gap-3 rounded-[14px] bg-[var(--brand)]/8 px-4 py-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--brand)]/15">
-                <span className="text-sm text-[var(--brand)]">📍</span>
-              </div>
+
+          {selectedPlace && (
+            <div className="mt-3 flex items-start gap-3 rounded-[14px] bg-[var(--brand)]/8 px-4 py-3">
+              <MapPin className="mt-0.5 shrink-0 text-[var(--brand)]" size={16} weight="fill" />
               <div>
-                <p className="text-[13px] font-semibold text-[var(--text-primary)]">{selectedVenue.name}</p>
-                <p className="text-[11px] text-[var(--text-tertiary)]">{selectedVenue.city}</p>
+                <p className="text-[13px] font-semibold text-[var(--text-primary)]">{selectedPlace.name}</p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{selectedPlace.formatted_address}</p>
+                {selectedPlace.lat !== 0 && (
+                  <p className="mt-0.5 text-[10px] text-[var(--text-tertiary)]/60">
+                    {selectedPlace.lat.toFixed(5)}, {selectedPlace.lng.toFixed(5)}
+                  </p>
+                )}
               </div>
             </div>
           )}
         </div>
       )}
 
+      {/* Custom location text */}
       {mode === "custom" && (
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
@@ -153,12 +210,49 @@ export function Step3Where() {
         </div>
       )}
 
+      {/* Online event */}
       {mode === "online" && (
-        <div className="rounded-[16px] bg-[var(--brand)]/8 px-4 py-4">
-          <p className="text-[13px] font-semibold text-[var(--brand)]">Online event</p>
-          <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-            Attendees will receive a join link in their ticket confirmation email.
-          </p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+              Platform
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ONLINE_PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setField("onlinePlatform", p.id)}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition ${
+                    state.onlinePlatform === p.id
+                      ? "bg-[var(--brand)] text-black"
+                      : "border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)]/30"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+              Video conferencing link
+            </label>
+            <div className="relative mt-2">
+              <Video className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" size={15} />
+              <input
+                className="w-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] py-3 pl-9 pr-4 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                placeholder="https://zoom.us/j/... or meet.google.com/..."
+                type="url"
+                value={state.onlineLink ?? ""}
+                onChange={(e) => setField("onlineLink", e.target.value || null)}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">
+              Attendees receive this link in their ticket confirmation email.
+            </p>
+          </div>
         </div>
       )}
     </div>

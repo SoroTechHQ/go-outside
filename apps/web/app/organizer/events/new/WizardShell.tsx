@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { ArrowCounterClockwise, Check, FloppyDisk } from "@phosphor-icons/react";
 import { WizardProvider, useWizard } from "./WizardContext";
 import { Step1Basics } from "./steps/Step1Basics";
 import { Step2When } from "./steps/Step2When";
@@ -56,13 +58,43 @@ function WizardProgress() {
 }
 
 function WizardContent() {
-  const { state, next, back } = useWizard();
+  const { state, next, back, clearDraft, saveDraft } = useWizard();
+  const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
   const StepComponent = STEP_COMPONENTS[state.step - 1];
   const isFirst = state.step === 1;
   const isLast = state.step === 6;
+  const hasSavedTitle = Boolean(state.title);
+
+  async function handleSaveDraft() {
+    setSaving(true);
+    const result = await saveDraft();
+    setSaving(false);
+    if (result) {
+      setSavedOk(true);
+      setTimeout(() => setSavedOk(false), 2500);
+    }
+  }
 
   return (
     <div className="flex h-full flex-col">
+      {/* Draft resume banner */}
+      {isFirst && hasSavedTitle && (
+        <div className="flex items-center justify-between border-b border-[var(--brand)]/20 bg-[var(--brand)]/6 px-6 py-3">
+          <p className="text-[12px] text-[var(--brand)]">
+            Draft resumed: <span className="font-semibold">{state.title}</span>
+          </p>
+          <button
+            type="button"
+            onClick={clearDraft}
+            className="flex items-center gap-1.5 rounded-full border border-[var(--brand)]/25 px-3 py-1 text-[11px] font-medium text-[var(--brand)] transition hover:bg-[var(--brand)]/10"
+          >
+            <ArrowCounterClockwise size={12} />
+            Start fresh
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="border-b border-[var(--border-subtle)] px-6 py-5 md:px-8">
         <div className="flex items-center justify-between gap-4">
@@ -111,10 +143,30 @@ function WizardContent() {
         </div>
 
         <div className="flex items-center gap-3">
-          {state.step > 1 && !isLast && (
-            <span className="text-[12px] text-[var(--text-tertiary)]">
-              Draft saved automatically
-            </span>
+          {state.title && !isLast && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleSaveDraft}
+              className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
+            >
+              {savedOk ? (
+                <>
+                  <Check size={12} weight="bold" className="text-[var(--brand)]" />
+                  <span className="text-[var(--brand)]">Saved</span>
+                </>
+              ) : saving ? (
+                <>
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <FloppyDisk size={13} />
+                  Save draft
+                </>
+              )}
+            </button>
           )}
           {!isLast && (
             <button

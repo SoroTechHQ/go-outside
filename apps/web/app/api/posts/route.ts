@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from("posts")
     .select(`
-      id, body, image_url, like_count, created_at, event_id,
+      id, body, media_urls, likes_count, created_at, event_id,
       users!posts_user_id_fkey(id, first_name, last_name, username, avatar_url, clerk_id),
       events!posts_event_id_fkey(id, title, slug, banner_url)
     `)
@@ -65,17 +65,17 @@ export async function POST(req: NextRequest) {
   const { data: post, error } = await supabaseAdmin
     .from("posts")
     .insert({
-      user_id:   (user as { id: string }).id,
-      body:      body.trim(),
-      image_url: image_url ?? null,
-      event_id:  event_id ?? null,
+      user_id:    (user as { id: string }).id,
+      body:       body.trim(),
+      media_urls: image_url ? [image_url] : [],
+      event_id:   event_id ?? null,
     })
     .select()
     .single();
 
   if (error) {
     console.error("[POST /api/posts]", error);
-    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create post", detail: error.message }, { status: 500 });
   }
 
   return NextResponse.json(post, { status: 201 });
