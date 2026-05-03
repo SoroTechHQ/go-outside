@@ -42,6 +42,12 @@ export function Step6Publish() {
 
   async function submit(publish: boolean) {
     setError(null);
+
+    // Client-side validation before hitting the API
+    if (!state.title?.trim()) { setError("Event title is required."); return; }
+    if (!state.startDatetime)  { setError("Start date and time are required."); return; }
+    if (!state.categoryId)     { setError("Please select an event category."); return; }
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/organizer/events", {
@@ -58,6 +64,7 @@ export function Step6Publish() {
           venueId: state.venueId,
           customLocation: state.customLocation,
           isOnline: state.isOnline,
+          onlineLink: (state as Record<string, unknown>).onlineLink ?? null,
           ticketTypes: state.ticketTypes,
           bannerUrl: state.bannerUrl,
           galleryUrls: state.galleryUrls,

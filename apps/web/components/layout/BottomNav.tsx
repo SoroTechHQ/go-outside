@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  CalendarPlus,
   ChartBar,
   ChatCircleDots,
   Fire,
@@ -45,11 +46,11 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const msgUnread  = useStreamUnread();
 
   const items: BottomNavItem[] = [
-    { href: "/",         icon: House,         label: "Home" },
-    { href: "/trending", icon: Fire,          label: "Trending" },
-    { href: "/messages", icon: ChatCircleDots, label: "Messages", badge: msgUnread },
-    { href: "/wallets",  icon: Wallet,        label: "Wallets" },
-    { href: "/profile",  icon: UserCircle,    label: "Profile" },
+    { href: "/",          icon: House,         label: "Home" },
+    { href: "/trending",  icon: Fire,          label: "Trending" },
+    { href: "/host/new",  icon: CalendarPlus,  label: "Host" },
+    { href: "/messages",  icon: ChatCircleDots, label: "Messages", badge: msgUnread },
+    { href: "/profile",   icon: UserCircle,    label: "Profile" },
   ];
 
   if (role === "organizer" || role === "admin") {

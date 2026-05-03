@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Buildings,
@@ -10,13 +10,21 @@ import {
   ChartBar,
   CaretDown,
   X,
-  Check,
+  Confetti,
 } from "@phosphor-icons/react";
 
-const ORGANIZER_CATEGORIES = [
-  "Music", "Nightlife", "Arts & Culture", "Food & Drink",
-  "Sports", "Tech & Business", "Fashion", "Comedy",
-  "Education", "Wellness", "Community", "Other",
+const PRIMARY_SCENES = [
+  "Music & Nightlife",
+  "Arts & Culture",
+  "Food & Drink",
+  "Sports & Fitness",
+  "Tech & Business",
+  "Fashion & Lifestyle",
+  "Comedy & Entertainment",
+  "Education & Workshops",
+  "Wellness & Spirituality",
+  "Community & Social",
+  "Other",
 ];
 
 type NotifPrefs = {
@@ -35,22 +43,24 @@ type Props = {
 export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }: Props) {
   const router = useRouter();
 
-  const [showOrgForm,  setShowOrgForm]  = useState(false);
-  const [orgNameVal,   setOrgNameVal]   = useState("");
-  const [orgBioVal,    setOrgBioVal]    = useState("");
-  const [selectedCats, setSelectedCats] = useState<string[]>([]);
-  const [converting,   setConverting]   = useState(false);
-  const [convertErr,   setConvertErr]   = useState<string | null>(null);
-  const [converted,    setConverted]    = useState(false);
+  const [showOrgForm,   setShowOrgForm]   = useState(false);
+  const [orgNameVal,    setOrgNameVal]    = useState("");
+  const [orgBioVal,     setOrgBioVal]     = useState("");
+  const [primaryScene,  setPrimaryScene]  = useState("");
+  const [converting,    setConverting]    = useState(false);
+  const [convertErr,    setConvertErr]    = useState<string | null>(null);
+  const [converted,     setConverted]     = useState(false);
+  const [showCelebrate, setShowCelebrate] = useState(false);
 
   const [prefs,       setPrefs]       = useState<NotifPrefs>(notifPrefs);
   const [savingNotif, setSavingNotif] = useState(false);
 
-  function toggleCat(cat: string) {
-    setSelectedCats((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
-  }
+  useEffect(() => {
+    if (!converted) return;
+    setShowCelebrate(true);
+    const t = setTimeout(() => router.push("/organizer"), 2200);
+    return () => clearTimeout(t);
+  }, [converted, router]);
 
   async function handleConvert() {
     if (!orgNameVal.trim()) { setConvertErr("Organization name is required"); return; }
@@ -61,17 +71,17 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          organization_name:  orgNameVal.trim(),
-          bio:                orgBioVal.trim(),
-          organizer_category: selectedCats,
+          organization_name: orgNameVal.trim(),
+          bio:               orgBioVal.trim(),
+          primary_scene:     primaryScene || null,
         }),
       });
       if (!res.ok) {
         const { error } = await res.json() as { error?: string };
         throw new Error(error ?? "Something went wrong");
       }
-      setConverted(true);
       setShowOrgForm(false);
+      setConverted(true);
     } catch (e) {
       setConvertErr((e as Error).message);
     } finally {
@@ -107,6 +117,30 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
     "w-full rounded-[12px] border border-[var(--border-default)] bg-[var(--bg-elevated)] px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[#4a9f63]/60 focus:ring-1 focus:ring-[#4a9f63]/20";
 
   const isOrganizerNow = isOrganizer || converted;
+
+  if (showCelebrate) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-6 md:py-10">
+        <div className="flex flex-col items-center justify-center gap-5 rounded-[24px] border border-[#4a9f63]/20 bg-[#4a9f63]/6 px-8 py-14 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#4a9f63]/20">
+            <Confetti size={32} weight="fill" className="text-[#4a9f63]" />
+          </div>
+          <div>
+            <p className="text-[22px] font-bold tracking-tight text-[var(--text-primary)]">
+              Welcome to GoOutside for Organizers
+            </p>
+            <p className="mt-1.5 text-[13px] text-[var(--text-tertiary)]">
+              Taking you to your dashboard…
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-[#4a9f63]/15 px-5 py-2 text-[12px] font-semibold text-[#4a9f63]">
+            <CheckCircle size={14} weight="fill" />
+            Organizer profile created
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 py-6 md:py-10">
@@ -216,29 +250,22 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                    Categories
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                    Primary Scene <span className="normal-case font-normal text-[var(--text-tertiary)]">(optional)</span>
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {ORGANIZER_CATEGORIES.map((cat) => {
-                      const active = selectedCats.includes(cat);
-                      return (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => toggleCat(cat)}
-                          className={`rounded-full border px-3 py-1 text-[11px] font-medium transition active:scale-[0.96] ${
-                            active
-                              ? "border-[#4a9f63]/50 bg-[#4a9f63]/20 text-[#4a9f63]"
-                              : "border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-card)]"
-                          }`}
-                        >
-                          {active && <Check size={9} className="mr-1 inline" weight="bold" />}
-                          {cat}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <select
+                    value={primaryScene}
+                    onChange={(e) => setPrimaryScene(e.target.value)}
+                    className={`${inputCls} appearance-none`}
+                  >
+                    <option value="">Select your main vibe…</option>
+                    {PRIMARY_SCENES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">
+                    Helps people find your profile. Your events can be any category.
+                  </p>
                 </div>
 
                 {convertErr && (

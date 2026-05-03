@@ -42,35 +42,71 @@ export async function POST(req: NextRequest) {
   if (!body.title || typeof body.title !== "string") {
     return jsonError(400, "title is required");
   }
+  if (!body.startDatetime) {
+    return jsonError(400, "startDatetime is required");
+  }
 
   const slug = await slugify(body.title as string);
+
+  const startDatetime = (body.startDatetime as string) || null;
+
+  // end_datetime is NOT NULL — default to start + 2 h if omitted
+  let endDatetime = (body.endDatetime as string) || null;
+  if (!endDatetime && startDatetime) {
+    const start = new Date(startDatetime);
+    if (!isNaN(start.getTime())) {
+      endDatetime = new Date(start.getTime() + 2 * 60 * 60 * 1000).toISOString();
+    }
+  }
+
+  // description is NOT NULL — cascade: description → shortDescription → title
+  const shortDesc = (body.shortDescription as string) || "";
+  const description = (body.description as string) || shortDesc || (body.title as string);
+
+  // Resolve location fields to satisfy CHECK constraint events_location_mode:
+  //   online=true  → online_link IS NOT NULL, venue_id IS NULL
+  //   online=false → online_link IS NULL, (venue_id OR custom_location) IS NOT NULL
+  const isOnline    = Boolean(body.isOnline);
+  const venueId     = !isOnline ? ((body.venueId as string) || null) : null;
+  const onlineLink  = isOnline  ? ((body.onlineLink as string) || "TBD") : null;
+  const customLoc   = !isOnline
+    ? ((body.customLocation as string) || null)
+    : null;
+  // If offline and no venue/location provided, fall back so constraint passes
+  const resolvedCustomLoc = (!isOnline && !venueId && !customLoc)
+    ? "Location TBD"
+    : customLoc;
 
   const { data: event, error } = await supabaseAdmin
     .from("events")
     .insert({
-      organizer_id: user.id,
-      category_id: (body.categoryId as string) || null,
-      title: body.title as string,
+      organizer_id:      user.id,
+      category_id:       (body.categoryId as string) || null,
+      title:             body.title as string,
       slug,
-      slug_v2: slug,
-      description: (body.description as string) || null,
-      short_description: (body.shortDescription as string) || null,
-      tags: (body.tags as string[]) ?? [],
-      banner_url: (body.bannerUrl as string) || null,
-      gallery_urls: (body.galleryUrls as string[]) ?? [],
-      start_datetime: (body.startDatetime as string) || null,
-      end_datetime: (body.endDatetime as string) || null,
-      timezone: (body.timezone as string) || "Africa/Accra",
-      is_online: Boolean(body.isOnline),
-      custom_location: (body.customLocation as string) || null,
-      venue_id: (body.venueId as string) || null,
-      status: body.publish ? "published" : "draft",
-      published_at: body.publish ? new Date().toISOString() : null,
+      slug_v2:           slug,
+      description,
+      short_description: shortDesc || null,
+      tags:              (body.tags as string[]) ?? [],
+      banner_url:        (body.bannerUrl as string) || null,
+      gallery_urls:      (body.galleryUrls as string[]) ?? [],
+      start_datetime:    startDatetime,
+      end_datetime:      endDatetime,
+      timezone:          (body.timezone as string) || "Africa/Accra",
+      is_online:         isOnline,
+      online_link:       onlineLink,
+      custom_location:   resolvedCustomLoc,
+      venue_id:          venueId,
+      status:            body.publish ? "published" : "draft",
+      published_at:      body.publish ? new Date().toISOString() : null,
     })
     .select("id, slug")
     .single();
 
-  if (error) return jsonError(500, error.message);
+  if (error) {
+    console.error("[POST /api/organizer/events] insert failed:", error);
+    return jsonError(500, error.message);
+  }
 
   // Fan-out new event notification to all followers when published
   if (body.publish) {

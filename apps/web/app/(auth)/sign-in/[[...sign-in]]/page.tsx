@@ -85,6 +85,38 @@ export default function SignInPage() {
       </div>
 
       <SignIn appearance={clerkAppearance} />
+
+      {/* Organizer intent CTA */}
+      <div
+        style={{
+          marginTop: "20px",
+          borderTop: "1px solid #f0f0f0",
+          paddingTop: "20px",
+          textAlign: "center",
+        }}
+      >
+        <a
+          href="/sign-up"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            borderRadius: "100px",
+            border: "1px solid #bbf7d0",
+            background: "#f0fdf4",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#166534",
+            textDecoration: "none",
+            transition: "background 0.15s",
+          }}
+        >
+          <span style={{ fontSize: "16px" }}>🎪</span>
+          Planning to host events?
+          <span style={{ color: "#2f8f45", fontWeight: 700 }}>Set up your organizer profile →</span>
+        </a>
+      </div>
     </>
   );
 }
