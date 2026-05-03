@@ -11,11 +11,9 @@ export async function POST(req: NextRequest) {
   if (csrf) return csrf;
 
   const body = await req.json() as Record<string, unknown>;
-  const orgName = typeof body.organization_name === "string" ? body.organization_name.trim() : "";
-  const orgBio  = typeof body.bio === "string" ? body.bio.trim() : "";
-  const orgCats = Array.isArray(body.organizer_category)
-    ? (body.organizer_category as unknown[]).filter((c): c is string => typeof c === "string")
-    : [];
+  const orgName     = typeof body.organization_name === "string" ? body.organization_name.trim() : "";
+  const orgBio      = typeof body.bio === "string" ? body.bio.trim() : "";
+  const primaryScene = typeof body.primary_scene === "string" ? body.primary_scene.trim() : null;
 
   if (!orgName) return jsonError(400, "Organization name is required");
 
@@ -38,7 +36,7 @@ export async function POST(req: NextRequest) {
       role:                  "organizer",
       is_verified_organizer: true,
       organizer_bio:         orgBio || null,
-      organizer_category:    orgCats.length ? orgCats : null,
+      organizer_category:    primaryScene ? [primaryScene] : null,
       updated_at:            new Date().toISOString(),
     })
     .eq("id", existing.id);

@@ -97,6 +97,22 @@ export default function SignUpPage() {
       </div>
 
       <SignUp appearance={clerkAppearance} forceRedirectUrl="/onboarding/profile" />
+
+      {/* Organizer intent note */}
+      <div
+        style={{
+          marginTop: "20px",
+          borderTop: "1px solid #f0f0f0",
+          paddingTop: "18px",
+          textAlign: "center",
+        }}
+      >
+        <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.5 }}>
+          <span style={{ fontSize: "15px" }}>🎪</span> Planning to host events?
+          <br />
+          Sign up and you&apos;ll set up your organizer profile right after.
+        </p>
+      </div>
     </>
   );
 }
