@@ -1393,3 +1393,217 @@ a {
   0%   { opacity: 1; }
   100% { opacity: 0.15; }
 }
+
+/* ── GoOutside DateTimePicker ─────────────────────────────────────────────── */
+
+/* Wrapper fills the container */
+.go-datepicker__wrapper {
+  display: block;
+  width: 100%;
+}
+
+/* The text input */
+.go-datepicker__input {
+  width: 100%;
+  padding: 0.625rem 2.5rem 0.625rem 2.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.go-datepicker__input::placeholder {
+  color: var(--text-tertiary);
+}
+.go-datepicker__input:focus,
+.go-datepicker__input:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--brand) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 10%, transparent);
+}
+.go-datepicker__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Popover calendar panel */
+.react-datepicker-popper {
+  z-index: 9999;
+}
+.go-datepicker__calendar.react-datepicker {
+  font-family: inherit;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(5, 12, 8, 0.18);
+  overflow: hidden;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+/* Triangle arrow */
+.react-datepicker__triangle {
+  display: none;
+}
+
+/* Header */
+.go-datepicker__calendar .react-datepicker__header {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 12px 8px;
+  border-radius: 0;
+}
+.go-datepicker__calendar .react-datepicker__current-month,
+.go-datepicker__calendar .react-datepicker-time__header {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.go-datepicker__calendar .react-datepicker__day-name {
+  color: var(--text-tertiary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  width: 2.2rem;
+  line-height: 2.2rem;
+}
+
+/* Nav arrows */
+.go-datepicker__calendar .react-datepicker__navigation {
+  top: 10px;
+}
+.go-datepicker__calendar .react-datepicker__navigation-icon::before {
+  border-color: var(--text-tertiary);
+  border-width: 2px 2px 0 0;
+  width: 7px;
+  height: 7px;
+}
+.go-datepicker__calendar .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: var(--brand);
+}
+
+/* Day cells */
+.go-datepicker__calendar .react-datepicker__day {
+  width: 2.2rem;
+  line-height: 2.2rem;
+  border-radius: 50%;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  transition: background 0.1s, color 0.1s;
+  margin: 0.1rem;
+}
+.go-datepicker__calendar .react-datepicker__day:hover:not(.react-datepicker__day--disabled) {
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  color: var(--brand);
+  border-radius: 50%;
+}
+.go-datepicker__calendar .react-datepicker__day--selected,
+.go-datepicker__calendar .react-datepicker__day--keyboard-selected {
+  background: var(--brand) !important;
+  color: #000 !important;
+  font-weight: 700;
+  border-radius: 50%;
+}
+.go-datepicker__calendar .react-datepicker__day--today {
+  font-weight: 700;
+  color: var(--brand);
+}
+.go-datepicker__calendar .react-datepicker__day--today.react-datepicker__day--selected {
+  color: #000;
+}
+.go-datepicker__calendar .react-datepicker__day--disabled {
+  color: var(--text-tertiary);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.go-datepicker__calendar .react-datepicker__day--outside-month {
+  color: var(--text-tertiary);
+  opacity: 0.45;
+}
+
+/* Time panel */
+.go-datepicker__calendar .react-datepicker__time-container {
+  border-left: 1px solid var(--border-subtle);
+  width: 96px;
+}
+.go-datepicker__calendar .react-datepicker__time-container .react-datepicker__time {
+  background: var(--bg-card);
+}
+.go-datepicker__calendar .react-datepicker__time-list-item {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: background 0.1s, color 0.1s;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 8px !important;
+}
+.go-datepicker__calendar .react-datepicker__time-list-item:hover {
+  background: color-mix(in srgb, var(--brand) 12%, transparent) !important;
+  color: var(--brand) !important;
+}
+.go-datepicker__calendar .react-datepicker__time-list-item--selected {
+  background: var(--brand) !important;
+  color: #000 !important;
+  font-weight: 700;
+}
+.go-datepicker__calendar .react-datepicker__time-list::-webkit-scrollbar {
+  width: 4px;
+}
+.go-datepicker__calendar .react-datepicker__time-list::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 2px;
+}
+
+/* Month/year dropdowns in header */
+.go-datepicker__calendar .react-datepicker__month-dropdown-container,
+.go-datepicker__calendar .react-datepicker__year-dropdown-container {
+  margin: 0 4px;
+}
+.go-datepicker__calendar .react-datepicker__month-read-view,
+.go-datepicker__calendar .react-datepicker__year-read-view {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.go-datepicker__calendar .react-datepicker__month-dropdown,
+.go-datepicker__calendar .react-datepicker__year-dropdown {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(5, 12, 8, 0.12);
+}
+.go-datepicker__calendar .react-datepicker__month-option,
+.go-datepicker__calendar .react-datepicker__year-option {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+.go-datepicker__calendar .react-datepicker__month-option:hover,
+.go-datepicker__calendar .react-datepicker__year-option:hover {
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--brand);
+}
+.go-datepicker__calendar .react-datepicker__month-option--selected_month,
+.go-datepicker__calendar .react-datepicker__year-option--selected_year {
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* Month container */
+.go-datepicker__calendar .react-datepicker__month-container {
+  float: none;
+}
+.go-datepicker__calendar .react-datepicker__month {
+  margin: 8px;
+}
+
+/* Week row */
+.go-datepicker__calendar .react-datepicker__week {
+  display: flex;
+}
+

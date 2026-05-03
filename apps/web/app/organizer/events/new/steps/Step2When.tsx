@@ -1,6 +1,7 @@
 "use client";
 
 import { useWizard } from "../WizardContext";
+import { DateTimePicker } from "../../../../../components/ui/DateTimePicker";
 
 const TIMEZONES = [
   "Africa/Accra",
@@ -17,30 +18,22 @@ export function Step2When() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-          Start date & time
-        </label>
-        <input
-          className="mt-2 w-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none [color-scheme:dark]"
-          type="datetime-local"
-          value={state.startDatetime}
-          onChange={(e) => setField("startDatetime", e.target.value)}
-        />
-      </div>
+      <DateTimePicker
+        label="Start date & time"
+        placeholder="Pick a start date and time…"
+        value={state.startDatetime}
+        onChange={(val) => setField("startDatetime", val)}
+        showTime
+      />
 
-      <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-          End date & time
-        </label>
-        <input
-          className="mt-2 w-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none [color-scheme:dark]"
-          min={state.startDatetime || undefined}
-          type="datetime-local"
-          value={state.endDatetime}
-          onChange={(e) => setField("endDatetime", e.target.value)}
-        />
-      </div>
+      <DateTimePicker
+        label="End date & time"
+        placeholder="Pick an end date and time…"
+        value={state.endDatetime}
+        onChange={(val) => setField("endDatetime", val)}
+        minDate={state.startDatetime || undefined}
+        showTime
+      />
 
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">

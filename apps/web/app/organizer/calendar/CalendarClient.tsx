@@ -112,15 +112,30 @@ function CalendarView({ events, year, month }: { events: CalendarEvent[]; year: 
                     {dayEvents.slice(0, 2).map((e) => (
                       <Link
                         key={e.id}
-                        className="block truncate rounded-[8px] bg-[var(--brand)]/15 px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand)] hover:bg-[var(--brand)]/25 transition"
+                        className="group/event relative block truncate rounded-[8px] bg-[var(--brand)]/15 px-1.5 py-0.5 text-[10px] font-medium text-[var(--brand)] transition hover:bg-[var(--brand)]/35 hover:shadow-[0_2px_8px_rgba(95,191,42,0.2)]"
                         href={`/organizer/events/${e.id}`}
                         title={e.title}
                       >
                         {e.title}
+                        {/* Hover tooltip */}
+                        <span className="pointer-events-none absolute bottom-full left-0 z-20 mb-1.5 hidden min-w-[160px] max-w-[220px] rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-2.5 shadow-[0_8px_24px_rgba(5,12,8,0.15)] group-hover/event:block">
+                          <span className="block truncate text-[11px] font-semibold text-[var(--text-primary)]">{e.title}</span>
+                          {e.startDatetime && (
+                            <span className="mt-0.5 block text-[10px] text-[var(--text-tertiary)]">
+                              {new Date(e.startDatetime).toLocaleDateString("en-GH", { month: "short", day: "numeric" })}
+                              {" · "}
+                              {new Date(e.startDatetime).toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                          <span className={`mt-1.5 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${statusChip(eventStatus(e))}`}>
+                            {eventStatus(e).charAt(0).toUpperCase() + eventStatus(e).slice(1)}
+                          </span>
+                          <SoldBar sold={e.ticketsSold} total={e.totalCapacity} />
+                        </span>
                       </Link>
                     ))}
                     {dayEvents.length > 2 && (
-                      <p className="text-[9px] text-[var(--text-tertiary)] pl-1.5">
+                      <p className="pl-1.5 text-[9px] text-[var(--text-tertiary)]">
                         +{dayEvents.length - 2} more
                       </p>
                     )}
@@ -160,11 +175,11 @@ function KanbanView({ events }: { events: CalendarEvent[] }) {
                 colEvents.map((e) => (
                   <Link
                     key={e.id}
-                    className="block rounded-[14px] bg-[var(--bg-elevated)] p-3 transition hover:bg-[var(--bg-muted)]"
+                    className="group block rounded-[14px] bg-[var(--bg-elevated)] p-3 transition hover:border hover:border-[var(--brand)]/25 hover:bg-[var(--bg-card)] hover:shadow-[0_4px_16px_rgba(5,12,8,0.08)]"
                     href={`/organizer/events/${e.id}`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-[12px] font-semibold leading-snug text-[var(--text-primary)]">
+                      <p className="text-[12px] font-semibold leading-snug text-[var(--text-primary)] transition group-hover:text-[var(--brand)]">
                         {e.title}
                       </p>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${statusChip(eventStatus(e))}`}>
@@ -173,10 +188,9 @@ function KanbanView({ events }: { events: CalendarEvent[] }) {
                     </div>
                     {e.startDatetime && (
                       <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-                        {new Date(e.startDatetime).toLocaleDateString("en-GH", {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(e.startDatetime).toLocaleDateString("en-GH", { month: "short", day: "numeric" })}
+                        {" · "}
+                        {new Date(e.startDatetime).toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     )}
                     <SoldBar sold={e.ticketsSold} total={e.totalCapacity} />

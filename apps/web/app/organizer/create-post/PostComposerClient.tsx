@@ -11,6 +11,7 @@ import {
   Ticket,
   X,
 } from "@phosphor-icons/react";
+import { DateTimePicker } from "../../../components/ui/DateTimePicker";
 
 type OwnEvent = { id: string; title: string; date: string | null; slug: string };
 
@@ -324,14 +325,13 @@ export function PostComposerClient({ organizerName, ownEvents }: Props) {
 
           {scheduleMode && (
             <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4">
-              <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                Publish at
-              </label>
-              <input
-                className="mt-2 w-full rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none [color-scheme:dark]"
-                type="datetime-local"
+              <DateTimePicker
+                label="Publish at"
+                placeholder="When should this go live?"
                 value={scheduledFor}
-                onChange={(e) => setScheduledFor(e.target.value)}
+                onChange={setScheduledFor}
+                showTime
+                clearable={false}
               />
             </div>
           )}
