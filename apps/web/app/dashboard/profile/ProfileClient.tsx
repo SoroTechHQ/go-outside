@@ -7,6 +7,7 @@ import Avatar from "boring-avatars";
 import {
   MapPin,
   PencilSimple,
+  GearSix,
   SignOut,
   X,
   CalendarBlank,
@@ -375,7 +376,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
               ringClass={tierInfo.ringClass}
               borderClass="border-[3px] border-[var(--bg-base)]"
             />
-            {/* Mobile edit + sign out buttons */}
+            {/* Mobile edit + settings + sign out buttons */}
             {currentProfile.isOwnProfile && (
               <div className="mb-1 flex items-center gap-2 md:hidden">
                 <button
@@ -386,11 +387,17 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
                   Edit
                 </button>
                 <button
+                  onClick={() => router.push("/dashboard/settings")}
+                  className="flex items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97]"
+                  aria-label="Settings"
+                >
+                  <GearSix size={14} />
+                </button>
+                <button
                   onClick={() => signOut(() => router.push("/"))}
                   className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-red-400 shadow-sm transition hover:bg-red-500/20 active:scale-[0.97]"
                 >
                   <SignOut size={13} />
-                  Sign Out
                 </button>
               </div>
             )}
@@ -407,7 +414,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
                   @{currentProfile.handle}
                 </p>
               </div>
-              {/* Desktop edit + sign out buttons */}
+              {/* Desktop edit + settings + sign out buttons */}
               {currentProfile.isOwnProfile && (
                 <div className="hidden items-center gap-2 md:flex">
                   <button
@@ -416,6 +423,13 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
                   >
                     <PencilSimple size={13} />
                     Edit Profile
+                  </button>
+                  <button
+                    onClick={() => router.push("/dashboard/settings")}
+                    className="flex items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97]"
+                    aria-label="Settings"
+                  >
+                    <GearSix size={14} />
                   </button>
                   <button
                     onClick={() => signOut(() => router.push("/"))}

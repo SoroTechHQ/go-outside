@@ -100,7 +100,7 @@ export default async function ProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
+    <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
       <ProfileClient
         profile={profile}
         pastTickets={pastTickets as AttendeeTicket[]}

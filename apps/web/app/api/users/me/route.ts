@@ -87,6 +87,7 @@ export async function PATCH(req: NextRequest) {
     "interests", "vibe",
     "pulse_score", "pulse_tier", "onboarding_complete",
     "avatar_url", "cover_url",
+    "notification_prefs",
   ] as const;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };

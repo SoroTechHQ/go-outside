@@ -38,6 +38,7 @@ type AppUserRow = {
   interests: unknown;
   location_city_name: string | null;
   pulse_tier: string | null;
+  avatar_url: string | null;
 };
 
 type ScarcityRow = {
@@ -71,7 +72,7 @@ async function resolveClerkId(clerkId?: string | null) {
 async function getAppUserRow(clerkId: string): Promise<AppUserRow | null> {
   const { data } = await supabaseAdmin
     .from("users")
-    .select("id, first_name, last_name, role, interests, location_city_name, pulse_tier")
+    .select("id, first_name, last_name, role, interests, location_city_name, pulse_tier, avatar_url")
     .eq("clerk_id", clerkId)
     .maybeSingle();
 
@@ -90,10 +91,13 @@ async function getShellUser(clerkId?: string | null, user?: AppUserRow | null): 
   }
 
   const nameFromRow = buildShellUserName(user ?? null);
+  const role: PublicShellUser["role"] = user?.role === "organizer" || user?.role === "admin" ? user.role : "attendee";
+
   if (nameFromRow) {
     return {
-      role: user?.role === "organizer" || user?.role === "admin" ? user.role : "attendee",
+      role,
       userName: nameFromRow,
+      avatarUrl: user?.avatar_url ?? null,
     };
   }
 
@@ -101,8 +105,9 @@ async function getShellUser(clerkId?: string | null, user?: AppUserRow | null): 
   const nameFromClerk = [clerk?.firstName?.trim(), clerk?.lastName?.trim()].filter(Boolean).join(" ").trim();
 
   return {
-    role: user?.role === "organizer" || user?.role === "admin" ? user.role : "attendee",
+    role,
     userName: nameFromClerk || demoData.attendee.name,
+    avatarUrl: user?.avatar_url ?? clerk?.imageUrl ?? null,
   };
 }
 

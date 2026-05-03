@@ -15,7 +15,7 @@ export function AppChrome() {
 
   return (
     <>
-      <NavSwitch role={shellUser.role} userName={shellUser.userName} />
+      <NavSwitch role={shellUser.role} userName={shellUser.userName} avatarUrl={shellUser.avatarUrl} />
       <Suspense fallback={null}>
         <Header appShell userName={shellUser.userName} />
       </Suspense>
