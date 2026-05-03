@@ -30,6 +30,8 @@ type SidebarProps = {
   role?: SidebarRole;
   userName?: string;
   avatarUrl?: string | null;
+  username?: string | null;
+  email?: string | null;
 };
 
 type NavItem = {
@@ -50,7 +52,7 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl }: SidebarProps) {
+export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl, username, email }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useClerk();
@@ -331,14 +333,14 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl
                   className="absolute bottom-full left-2 right-2 mb-1 overflow-hidden rounded-[14px] border border-[var(--border-card)] bg-[var(--bg-elevated)] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
                 >
                   <button
-                    onClick={() => { setProfileMenuOpen(false); router.push("/dashboard/profile"); }}
+                    onClick={() => { setProfileMenuOpen(false); router.push(username ? `/${username}` : "/dashboard/profile"); }}
                     className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-[var(--text-primary)] transition hover:bg-[var(--bg-card)]"
                   >
                     <UserCircle size={15} className="text-[var(--text-tertiary)]" />
                     View Profile
                   </button>
                   <button
-                    onClick={() => { setProfileMenuOpen(false); router.push("/dashboard/settings"); }}
+                    onClick={() => { setProfileMenuOpen(false); router.push("/settings"); }}
                     className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-[var(--text-primary)] transition hover:bg-[var(--bg-card)]"
                   >
                     <GearSix size={15} className="text-[var(--text-tertiary)]" />

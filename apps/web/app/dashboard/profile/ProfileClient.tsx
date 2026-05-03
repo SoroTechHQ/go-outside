@@ -387,7 +387,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
                   Edit
                 </button>
                 <button
-                  onClick={() => router.push("/dashboard/settings")}
+                  onClick={() => router.push("/settings")}
                   className="flex items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97]"
                   aria-label="Settings"
                 >
@@ -425,7 +425,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
                     Edit Profile
                   </button>
                   <button
-                    onClick={() => router.push("/dashboard/settings")}
+                    onClick={() => router.push("/settings")}
                     className="flex items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/50 hover:text-[#4a9f63] active:scale-[0.97]"
                     aria-label="Settings"
                   >

@@ -29,12 +29,12 @@ type Props = {
   isOrganizer:   boolean;
   orgName:       string | null;
   notifPrefs:    NotifPrefs;
+  maskedEmail?:  string;
 };
 
-export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
+export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }: Props) {
   const router = useRouter();
 
-  // Organizer conversion state
   const [showOrgForm,  setShowOrgForm]  = useState(false);
   const [orgNameVal,   setOrgNameVal]   = useState("");
   const [orgBioVal,    setOrgBioVal]    = useState("");
@@ -43,9 +43,8 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
   const [convertErr,   setConvertErr]   = useState<string | null>(null);
   const [converted,    setConverted]    = useState(false);
 
-  // Notification state
-  const [prefs,        setPrefs]        = useState<NotifPrefs>(notifPrefs);
-  const [savingNotif,  setSavingNotif]  = useState(false);
+  const [prefs,       setPrefs]       = useState<NotifPrefs>(notifPrefs);
+  const [savingNotif, setSavingNotif] = useState(false);
 
   function toggleCat(cat: string) {
     setSelectedCats((prev) =>
@@ -62,8 +61,8 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          organization_name: orgNameVal.trim(),
-          bio:               orgBioVal.trim(),
+          organization_name:  orgNameVal.trim(),
+          bio:                orgBioVal.trim(),
           organizer_category: selectedCats,
         }),
       });
@@ -81,6 +80,13 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
   }
 
   async function handleNotifToggle(key: keyof NotifPrefs) {
+    if (key === "push" && !prefs.push) {
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
+      }
+    }
+
     const updated = { ...prefs, [key]: !prefs[key] };
     setPrefs(updated);
     setSavingNotif(true);
@@ -98,7 +104,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
   }
 
   const inputCls =
-    "w-full rounded-[12px] border border-white/10 bg-white/6 px-4 py-3 text-[13px] text-white placeholder-white/25 outline-none transition focus:border-[#4a9f63]/50 focus:ring-1 focus:ring-[#4a9f63]/20";
+    "w-full rounded-[12px] border border-[var(--border-default)] bg-[var(--bg-elevated)] px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[#4a9f63]/60 focus:ring-1 focus:ring-[#4a9f63]/20";
 
   const isOrganizerNow = isOrganizer || converted;
 
@@ -141,7 +147,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
         ) : (
           <div className="px-5 py-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/6">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--bg-elevated)]">
                 <Buildings size={18} className="text-[var(--text-tertiary)]" />
               </div>
               <div className="flex-1">
@@ -168,10 +174,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
                     </p>
                   </div>
                 </div>
-                <CaretDown
-                  size={14}
-                  className="shrink-0 text-[var(--text-tertiary)] transition-transform"
-                />
+                <CaretDown size={14} className="shrink-0 text-[var(--text-tertiary)]" />
               </button>
             ) : (
               <div className="mt-4 space-y-4 rounded-[14px] border border-[#4a9f63]/20 bg-[#4a9f63]/6 p-4">
@@ -181,15 +184,15 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
                   </p>
                   <button
                     onClick={() => { setShowOrgForm(false); setConvertErr(null); }}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-white/8 text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bg-elevated)] text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
                   >
                     <X size={12} />
                   </button>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
-                    Organization Name <span className="text-red-400">*</span>
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                    Organization Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={orgNameVal}
@@ -200,7 +203,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
                     Short Bio
                   </label>
                   <textarea
@@ -213,7 +216,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
                     Categories
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -227,7 +230,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
                           className={`rounded-full border px-3 py-1 text-[11px] font-medium transition active:scale-[0.96] ${
                             active
                               ? "border-[#4a9f63]/50 bg-[#4a9f63]/20 text-[#4a9f63]"
-                              : "border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20"
+                              : "border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-card)]"
                           }`}
                         >
                           {active && <Check size={9} className="mr-1 inline" weight="bold" />}
@@ -239,7 +242,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
                 </div>
 
                 {convertErr && (
-                  <p className="rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-[12px] text-red-400">
+                  <p className="rounded-[10px] border border-red-500/20 bg-red-500/10 px-4 py-2 text-[12px] text-red-500">
                     {convertErr}
                   </p>
                 )}
@@ -272,16 +275,28 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
         <div className="border-b border-[var(--border-subtle)] px-5 py-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
             Notifications
-            {savingNotif && (
-              <span className="ml-2 text-[#4a9f63]">saving…</span>
-            )}
+            {savingNotif && <span className="ml-2 text-[#4a9f63]">saving…</span>}
           </p>
         </div>
         {(
           [
-            { key: "email"  as const, label: "Email notifications",  desc: "Event reminders and receipts" },
-            { key: "push"   as const, label: "Push notifications",   desc: "Real-time alerts on your device" },
-            { key: "in_app" as const, label: "In-app notifications", desc: "Activity bell in the app" },
+            {
+              key:   "email"  as const,
+              label: "Email notifications",
+              desc:  maskedEmail
+                ? `Reminders and receipts sent to ${maskedEmail}`
+                : "Event reminders and ticket receipts",
+            },
+            {
+              key:   "push"   as const,
+              label: "Push notifications",
+              desc:  "Browser alerts for activity and events near you",
+            },
+            {
+              key:   "in_app" as const,
+              label: "In-app notifications",
+              desc:  "Activity bell and feed inside the app",
+            },
           ] satisfies { key: keyof NotifPrefs; label: string; desc: string }[]
         ).map(({ key, label, desc }, i, arr) => (
           <button
@@ -301,12 +316,12 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs }: Props) {
             {/* Toggle pill */}
             <div
               className={`relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors duration-200 ${
-                prefs[key] ? "bg-[#4a9f63]" : "bg-white/12"
+                prefs[key] ? "bg-[#4a9f63]" : "bg-[var(--border-card)]"
               }`}
             >
               <div
-                className={`absolute top-[3px] h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${
-                  prefs[key] ? "translate-x-[22px]" : "translate-x-[3px]"
+                className={`absolute top-[3px] h-5 w-5 rounded-full shadow transition-transform duration-200 ${
+                  prefs[key] ? "translate-x-[22px] bg-white" : "translate-x-[3px] bg-[var(--bg-base)]"
                 }`}
               />
             </div>
