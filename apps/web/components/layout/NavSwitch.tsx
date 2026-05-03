@@ -6,14 +6,16 @@ type NavSwitchRole = "attendee" | "organizer" | "admin";
 export function NavSwitch({
   role = "attendee",
   userName = "Kofi Mensah",
+  avatarUrl,
 }: {
   role?: NavSwitchRole;
   userName?: string;
+  avatarUrl?: string | null;
 }) {
   return (
     <>
       <div className="hidden md:block">
-        <Sidebar role={role} userName={userName} />
+        <Sidebar role={role} userName={userName} avatarUrl={avatarUrl} />
       </div>
       <div className="md:hidden">
         <BottomNav role={role} />

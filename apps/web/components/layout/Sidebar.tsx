@@ -7,6 +7,7 @@ import {
   Bell,
   ChartBar,
   ChatCircleDots,
+  GearSix,
   House,
   MoonStars,
   ShoppingCart,
@@ -28,6 +29,7 @@ type SidebarRole = "attendee" | "organizer" | "admin";
 type SidebarProps = {
   role?: SidebarRole;
   userName?: string;
+  avatarUrl?: string | null;
 };
 
 type NavItem = {
@@ -48,7 +50,7 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: SidebarProps) {
+export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useClerk();
@@ -286,8 +288,20 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center text-[var(--brand)]">
-                {isExpanded ? getInitials(userName) : <UserCircle size={20} weight={pathname.startsWith("/profile") ? "fill" : "regular"} />}
+              <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--brand)]/40">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt={userName}
+                    fill
+                    className="object-cover"
+                    sizes="32px"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-[var(--bg-card)] text-[11px] font-semibold text-[var(--brand)]">
+                    {getInitials(userName)}
+                  </div>
+                )}
               </div>
               <AnimatePresence>
                 {isExpanded ? (
@@ -322,6 +336,13 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah" }: Sidebar
                   >
                     <UserCircle size={15} className="text-[var(--text-tertiary)]" />
                     View Profile
+                  </button>
+                  <button
+                    onClick={() => { setProfileMenuOpen(false); router.push("/dashboard/settings"); }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-[var(--text-primary)] transition hover:bg-[var(--bg-card)]"
+                  >
+                    <GearSix size={15} className="text-[var(--text-tertiary)]" />
+                    Settings
                   </button>
                   <div className="mx-3 h-px bg-[var(--border-subtle)]" />
                   <button
