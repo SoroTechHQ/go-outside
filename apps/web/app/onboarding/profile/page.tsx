@@ -42,6 +42,7 @@ export default function OnboardingProfilePage() {
   const { user, isLoaded } = useUser();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recovering, setRecovering] = useState(true);
 
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -53,6 +54,23 @@ export default function OnboardingProfilePage() {
       location:   null,
     },
   });
+
+  // Check if this Clerk session belongs to an existing account signed in via a
+  // different auth method (e.g. OAuth with the same email as a password account).
+  // If so, adopt the existing profile and skip onboarding.
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    fetch("/api/auth/recover-account", { method: "POST" })
+      .then((r) => r.json())
+      .then((body: { recovered?: boolean; wasComplete?: boolean; alreadyComplete?: boolean }) => {
+        if (body.alreadyComplete || (body.recovered && body.wasComplete)) {
+          window.location.href = "/home";
+        } else {
+          setRecovering(false);
+        }
+      })
+      .catch(() => setRecovering(false));
+  }, [isLoaded, user]);
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -126,7 +144,7 @@ export default function OnboardingProfilePage() {
     }
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || recovering) {
     return (
       <div className="flex min-h-[30vh] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5FBF2A] border-t-transparent" />

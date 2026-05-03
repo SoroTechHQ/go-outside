@@ -125,6 +125,19 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (error) {
+    // Email conflict → this Clerk account shares an email with an existing Supabase row
+    // (happens when a user signs in via OAuth with an email that already has a password account).
+    // Adopt the existing row by re-pointing its clerk_id to the current session.
+    if (error.code === "23505" && (error.message ?? "").toLowerCase().includes("email")) {
+      const email = clerk.emailAddresses[0]?.emailAddress ?? "";
+      const { data: adopted, error: adoptErr } = await supabaseAdmin
+        .from("users")
+        .update({ clerk_id: clerk.id, ...updates })
+        .eq("email", email)
+        .select(USER_PUBLIC_SELECT.join(", "))
+        .single();
+      if (!adoptErr && adopted) return jsonNoStore(adopted as PublicUserDto);
+    }
     console.error("[PATCH /api/users/me]", error);
     const { message, status } = humanizeDbError(error);
     return jsonError(status, message);
