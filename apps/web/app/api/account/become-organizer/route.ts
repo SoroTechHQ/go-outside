@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         user_id:           existing.id,
         organization_name: orgName,
         bio:               orgBio || null,
-        status:            "verified",
+        status:            "approved",
         updated_at:        new Date().toISOString(),
       },
       { onConflict: "user_id" }
