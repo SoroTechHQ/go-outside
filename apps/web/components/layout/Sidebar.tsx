@@ -5,7 +5,6 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
-  CalendarPlus,
   ChartBar,
   ChatCircleDots,
   GearSix,
@@ -159,7 +158,7 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl
           )}
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col justify-between">
+        <div className="flex min-h-0 flex-1 items-center">
           <nav className="flex w-full flex-col gap-1 px-2">
             {navItems.map((item) => {
               const active =
@@ -216,34 +215,6 @@ export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl
               );
             })}
           </nav>
-
-          {/* Host an Event CTA */}
-          <div className="px-2 pb-2">
-            <Link href="/host/new">
-              <motion.div
-                className={`flex h-[46px] items-center rounded-[14px] bg-[var(--brand)] text-black transition hover:bg-[#4fa824] active:scale-[0.97] ${
-                  isExpanded ? "gap-2.5 px-4" : "justify-center"
-                }`}
-                transition={{ duration: 0.15 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <CalendarPlus size={20} weight="bold" />
-                <AnimatePresence>
-                  {isExpanded ? (
-                    <motion.span
-                      animate={{ opacity: 1, width: "auto" }}
-                      className="overflow-hidden whitespace-nowrap text-[13px] font-bold"
-                      exit={{ opacity: 0, width: 0 }}
-                      initial={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      Host an Event
-                    </motion.span>
-                  ) : null}
-                </AnimatePresence>
-              </motion.div>
-            </Link>
-          </div>
         </div>
 
         <div className="px-2 pt-4">

@@ -48,14 +48,36 @@ export async function POST(req: NextRequest) {
   );
 
   if (type === "user.created") {
-    await supabaseAdmin.from("users").insert({
-      clerk_id:   data.id,
-      email:      primaryEmail?.email_address ?? "",
-      first_name: data.first_name ?? "User",
-      last_name:  data.last_name ?? "",
-      avatar_url: data.image_url ?? null,
-      role:       "attendee",
-    });
+    const email = primaryEmail?.email_address ?? "";
+
+    // Check if a row already exists for this email (e.g. email/password → OAuth same email)
+    const { data: existing } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existing) {
+      // Adopt the existing profile: re-link it to the new Clerk ID
+      await supabaseAdmin
+        .from("users")
+        .update({
+          clerk_id:   data.id,
+          avatar_url: data.image_url ?? null,
+          first_name: data.first_name ?? "User",
+          last_name:  data.last_name ?? "",
+        })
+        .eq("id", existing.id);
+    } else {
+      await supabaseAdmin.from("users").insert({
+        clerk_id:   data.id,
+        email,
+        first_name: data.first_name ?? "User",
+        last_name:  data.last_name ?? "",
+        avatar_url: data.image_url ?? null,
+        role:       "attendee",
+      });
+    }
   }
 
   if (type === "user.updated") {

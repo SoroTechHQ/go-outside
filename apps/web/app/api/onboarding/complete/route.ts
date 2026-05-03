@@ -40,6 +40,46 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (upsertErr || !sbUser) {
+    // Email conflict → adopt the existing row (OAuth + email/password same-email case)
+    if (upsertErr?.code === "23505" && (upsertErr.message ?? "").toLowerCase().includes("email")) {
+      const email = clerk.emailAddresses[0]?.emailAddress ?? "";
+      const { data: adopted, error: adoptErr } = await supabaseAdmin
+        .from("users")
+        .update({
+          clerk_id:            clerk.id,
+          pulse_score,
+          pulse_tier,
+          onboarding_complete: true,
+          updated_at:          new Date().toISOString(),
+        })
+        .eq("email", email)
+        .select("id, location_city, interests, vibe")
+        .single();
+      if (!adoptErr && adopted) {
+        // Continue with the adopted user
+        const adoptedUser = adopted as typeof sbUser;
+        const client = await clerkClient();
+        await client.users.updateUserMetadata(clerk.id, {
+          unsafeMetadata: {
+            ...(clerk.unsafeMetadata ?? {}),
+            onboardingComplete: true,
+            onboardingStep:     5,
+          },
+        });
+        const res = NextResponse.json({ ok: true });
+        res.cookies.set("go_done", "1", { ...COOKIE_OPTS, httpOnly: true });
+        const prefs = {
+          city:      (adoptedUser as Record<string, unknown>).location_city as string ?? "",
+          interests: ((adoptedUser as Record<string, unknown>).interests as string[]) ?? [],
+          vibe:      ((adoptedUser as Record<string, unknown>).vibe as Record<string, unknown> | null) ?? null,
+          score:     pulse_score,
+          tier:      pulse_tier,
+        };
+        res.cookies.set("go_prefs", JSON.stringify(prefs), { ...COOKIE_OPTS, httpOnly: false });
+        return res;
+      }
+    }
+
     console.error("[/api/onboarding/complete] upsert failed", upsertErr);
     if (upsertErr) {
       const { message, status } = humanizeDbError(upsertErr);
