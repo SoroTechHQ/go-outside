@@ -39,6 +39,8 @@ type AppUserRow = {
   location_city_name: string | null;
   pulse_tier: string | null;
   avatar_url: string | null;
+  username: string | null;
+  email: string | null;
 };
 
 type ScarcityRow = {
@@ -72,7 +74,7 @@ async function resolveClerkId(clerkId?: string | null) {
 async function getAppUserRow(clerkId: string): Promise<AppUserRow | null> {
   const { data } = await supabaseAdmin
     .from("users")
-    .select("id, first_name, last_name, role, interests, location_city_name, pulse_tier, avatar_url")
+    .select("id, first_name, last_name, role, interests, location_city_name, pulse_tier, avatar_url, username, email")
     .eq("clerk_id", clerkId)
     .maybeSingle();
 
@@ -96,8 +98,10 @@ async function getShellUser(clerkId?: string | null, user?: AppUserRow | null): 
   if (nameFromRow) {
     return {
       role,
-      userName: nameFromRow,
+      userName:  nameFromRow,
       avatarUrl: user?.avatar_url ?? null,
+      username:  user?.username ?? null,
+      email:     user?.email ?? null,
     };
   }
 
@@ -106,8 +110,10 @@ async function getShellUser(clerkId?: string | null, user?: AppUserRow | null): 
 
   return {
     role,
-    userName: nameFromClerk || demoData.attendee.name,
+    userName:  nameFromClerk || demoData.attendee.name,
     avatarUrl: user?.avatar_url ?? clerk?.imageUrl ?? null,
+    username:  user?.username ?? null,
+    email:     clerk?.emailAddresses?.[0]?.emailAddress ?? null,
   };
 }
 

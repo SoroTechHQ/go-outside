@@ -13,6 +13,8 @@ import {
   UserMinus,
   ChatCircleDots,
   Share,
+  GearSix,
+  PencilSimple,
   MapPin,
   CalendarBlank,
   Lightning,
@@ -31,6 +33,8 @@ import { getPulseProgress, getNextTier, type PulseTier } from "../dashboard/prof
 import { PostFeed } from "../../components/posts/PostFeed";
 import { SnippetComposer } from "../../components/posts/SnippetComposer";
 import { useFollowMutation, useFollowStatus } from "../../hooks/useFollow";
+import { EditProfileSheet } from "../dashboard/profile/components/EditProfileSheet";
+import type { UserProfile } from "../dashboard/profile/types";
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -675,6 +679,10 @@ export default function GoProfileClient({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("posts");
   const [peopleSheet, setPeopleSheet] = useState<"followers" | "following" | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [localName, setLocalName] = useState(name);
+  const [localBio, setLocalBio] = useState(bio);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState(avatarUrl);
 
   const resolvedAvatar = withAvatarTransform(avatarUrl);
   const resolvedCover  = withCoverTransform(coverUrl);
@@ -839,12 +847,22 @@ export default function GoProfileClient({
             )}
 
             {isOwnProfile && (
-              <button
-                onClick={() => router.push("/dashboard/profile")}
-                className="rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 active:scale-95"
-              >
-                Edit profile
-              </button>
+              <>
+                <button
+                  onClick={() => setEditOpen(true)}
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] px-4 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95"
+                >
+                  <PencilSimple size={13} />
+                  Edit profile
+                </button>
+                <button
+                  onClick={() => router.push("/settings")}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95"
+                  title="Settings"
+                >
+                  <GearSix size={15} />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -935,6 +953,48 @@ export default function GoProfileClient({
           clerkId={clerkId}
           type={peopleSheet}
         />
+      )}
+
+      {/* Edit profile sheet — only for own profile */}
+      {isOwnProfile && editOpen && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setEditOpen(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] md:bottom-auto md:left-1/2 md:top-1/2 md:right-auto md:w-[480px] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[24px] md:border md:border-[#4a9f63]/15">
+            <EditProfileSheet
+              profile={{
+                id:                "",
+                name:              localName,
+                handle:            username,
+                bio:               localBio ?? "",
+                location:          city ?? "",
+                avatarUrl:         localAvatarUrl,
+                coverUrl:          coverUrl,
+                joinedAt:          joinedAt ?? "",
+                pulseScore:        pulseScore,
+                pulseTier:         (pulseTier as UserProfile["pulseTier"]) ?? "Newcomer",
+                neighbourhoodRank: 0,
+                cityRankPercent:   0,
+                eventsAttended:    0,
+                friendCount:       0,
+                followingCount:    0,
+                snippetCount:      0,
+                topCategories:     [],
+                importedTweetIds:  [],
+                isOwnProfile:      true,
+              }}
+              onClose={() => setEditOpen(false)}
+              onSave={(updates) => {
+                if (updates.name)      setLocalName(updates.name);
+                if (updates.bio !== undefined) setLocalBio(updates.bio);
+                if (updates.avatarUrl !== undefined) setLocalAvatarUrl(updates.avatarUrl);
+                setEditOpen(false);
+              }}
+            />
+          </div>
+        </div>
       )}
     </main>
   );

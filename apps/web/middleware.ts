@@ -6,6 +6,7 @@ const isProtected = createRouteMatcher([
   "/organizer(.*)",
   "/onboarding(.*)",
   "/home(.*)",
+  "/settings",
 ]);
 
 const isMarketingRoot = createRouteMatcher(["/"]);

@@ -33,6 +33,8 @@ export type PublicShellUser = {
   role: "attendee" | "organizer" | "admin";
   userName: string;
   avatarUrl?: string | null;
+  username?: string | null;
+  email?: string | null;
 };
 
 export type AppBootstrap = {
