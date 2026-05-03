@@ -84,7 +84,16 @@ export default function SignInPage() {
         </span>
       </div>
 
-      <SignIn appearance={clerkAppearance} />
+      <SignIn
+        appearance={clerkAppearance}
+        localization={{
+          unstable__errors: {
+            form_identifier_not_found: "Incorrect email or password.",
+            form_password_incorrect: "Incorrect email or password.",
+            form_password_or_identifier_incorrect: "Incorrect email or password.",
+          },
+        }}
+      />
 
       {/* Organizer intent CTA */}
       <div
