@@ -15,7 +15,7 @@ export async function subscribeToPush(clerkToken: string): Promise<void> {
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    applicationServerKey: urlBase64ToUint8Array(vapidKey) as unknown as BufferSource,
   });
 
   await fetch("/api/notifications/push-subscribe", {

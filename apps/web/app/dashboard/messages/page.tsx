@@ -543,6 +543,25 @@ function MessagesShell({
     return () => { unsub.unsubscribe(); unsub2.unsubscribe(); };
   }, [client]);
 
+  // In-tab browser notification for messages arriving while user is on another tab/page
+  useEffect(() => {
+    if (!client) return;
+    const sub = client.on("notification.message_new", (event) => {
+      if (activeChannel?.cid === event.cid) return;
+      if (Notification.permission !== "granted") return;
+      const sender = (event.message?.user as { name?: string } | undefined)?.name ?? "Someone";
+      const text = (event.message as { text?: string } | undefined)?.text?.trim();
+      const attachments = (event.message as { attachments?: unknown[] } | undefined)?.attachments;
+      const body = text || (attachments?.length ? "Sent a file" : "New message");
+      new Notification(`${sender} · GoOutside`, {
+        body,
+        icon: "/favicon-icon.png",
+        tag: event.channel_id,
+      });
+    });
+    return () => sub.unsubscribe();
+  }, [client, activeChannel?.cid]);
+
   // Auto-open DM channel when navigated from a profile page
   useEffect(() => {
     if (!dmUserId || !client || dmUserId === identity.id || dmOpenedRef.current) return;
@@ -585,12 +604,13 @@ function MessagesShell({
 
   const handleOpenChannel = useCallback(
     (channel: StreamChannel) => {
+      setActiveChannel(channel);
       setSelectedChannelCid(channel.cid);
       if (isMobile) {
         setMobilePane("thread");
       }
     },
-    [isMobile],
+    [isMobile, setActiveChannel],
   );
 
   const handleOpenCompose = useCallback(() => {
@@ -673,7 +693,7 @@ function MessagesShell({
         style={getStreamTheme(activeConvType)}
       >
         {activeChannel ? (
-          <Channel EmptyStateIndicator={ChannelMessagesEmptyState}>
+          <Channel key={activeChannel.cid} EmptyStateIndicator={ChannelMessagesEmptyState}>
             <Window>
               <GoChannelHeader
                 onBack={() => setMobilePane("list")}
@@ -746,6 +766,23 @@ function StreamMessagesView({
     tokenOrProvider: tokenProvider,
     userData: identity,
   });
+
+  // Register service worker and subscribe to push once the Stream client is ready
+  useEffect(() => {
+    if (!client) return;
+    if (!("serviceWorker" in navigator)) return;
+
+    const setup = async () => {
+      await navigator.serviceWorker.register("/sw.js").catch(() => {});
+      const granted = await requestPushPermission();
+      if (!granted) return;
+      const clerkToken = await getClerkToken();
+      if (!clerkToken) return;
+      await subscribeToPush(clerkToken).catch(() => {});
+    };
+
+    void setup();
+  }, [client, getClerkToken]);
 
   if (bootError) return <MessagesConfigError detail={bootError} />;
   if (!client) return <MessagesPageSkeleton />;
