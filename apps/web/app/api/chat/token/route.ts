@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const serverClient = getStreamServerClient();
 
-    await serverClient.upsertUser({ id: clerk.id, name, ...(image ? { image } : {}) });
+    await serverClient.upsertUser({ id: clerk.id, name, app: "gooutside", ...(image ? { image } : {}) });
 
     // Token valid for 24 h — short enough to limit exposure, long enough for a session
     const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
