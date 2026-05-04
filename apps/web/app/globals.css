@@ -433,6 +433,50 @@ a {
   color: var(--brand);
 }
 
+/* ── Inbox tabs ── */
+.go-stream-inbox-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 1rem;
+}
+
+.go-stream-inbox-tab {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 5px;
+  padding: 5px 10px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.go-stream-inbox-tab:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.go-stream-inbox-tab--active {
+  background: var(--brand-dim);
+  color: var(--brand);
+}
+
+.go-stream-inbox-tab__badge {
+  background: var(--brand);
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 16px;
+  padding: 2px 5px;
+  text-align: center;
+}
+
 /* Channel list */
 .go-stream-chat__sidebar .str-chat__channel-list,
 .go-stream-chat__sidebar .str-chat__channel-list-messenger {
@@ -1398,6 +1442,120 @@ a {
 
 .go-message-input__send--active:active {
   transform: scale(0.95);
+}
+
+/* ── Locked input state (pending request) ── */
+.go-message-input--locked {
+  padding: 10px 12px 14px;
+}
+
+.go-message-input__lock {
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-tertiary);
+  display: flex;
+  font-size: 0.82rem;
+  gap: 7px;
+  padding: 10px 14px;
+}
+
+:root[data-theme="dark"] .go-message-input__lock {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Request banner (shown to recipient for pending channels) ── */
+.go-request-banner {
+  align-items: center;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-shrink: 0;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 0.85rem 1.1rem;
+}
+
+:root[data-theme="dark"] .go-request-banner {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.go-request-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.go-request-banner__label {
+  color: var(--brand);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 2px;
+  text-transform: uppercase;
+}
+
+.go-request-banner__text {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.go-request-banner__error {
+  color: #f87171;
+  font-size: 0.78rem;
+  margin: 4px 0 0;
+}
+
+.go-request-banner__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.go-request-banner__btn {
+  align-items: center;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 4px;
+  padding: 6px 14px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.go-request-banner__btn:disabled {
+  opacity: 0.5;
+}
+
+.go-request-banner__btn:active {
+  transform: scale(0.97);
+}
+
+.go-request-banner__btn--accept {
+  background: var(--brand);
+  color: #fff;
+}
+
+.go-request-banner__btn--accept:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+.go-request-banner__btn--decline {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.go-request-banner__btn--decline:hover:not(:disabled) {
+  background: rgba(232, 93, 138, 0.12);
+  color: var(--pink);
 }
 
 /* ── Empty states ── */

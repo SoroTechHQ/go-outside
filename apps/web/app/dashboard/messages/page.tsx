@@ -31,6 +31,7 @@ import {
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { GoMessageInput } from "../../../components/chat/GoMessageInput";
 import { GoChannelHeader } from "../../../components/chat/GoChannelHeader";
+import { GoRequestBanner } from "../../../components/chat/GoRequestBanner";
 import { requestPushPermission, subscribeToPush } from "../../../lib/notifications/push";
 
 type GoConversationType =
@@ -514,6 +515,8 @@ function ComposeConversation({
   );
 }
 
+type InboxTab = "primary" | "requests";
+
 function MessagesShell({
   dmUserId,
   identity,
@@ -526,10 +529,48 @@ function MessagesShell({
   const { channel: activeChannel, client, setActiveChannel } = useChatContext("MessagesShell");
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [composeOpen, setComposeOpen] = useState(false);
+  const [inbox, setInbox] = useState<InboxTab>("primary");
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
+  const [requestCount, setRequestCount] = useState(0);
   const [selectedChannelCid, setSelectedChannelCid] = useState<string | undefined>(starterChannelCid);
   const [activeConvType, setActiveConvType] = useState<GoConversationType>("friend_dm");
   const dmOpenedRef = useRef(false);
+
+  // Count incoming pending request channels (I'm the recipient)
+  useEffect(() => {
+    if (!client) return;
+    const refresh = async () => {
+      try {
+        const channels = await client.queryChannels(
+          { members: { $in: [identity.id] }, type: "messaging", go_channel_state: "pending" } as Record<string, unknown>,
+          {},
+          { limit: 100, state: false },
+        );
+        const incoming = channels.filter((ch) => {
+          const d = ch.data as Record<string, unknown>;
+          return d.go_initiated_by !== identity.id;
+        });
+        setRequestCount(incoming.length);
+      } catch { /* ignore */ }
+    };
+    void refresh();
+    const unsub1 = client.on("channel.updated", () => void refresh());
+    const unsub2 = client.on("notification.added_to_channel", () => void refresh());
+    return () => { unsub1.unsubscribe(); unsub2.unsubscribe(); };
+  }, [client, identity.id]);
+
+  // When a channel is hidden (after decline), clear it if it was active
+  useEffect(() => {
+    if (!client) return;
+    const unsub = client.on("channel.hidden", (event) => {
+      if (event.channel?.cid === activeChannel?.cid) {
+        setActiveChannel(undefined);
+        setSelectedChannelCid(undefined);
+        if (isMobile) setMobilePane("list");
+      }
+    });
+    return () => unsub.unsubscribe();
+  }, [client, activeChannel?.cid, isMobile, setActiveChannel]);
 
   // Broadcast unread count to BottomNav via CustomEvent
   useEffect(() => {
@@ -639,6 +680,7 @@ function MessagesShell({
         members: [identity.id, user.id],
         go_conversation_type: convType,
         go_channel_state: isConnected ? "active" : "pending",
+        go_initiated_by: identity.id,
         ...(user.username ? { go_other_username: user.username } : {}),
       } as Parameters<typeof client.channel>[1]);
       await channel.watch();
@@ -680,20 +722,83 @@ function MessagesShell({
               <PencilSimple size={17} weight="bold" />
             </button>
           </div>
+
+          <div className="go-stream-inbox-tabs" role="tablist">
+            <button
+              aria-selected={inbox === "primary"}
+              className={`go-stream-inbox-tab${inbox === "primary" ? " go-stream-inbox-tab--active" : ""}`}
+              onClick={() => setInbox("primary")}
+              role="tab"
+              type="button"
+            >
+              Primary
+            </button>
+            <button
+              aria-selected={inbox === "requests"}
+              className={`go-stream-inbox-tab${inbox === "requests" ? " go-stream-inbox-tab--active" : ""}`}
+              onClick={() => setInbox("requests")}
+              role="tab"
+              type="button"
+            >
+              Requests
+              {requestCount > 0 && (
+                <span className="go-stream-inbox-tab__badge">{requestCount > 99 ? "99+" : requestCount}</span>
+              )}
+            </button>
+          </div>
         </div>
 
-        <ChannelList
-          EmptyStateIndicator={ChannelListEmptyState}
-          LoadingIndicator={LoadingIndicator}
-          Preview={(previewProps) => (
-            <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
-          )}
-          customActiveChannel={selectedChannelCid ?? starterChannelCid}
-          filters={{ members: { $in: [identity.id] }, type: "messaging" }}
-          options={{ limit: 20, presence: true, state: true, watch: true }}
-          setActiveChannelOnMount={!isMobile}
-          sort={{ last_message_at: -1 }}
-        />
+        {inbox === "primary" ? (
+          <ChannelList
+            key="primary"
+            EmptyStateIndicator={ChannelListEmptyState}
+            LoadingIndicator={LoadingIndicator}
+            Preview={(previewProps) => (
+              <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
+            )}
+            customActiveChannel={selectedChannelCid ?? starterChannelCid}
+            filters={{
+              members: { $in: [identity.id] },
+              type: "messaging",
+              $or: [
+                { go_channel_state: "active" },
+                { go_channel_state: { $exists: false } },
+                { go_channel_state: "pending", go_initiated_by: identity.id },
+              ],
+            } as unknown as Parameters<typeof ChannelList>[0]["filters"]}
+            options={{ limit: 20, presence: true, state: true, watch: true }}
+            setActiveChannelOnMount={!isMobile}
+            sort={{ last_message_at: -1 }}
+          />
+        ) : (
+          <ChannelList
+            key="requests"
+            EmptyStateIndicator={() => (
+              <div className="go-stream-empty">
+                <div className="go-stream-empty__icon">
+                  <ChatCircleDots size={26} weight="duotone" />
+                </div>
+                <div>
+                  <p className="go-stream-empty__title">No message requests</p>
+                  <p className="go-stream-empty__copy">When someone new messages you, it'll appear here.</p>
+                </div>
+              </div>
+            )}
+            LoadingIndicator={LoadingIndicator}
+            Preview={(previewProps) => (
+              <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
+            )}
+            customActiveChannel={selectedChannelCid}
+            filters={{
+              members: { $in: [identity.id] },
+              type: "messaging",
+              go_channel_state: "pending",
+            } as unknown as Parameters<typeof ChannelList>[0]["filters"]}
+            options={{ limit: 20, presence: true, state: true, watch: true }}
+            setActiveChannelOnMount={false}
+            sort={{ last_message_at: -1 }}
+          />
+        )}
       </aside>
 
       <section
@@ -706,6 +811,13 @@ function MessagesShell({
               <GoChannelHeader
                 onBack={() => setMobilePane("list")}
                 showBackButton={isMobile && mobilePane === "thread"}
+              />
+              <GoRequestBanner
+                onDeclined={() => {
+                  setActiveChannel(undefined);
+                  setSelectedChannelCid(undefined);
+                  if (isMobile) setMobilePane("list");
+                }}
               />
               <MessageList
                 messageActions={["delete", "edit", "flag", "markUnread", "mute", "react", "quote"]}
