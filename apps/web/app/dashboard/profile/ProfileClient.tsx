@@ -350,11 +350,11 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
           />
         )}
 
-        {/* Edit cover button */}
+        {/* Edit cover button — sits at top-right so it never overlaps the avatar */}
         {currentProfile.isOwnProfile && (
           <button
             onClick={() => setEditOpen(true)}
-            className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70 backdrop-blur-sm transition hover:bg-black/55 hover:text-white active:scale-[0.97]"
+            className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white/70 backdrop-blur-sm transition hover:bg-black/55 hover:text-white active:scale-[0.97]"
           >
             <PencilSimple size={12} />
             Edit Profile

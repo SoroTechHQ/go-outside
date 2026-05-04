@@ -230,7 +230,7 @@ export default function OrganizerProfileClient({
   ];
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
+    <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
       {/* Cover */}
       <div className="relative h-[240px] w-full overflow-hidden md:h-[280px]">
         {resolvedCover ? (
@@ -261,21 +261,23 @@ export default function OrganizerProfileClient({
         <div className="min-w-0">
           {/* Logo / Avatar */}
           <div className="-mt-12 pb-3">
-            <div
-              className="relative overflow-hidden rounded-[20px] border-4 border-[var(--bg-base)] shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
-              style={{ width: 84, height: 84 }}
-            >
-              {logoUrl ? (
-                <Image src={logoUrl} alt={orgName} width={84} height={84} className="h-full w-full object-cover" />
-              ) : resolvedAvatar ? (
-                <Image src={resolvedAvatar} alt={orgName} width={84} height={84} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0e2212] to-[#152a1a] text-xl font-black tracking-tight text-[#4a9f63]">
-                  {orgName.slice(0, 2).toUpperCase()}
-                </div>
-              )}
+            {/* Outer wrapper: relative but NOT overflow-hidden so the badge escapes */}
+            <div className="relative inline-block" style={{ width: 84, height: 84 }}>
+              {/* Inner: clips the image to the rounded square */}
+              <div className="h-full w-full overflow-hidden rounded-[20px] border-4 border-[var(--bg-base)] shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+                {logoUrl ? (
+                  <Image src={logoUrl} alt={orgName} width={84} height={84} className="h-full w-full object-cover" />
+                ) : resolvedAvatar ? (
+                  <Image src={resolvedAvatar} alt={orgName} width={84} height={84} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0e2212] to-[#152a1a] text-xl font-black tracking-tight text-[#4a9f63]">
+                    {orgName.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              {/* Badge overlays the top-right corner of the image */}
               {isVerified && (
-                <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[var(--bg-base)] bg-[#4a9f63]">
+                <div className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[var(--bg-base)] bg-[#4a9f63] shadow-[0_2px_8px_rgba(74,159,99,0.5)]">
                   <ShieldCheck size={12} weight="fill" className="text-white" />
                 </div>
               )}
