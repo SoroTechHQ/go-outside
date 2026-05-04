@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import AppBackground from "./AppBackground";
 import AppChrome from "./AppChrome";
 import Footer from "./Footer";
@@ -38,6 +39,14 @@ const NO_FOOTER_ROUTES = [
 
 export function ConditionalChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // SW registration is best-effort — never block the app
+      });
+    }
+  }, []);
   const isStandalone = STANDALONE_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
   const hideFooter = NO_FOOTER_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
 

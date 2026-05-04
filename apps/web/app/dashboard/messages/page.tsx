@@ -31,6 +31,7 @@ import {
 
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { GoMessageInput } from "../../../components/chat/GoMessageInput";
+import { buildChannelId } from "../../../lib/chat/channel-id";
 
 type GoConversationType =
   | "friend_dm"
@@ -177,12 +178,6 @@ function formatPresenceCopy(channel: StreamChannel, currentUserId?: string) {
   return onlineCount > 0 ? `${onlineCount} online` : `${others.length} members`;
 }
 
-function buildChannelId(userA: string, userB: string) {
-  return [userA, userB]
-    .sort()
-    .join("__")
-    .replace(/[^a-zA-Z0-9_-]/g, "_");
-}
 
 function MessagesLoadingState({ label }: { label: string }) {
   return (
