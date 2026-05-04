@@ -1,7 +1,7 @@
 import "server-only";
 
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { demoData, type EventItem } from "@gooutside/demo-data";
+import { type EventItem } from "@gooutside/demo-data";
 import type { AppBootstrap, FeedEventItem, FeedFilters, FeedPage, PublicShellUser } from "../app-contracts";
 import { DEFAULT_APP_BOOTSTRAP } from "../app-contracts";
 import {
@@ -110,7 +110,7 @@ async function getShellUser(clerkId?: string | null, user?: AppUserRow | null): 
 
   return {
     role,
-    userName:  nameFromClerk || demoData.attendee.name,
+    userName:  nameFromClerk,
     avatarUrl: user?.avatar_url ?? clerk?.imageUrl ?? null,
     username:  user?.username ?? null,
     email:     clerk?.emailAddresses?.[0]?.emailAddress ?? null,

@@ -21,13 +21,14 @@ type HeaderProps = {
 function getInitials(name: string) {
   return name
     .split(" ")
-    .map((part) => part[0])
+    .map((part) => part[0] ?? "")
+    .filter(Boolean)
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "GO";
 }
 
-export function Header({ appShell = false, userName = "Kofi Mensah" }: HeaderProps) {
+export function Header({ appShell = false, userName = "" }: HeaderProps) {
   const pathname = usePathname();
   const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
   const { peekPanelWidth } = useAppShell();

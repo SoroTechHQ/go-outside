@@ -1,16 +1,23 @@
 "use client";
 
 import { Suspense } from "react";
-import { demoData } from "@gooutside/demo-data";
+import { useUser } from "@clerk/nextjs";
 import Header from "./Header";
 import NavSwitch from "./NavSwitch";
 import { useAppBootstrap } from "../../hooks/useAppBootstrap";
 
 export function AppChrome() {
   const { data } = useAppBootstrap();
+  const { user: clerkUser } = useUser();
+
+  const clerkName = [clerkUser?.firstName?.trim(), clerkUser?.lastName?.trim()]
+    .filter(Boolean)
+    .join(" ");
+
   const shellUser = data?.shellUser ?? {
     role: "attendee" as const,
-    userName: demoData.attendee.name,
+    userName: clerkName,
+    avatarUrl: clerkUser?.imageUrl ?? null,
   };
 
   return (

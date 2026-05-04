@@ -57,11 +57,18 @@ export async function getOrCreateSupabaseUser(): Promise<SupabaseUser | null> {
     .single();
 
   if (error) {
-    // Email already exists (seeded row with different clerk_id) — claim it
+    // Email already exists (seeded row with different clerk_id) — claim it and sync names
     if (error.code === "23505") {
+      const nameUpdates: Record<string, string | null> = {
+        clerk_id: clerkUser.id,
+        avatar_url: clerkUser.imageUrl ?? null,
+      };
+      if (clerkUser.firstName) nameUpdates.first_name = clerkUser.firstName;
+      if (clerkUser.lastName !== undefined) nameUpdates.last_name = clerkUser.lastName ?? "";
+
       const { data: claimed } = await supabaseAdmin
         .from("users")
-        .update({ clerk_id: clerkUser.id })
+        .update(nameUpdates)
         .eq("email", primaryEmail?.emailAddress ?? "")
         .select("*")
         .single();
