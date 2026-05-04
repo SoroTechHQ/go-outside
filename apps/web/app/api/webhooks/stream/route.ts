@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import type webpush from "web-push";
 import { getStreamServerClient } from "../../../../lib/stream";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { sendWebPush } from "../../../../lib/notifications/send-web-push";
 
 type StreamWebhookEvent = {
   type: string;
@@ -110,6 +112,27 @@ export async function POST(req: NextRequest) {
       channelId,
       emailDelayMins,
     });
+
+    // Send Web Push to all stored subscriptions for this user
+    const { data: pushUser } = await supabaseAdmin
+      .from("users")
+      .select("push_subscriptions")
+      .eq("clerk_id", clerkId)
+      .single();
+
+    const pushSubs = pushUser?.push_subscriptions as Record<string, webpush.PushSubscription> | null;
+    if (pushSubs) {
+      const senderName = event.message?.user?.name ?? "Someone";
+      await Promise.all(
+        Object.values(pushSubs).map((sub) =>
+          sendWebPush(sub, {
+            title: `${senderName} · GoOutside`,
+            body: messagePreview || "New message",
+            url: "/dashboard/messages",
+          }).catch(() => {})
+        )
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -369,7 +369,7 @@ a {
   --str-chat__primary-color: #5FBF2A;
   --str-chat__secondary-color: var(--bg-surface);
   --str-chat__avatar-background-color: #dfe8df;
-  --str-chat__message-max-width: min(76%, 560px);
+  --str-chat__message-max-width: 560px;
   /* Received message bubble — iMessage grey */
   --str-chat__message-bubble-background: #F0F0F0;
   --str-chat__message-bubble-color: #111111;
@@ -679,7 +679,10 @@ a {
   color: #111111 !important;
   font-size: 0.96rem;
   line-height: 1.42;
+  min-width: 56px;
   padding: 0.72rem 0.92rem;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .go-stream-chat__thread .str-chat__message-text,
