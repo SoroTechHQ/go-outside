@@ -37,7 +37,7 @@ const DEMO_THREADS: Record<string, { text: string; sender: string }[]> = {
   ],
 };
 
-export async function GET() {
+export async function POST() {
   const clerk = await currentUser();
   if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -52,10 +52,17 @@ export async function GET() {
     };
     await client.upsertUser(realUser);
 
-    // 2. Upsert demo users
+    // 2. Guard — don't re-seed if demo conversations already exist
+    const firstChannelId = [clerk.id, DEMO_USERS[0].id].sort().join("__").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const existing = await client.queryChannels({ id: { $eq: firstChannelId } }, {}, { limit: 1 });
+    if (existing.length > 0) {
+      return NextResponse.json({ ok: true, message: "Already seeded." });
+    }
+
+    // 3. Upsert demo users
     await client.upsertUsers(DEMO_USERS);
 
-    // 3. Create a DM channel per demo user and send seed messages
+    // 4. Create a DM channel per demo user and send seed messages
     const created: string[] = [];
 
     for (const demo of DEMO_USERS) {
