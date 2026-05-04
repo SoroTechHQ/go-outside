@@ -7,6 +7,7 @@ import {
   ArrowRight,
   CalendarBlank,
   ChatCircleDots,
+  Eye,
   Fire,
   Heart,
   Ticket,
@@ -177,6 +178,19 @@ export function TopicHeroCard({
         </p>
       </div>
     </div>
+  );
+}
+
+export function EventMetricStrip({ event }: { event: TrendingEvent }) {
+  return (
+    <MetricStrip
+      items={[
+        { label: "Views",    value: event.views_count.toLocaleString(),   icon: <Eye size={14} /> },
+        { label: "Saves",    value: event.saves_count.toLocaleString(),   icon: <Heart size={14} /> },
+        { label: "Tickets",  value: event.tickets_sold.toLocaleString(),  icon: <Ticket size={14} /> },
+        { label: "Snippets", value: event.snippet_count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
+      ]}
+    />
   );
 }
 
