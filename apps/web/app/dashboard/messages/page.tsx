@@ -30,6 +30,59 @@ import {
 } from "stream-chat-react";
 
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
+import { GoMessageInput } from "../../../components/chat/GoMessageInput";
+
+type GoConversationType =
+  | "friend_dm"
+  | "organizer_chat"
+  | "message_request"
+  | "follower_dm"
+  | "event_group";
+
+type GoChannelData = {
+  go_conversation_type?: GoConversationType;
+  go_other_user_verified?: boolean;
+};
+
+function getChannelConversationType(channel: StreamChannel): GoConversationType {
+  return (channel.data as GoChannelData | undefined)?.go_conversation_type ?? "friend_dm";
+}
+
+function getStreamTheme(type: GoConversationType): React.CSSProperties {
+  const base: React.CSSProperties = {
+    "--str-chat__primary-color":                          "#5FBF2A",
+    "--str-chat__own-message-bubble-background-color":    "#5FBF2A",
+    "--str-chat__own-message-bubble-color":               "#ffffff",
+    "--str-chat__message-bubble-background-color":        "#1e1e1e",
+    "--str-chat__message-bubble-color":                   "#f0f0f0",
+    "--str-chat__border-radius-md":                       "18px",
+    "--str-chat__border-radius-sm":                       "12px",
+  } as React.CSSProperties;
+
+  if (type === "message_request") {
+    return {
+      ...base,
+      "--str-chat__own-message-bubble-background-color": "#3a3a3a",
+      "--str-chat__own-message-bubble-color":            "#ffffff",
+    } as React.CSSProperties;
+  }
+
+  if (type === "organizer_chat") {
+    return {
+      ...base,
+      "--str-chat__message-bubble-background-color": "#161e12",
+    } as React.CSSProperties;
+  }
+
+  return base;
+}
+
+const CONV_TYPE_BADGE: Record<string, { label: string; color: string } | undefined> = {
+  organizer_chat:  { label: "Organizer",   color: "#5FBF2A" },
+  message_request: { label: "Request",     color: "#f59e0b" },
+  follower_dm:     { label: "Follows you", color: "#60a5fa" },
+  event_group:     { label: "Event",       color: "#a78bfa" },
+};
 
 type StreamSessionResponse = {
   starterChannelCid?: string;
@@ -232,12 +285,26 @@ function ComposeUserAvatar({ user }: { user: ChatUserSummary }) {
   );
 }
 
+function ConversationTypeBadge({ type }: { type: GoConversationType }) {
+  const config = CONV_TYPE_BADGE[type];
+  if (!config) return null;
+  return (
+    <span
+      className="go-stream-conv-badge"
+      style={{ color: config.color, background: `${config.color}18`, border: `1px solid ${config.color}30` }}
+    >
+      {config.label}
+    </span>
+  );
+}
+
 function ConversationPreview(
   props: ChannelPreviewUIComponentProps & { onOpenChannel: (channel: StreamChannel) => void },
 ) {
   const { active, channel, latestMessagePreview, onOpenChannel, onSelect, unread } = props;
   const { client } = useChatContext("ConversationPreview");
   const participant = getPrimaryParticipant(channel, client.userID);
+  const convType = getChannelConversationType(channel);
   const previewText =
     typeof latestMessagePreview === "string" && latestMessagePreview.trim()
       ? latestMessagePreview
@@ -263,7 +330,10 @@ function ConversationPreview(
 
       <div className="go-stream-conversation__body">
         <div className="go-stream-conversation__topline">
-          <p className="go-stream-conversation__title">{getConversationTitle(channel, client.userID)}</p>
+          <div className="go-stream-conversation__title-row">
+            <p className="go-stream-conversation__title">{getConversationTitle(channel, client.userID)}</p>
+            <ConversationTypeBadge type={convType} />
+          </div>
           <span className="go-stream-conversation__time">{formatConversationTime(channel)}</span>
         </div>
         <p className="go-stream-conversation__preview">{previewText}</p>
@@ -284,9 +354,11 @@ function ConversationHeader({
   const { channel } = useChannelStateContext("ConversationHeader");
   const { client } = useChatContext("ConversationHeader");
   const participant = getPrimaryParticipant(channel, client.userID);
+  const convType = getChannelConversationType(channel);
+  const isOrganizer = convType === "organizer_chat";
 
   return (
-    <div className="go-stream-thread-header">
+    <div className={`go-stream-thread-header${isOrganizer ? " go-stream-thread-header--organizer" : ""}`}>
       <div className="go-stream-thread-header__identity">
         {showBackButton ? (
           <button
@@ -306,10 +378,16 @@ function ConversationHeader({
             <span>{(participant?.name || getConversationTitle(channel, client.userID)).slice(0, 1).toUpperCase()}</span>
           )}
           {participant?.online ? <span className="go-stream-conversation__online" /> : null}
+          {isOrganizer ? <span className="go-stream-conversation__verified" aria-label="Verified organizer" /> : null}
         </div>
 
         <div className="min-w-0">
-          <p className="go-stream-thread-header__title">{getConversationTitle(channel, client.userID)}</p>
+          <div className="go-stream-thread-header__name-row">
+            <p className="go-stream-thread-header__title">{getConversationTitle(channel, client.userID)}</p>
+            {isOrganizer ? (
+              <span className="go-stream-thread-header__organizer-pill">ORGANIZER</span>
+            ) : null}
+          </div>
           <p className="go-stream-thread-header__meta">{formatPresenceCopy(channel, client.userID)}</p>
         </div>
       </div>
@@ -513,6 +591,7 @@ function MessagesShell({
   const [composeOpen, setComposeOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const [selectedChannelCid, setSelectedChannelCid] = useState<string | undefined>(starterChannelCid);
+  const [activeConvType, setActiveConvType] = useState<GoConversationType>("friend_dm");
   const dmOpenedRef = useRef(false);
 
   // Broadcast unread count to BottomNav via CustomEvent
@@ -568,6 +647,7 @@ function MessagesShell({
   useEffect(() => {
     if (activeChannel?.cid) {
       setSelectedChannelCid(activeChannel.cid);
+      setActiveConvType(getChannelConversationType(activeChannel));
     }
   }, [activeChannel?.cid]);
 
@@ -673,7 +753,10 @@ function MessagesShell({
         />
       </aside>
 
-      <section className="go-stream-chat__thread">
+      <section
+        className={`go-stream-chat__thread go-conv-${activeConvType}`}
+        style={getStreamTheme(activeConvType)}
+      >
         {activeChannel ? (
           <Channel EmptyStateIndicator={ChannelMessagesEmptyState}>
             <Window>
@@ -683,10 +766,7 @@ function MessagesShell({
               />
               <MessageList reactionDetailsSort={[{ field: "count", direction: -1 }]} />
               <TypingIndicator />
-              <MessageInput
-                additionalTextareaProps={{ placeholder: "Message…" }}
-                focus
-              />
+              <MessageInput Input={GoMessageInput} />
             </Window>
             <Thread />
           </Channel>
@@ -755,23 +835,13 @@ function StreamMessagesView({
   if (bootError) return <MessagesConfigError detail={bootError} />;
   if (!client) return <MessagesPageSkeleton />;
 
-  const streamTheme: React.CSSProperties = {
-    "--str-chat__primary-color":                "#5FBF2A",
-    "--str-chat__own-message-bubble-color":     "#ffffff",
-    "--str-chat__own-message-bubble-background-color": "#5FBF2A",
-    "--str-chat__message-bubble-color":         "#111111",
-    "--str-chat__message-bubble-background-color": "#F0F0F0",
-    "--str-chat__border-radius-md":             "18px",
-    "--str-chat__border-radius-sm":             "12px",
-  } as React.CSSProperties;
-
   // Don't auto-select the welcome channel when navigating from a profile (?dm=) — the DM effect handles it
   const effectiveStarterCid = dmUserId ? undefined : starterChannelCid;
 
   return (
     <main className="page-grid go-stream-page">
       <div className="go-stream-frame h-full overflow-hidden">
-        <div className="go-stream-inner h-full overflow-hidden" style={streamTheme}>
+        <div className="go-stream-inner h-full overflow-hidden">
           <Chat client={client}>
             <MessagesShell dmUserId={dmUserId} identity={identity} starterChannelCid={effectiveStarterCid} />
           </Chat>

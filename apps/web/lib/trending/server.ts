@@ -12,6 +12,34 @@ import type {
 
 const WINDOW_HOURS = 48;
 const SNIPPET_WINDOW_HOURS = 168;
+const BODY_HASHTAG_REGEX = /#([a-z0-9][a-z0-9_-]{1,31})/gi;
+const TOPIC_BLOCKLIST = new Set([
+  "accra",
+  "ghana",
+  "gooutside",
+  "event",
+  "events",
+  "weekend",
+  "weekends",
+  "tonight",
+  "today",
+  "tomorrow",
+  "people",
+  "person",
+  "crowd",
+  "crowds",
+  "vibes",
+  "vibe",
+  "scene",
+  "good",
+  "great",
+  "nice",
+  "fun",
+  "moment",
+  "moments",
+  "thing",
+  "things",
+]);
 
 const EDGE_WEIGHTS: Record<string, number> = {
   card_view: 0.5,
@@ -109,6 +137,30 @@ function getDecayFactor(createdAt: string) {
 
 function normalizeTag(tag: string) {
   return tag.trim().toLowerCase();
+}
+
+function isAllowedTopicTag(tag: string) {
+  const normalized = normalizeTag(tag);
+  if (!normalized) return false;
+  if (normalized.length < 3 || normalized.length > 32) return false;
+  if (TOPIC_BLOCKLIST.has(normalized)) return false;
+  if (/^\d+$/.test(normalized)) return false;
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  if (wordCount > 4) return false;
+  return true;
+}
+
+function extractBodyHashtags(body: string | null) {
+  if (!body) return [];
+
+  const tags: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = BODY_HASHTAG_REGEX.exec(body)) !== null) {
+    tags.push(normalizeTag(match[1] ?? ""));
+  }
+
+  BODY_HASHTAG_REGEX.lastIndex = 0;
+  return unique(tags.filter(isAllowedTopicTag));
 }
 
 function displayName(user: UserRow | null | undefined) {
@@ -255,7 +307,12 @@ async function hydrateSnippets(rows: SnippetRow[]): Promise<TrendingSnippet[]> {
       body: row.body,
       rating: Number(row.rating ?? 0),
       created_at: row.created_at,
-      vibe_tags: row.vibe_tags ?? [],
+      vibe_tags: unique(
+        [
+          ...(row.vibe_tags ?? []).map(normalizeTag),
+          ...extractBodyHashtags(row.body),
+        ].filter(isAllowedTopicTag),
+      ),
       photo_url: row.photo_url,
       media_urls: row.media_urls ?? [],
       user: user
@@ -311,7 +368,12 @@ async function buildEventContext(limit?: number, persistScores = false): Promise
 
     snippetCounts.set(snippet.event_id, (snippetCounts.get(snippet.event_id) ?? 0) + 1);
 
-    const normalizedTags = unique((snippet.vibe_tags ?? []).map(normalizeTag).filter(Boolean));
+    const normalizedTags = unique(
+      [
+        ...(snippet.vibe_tags ?? []).map(normalizeTag),
+        ...extractBodyHashtags(snippet.body),
+      ].filter(isAllowedTopicTag),
+    );
     topicUsageByEventId.set(snippet.event_id, new Set([...(topicUsageByEventId.get(snippet.event_id) ?? new Set<string>()), ...normalizedTags]));
 
     for (const tag of normalizedTags) {
@@ -504,7 +566,7 @@ export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
 
   for (const event of eventContext.events) {
     const raw = eventContext.rawEventMap.get(event.id);
-    const tags = (raw?.tags ?? []).map(normalizeTag).filter(Boolean);
+    const tags = (raw?.tags ?? []).map(normalizeTag).filter(isAllowedTopicTag);
     for (const tag of tags) {
       tagScores.set(tag, (tagScores.get(tag) ?? 0) + Math.max(1, event.trending_score * 0.22));
       const ids = tagEventIds.get(tag) ?? new Set<string>();
@@ -566,7 +628,10 @@ export async function getTrendingEventDetail(slug: string): Promise<TrendingEven
   const eventSnippets = snippets.filter((snippet) => snippet.event_id === event.id).slice(0, 12);
   const hydratedSnippets = await hydrateSnippets(eventSnippets);
   const related_topics = unique(
-    hydratedSnippets.flatMap((snippet) => snippet.vibe_tags.map(normalizeTag)).filter(Boolean),
+    eventSnippets.flatMap((snippet) => [
+      ...(snippet.vibe_tags ?? []).map(normalizeTag),
+      ...extractBodyHashtags(snippet.body),
+    ]).filter(isAllowedTopicTag),
   ).slice(0, 8);
 
   return {
@@ -620,8 +685,16 @@ export async function getTrendingTopicDetail(tag: string): Promise<TrendingTopic
   });
 
   const matchedSnippets = snippets
-    .filter((snippet) => (snippet.vibe_tags ?? []).some((value) => normalizeTag(value) === normalizedTag))
-    .slice(0, 20);
+    .filter((snippet) => {
+      const tags = unique(
+        [
+          ...(snippet.vibe_tags ?? []).map(normalizeTag),
+          ...extractBodyHashtags(snippet.body),
+        ].filter(isAllowedTopicTag),
+      );
+      return tags.includes(normalizedTag);
+    })
+    .slice(0, 24);
 
   const hydratedSnippets = await hydrateSnippets(matchedSnippets);
   const relatedEventIds = new Set(hydratedSnippets.map((snippet) => snippet.event?.id).filter(Boolean) as string[]);

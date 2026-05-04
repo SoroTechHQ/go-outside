@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendUp,
@@ -13,7 +14,6 @@ import {
   ArrowRight,
   MagnifyingGlass,
   Lightning,
-  BookmarkSimple,
 } from "@phosphor-icons/react";
 import { thumbnailUrl as withThumbnailTransform, bannerUrl as withBannerTransform } from "../../../lib/image-url";
 import MobileUnifiedSearch from "../../../components/search/MobileUnifiedSearch";
@@ -76,14 +76,24 @@ function SkeletonCard() {
 }
 
 function TrendingEventCard({ event, index }: { event: TrendingEvent; index: number }) {
-  const [saved, setSaved] = useState(false);
-
+  const router = useRouter();
   const dateLabel = event.start_datetime
     ? new Date(event.start_datetime).toLocaleDateString("en-GH", { weekday: "short", month: "short", day: "numeric" })
     : null;
 
   return (
-    <div className="group relative flex gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 transition-all hover:border-[var(--border-default)] hover:shadow-sm">
+    <div
+      className="group relative flex w-full cursor-pointer gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 text-left transition-all hover:border-[var(--border-default)] hover:shadow-sm"
+      onClick={() => router.push(`/events/${event.slug}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/events/${event.slug}`);
+        }
+      }}
+      role="link"
+      tabIndex={0}
+    >
       <div className="flex w-8 shrink-0 flex-col items-center gap-1 pt-1">
         <span className="text-[18px] font-black text-[var(--text-tertiary)]">
           {String(index + 1).padStart(2, "0")}
@@ -109,17 +119,9 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <TrendingBadge score={event.trending_score} />
-          <button
-            className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--brand)] transition-colors"
-            onClick={() => setSaved((v) => !v)}
-            type="button"
-          >
-            <BookmarkSimple
-              size={16}
-              weight={saved ? "fill" : "regular"}
-              className={saved ? "text-[var(--brand)]" : ""}
-            />
-          </button>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            Live rank
+          </span>
         </div>
 
         <Link href={`/events/${event.slug}`} className="block">
@@ -151,6 +153,7 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
             <Link
               className="text-[11px] font-semibold text-[var(--text-secondary)] underline-offset-4 hover:text-[var(--brand)] hover:underline"
               href={`/dashboard/trending/events/${event.slug}`}
+              onClick={(e) => e.stopPropagation()}
             >
               Why trending
             </Link>
@@ -165,6 +168,7 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
 type TabType = "events" | "organizers" | "topics";
 
 export default function TrendingPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabType>("events");
   const [search, setSearch] = useState("");
 
@@ -259,7 +263,18 @@ export default function TrendingPage() {
               ) : (
                 <>
                   {/* Hero banner — first event */}
-                  <div className="relative overflow-hidden rounded-2xl">
+                  <div
+                    className="relative overflow-hidden rounded-2xl cursor-pointer"
+                    onClick={() => router.push(`/events/${filteredEvents[0].slug}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(`/events/${filteredEvents[0].slug}`);
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
+                  >
                     {filteredEvents[0].banner_url ? (
                       <img
                         alt={filteredEvents[0].title}
@@ -279,7 +294,7 @@ export default function TrendingPage() {
                           {Math.round(filteredEvents[0].trending_score)} trend score
                         </span>
                       </div>
-                      <Link href={`/events/${filteredEvents[0].slug}`}>
+                      <Link href={`/events/${filteredEvents[0].slug}`} onClick={(e) => e.stopPropagation()}>
                         <h2 className="text-[17px] font-black text-white leading-tight">
                           {filteredEvents[0].title}
                         </h2>
@@ -293,10 +308,18 @@ export default function TrendingPage() {
                           {filteredEvents[0].price_label ?? "Free"}
                         </span>
                         <div className="flex items-center gap-3 text-[12px] font-semibold">
-                          <Link href={`/events/${filteredEvents[0].slug}`} className="text-white">
+                          <Link
+                            href={`/events/${filteredEvents[0].slug}`}
+                            className="text-white"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             Open event
                           </Link>
-                          <Link href={`/dashboard/trending/events/${filteredEvents[0].slug}`} className="text-white/80 underline-offset-4 hover:underline">
+                          <Link
+                            href={`/dashboard/trending/events/${filteredEvents[0].slug}`}
+                            className="text-white/80 underline-offset-4 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             Why trending
                           </Link>
                         </div>
@@ -326,27 +349,55 @@ export default function TrendingPage() {
                 </p>
               ) : (
                 filteredOrgs.map((org, i) => (
-                  <Link
+                  <div
                     key={org.id}
-                    href={`/dashboard/trending/organizers/${org.username ?? org.id}`}
-                    className="flex gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 transition hover:border-[var(--border-default)]"
+                    className="flex w-full cursor-pointer gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 text-left transition hover:border-[var(--border-default)]"
+                    onClick={() => {
+                      if (org.username) {
+                        router.push(`/${org.username}`);
+                      } else {
+                        router.push(`/dashboard/trending/organizers/${org.id}`);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (org.username) {
+                          router.push(`/${org.username}`);
+                        } else {
+                          router.push(`/dashboard/trending/organizers/${org.id}`);
+                        }
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
                   >
                     <div className="relative shrink-0">
-                      <div className="h-16 w-16 rounded-xl overflow-hidden bg-[var(--bg-muted)]">
-                        {org.logo_url && (
-                          <img
-                            alt={org.name}
-                            className="h-full w-full object-cover"
-                            src={`${org.logo_url}?width=128&format=webp`}
-                          />
-                        )}
-                      </div>
+                      <Link
+                        href={org.username ? `/${org.username}` : `/dashboard/trending/organizers/${org.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="h-16 w-16 rounded-xl overflow-hidden bg-[var(--bg-muted)]">
+                          {org.logo_url && (
+                            <img
+                              alt={org.name}
+                              className="h-full w-full object-cover"
+                              src={`${org.logo_url}?width=128&format=webp`}
+                            />
+                          )}
+                        </div>
+                      </Link>
                       <div className="absolute -top-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[11px] font-black text-[var(--text-tertiary)]">
                         {i + 1}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{org.name}</p>
+                      <Link
+                        href={org.username ? `/${org.username}` : `/dashboard/trending/organizers/${org.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{org.name}</p>
+                      </Link>
                       {org.reasons.length > 0 && (
                         <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-tertiary)]">
                           {reasonSummary(org.reasons)}
@@ -356,12 +407,25 @@ export default function TrendingPage() {
                         <span className="text-[12px] text-[var(--text-secondary)]">
                           {compactNumber(org.follower_count)} followers · {org.event_count} events
                         </span>
-                        <span className="flex items-center gap-1 text-[12px] font-semibold text-[var(--brand)]">
-                          <TrendUp size={12} weight="bold" /> Why trending
-                        </span>
+                        <div className="flex items-center gap-3 text-[12px] font-semibold">
+                          <Link
+                            href={org.username ? `/${org.username}` : `/dashboard/trending/organizers/${org.id}`}
+                            className="text-[var(--text-secondary)]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View profile
+                          </Link>
+                          <Link
+                            href={`/dashboard/trending/organizers/${org.username ?? org.id}`}
+                            className="flex items-center gap-1 text-[var(--brand)]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <TrendUp size={12} weight="bold" /> Why trending
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))
               )}
             </div>
