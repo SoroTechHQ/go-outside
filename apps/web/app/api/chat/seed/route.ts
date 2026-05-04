@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { getStreamServerClient } from "../../../../lib/stream";
+import { buildChannelId } from "../../../../lib/chat/channel-id";
 
 const DEMO_USERS = [
   {
@@ -53,7 +54,7 @@ export async function POST() {
     await client.upsertUser(realUser);
 
     // 2. Guard — don't re-seed if demo conversations already exist
-    const firstChannelId = [clerk.id, DEMO_USERS[0].id].sort().join("__").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const firstChannelId = buildChannelId(clerk.id, DEMO_USERS[0].id);
     const existing = await client.queryChannels({ id: { $eq: firstChannelId } }, {}, { limit: 1 });
     if (existing.length > 0) {
       return NextResponse.json({ ok: true, message: "Already seeded." });
@@ -66,7 +67,7 @@ export async function POST() {
     const created: string[] = [];
 
     for (const demo of DEMO_USERS) {
-      const channelId = [clerk.id, demo.id].sort().join("__").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const channelId = buildChannelId(clerk.id, demo.id);
 
       const channel = client.channel("messaging", channelId, {
         members: [clerk.id, demo.id],

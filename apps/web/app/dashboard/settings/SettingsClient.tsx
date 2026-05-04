@@ -31,6 +31,11 @@ type NotifPrefs = {
   email:  boolean;
   push:   boolean;
   in_app: boolean;
+  // Granular message prefs — backed by /api/user/notification-prefs
+  messages_in_app?:           boolean;
+  messages_push?:             boolean;
+  messages_email?:            boolean;
+  messages_email_delay_mins?: number;
 };
 
 type Props = {
@@ -54,6 +59,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
 
   const [prefs,       setPrefs]       = useState<NotifPrefs>(notifPrefs);
   const [savingNotif, setSavingNotif] = useState(false);
+  const [msgEmailDelay, setMsgEmailDelay] = useState(notifPrefs.messages_email_delay_mins ?? 60);
 
   useEffect(() => {
     if (!converted) return;
@@ -108,6 +114,19 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
       });
     } catch {
       setPrefs(prefs);
+    } finally {
+      setSavingNotif(false);
+    }
+  }
+
+  async function saveMsgPref(key: string, value: unknown) {
+    setSavingNotif(true);
+    try {
+      await fetch("/api/user/notification-prefs", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: value }),
+      });
     } finally {
       setSavingNotif(false);
     }
@@ -355,6 +374,45 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
           </button>
         ))}
       </section>
+
+      {/* ── Message Notification Detail ────────────────────────────────── */}
+      {prefs.email && (
+        <section className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)]">
+          <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+              Message Email Reminder
+            </p>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-[12px] text-[var(--text-tertiary)] mb-3">
+              Send an email if you haven&apos;t replied to a DM after:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 30,  label: "30 min" },
+                { value: 60,  label: "1 hour" },
+                { value: 120, label: "2 hours" },
+                { value: 0,   label: "Never" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={async () => {
+                    setMsgEmailDelay(opt.value);
+                    await saveMsgPref("messages_email_delay_mins", opt.value);
+                  }}
+                  className={`rounded-full px-4 py-1.5 text-[12px] font-semibold transition ${
+                    msgEmailDelay === opt.value
+                      ? "bg-[#4a9f63] text-white"
+                      : "border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[#4a9f63]/40"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
     </div>
   );
