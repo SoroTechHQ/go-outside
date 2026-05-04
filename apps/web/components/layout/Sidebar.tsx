@@ -46,13 +46,14 @@ type NavItem = {
 function getInitials(name: string) {
   return name
     .split(" ")
-    .map((part) => part[0])
+    .map((part) => part[0] ?? "")
+    .filter(Boolean)
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "GO";
 }
 
-export function Sidebar({ role = "attendee", userName = "Kofi Mensah", avatarUrl, username, email }: SidebarProps) {
+export function Sidebar({ role = "attendee", userName = "", avatarUrl, username, email }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useClerk();

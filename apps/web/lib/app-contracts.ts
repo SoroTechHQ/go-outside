@@ -57,7 +57,7 @@ export const EMPTY_NOTIFICATIONS_PAGE: NotificationsPage = {
 
 export const DEFAULT_SHELL_USER: PublicShellUser = {
   role: "attendee",
-  userName: "Kofi Mensah",
+  userName: "",
 };
 
 export const DEFAULT_APP_BOOTSTRAP: AppBootstrap = {

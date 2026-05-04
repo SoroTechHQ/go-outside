@@ -5,7 +5,7 @@ type NavSwitchRole = "attendee" | "organizer" | "admin";
 
 export function NavSwitch({
   role = "attendee",
-  userName = "Kofi Mensah",
+  userName = "",
   avatarUrl,
   username,
   email,
