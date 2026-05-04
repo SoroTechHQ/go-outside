@@ -107,6 +107,12 @@ type MobilePane = "list" | "thread" | "compose";
 
 const STREAM_API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY ?? "";
 
+function cidToId(cid: string | undefined): string | undefined {
+  if (!cid) return undefined;
+  const idx = cid.indexOf(":");
+  return idx >= 0 ? cid.slice(idx + 1) : cid;
+}
+
 function buildDisplayName(user: ReturnType<typeof useUser>["user"]) {
   if (!user) return "GoOutside User";
   const fullName = [user.firstName?.trim(), user.lastName?.trim()].filter(Boolean).join(" ").trim();
@@ -836,7 +842,7 @@ function MessagesShell({
             Preview={(previewProps) => (
               <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
             )}
-            customActiveChannel={selectedChannelCid ?? starterChannelCid}
+            customActiveChannel={cidToId(selectedChannelCid ?? starterChannelCid)}
             filters={{
               members: { $in: [identity.id] },
               type: "messaging",
@@ -869,7 +875,7 @@ function MessagesShell({
             Preview={(previewProps) => (
               <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
             )}
-            customActiveChannel={selectedChannelCid}
+            customActiveChannel={cidToId(selectedChannelCid)}
             filters={{
               members: { $in: [identity.id] },
               type: "messaging",
