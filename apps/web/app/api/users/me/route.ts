@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { getStreamServerClient } from "../../../../lib/stream";
 import { enforceRateLimit, enforceSameOrigin, getActorKey, jsonError, jsonNoStore } from "../../../../lib/api-security";
 import { humanizeDbError } from "../../../../lib/db-errors";
 import { hasValidCoordinates, isMissingLocationPointColumn, toLocationPoint } from "../../../../lib/location-point";
@@ -163,6 +164,20 @@ export async function PATCH(req: NextRequest) {
       const taken = msg.toLowerCase().includes("taken") || msg.toLowerCase().includes("already") || msg.toLowerCase().includes("unique");
       return jsonError(409, taken ? "That username is already taken. Choose a different one to continue." : "Couldn't save username. Please try again.");
     }
+  }
+
+  // Sync updated name/avatar/username to Stream so chat sidebar shows current info
+  if (data && ("first_name" in updates || "last_name" in updates || "avatar_url" in updates || "username" in updates)) {
+    const d = data as unknown as Record<string, unknown>;
+    const streamName = [d.first_name, d.last_name].filter(Boolean).join(" ").trim() || "GoOutside User";
+    const streamImage = d.avatar_url as string | undefined;
+    const streamUsername = d.username as string | undefined;
+    void getStreamServerClient().upsertUser({
+      id: clerk.id,
+      name: streamName,
+      ...(streamImage ? { image: streamImage } : {}),
+      ...(streamUsername ? { username: streamUsername } : {}),
+    }).catch((err: unknown) => console.error("[PATCH /api/users/me] Stream sync failed:", err));
   }
 
   return jsonNoStore(data as PublicUserDto);

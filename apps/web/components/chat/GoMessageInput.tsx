@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { ImageSquare, PaperPlaneTilt, SpinnerGap, X } from "@phosphor-icons/react";
 import { useChannelStateContext } from "stream-chat-react";
 import { compressChatImage } from "../../lib/chat/compress-image";
@@ -15,6 +15,11 @@ export function GoMessageInput() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const isTouchDevice = useMemo(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches,
+    [],
+  );
 
   const busy = uploadState !== "idle";
   const canSend = (text.trim().length > 0 || pending !== null) && !busy;
@@ -76,7 +81,8 @@ export function GoMessageInput() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // On touch devices Enter = new line; use the send button instead
+    if (e.key === "Enter" && !e.shiftKey && !isTouchDevice) {
       e.preventDefault();
       void handleSend();
     }
@@ -148,6 +154,7 @@ export function GoMessageInput() {
         <textarea
           className="go-message-input__textarea"
           disabled={uploadState === "uploading"}
+          enterKeyHint={isTouchDevice ? "enter" : "send"}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="Message…"

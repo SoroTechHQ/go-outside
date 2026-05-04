@@ -480,12 +480,9 @@ a {
   width: calc(100% - 1.2rem);
 }
 
-.go-stream-conversation:hover {
-  background: var(--bg-surface);
-}
-
+.go-stream-conversation:hover,
 .go-stream-conversation--active {
-  background: rgba(var(--brand-rgb), 0.08);
+  background: var(--bg-surface);
 }
 
 .go-stream-conversation__avatar,
@@ -653,7 +650,7 @@ a {
 }
 
 .go-stream-chat__thread .str-chat__list {
-  background: #f6f7f8;
+  background: #f8f8f8;
   flex: 1;
   overflow-y: auto;
   padding: 1.1rem 0.4rem 1.2rem;
@@ -672,17 +669,17 @@ a {
 }
 
 .go-stream-chat__thread .str-chat__message-bubble {
-  background: #F0F0F0 !important;
+  background: #E9E9EB !important;
   border: none !important;
-  border-radius: 18px 18px 18px 6px !important;
+  border-radius: 18px 18px 18px 5px !important;
   box-shadow: none !important;
   color: #111111 !important;
-  font-size: 0.96rem;
-  line-height: 1.42;
-  min-width: 56px;
-  padding: 0.72rem 0.92rem;
-  word-break: normal;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  min-width: 48px;
   overflow-wrap: break-word;
+  padding: 0.15rem 0.05rem;
+  word-break: normal;
 }
 
 .go-stream-chat__thread .str-chat__message-text,
@@ -697,7 +694,7 @@ a {
 .go-stream-chat__thread .str-chat__message--me .str-chat__message-bubble,
 .go-stream-chat__thread .str-chat__message--mine .str-chat__message-bubble {
   background: #5FBF2A !important;
-  border-radius: 18px 18px 6px 18px !important;
+  border-radius: 18px 18px 5px 18px !important;
   color: #fff !important;
 }
 
@@ -981,17 +978,9 @@ a {
   border-color: rgba(var(--brand-rgb), 0.34);
 }
 
-:root[data-theme="dark"] .go-stream-conversation:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
+:root[data-theme="dark"] .go-stream-conversation:hover,
 :root[data-theme="dark"] .go-stream-conversation--active {
-  background:
-    linear-gradient(180deg, rgba(var(--brand-rgb), 0.16), rgba(var(--brand-rgb), 0.1)),
-    rgba(255, 255, 255, 0.02);
-  box-shadow:
-    inset 0 0 0 1px rgba(var(--brand-rgb), 0.18),
-    0 10px 24px rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 :root[data-theme="dark"] .go-stream-conversation__avatar,
@@ -1052,7 +1041,6 @@ a {
 :root[data-theme="dark"] .go-stream-chat__thread .str-chat__message--mine .str-chat__message-bubble {
   background: var(--brand) !important;
   color: #ffffff !important;
-  font-weight: 600;
   text-shadow: none;
 }
 
@@ -1299,8 +1287,8 @@ a {
 
 .go-message-input__row {
   align-items: flex-end;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 22px;
   display: flex;
   gap: 6px;
@@ -1309,11 +1297,11 @@ a {
 }
 
 .go-message-input__row:focus-within {
-  border-color: rgba(95, 191, 42, 0.32);
+  border-color: rgba(95, 191, 42, 0.5);
 }
 
 .go-message-input__attach {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--text-secondary);
   flex-shrink: 0;
   line-height: 0;
   padding: 4px;
@@ -1333,7 +1321,7 @@ a {
 .go-message-input__textarea {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   flex: 1;
   font-size: 14px;
   line-height: 1.5;
@@ -1345,14 +1333,14 @@ a {
 }
 
 .go-message-input__textarea::placeholder {
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--text-tertiary);
 }
 
 .go-message-input__send {
   align-items: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--text-tertiary);
   display: flex;
   flex-shrink: 0;
   height: 34px;
@@ -1360,6 +1348,28 @@ a {
   line-height: 0;
   transition: background 0.2s, color 0.2s, transform 0.15s;
   width: 34px;
+}
+
+:root[data-theme="dark"] .go-message-input__row {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .go-message-input__attach {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+:root[data-theme="dark"] .go-message-input__textarea {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme="dark"] .go-message-input__textarea::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+:root[data-theme="dark"] .go-message-input__send {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.28);
 }
 
 .go-message-input__send--active {
@@ -1424,15 +1434,6 @@ a {
 .go-stream-thread-header__meta--typing {
   color: var(--brand);
   font-style: italic;
-}
-
-/* ── Active conversation: green left border accent ── */
-.go-stream-conversation--active {
-  border-left: 2px solid transparent;
-}
-
-:root[data-theme="dark"] .go-stream-conversation--active {
-  border-left-color: #5FBF2A;
 }
 
 /* ── Image attachments in message bubbles ── */
