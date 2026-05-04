@@ -11,6 +11,7 @@
   "dependencies": {
     "@gooutside/demo-data": "workspace:*",
     "@gooutside/ui": "workspace:*",
+    "@supabase/supabase-js": "^2",
     "apexcharts": "^5.10.5",
     "next": "^15.3.2",
     "react": "^19.1.0",

@@ -1,100 +1,138 @@
-import { DashboardShell } from "../dashboard-shell";
-import { MetricTile, PageHero, SectionBlock } from "../dashboard-primitives";
-import { DonutChart, MultiBarChart, MultiLineChart, RadialGauge } from "../charts/AdminCharts";
+import { DashboardShell } from '../dashboard-shell'
+import { SectionBlock } from '../dashboard-primitives'
+import { supabaseAdmin } from '../../lib/supabase'
+import { SignupTrendChart } from '../charts/SignupTrendChart'
+import { CityBreakdownChart } from '../charts/CityBreakdownChart'
+import { TierDistributionChart } from '../charts/TierDistributionChart'
+import { CategoryChart } from '../charts/CategoryChart'
+import { DeviceChart } from '../charts/DeviceChart'
 
-export function PlatformAnalyticsPage() {
+function countBy<T>(arr: T[], key: (item: T) => string): Record<string, number> {
+  return arr.reduce<Record<string, number>>((acc, item) => {
+    const k = key(item)
+    if (k) acc[k] = (acc[k] ?? 0) + 1
+    return acc
+  }, {})
+}
+
+export async function PlatformAnalyticsPage() {
+  const thirtyAgo = new Date()
+  thirtyAgo.setDate(thirtyAgo.getDate() - 30)
+
+  const [
+    { data: signupRows },
+    { data: cityRows },
+    { data: tierRows },
+    { data: categoryRows },
+    { data: deviceRows },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from('users')
+      .select('created_at')
+      .gte('created_at', thirtyAgo.toISOString()),
+    supabaseAdmin
+      .from('users')
+      .select('location_city')
+      .not('location_city', 'is', null),
+    supabaseAdmin.from('users').select('pulse_tier'),
+    supabaseAdmin
+      .from('events')
+      .select('category_id, categories(name)')
+      .eq('status', 'published'),
+    supabaseAdmin
+      .from('interaction_sessions')
+      .select('device_type')
+      .not('device_type', 'is', null)
+      .limit(1000),
+  ])
+
+  // Signups by date (YYYY-MM-DD)
+  const signupsByDate = countBy(signupRows ?? [], (r) =>
+    (r.created_at as string).slice(0, 10),
+  )
+  const signupData = Object.entries(signupsByDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({ date, count }))
+
+  // City distribution — top 8
+  const cityCounts = countBy(cityRows ?? [], (r) => r.location_city as string)
+  const cityData = Object.entries(cityCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8)
+    .map(([city, count]) => ({ city, count }))
+
+  // Pulse tier distribution
+  const tierCounts = countBy(tierRows ?? [], (r) => (r.pulse_tier as string) ?? 'newcomer')
+  const tierData = Object.entries(tierCounts).map(([tier, count]) => ({ tier, count }))
+
+  // Events per category
+  type CategoryRow = { categories: { name: string } | { name: string }[] | null }
+  const catCounts = countBy(categoryRows as CategoryRow[] ?? [], (r) => {
+    if (!r.categories) return ''
+    const cats = Array.isArray(r.categories) ? r.categories : [r.categories]
+    return cats[0]?.name ?? ''
+  })
+  const categoryData = Object.entries(catCounts)
+    .filter(([name]) => name)
+    .sort(([, a], [, b]) => b - a)
+    .map(([category, count]) => ({ category, count }))
+
+  // Device breakdown
+  const deviceCounts = countBy(deviceRows ?? [], (r) => (r.device_type as string) ?? 'unknown')
+  const deviceData = Object.entries(deviceCounts).map(([device, count]) => ({ device, count }))
+
   return (
-    <DashboardShell mode="admin" subtitle="Charts, comparisons, and experimentation surfaces" title="Analytics">
+    <DashboardShell mode="admin" title="Analytics" subtitle="Platform growth and user behavior.">
       <div className="space-y-6">
-        <PageHero
-          eyebrow="Chart page"
-          title="A broader chart library than the original green-only dashboard."
-          description="This is the chart-heavy surface requested for the admin app: line, stacked bar, donut, and radial views pulled into a single page so the system has a clear place to keep growing."
-        />
+        {/* Signups trend */}
+        <SectionBlock title="Signups (last 30 days)" subtitle="Daily new user registrations.">
+          {signupData.length > 0 ? (
+            <SignupTrendChart data={signupData} />
+          ) : (
+            <p className="text-sm text-[var(--text-secondary)]">No signup data in the last 30 days.</p>
+          )}
+        </SectionBlock>
 
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile accent="brand" label="Conversion rate" meta="Discovery to checkout completion" trend="+2.8 pts" value="18.4%" />
-          <MetricTile accent="cyan" label="Avg. order value" meta="Gross booking basket size" trend="+7%" value="GHS 212" />
-          <MetricTile accent="violet" label="Promo uplift" meta="Compared to non-promoted listings" trend="+11%" value="1.38x" />
-          <MetricTile accent="amber" label="Refund rate" meta="Trailing thirty days" trend="-0.4 pts" value="2.1%" />
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-[1.3fr,0.7fr]">
-          <SectionBlock subtitle="Two-series trend borrowed from the boilerplate line-chart pattern" title="Bookings vs revenue">
-            <MultiLineChart
-              categories={["Jan", "Feb", "Mar", "Apr", "May", "Jun"]}
-              series={[
-                { name: "Bookings", data: [140, 168, 160, 190, 214, 238], tone: "brand" },
-                { name: "Revenue (GHSk)", data: [82, 95, 92, 110, 128, 142], tone: "violet" },
-              ]}
-            />
+        <div className="grid gap-6 xl:grid-cols-2">
+          {/* City breakdown */}
+          <SectionBlock title="City Breakdown" subtitle="Top 8 cities by registered user count.">
+            {cityData.length > 0 ? (
+              <CityBreakdownChart data={cityData} />
+            ) : (
+              <p className="text-sm text-[var(--text-secondary)]">No city data available.</p>
+            )}
           </SectionBlock>
 
-          <SectionBlock subtitle="Fast pulse gauge" title="Launch confidence">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-              <RadialGauge label="Readiness" tone="cyan" value={78} />
-              <RadialGauge label="Support load" tone="amber" value={34} />
-            </div>
+          {/* Tier distribution */}
+          <SectionBlock title="Pulse Tier Distribution" subtitle="User breakdown by pulse tier.">
+            {tierData.length > 0 ? (
+              <TierDistributionChart data={tierData} />
+            ) : (
+              <p className="text-sm text-[var(--text-secondary)]">No tier data available.</p>
+            )}
           </SectionBlock>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[1fr,1fr,0.82fr]">
-          <SectionBlock subtitle="Monthly volume across key streams" title="Traffic layers">
-            <MultiBarChart
-              categories={["Jan", "Feb", "Mar", "Apr", "May", "Jun"]}
-              series={[
-                { name: "Organic", data: [72, 84, 88, 96, 110, 118], tone: "brand" },
-                { name: "Paid", data: [34, 38, 35, 44, 52, 56], tone: "amber" },
-                { name: "Referral", data: [22, 28, 26, 30, 35, 39], tone: "cyan" },
-              ]}
-            />
+        <div className="grid gap-6 xl:grid-cols-2">
+          {/* Events per category */}
+          <SectionBlock title="Events by Category" subtitle="Published events grouped by category.">
+            {categoryData.length > 0 ? (
+              <CategoryChart data={categoryData} />
+            ) : (
+              <p className="text-sm text-[var(--text-secondary)]">No published events found.</p>
+            )}
           </SectionBlock>
 
-          <SectionBlock subtitle="Category performance by demand share" title="Demand split">
-            <DonutChart
-              items={[
-                { label: "Music", value: 29, tone: "brand" },
-                { label: "Community", value: 21, tone: "cyan" },
-                { label: "Food", value: 18, tone: "amber" },
-                { label: "Tech", value: 17, tone: "violet" },
-                { label: "Arts", value: 15, tone: "coral" },
-              ]}
-            />
-          </SectionBlock>
-
-          <SectionBlock subtitle="Quick comparisons" title="Signals">
-            <div className="space-y-4">
-              {[
-                ["Homepage placement CTR", "4.8%", "brand"],
-                ["Search to event detail", "36%", "cyan"],
-                ["Ticket checkout completion", "72%", "violet"],
-                ["Moderation same-day closure", "64%", "amber"],
-              ].map(([label, value, tone]) => (
-                <div key={label} className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4">
-                  <p className="text-sm text-[var(--text-secondary)]">{label}</p>
-                  <p className="mt-2 font-display text-3xl italic text-[var(--text-primary)]">{value}</p>
-                  <div className="mt-3 h-2 rounded-full bg-[var(--bg-card-alt)]">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width: value,
-                        backgroundColor:
-                          tone === "brand"
-                            ? "var(--brand)"
-                            : tone === "cyan"
-                              ? "var(--accent-cyan)"
-                              : tone === "violet"
-                                ? "var(--accent-violet)"
-                                : "var(--accent-amber)",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Device breakdown */}
+          <SectionBlock title="Device Types" subtitle="Session device breakdown (last 1,000 sessions).">
+            {deviceData.length > 0 ? (
+              <DeviceChart data={deviceData} />
+            ) : (
+              <p className="text-sm text-[var(--text-secondary)]">No session device data.</p>
+            )}
           </SectionBlock>
         </div>
       </div>
     </DashboardShell>
-  );
+  )
 }

@@ -16,6 +16,9 @@ importers:
       '@gooutside/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@supabase/supabase-js':
+        specifier: ^2
+        version: 2.103.0
       apexcharts:
         specifier: ^5.10.5
         version: 5.10.5
