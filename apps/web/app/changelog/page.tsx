@@ -24,28 +24,33 @@ import {
 } from "@phosphor-icons/react";
 
 /* ─────────────────────────────────────────────
-   DATA
+   TYPES
 ───────────────────────────────────────────── */
 
 type Tag = "new" | "improved" | "fix" | "security";
 
 interface Entry {
   title: string;
-  plain: string;          // plain-English description for non-technical clients
-  detail?: string;        // optional mini-tutorial / expected output
+  plain: string;
+  detail?: string;
   tag: Tag;
   icon?: React.ElementType;
-  commits?: string[];     // short commit hashes for GitHub links
+  commits?: string[];
+  screenshot?: string; // path relative to /public
 }
 
 interface DateGroup {
-  date: string;           // display date
-  iso: string;            // for sort
-  headline: string;       // one-liner summary of the day
+  date: string;
+  iso: string;
+  headline: string;
   entries: Entry[];
 }
 
 const REPO = "https://github.com/SoroTechHQ/go-outside";
+
+/* ─────────────────────────────────────────────
+   CHANGELOG DATA
+───────────────────────────────────────────── */
 
 const CHANGELOG: DateGroup[] = [
   {
@@ -56,17 +61,18 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Message Requests — Accept or Decline",
         plain:
-          "When someone you don't follow tries to message you, their message now lands in a separate 'Requests' inbox. You can read it and decide whether to accept or decline the conversation. Accepted chats move to your main inbox.",
+          "When someone you don't follow tries to message you, their message now lands in a separate Requests inbox. You can read it and decide whether to accept the conversation or decline it. Accepted chats move straight to your main inbox.",
         detail:
-          "Open the Messages tab → tap 'Requests' at the top → tap a message to preview it → hit Accept to start chatting or Decline to remove it.",
+          "Open the Messages tab → tap Requests at the top → tap a message to preview it → hit Accept to start chatting or Decline to remove it.",
         tag: "new",
         icon: ChatCircleDots,
         commits: ["7a027c9", "9f044fc"],
+        screenshot: "/changelog/messages.png",
       },
       {
         title: "Push Notifications for New Messages",
         plain:
-          "The app can now send you a push notification on your phone or browser when you receive a new message, even if the app isn't open.",
+          "The app can now send you a push notification on your phone or browser when you receive a new message — even if the app isn't open at the time.",
         detail:
           "The first time you visit Messages you'll be asked if you'd like to turn on notifications. Tap Allow and you're set.",
         tag: "new",
@@ -82,6 +88,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "new",
         icon: Star,
         commits: ["b62cd9d", "b478e45"],
+        screenshot: "/changelog/trending.png",
       },
       {
         title: "Messages — Unread Count Badges",
@@ -105,13 +112,7 @@ const CHANGELOG: DateGroup[] = [
           "Behind the scenes, a full admin control panel was added. The platform team can now review content, manage organisers, run promotions, track revenue, and handle tickets — all from one dashboard.",
         tag: "new",
         commits: ["bbf84e4"],
-      },
-      {
-        title: "Build Stability Fix",
-        plain:
-          "A deployment issue was resolved that was preventing the latest version from going live on the server.",
-        tag: "fix",
-        commits: ["488c7c3"],
+        screenshot: "/changelog/organizer.png",
       },
       {
         title: "Scheduled Post Publishing — 9 AM Daily",
@@ -132,10 +133,11 @@ const CHANGELOG: DateGroup[] = [
         plain:
           "Organisers can now create a live event from start to finish using a guided multi-step form. Add the event name, description, date, location, ticket types and prices, cover photo, and privacy settings — all in one smooth flow.",
         detail:
-          "Head to the Organiser Dashboard → tap 'Create Event' → follow the steps: Details → Tickets → Creative → Publish. Your event goes live once you hit Publish.",
+          "Head to the Organiser Dashboard → tap Create Event → follow the steps: Details → Tickets → Creative → Publish. Your event goes live once you hit Publish.",
         tag: "new",
         icon: Ticket,
         commits: ["081b129", "8204fda"],
+        screenshot: "/changelog/host-event.png",
       },
       {
         title: "Edit & Delete Events",
@@ -160,6 +162,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "new",
         icon: Gear,
         commits: ["ea756ed", "de7a088"],
+        screenshot: "/changelog/settings.png",
       },
       {
         title: "Better Sign-In Error Messages",
@@ -171,7 +174,7 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Account Recovery",
         plain:
-          "If your account ran into a conflict during setup (e.g. you signed up twice with the same email), the app can now automatically recover and connect you to your existing profile.",
+          "If your account ran into a conflict during setup, the app can now automatically recover and connect you to your existing profile without losing any data.",
         tag: "fix",
         commits: ["113657d"],
       },
@@ -216,6 +219,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "improved",
         icon: MagnifyingGlass,
         commits: ["9782578", "c6bfbc6", "58aa96d"],
+        screenshot: "/changelog/search.png",
       },
       {
         title: "AI Discovery Banner",
@@ -249,6 +253,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "new",
         icon: Robot,
         commits: ["474fb3c"],
+        screenshot: "/changelog/search.png",
       },
     ],
   },
@@ -290,7 +295,7 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Sponsor Spotlight",
         plain:
-          "GoOutside's first spotlight sponsor (supercar partner) is now featured in the app, showcasing brand partnerships in the event discovery feed.",
+          "GoOutside's first spotlight sponsor is now featured in the app, showcasing brand partnerships in the event discovery feed.",
         tag: "new",
         commits: ["fecaf04"],
       },
@@ -317,6 +322,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "new",
         icon: Trophy,
         commits: ["9aad2d7", "bc5690b"],
+        screenshot: "/changelog/rewards.png",
       },
       {
         title: "Pulse Score History",
@@ -335,6 +341,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "new",
         icon: Bell,
         commits: ["96d8d72", "32e90a5"],
+        screenshot: "/changelog/notifications.png",
       },
       {
         title: "Like Posts",
@@ -346,24 +353,18 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Personalised Feed Sections",
         plain:
-          "Your home feed is now split into named sections — 'Because You Saved', 'Trending Near You', 'Friends Are Going', and more — each curated specifically for you based on your behaviour in the app.",
+          "Your home feed is now split into named sections — Because You Saved, Trending Near You, Friends Are Going, and more — each curated specifically for you based on your behaviour in the app.",
         tag: "new",
         commits: ["7ff8fd0"],
+        screenshot: "/changelog/home.png",
       },
       {
         title: "User Discovery",
         plain:
-          "A new 'People You May Know' feature was added, suggesting other users you might want to follow based on shared interests and mutual connections.",
+          "A new People You May Know feature was added, suggesting other users you might want to follow based on shared interests and mutual connections.",
         tag: "new",
         icon: UserCircle,
         commits: ["7d530f2"],
-      },
-      {
-        title: "Follow Status in Real-Time",
-        plain:
-          "Follow buttons across the app now reflect the correct state instantly — whether you follow someone or not is always accurate and updates the moment you tap.",
-        tag: "improved",
-        commits: ["32e90a5"],
       },
       {
         title: "Security Hardening",
@@ -391,12 +392,13 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Buy Tickets from Event Pages",
         plain:
-          "You can now tap 'Get Tickets' directly from any event detail page. A panel slides up showing available ticket types, quantities, and prices. Select your tickets and proceed to checkout.",
+          "You can now tap Get Tickets directly from any event detail page. A panel slides up showing available ticket types, quantities, and prices. Select your tickets and proceed to checkout.",
         detail:
-          "Tap any event → scroll to the ticket section → tap 'Get Tickets' → choose your quantity → tap Checkout.",
+          "Tap any event → scroll to the ticket section → tap Get Tickets → choose your quantity → tap Checkout.",
         tag: "new",
         icon: Ticket,
         commits: ["5944fcd"],
+        screenshot: "/changelog/event-detail.png",
       },
     ],
   },
@@ -406,14 +408,15 @@ const CHANGELOG: DateGroup[] = [
     headline: "Real-time messaging, Ghana seed data, and follow system",
     entries: [
       {
-        title: "Real-Time Messaging (Stream Chat)",
+        title: "Real-Time Messaging",
         plain:
-          "Direct messaging between users is now live. You can start a conversation with anyone on the platform, send messages, and see when they've read them — all in real time.",
+          "Direct messaging between users is now live. You can start a conversation with anyone on the platform, send messages, and see when they've been read — all in real time.",
         detail:
           "Dashboard → Messages → tap the compose button → search for a user → start chatting. Messages are delivered instantly.",
         tag: "new",
         icon: ChatCircleDots,
         commits: ["ad42475", "bd271fe", "433a139"],
+        screenshot: "/changelog/messages.png",
       },
       {
         title: "Follow & Unfollow Users",
@@ -424,6 +427,7 @@ const CHANGELOG: DateGroup[] = [
         tag: "new",
         icon: UserCircle,
         commits: ["5a1790e"],
+        screenshot: "/changelog/profile.png",
       },
       {
         title: "Real Ghana Event & User Data",
@@ -431,13 +435,6 @@ const CHANGELOG: DateGroup[] = [
           "The app is now running on real Ghana event data — 30 authentic events across Accra, Kumasi, Tamale, and beyond, with 120 real-feeling user profiles. No more placeholder content.",
         tag: "new",
         commits: ["7b65900"],
-      },
-      {
-        title: "Error Handling Improvements",
-        plain:
-          "Behind the scenes, the app now gracefully handles situations where a database call fails or data is missing, instead of crashing or showing blank screens.",
-        tag: "fix",
-        commits: ["097c486"],
       },
       {
         title: "Responsive Home Layout",
@@ -449,7 +446,7 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Dark Mode Detection",
         plain:
-          "The app now correctly reads your device's dark/light mode setting on first load, so you always start in the right theme.",
+          "The app now correctly reads your device's dark/light mode setting on first load, so you always start in the right theme without any flicker.",
         tag: "fix",
         commits: ["8fe5987"],
       },
@@ -484,36 +481,36 @@ function TagPill({ tag }: { tag: Tag }) {
 function EntryCard({ entry }: { entry: Entry }) {
   const [open, setOpen] = useState(false);
   const Icon = entry.icon;
+  const hasExpander = !!(entry.detail || entry.screenshot || (entry.commits && entry.commits.length > 0));
 
   return (
     <div className="group relative rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[rgba(47,143,69,0.25)] transition-all duration-200 overflow-hidden">
-      {/* accent bar */}
+      {/* left accent bar */}
       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#2f8f45] to-[rgba(47,143,69,0.1)] opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full text-left px-5 py-4 flex items-start gap-3"
+        onClick={() => hasExpander && setOpen((v) => !v)}
+        className={`w-full text-left px-5 py-4 flex items-start gap-3 ${hasExpander ? "cursor-pointer" : "cursor-default"}`}
       >
         {/* icon */}
         <div className="mt-0.5 shrink-0 w-8 h-8 rounded-lg bg-[var(--brand-dim)] flex items-center justify-center">
-          {Icon ? (
-            <Icon size={16} weight="duotone" className="text-[#2f8f45]" />
-          ) : (
-            <Sparkle size={16} weight="duotone" className="text-[#2f8f45]" />
-          )}
+          {Icon
+            ? <Icon size={16} weight="duotone" className="text-[#2f8f45]" />
+            : <Sparkle size={16} weight="duotone" className="text-[#2f8f45]" />
+          }
         </div>
 
-        {/* content */}
+        {/* text */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="font-semibold text-[var(--text-primary)] text-sm leading-snug">{entry.title}</span>
             <TagPill tag={entry.tag} />
           </div>
-          <p className="text-[var(--text-secondary)] text-sm leading-relaxed line-clamp-2">{entry.plain}</p>
+          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{entry.plain}</p>
         </div>
 
         {/* caret */}
-        {(entry.detail || (entry.commits && entry.commits.length > 0)) && (
+        {hasExpander && (
           <CaretDown
             size={14}
             weight="bold"
@@ -523,17 +520,37 @@ function EntryCard({ entry }: { entry: Entry }) {
       </button>
 
       {/* expanded panel */}
-      {open && (
-        <div className="px-5 pb-5 space-y-3 border-t border-[var(--border-subtle)]">
-          {entry.detail && (
-            <div className="mt-4 rounded-lg bg-[var(--bg-surface)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-2">How to use it</p>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{entry.detail}</p>
+      {open && hasExpander && (
+        <div className="border-t border-[var(--border-subtle)]">
+          {/* screenshot */}
+          {entry.screenshot && (
+            <div className="px-5 pt-4">
+              <div className="rounded-xl overflow-hidden border border-[var(--border-subtle)] shadow-sm">
+                <Image
+                  src={entry.screenshot}
+                  alt={entry.title}
+                  width={900}
+                  height={560}
+                  className="w-full h-auto object-cover"
+                  unoptimized
+                />
+              </div>
             </div>
           )}
 
+          {/* how to use */}
+          {entry.detail && (
+            <div className="px-5 pt-4">
+              <div className="rounded-lg bg-[var(--bg-surface)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-2">How to use it</p>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{entry.detail}</p>
+              </div>
+            </div>
+          )}
+
+          {/* commit links */}
           {entry.commits && entry.commits.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="px-5 pb-5 pt-3 flex flex-wrap gap-2">
               {entry.commits.map((hash) => (
                 <a
                   key={hash}
@@ -556,12 +573,18 @@ function EntryCard({ entry }: { entry: Entry }) {
 }
 
 /* ─────────────────────────────────────────────
-   DATE SECTION
+   DATE SECTION — controlled open state
 ───────────────────────────────────────────── */
 
-function DateSection({ group, defaultOpen }: { group: DateGroup; defaultOpen: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-
+function DateSection({
+  group,
+  open,
+  onToggle,
+}: {
+  group: DateGroup;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const counts = group.entries.reduce(
     (acc, e) => { acc[e.tag] = (acc[e.tag] || 0) + 1; return acc; },
     {} as Record<string, number>
@@ -573,9 +596,9 @@ function DateSection({ group, defaultOpen }: { group: DateGroup; defaultOpen: bo
       <div className="absolute -left-[27px] top-[22px] w-3 h-3 rounded-full border-2 border-[#2f8f45] bg-[var(--bg-page)] z-10" />
 
       <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-card)] overflow-hidden shadow-sm">
-        {/* date header */}
+        {/* header */}
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={onToggle}
           className="w-full text-left px-6 py-5 flex items-start gap-4 hover:bg-[var(--bg-surface)] transition-colors"
         >
           <div className="shrink-0 mt-0.5 w-10 h-10 rounded-xl bg-[var(--brand-dim)] flex items-center justify-center">
@@ -604,7 +627,7 @@ function DateSection({ group, defaultOpen }: { group: DateGroup; defaultOpen: bo
 
         {/* entries */}
         {open && (
-          <div className="px-6 pb-6 space-y-3 border-t border-[var(--border-subtle)]">
+          <div className="px-6 pb-6 border-t border-[var(--border-subtle)]">
             <div className="pt-4 space-y-3">
               {group.entries.map((entry, i) => (
                 <EntryCard key={i} entry={entry} />
@@ -632,10 +655,10 @@ function StatsBar() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
       {[
-        { label: "Total updates",    value: total,    color: "text-[var(--text-primary)]",  bg: "bg-[var(--bg-card)]" },
-        { label: "New features",     value: newCount, color: "text-[#2f8f45]",               bg: "bg-[rgba(47,143,69,0.06)]" },
-        { label: "Improvements",     value: impCount, color: "text-[#4a7ae8]",               bg: "bg-[rgba(74,122,232,0.06)]" },
-        { label: "Fixes & Security", value: fixCount + secCount, color: "text-[#e85d8a]",   bg: "bg-[rgba(232,93,138,0.06)]" },
+        { label: "Total updates",    value: total,            color: "text-[var(--text-primary)]", bg: "bg-[var(--bg-card)]" },
+        { label: "New features",     value: newCount,         color: "text-[#2f8f45]",              bg: "bg-[rgba(47,143,69,0.04)]" },
+        { label: "Improvements",     value: impCount,         color: "text-[#4a7ae8]",              bg: "bg-[rgba(74,122,232,0.04)]" },
+        { label: "Fixes & Security", value: fixCount+secCount, color: "text-[#e85d8a]",             bg: "bg-[rgba(232,93,138,0.04)]" },
       ].map(({ label, value, color, bg }) => (
         <div key={label} className={`rounded-xl ${bg} border border-[var(--border-subtle)] px-5 py-4`}>
           <div className={`text-3xl font-black ${color} tabular-nums`}>{value}</div>
@@ -651,24 +674,28 @@ function StatsBar() {
 ───────────────────────────────────────────── */
 
 export default function ChangelogPage() {
-  const [expandAll, setExpandAll] = useState(false);
+  // Lifted state: one boolean per date group. First section open by default.
+  const [openStates, setOpenStates] = useState<boolean[]>(
+    CHANGELOG.map((_, i) => i === 0)
+  );
+
+  const allOpen = openStates.every(Boolean);
+
+  function toggleAll() {
+    const next = !allOpen;
+    setOpenStates(CHANGELOG.map(() => next));
+  }
+
+  function toggleOne(i: number) {
+    setOpenStates((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
-      {/* ── Background grid pattern ── */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(90deg, var(--text-primary) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
+      {/* top accent bar */}
+      <div className="h-1 bg-gradient-to-r from-[#2f8f45] via-[#4caf65] to-[#2f8f45]" />
 
-      {/* ── Top accent bar ── */}
-      <div className="relative z-10 h-1 bg-gradient-to-r from-[#2f8f45] via-[#4caf65] to-[#2f8f45]" />
-
-      <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pb-24">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24">
 
         {/* ── Header ── */}
         <header className="pt-14 pb-10 text-center">
@@ -695,13 +722,12 @@ export default function ChangelogPage() {
             A running record of every feature, improvement, and fix shipped to GoOutside — written in plain language, no technical jargon required.
           </p>
 
-          {/* GitHub link */}
           <div className="flex items-center justify-center gap-4 mt-6">
             <a
               href={REPO}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-default)] hover:border-[var(--border-card)] rounded-full px-4 py-2 bg-[var(--bg-card)] transition-all duration-150"
+              className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-default)] hover:border-[rgba(47,143,69,0.3)] rounded-full px-4 py-2 bg-[var(--bg-card)] transition-all duration-150"
             >
               <GithubLogo size={16} weight="fill" />
               View source on GitHub
@@ -716,13 +742,13 @@ export default function ChangelogPage() {
         {/* ── Controls ── */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-            {CHANGELOG.length} release dates
+            {CHANGELOG.length} release dates · April – May 2026
           </p>
           <button
-            onClick={() => setExpandAll((v) => !v)}
-            className="text-xs font-semibold text-[#2f8f45] hover:underline"
+            onClick={toggleAll}
+            className="text-xs font-semibold text-[#2f8f45] hover:underline underline-offset-2 transition-all"
           >
-            {expandAll ? "Collapse all" : "Expand all"}
+            {allOpen ? "Collapse all" : "Expand all"}
           </button>
         </div>
 
@@ -733,7 +759,12 @@ export default function ChangelogPage() {
 
           <div className="pl-10 space-y-5">
             {CHANGELOG.map((group, i) => (
-              <DateSection key={group.iso} group={group} defaultOpen={i === 0 || expandAll} />
+              <DateSection
+                key={group.iso}
+                group={group}
+                open={openStates[i]}
+                onToggle={() => toggleOne(i)}
+              />
             ))}
           </div>
         </div>
