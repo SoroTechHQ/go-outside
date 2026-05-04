@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ChatCircleDots,
-  Eye,
-  Heart,
-  Ticket,
-} from "@phosphor-icons/react";
-import {
+  EventMetricStrip,
   FeaturedTrendEvent,
-  MetricStrip,
   ReasonList,
   SnippetList,
   TrendPageShell,
@@ -52,14 +46,7 @@ export default async function TrendingEventDetailPage({ params }: Props) {
         )}
       </div>
 
-      <MetricStrip
-        items={[
-          { label: "Views", value: event.views_count.toLocaleString(), icon: <Eye size={14} /> },
-          { label: "Saves", value: event.saves_count.toLocaleString(), icon: <Heart size={14} /> },
-          { label: "Tickets", value: event.tickets_sold.toLocaleString(), icon: <Ticket size={14} /> },
-          { label: "Snippets", value: event.snippet_count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
-        ]}
-      />
+      <EventMetricStrip event={event} />
 
       <section className="space-y-4">
         <div>
