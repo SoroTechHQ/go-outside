@@ -11,66 +11,87 @@ type NavItem = { label: string; href: string; icon: ReactNode };
 
 const adminNav: NavItem[] = [
   {
-    label: "Overview",
+    label: "Dashboard",
     href: "/",
     icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/></svg>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="2" y="2" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.6"/><rect x="12" y="2" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.6"/><rect x="2" y="12" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.6"/><rect x="12" y="12" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.6"/></svg>
     ),
   },
   {
     label: "Events",
     href: "/events",
     icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M16 2v4M8 2v4M3 9h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M13 1.5v3M7 1.5v3M2 7.5h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+    ),
+  },
+  {
+    label: "Organizers",
+    href: "/organizers",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="7" cy="6" r="3" stroke="currentColor" strokeWidth="1.6"/><path d="M1 17v-.5A6 6 0 0 1 13 17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="15" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.6"/><path d="M13.5 17v-.5a3 3 0 0 1 5.5 0v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+    ),
+  },
+  {
+    label: "Tickets",
+    href: "/tickets",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><path d="M2 7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v1.5a2 2 0 0 0 0 4V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1.5a2 2 0 0 0 0-4V7Z" stroke="currentColor" strokeWidth="1.6"/><path d="M13 6v9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2 2"/></svg>
+    ),
+  },
+  {
+    label: "Revenue",
+    href: "/revenue",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.6"/><path d="M10 6v1.5M10 12.5V14M7.5 11a2.5 2.5 0 0 0 5 0c0-1.38-1.12-2-2.5-2S7.5 8.38 7.5 7a2.5 2.5 0 0 1 5 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+    ),
+  },
+  {
+    label: "Moderation",
+    href: "/moderation",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><path d="M10 2l1.8 5.4H17l-4.5 3.3 1.7 5.2L10 13l-4.2 2.9 1.7-5.2L3 7.4h5.2L10 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/></svg>
+    ),
+  },
+  {
+    label: "Broadcasts",
+    href: "/broadcasts",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><path d="M4 10H2M18 10h-2M10 2V4M10 16v2M5.64 5.64 4.22 4.22M15.78 15.78l-1.42-1.42M5.64 14.36l-1.42 1.42M15.78 4.22l-1.42 1.42" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.6"/></svg>
+    ),
+  },
+  {
+    label: "Promotions",
+    href: "/promotions",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><path d="M3 10.5 10 3l7 7.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M6 9v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M8 17v-4h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
     ),
   },
   {
     label: "Users",
     href: "/users",
     icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/><path d="M2 21v-1a7 7 0 0 1 14 0v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M19 11v6M22 14h-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="8" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.6"/><path d="M1.5 18v-1a6.5 6.5 0 0 1 13 0v1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M17 9v5M19.5 11.5h-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
     ),
   },
   {
     label: "Analytics",
     href: "/analytics",
     icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M4 17.5 9 12l4 4 7-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8"/><path d="M4 20h16" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8"/></svg>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><path d="M3 14.5 8 9l3.5 3.5L17 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 17.5h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
     ),
   },
   {
-    label: "Tables",
-    href: "/tables",
+    label: "Settings",
+    href: "/settings",
     icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M3 10h18M8 4v16M16 4v16" stroke="currentColor" strokeWidth="1.8"/></svg>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.6"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
     ),
   },
   {
-    label: "Forms",
-    href: "/forms",
+    label: "Audit Log",
+    href: "/audit-log",
     icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.8"/><path d="M8 8h8M8 12h8M8 16h4" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8"/></svg>
-    ),
-  },
-  {
-    label: "Components",
-    href: "/components",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M3 15v4a2 2 0 0 0 2 2h4" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8"/><rect x="7.5" y="7.5" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="1.8"/></svg>
-    ),
-  },
-  {
-    label: "Media",
-    href: "/media",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="m21 15-4.5-4.5-4 4-2.5-2.5L3 19" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8"/></svg>
-    ),
-  },
-  {
-    label: "Notifications",
-    href: "/notifications",
-    icon: (
-      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6 6 0 0 0-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7 6h6M7 10h6M7 14h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
     ),
   },
 ];
@@ -168,11 +189,6 @@ export function AppSidebar({ mode }: { mode: "admin" | "organizer" }) {
 
         {/* Nav */}
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {wide && mode === "admin" ? (
-            <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
-              Platform UI
-            </p>
-          ) : null}
           {nav.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
