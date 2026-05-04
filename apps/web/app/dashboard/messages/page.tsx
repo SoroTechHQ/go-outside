@@ -23,7 +23,6 @@ import {
   Thread,
   TypingIndicator,
   Window,
-  useChannelStateContext,
   useChatContext,
   useCreateChatClient,
   type ChannelPreviewUIComponentProps,
@@ -31,7 +30,8 @@ import {
 
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { GoMessageInput } from "../../../components/chat/GoMessageInput";
-import { buildChannelId } from "../../../lib/chat/channel-id";
+import { GoChannelHeader } from "../../../components/chat/GoChannelHeader";
+import { requestPushPermission, subscribeToPush } from "../../../lib/notifications/push";
 
 type GoConversationType =
   | "friend_dm"
@@ -166,16 +166,6 @@ function formatConversationTime(channel: StreamChannel) {
   }
 
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
-}
-
-function formatPresenceCopy(channel: StreamChannel, currentUserId?: string) {
-  const users = getChannelUsers(channel, currentUserId);
-  const others = users.filter((u) => u.id !== currentUserId);
-  if (others.length === 1) {
-    return others[0].online ? "Online now" : "Last seen recently";
-  }
-  const onlineCount = others.filter((u) => Boolean(u.online)).length;
-  return onlineCount > 0 ? `${onlineCount} online` : `${others.length} members`;
 }
 
 
@@ -339,56 +329,6 @@ function ConversationPreview(
   );
 }
 
-function ConversationHeader({
-  onBack,
-  showBackButton,
-}: {
-  onBack: () => void;
-  showBackButton: boolean;
-}) {
-  const { channel } = useChannelStateContext("ConversationHeader");
-  const { client } = useChatContext("ConversationHeader");
-  const participant = getPrimaryParticipant(channel, client.userID);
-  const convType = getChannelConversationType(channel);
-  const isOrganizer = convType === "organizer_chat";
-
-  return (
-    <div className={`go-stream-thread-header${isOrganizer ? " go-stream-thread-header--organizer" : ""}`}>
-      <div className="go-stream-thread-header__identity">
-        {showBackButton ? (
-          <button
-            aria-label="Back to messages"
-            className="go-stream-thread-header__back"
-            onClick={onBack}
-            type="button"
-          >
-            <ArrowLeft size={20} weight="bold" />
-          </button>
-        ) : null}
-
-        <div className="go-stream-conversation__avatar go-stream-conversation__avatar--header">
-          {participant?.image ? (
-            <img alt={participant.name || "Conversation"} src={participant.image} />
-          ) : (
-            <span>{(participant?.name || getConversationTitle(channel, client.userID)).slice(0, 1).toUpperCase()}</span>
-          )}
-          {participant?.online ? <span className="go-stream-conversation__online" /> : null}
-          {isOrganizer ? <span className="go-stream-conversation__verified" aria-label="Verified organizer" /> : null}
-        </div>
-
-        <div className="min-w-0">
-          <div className="go-stream-thread-header__name-row">
-            <p className="go-stream-thread-header__title">{getConversationTitle(channel, client.userID)}</p>
-            {isOrganizer ? (
-              <span className="go-stream-thread-header__organizer-pill">ORGANIZER</span>
-            ) : null}
-          </div>
-          <p className="go-stream-thread-header__meta">{formatPresenceCopy(channel, client.userID)}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ComposeConversation({
   currentUserId,
@@ -609,19 +549,10 @@ function MessagesShell({
     dmOpenedRef.current = true;
 
     const openDm = async () => {
-      const channelId = buildChannelId(identity.id, dmUserId);
-      const channel = client.channel("messaging", channelId, {
-        created_by_id: identity.id,
+      // Distinct channel — Stream deduplicates by member set, no ID collision risk
+      const channel = client.channel("messaging", {
         members: [identity.id, dmUserId],
       });
-
-      try {
-        await channel.create();
-      } catch (err) {
-        const msg = err instanceof Error ? err.message.toLowerCase() : "";
-        if (!msg.includes("already exists")) throw err;
-      }
-
       await channel.watch();
       setActiveChannel(channel);
       startTransition(() => {
@@ -678,21 +609,10 @@ function MessagesShell({
 
   const handleStartConversation = useCallback(
     async (user: ChatUserSummary) => {
-      const channelId = buildChannelId(identity.id, user.id);
-      const channel = client.channel("messaging", channelId, {
-        created_by_id: identity.id,
+      // Distinct channel — Stream auto-generates the ID from the member set
+      const channel = client.channel("messaging", {
         members: [identity.id, user.id],
       });
-
-      try {
-        await channel.create();
-      } catch (error) {
-        const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-        if (!message.includes("already exists")) {
-          throw error;
-        }
-      }
-
       await channel.watch();
       setActiveChannel(channel);
 
@@ -755,7 +675,7 @@ function MessagesShell({
         {activeChannel ? (
           <Channel EmptyStateIndicator={ChannelMessagesEmptyState}>
             <Window>
-              <ConversationHeader
+              <GoChannelHeader
                 onBack={() => setMobilePane("list")}
                 showBackButton={isMobile && mobilePane === "thread"}
               />

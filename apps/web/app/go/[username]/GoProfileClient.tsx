@@ -310,7 +310,7 @@ export default function GoProfileClient({
   ];
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
+    <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
       {/* Cover */}
       <div className="relative h-[220px] w-full overflow-hidden md:h-[260px]">
         {resolvedCover ? (

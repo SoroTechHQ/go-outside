@@ -1417,6 +1417,78 @@ a {
   max-width: 22rem;
 }
 
+/* ── Typing indicator in header ── */
+.go-stream-thread-header__meta--typing {
+  color: var(--brand);
+  font-style: italic;
+}
+
+/* ── Active conversation: green left border accent ── */
+.go-stream-conversation--active {
+  border-left: 2px solid transparent;
+}
+
+:root[data-theme="dark"] .go-stream-conversation--active {
+  border-left-color: #5FBF2A;
+}
+
+/* ── Image attachments in message bubbles ── */
+.go-stream-chat__thread .str-chat__message-attachment--image img {
+  border-radius: 14px;
+  cursor: pointer;
+  max-height: 320px;
+  max-width: 280px;
+  object-fit: cover;
+  transition: opacity 0.15s;
+  width: 100%;
+}
+
+.go-stream-chat__thread .str-chat__message-attachment--image img:hover {
+  opacity: 0.9;
+}
+
+.go-stream-chat__thread .str-chat__message--me .str-chat__message-attachment--image,
+.go-stream-chat__thread .str-chat__message--mine .str-chat__message-attachment--image {
+  border-radius: 16px 16px 4px 16px;
+  overflow: hidden;
+}
+
+.go-stream-chat__thread .str-chat__message:not(.str-chat__message--me):not(.str-chat__message--mine) .str-chat__message-attachment--image {
+  border-radius: 16px 16px 16px 4px;
+  overflow: hidden;
+}
+
+/* ── Message list scrollbar — minimal ── */
+.go-stream-chat__thread .str-chat__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.go-stream-chat__thread .str-chat__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.go-stream-chat__thread .str-chat__list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+:root[data-theme="dark"] .go-stream-chat__thread .str-chat__list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.go-stream-chat__thread .str-chat__list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .go-stream-chat__thread .str-chat__list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── Typing indicator dots — hide avatars for clean look ── */
+.go-stream-chat__thread .str-chat__typing-indicator__avatars {
+  display: none;
+}
+
 /* ── Mobile: stack vertically ── */
 @media (max-width: 767px) {
   .go-stream-chat {

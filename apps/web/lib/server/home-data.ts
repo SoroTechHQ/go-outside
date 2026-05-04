@@ -87,13 +87,37 @@ function buildShellUserName(user: Pick<AppUserRow, "first_name" | "last_name"> |
   return [first, last].filter(Boolean).join(" ").trim();
 }
 
+async function getOrgName(userId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("organizer_profiles")
+    .select("organization_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data as { organization_name?: string | null } | null)?.organization_name ?? null;
+}
+
 async function getShellUser(clerkId?: string | null, user?: AppUserRow | null): Promise<PublicShellUser> {
   if (!clerkId) {
     return DEFAULT_APP_BOOTSTRAP.shellUser;
   }
 
-  const nameFromRow = buildShellUserName(user ?? null);
   const role: PublicShellUser["role"] = user?.role === "organizer" || user?.role === "admin" ? user.role : "attendee";
+
+  // For organizers, prefer the organization display name
+  if (role === "organizer" && user?.id) {
+    const orgName = await getOrgName(user.id);
+    if (orgName) {
+      return {
+        role,
+        userName:  orgName,
+        avatarUrl: user.avatar_url ?? null,
+        username:  user.username ?? null,
+        email:     user.email ?? null,
+      };
+    }
+  }
+
+  const nameFromRow = buildShellUserName(user ?? null);
 
   if (nameFromRow) {
     return {
