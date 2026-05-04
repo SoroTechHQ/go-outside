@@ -99,12 +99,14 @@ export function createChatRouter() {
       {
         id: userId,
         image,
-        name
+        name,
+        app: 'gooutside',
       }
     ]);
 
     const starterChannelCid = await ensureStarterChannel(streamClient, userId);
-    const token = streamClient.createToken(userId);
+    const expiry = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24h
+    const token = streamClient.createToken(userId, expiry);
 
     return c.json({
       starterChannelCid,

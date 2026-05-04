@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendUp,
   Fire,
-  MapPin,
+  CalendarBlank,
   Ticket,
   Heart,
   Users,
@@ -16,36 +17,13 @@ import {
 } from "@phosphor-icons/react";
 import { thumbnailUrl as withThumbnailTransform, bannerUrl as withBannerTransform } from "../../../lib/image-url";
 import MobileUnifiedSearch from "../../../components/search/MobileUnifiedSearch";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-type TrendingEvent = {
-  id: string;
-  title: string;
-  slug: string;
-  banner_url: string | null;
-  start_datetime: string | null;
-  price_label: string | null;
-  trending_score: number | null;
-};
-
-type TrendingOrganizer = {
-  id: string;
-  name: string;
-  logo_url: string | null;
-  follower_count: number | null;
-};
-
-type TrendingTopic = {
-  tag: string;
-  count: number;
-};
-
-type TrendingResponse = {
-  section: string;
-  events: TrendingEvent[];
-  organizers: TrendingOrganizer[];
-  topics: TrendingTopic[];
-};
+import type {
+  TrendReason,
+  TrendingEvent,
+  TrendingOrganizer,
+  TrendingResponse,
+  TrendingTopic,
+} from "../../../lib/trending/types";
 
 // ── API fetcher ───────────────────────────────────────────────────────────────
 async function fetchTrending(section: string): Promise<TrendingResponse> {
@@ -54,8 +32,18 @@ async function fetchTrending(section: string): Promise<TrendingResponse> {
   return res.json() as Promise<TrendingResponse>;
 }
 
+function compactNumber(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return `${value}`;
+}
+
+function reasonSummary(reasons: TrendReason[]) {
+  return reasons.slice(0, 2).map((reason) => reason.value).join(" · ");
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
-function TrendingBadge({ score }: { score: number | null }) {
+function TrendingBadge({ score }: { score: number }) {
   if (!score || score <= 0) return null;
   if (score >= 100) return (
     <span className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-500">
@@ -107,7 +95,7 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
         )}
       </div>
 
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
+      <Link href={`/events/${event.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
         {event.banner_url && (
           <img
             alt={event.title}
@@ -116,7 +104,7 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
           />
         )}
         <div className="absolute inset-0 bg-black/10" />
-      </div>
+      </Link>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
@@ -134,23 +122,39 @@ function TrendingEventCard({ event, index }: { event: TrendingEvent; index: numb
           </button>
         </div>
 
-        <p className="mt-0.5 text-[14px] font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">
-          {event.title}
-        </p>
+        <Link href={`/events/${event.slug}`} className="block">
+          <p className="mt-0.5 text-[14px] font-bold text-[var(--text-primary)] line-clamp-2 leading-tight">
+            {event.title}
+          </p>
+        </Link>
 
         {dateLabel && (
           <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[var(--text-tertiary)]">
-            <MapPin size={10} weight="fill" />
+            <CalendarBlank size={10} weight="fill" />
             <span className="truncate">{dateLabel}</span>
           </div>
         )}
 
+        {event.reasons.length > 0 && (
+          <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-tertiary)]">
+            {reasonSummary(event.reasons)}
+          </p>
+        )}
+
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-3 text-[12px] text-[var(--text-tertiary)]">
-            <span className="flex items-center gap-1"><Users size={11} weight="fill" /> —</span>
-            <span className="flex items-center gap-1"><Heart size={11} weight="fill" /> —</span>
+            <span className="flex items-center gap-1"><Users size={11} weight="fill" /> {compactNumber(event.snippet_count)}</span>
+            <span className="flex items-center gap-1"><Heart size={11} weight="fill" /> {compactNumber(event.saves_count)}</span>
           </div>
-          <span className="text-[12px] font-bold text-[var(--brand)]">{event.price_label ?? "Free"}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] font-bold text-[var(--brand)]">{event.price_label ?? "Free"}</span>
+            <Link
+              className="text-[11px] font-semibold text-[var(--text-secondary)] underline-offset-4 hover:text-[var(--brand)] hover:underline"
+              href={`/dashboard/trending/events/${event.slug}`}
+            >
+              Why trending
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -197,7 +201,10 @@ export default function TrendingPage() {
               </h1>
             </div>
             <p className="text-[14px] text-[var(--text-tertiary)]">
-              What's hot in Ghana right now · Updated every 30 min
+              What's hot in Ghana right now
+            </p>
+            <p className="mt-2 text-[12px] text-[var(--text-tertiary)]">
+              Ranked using saves, shares, ticket intent, views, snippets, and recent momentum from the app.
             </p>
           </div>
 
@@ -264,24 +271,35 @@ export default function TrendingPage() {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-1 flex items-center gap-2">
                         <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
                           <Fire size={9} weight="fill" /> #1 Trending
                         </span>
-                        {filteredEvents[0].trending_score && (
-                          <span className="text-[11px] text-white/70">
-                            {Math.round(filteredEvents[0].trending_score)} interactions
-                          </span>
-                        )}
+                        <span className="text-[11px] text-white/70">
+                          {Math.round(filteredEvents[0].trending_score)} trend score
+                        </span>
                       </div>
-                      <h2 className="text-[17px] font-black text-white leading-tight">
-                        {filteredEvents[0].title}
-                      </h2>
-                      <div className="mt-1 flex items-center justify-between">
+                      <Link href={`/events/${filteredEvents[0].slug}`}>
+                        <h2 className="text-[17px] font-black text-white leading-tight">
+                          {filteredEvents[0].title}
+                        </h2>
+                      </Link>
+                      <p className="mt-1 line-clamp-2 text-[11px] text-white/70">
+                        {reasonSummary(filteredEvents[0].reasons)}
+                      </p>
+                      <div className="mt-2 flex items-center justify-between">
                         <span className="text-[12px] text-white/70">
                           <Ticket size={10} weight="fill" className="inline mr-1" />
                           {filteredEvents[0].price_label ?? "Free"}
                         </span>
+                        <div className="flex items-center gap-3 text-[12px] font-semibold">
+                          <Link href={`/events/${filteredEvents[0].slug}`} className="text-white">
+                            Open event
+                          </Link>
+                          <Link href={`/dashboard/trending/events/${filteredEvents[0].slug}`} className="text-white/80 underline-offset-4 hover:underline">
+                            Why trending
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -308,8 +326,9 @@ export default function TrendingPage() {
                 </p>
               ) : (
                 filteredOrgs.map((org, i) => (
-                  <div
+                  <Link
                     key={org.id}
+                    href={`/dashboard/trending/organizers/${org.username ?? org.id}`}
                     className="flex gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 transition hover:border-[var(--border-default)]"
                   >
                     <div className="relative shrink-0">
@@ -328,16 +347,21 @@ export default function TrendingPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{org.name}</p>
+                      {org.reasons.length > 0 && (
+                        <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-tertiary)]">
+                          {reasonSummary(org.reasons)}
+                        </p>
+                      )}
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-[12px] text-[var(--text-secondary)]">
-                          {org.follower_count?.toLocaleString() ?? "—"} followers
+                          {compactNumber(org.follower_count)} followers · {org.event_count} events
                         </span>
                         <span className="flex items-center gap-1 text-[12px] font-semibold text-[var(--brand)]">
-                          <TrendUp size={12} weight="bold" /> Trending
+                          <TrendUp size={12} weight="bold" /> Why trending
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
@@ -359,8 +383,9 @@ export default function TrendingPage() {
                 </p>
               ) : (
                 filteredTopics.map((topic, i) => (
-                  <div
+                  <Link
                     key={topic.tag}
+                    href={`/dashboard/trending/topics/${encodeURIComponent(topic.tag)}`}
                     className="flex items-center justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3.5 transition hover:border-[var(--border-default)] cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
@@ -370,8 +395,13 @@ export default function TrendingPage() {
                       <div>
                         <p className="text-[14px] font-bold text-[var(--text-primary)]">#{topic.tag}</p>
                         <p className="text-[12px] text-[var(--text-tertiary)]">
-                          {topic.count} {topic.count === 1 ? "snippet" : "snippets"}
+                          {topic.count} {topic.count === 1 ? "snippet" : "snippets"} · {topic.event_count} events
                         </p>
+                        {topic.reasons.length > 0 && (
+                          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+                            {reasonSummary(topic.reasons)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -382,7 +412,7 @@ export default function TrendingPage() {
                       )}
                       <ArrowRight size={14} className="text-[var(--text-tertiary)]" />
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
