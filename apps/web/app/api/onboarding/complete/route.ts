@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
         .single();
       if (!adoptErr && adopted) {
         // Continue with the adopted user
-        const adoptedUser = adopted as typeof sbUser;
         const client = await clerkClient();
         await client.users.updateUserMetadata(clerk.id, {
           unsafeMetadata: {
@@ -69,9 +68,9 @@ export async function POST(req: NextRequest) {
         const res = NextResponse.json({ ok: true });
         res.cookies.set("go_done", "1", { ...COOKIE_OPTS, httpOnly: true });
         const prefs = {
-          city:      (adoptedUser as Record<string, unknown>).location_city as string ?? "",
-          interests: ((adoptedUser as Record<string, unknown>).interests as string[]) ?? [],
-          vibe:      ((adoptedUser as Record<string, unknown>).vibe as Record<string, unknown> | null) ?? null,
+          city:      (adopted.location_city as string) ?? "",
+          interests: (adopted.interests as string[]) ?? [],
+          vibe:      (adopted.vibe as Record<string, unknown> | null) ?? null,
           score:     pulse_score,
           tier:      pulse_tier,
         };
