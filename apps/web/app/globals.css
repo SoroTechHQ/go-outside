@@ -936,6 +936,20 @@ a {
   margin-top: 0.15rem;
 }
 
+.go-stream-compose__result-username {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.go-stream-compose__result--request {
+  opacity: 0.85;
+}
+
+.go-stream-compose__result-label--request {
+  color: #f59e0b !important;
+  font-size: 0.78rem !important;
+}
+
 :root[data-theme="dark"] .go-stream-frame {
   background:
     radial-gradient(circle at top left, rgba(var(--brand-rgb), 0.08), transparent 28%),

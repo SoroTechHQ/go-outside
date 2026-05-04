@@ -12,7 +12,8 @@ import {
 import React, { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import type { Channel as StreamChannel, UserFilters, UserResponse, UserSort } from "stream-chat";
+import type { Channel as StreamChannel } from "stream-chat";
+import type { ChatContact } from "../../api/chat/contacts/route";
 import {
   Channel,
   ChannelList,
@@ -22,8 +23,8 @@ import {
   MessageList,
   TypingIndicator,
   Window,
-  useChatContext,
   useCreateChatClient,
+  useChatContext,
   type ChannelPreviewUIComponentProps,
 } from "stream-chat-react";
 
@@ -94,9 +95,11 @@ type ChatIdentity = { id: string; image?: string; name: string };
 
 type ChatUserSummary = {
   id: string;
-  image?: string;
+  image?: string | null;
   name: string;
+  username?: string | null;
   online?: boolean;
+  relationship?: ChatContact["relationship"];
 };
 
 type MobilePane = "list" | "thread" | "compose";
@@ -329,24 +332,28 @@ function ConversationPreview(
 }
 
 
+const RELATIONSHIP_LABEL: Record<ChatContact["relationship"], string | null> = {
+  mutual:    null,
+  following: "Following",
+  follower:  "Follows you",
+  none:      "Not connected · sends as request",
+};
+
 function ComposeConversation({
-  currentUserId,
   isMobile,
   onClose,
   onStartConversation,
   open,
 }: {
-  currentUserId: string;
   isMobile: boolean;
   onClose: () => void;
   onStartConversation: (user: ChatUserSummary) => Promise<void>;
   open: boolean;
 }) {
-  const { client } = useChatContext("ComposeConversation");
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [results, setResults] = useState<ChatUserSummary[]>([]);
+  const [results, setResults] = useState<ChatContact[]>([]);
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
 
@@ -364,39 +371,18 @@ function ComposeConversation({
 
     let cancelled = false;
 
-    const loadUsers = async () => {
+    const loadContacts = async () => {
       setLoadingUsers(true);
       setError(null);
 
       try {
-        const query = deferredSearch.trim();
-        const filters: UserFilters = query
-          ? {
-              $and: [
-                { $nor: [{ id: currentUserId }] },
-                {
-                  $or: [
-                    { name: { $autocomplete: query } },
-                    { username: { $autocomplete: query } },
-                    { id: { $autocomplete: query } },
-                  ],
-                },
-              ],
-            }
-          : { $nor: [{ id: currentUserId }] };
-        const sort: UserSort = [{ online: -1 }, { last_active: -1 }, { name: 1 }];
-
-        const response = await client.queryUsers(filters, sort, { limit: 12, presence: true });
+        const q = deferredSearch.trim();
+        const url = q ? `/api/chat/contacts?q=${encodeURIComponent(q)}` : "/api/chat/contacts";
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Could not load contacts.");
+        const json = (await res.json()) as { contacts: ChatContact[] };
         if (cancelled) return;
-
-        setResults(
-          response.users.map((user: UserResponse) => ({
-            id: user.id,
-            image: user.image || undefined,
-            name: user.name || user.username || user.id,
-            online: Boolean(user.online),
-          })),
-        );
+        setResults(json.contacts);
       } catch (loadError) {
         if (cancelled) return;
         setError(loadError instanceof Error ? loadError.message : "Could not load people to message.");
@@ -406,12 +392,12 @@ function ComposeConversation({
       }
     };
 
-    void loadUsers();
+    void loadContacts();
 
     return () => {
       cancelled = true;
     };
-  }, [client, currentUserId, deferredSearch, open]);
+  }, [deferredSearch, open]);
 
   if (!open) return null;
 
@@ -464,25 +450,35 @@ function ComposeConversation({
 
           {!loadingUsers && !error && results.length === 0 ? (
             <p className="go-stream-compose__state">
-              {search.trim() ? "No matching people found." : "No one is available to message yet."}
+              {search.trim()
+                ? "No users found with that username or name."
+                : "Follow people to see them here, or search by username."}
             </p>
           ) : null}
 
           {!loadingUsers && !error
-            ? results.map((user) => {
-                const disabled = creatingId === user.id;
+            ? results.map((contact) => {
+                const disabled = creatingId === contact.id;
+                const relationLabel = RELATIONSHIP_LABEL[contact.relationship];
+                const isRequest = contact.relationship === "none";
 
                 return (
                   <button
-                    key={user.id}
-                    className="go-stream-compose__result"
+                    key={contact.id}
+                    className={`go-stream-compose__result${isRequest ? " go-stream-compose__result--request" : ""}`}
                     disabled={Boolean(creatingId)}
                     onClick={async () => {
-                      setCreatingId(user.id);
+                      setCreatingId(contact.id);
                       setError(null);
 
                       try {
-                        await onStartConversation(user);
+                        await onStartConversation({
+                          id: contact.id,
+                          name: contact.name,
+                          image: contact.image ?? undefined,
+                          username: contact.username,
+                          relationship: contact.relationship,
+                        });
                       } catch (conversationError) {
                         setError(
                           conversationError instanceof Error
@@ -495,10 +491,17 @@ function ComposeConversation({
                     }}
                     type="button"
                   >
-                    <ComposeUserAvatar user={user} />
+                    <ComposeUserAvatar user={{ id: contact.id, name: contact.name, image: contact.image ?? undefined }} />
                     <div className="go-stream-compose__result-copy">
-                      <p>{user.name}</p>
-                      <span>{user.online ? "Online now" : "Tap to open a new message"}</span>
+                      <p>
+                        {contact.name}
+                        {contact.username ? (
+                          <span className="go-stream-compose__result-username"> @{contact.username}</span>
+                        ) : null}
+                      </p>
+                      <span className={isRequest ? "go-stream-compose__result-label--request" : ""}>
+                        {relationLabel ?? "Friends"}
+                      </span>
                     </div>
                     {disabled ? <SpinnerGap className="animate-spin" size={16} weight="bold" /> : null}
                   </button>
@@ -628,10 +631,16 @@ function MessagesShell({
 
   const handleStartConversation = useCallback(
     async (user: ChatUserSummary) => {
-      // Distinct channel — Stream auto-generates the ID from the member set
+      const isConnected = user.relationship && user.relationship !== "none";
+      const convType: GoConversationType = isConnected ? "friend_dm" : "message_request";
+
+      // Distinct channel — Stream deduplicates by member set
       const channel = client.channel("messaging", {
         members: [identity.id, user.id],
-      });
+        go_conversation_type: convType,
+        go_channel_state: isConnected ? "active" : "pending",
+        ...(user.username ? { go_other_username: user.username } : {}),
+      } as Parameters<typeof client.channel>[1]);
       await channel.watch();
       setActiveChannel(channel);
 
@@ -712,7 +721,6 @@ function MessagesShell({
       </section>
 
       <ComposeConversation
-        currentUserId={identity.id}
         isMobile={isMobile}
         onClose={handleCloseCompose}
         onStartConversation={handleStartConversation}
