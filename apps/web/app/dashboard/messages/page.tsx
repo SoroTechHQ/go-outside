@@ -20,7 +20,6 @@ import {
   LoadingIndicator,
   MessageInput,
   MessageList,
-  Thread,
   TypingIndicator,
   Window,
   useChatContext,
@@ -699,11 +698,13 @@ function MessagesShell({
                 onBack={() => setMobilePane("list")}
                 showBackButton={isMobile && mobilePane === "thread"}
               />
-              <MessageList reactionDetailsSort={[{ field: "count", direction: -1 }]} />
+              <MessageList
+                messageActions={["delete", "edit", "flag", "markUnread", "mute", "react", "quote"]}
+                reactionDetailsSort={[{ field: "count", direction: -1 }]}
+              />
               <TypingIndicator />
               <MessageInput Input={GoMessageInput} />
             </Window>
-            <Thread />
           </Channel>
         ) : (
           <ChannelMessagesEmptyState />

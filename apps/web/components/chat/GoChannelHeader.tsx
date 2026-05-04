@@ -52,6 +52,7 @@ export function GoChannelHeader({
 
   const participant = getPrimaryParticipant(channel, client.userID);
   const title = getConversationTitle(channel, client.userID);
+  const participantUsername = (participant as unknown as Record<string, unknown> | undefined)?.username as string | undefined;
 
   // Typing indicator in header subtitle
   const typingUsers = Object.values(typing ?? {}).filter(
@@ -64,7 +65,9 @@ export function GoChannelHeader({
       : "Several people are typing…"
     : null;
 
-  const presenceSubtitle = participant?.online ? "Online now" : "Last seen recently";
+  const presenceSubtitle = participantUsername
+    ? `@${participantUsername}  ·  ${participant?.online ? "Online now" : "Last seen recently"}`
+    : participant?.online ? "Online now" : "Last seen recently";
   const subtitle = typingLabel ?? presenceSubtitle;
 
   const convType = (channel.data as { go_conversation_type?: GoConversationType } | undefined)
