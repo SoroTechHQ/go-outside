@@ -100,7 +100,6 @@ export function createChatRouter() {
         id: userId,
         image,
         name,
-        app: 'gooutside',
       }
     ]);
 

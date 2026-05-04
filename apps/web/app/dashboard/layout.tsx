@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { STEP_ROUTES } from "../../lib/onboarding-utils";
+import { StreamTokenPrewarm } from "../../components/messages/StreamTokenPrewarm";
 
 /**
  * Dashboard layout — guards against users who haven't completed onboarding.
@@ -23,5 +24,10 @@ export default async function DashboardLayout({
     redirect(dest);
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <StreamTokenPrewarm />
+      {children}
+    </>
+  );
 }

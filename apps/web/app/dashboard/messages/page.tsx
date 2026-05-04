@@ -21,6 +21,7 @@ import {
   MessageInput,
   MessageList,
   Thread,
+  TypingIndicator,
   Window,
   useChannelStateContext,
   useChatContext,
@@ -115,9 +116,12 @@ function formatConversationTime(channel: StreamChannel) {
 
 function formatPresenceCopy(channel: StreamChannel, currentUserId?: string) {
   const users = getChannelUsers(channel, currentUserId);
-  const onlineCount = users.filter((user) => Boolean(user.online)).length;
-  const memberLabel = users.length === 1 ? "member" : "members";
-  return `${users.length} ${memberLabel}, ${onlineCount} online`;
+  const others = users.filter((u) => u.id !== currentUserId);
+  if (others.length === 1) {
+    return others[0].online ? "Online now" : "Last seen recently";
+  }
+  const onlineCount = others.filter((u) => Boolean(u.online)).length;
+  return onlineCount > 0 ? `${onlineCount} online` : `${others.length} members`;
 }
 
 function buildChannelId(userA: string, userB: string) {
@@ -140,6 +144,34 @@ function MessagesLoadingState({ label }: { label: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function MessagesPageSkeleton() {
+  return (
+    <main className="page-grid go-stream-page">
+      <div className="go-stream-frame h-full overflow-hidden">
+        <div className="go-stream-chat">
+          <aside className="go-stream-chat__sidebar">
+            <div className="go-stream-sidebar__header">
+              <div className="h-7 w-28 animate-pulse rounded-lg bg-white/8" />
+            </div>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-white/8" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-28 animate-pulse rounded bg-white/8" />
+                  <div className="h-3 w-40 animate-pulse rounded bg-white/6" />
+                </div>
+              </div>
+            ))}
+          </aside>
+          <section className="go-stream-chat__thread">
+            <ChannelMessagesEmptyState />
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -650,6 +682,7 @@ function MessagesShell({
                 showBackButton={isMobile && mobilePane === "thread"}
               />
               <MessageList reactionDetailsSort={[{ field: "count", direction: -1 }]} />
+              <TypingIndicator />
               <MessageInput
                 additionalTextareaProps={{ placeholder: "Message…" }}
                 focus
@@ -720,7 +753,7 @@ function StreamMessagesView({
   });
 
   if (bootError) return <MessagesConfigError detail={bootError} />;
-  if (!client) return <MessagesLoadingState label="Connecting to chat…" />;
+  if (!client) return <MessagesPageSkeleton />;
 
   const streamTheme: React.CSSProperties = {
     "--str-chat__primary-color":                "#5FBF2A",
@@ -732,12 +765,15 @@ function StreamMessagesView({
     "--str-chat__border-radius-sm":             "12px",
   } as React.CSSProperties;
 
+  // Don't auto-select the welcome channel when navigating from a profile (?dm=) — the DM effect handles it
+  const effectiveStarterCid = dmUserId ? undefined : starterChannelCid;
+
   return (
     <main className="page-grid go-stream-page">
       <div className="go-stream-frame h-full overflow-hidden">
         <div className="go-stream-inner h-full overflow-hidden" style={streamTheme}>
           <Chat client={client}>
-            <MessagesShell dmUserId={dmUserId} identity={identity} starterChannelCid={starterChannelCid} />
+            <MessagesShell dmUserId={dmUserId} identity={identity} starterChannelCid={effectiveStarterCid} />
           </Chat>
         </div>
       </div>
