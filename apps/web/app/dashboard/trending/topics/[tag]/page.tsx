@@ -1,18 +1,12 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ChatCircleDots,
-  Fire,
-  Ticket,
-  Users,
-} from "@phosphor-icons/react";
-import {
   EventMiniList,
-  MetricStrip,
   OrganizerMiniList,
   ReasonList,
   SnippetList,
+  TopicHeroCard,
   TopicMediaGrid,
+  TopicMetricStrip,
   TrendPageShell,
 } from "../../../../../components/trending/TrendDetailPrimitives";
 import { getTrendingTopicDetail } from "../../../../../lib/trending/server";
@@ -35,66 +29,9 @@ export default async function TrendingTopicDetailPage({ params }: Props) {
       title={`#${topic.tag}`}
       subtitle="This works like a topic search surface: live mentions first, visual posts next, then the events and organizers driving the conversation."
     >
-      <div className="overflow-hidden rounded-[30px] border border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(74,159,99,0.08)_0%,rgba(255,255,255,0)_100%)]">
-        <div className="p-5 md:p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-red-500">
-              <Fire size={10} weight="fill" />
-              Trending topic
-            </span>
-            <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
-              {Math.round(topic.trending_score)} score
-            </span>
-            <span className="rounded-full bg-[var(--bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
-              {topic.count} mentions
-            </span>
-            <span className="rounded-full bg-[var(--bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
-              {topic.event_count} linked events
-            </span>
-          </div>
+      <TopicHeroCard topic={topic} organizerCount={related_organizers.length} />
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            <a href="#mentions" className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)]">
-              Mentions
-            </a>
-            <a href="#media" className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)]">
-              Media
-            </a>
-            <a href="#events" className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)]">
-              Events
-            </a>
-            <a href="#organizers" className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)]">
-              Organizers
-            </a>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            {topic.lead_event_slug && (
-              <Link
-                href={`/events/${topic.lead_event_slug}`}
-                className="rounded-full bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-white"
-              >
-                Open lead event
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/70 px-5 py-4 md:px-6">
-          <p className="text-[12px] leading-relaxed text-[var(--text-tertiary)]">
-            The topic index only accepts cleaned tags and hashtags. Generic filler terms are filtered out so this page surfaces actual scenes, interests, and event conversations instead of random words.
-          </p>
-        </div>
-      </div>
-
-      <MetricStrip
-        items={[
-          { label: "Snippets", value: topic.count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
-          { label: "Events", value: topic.event_count.toLocaleString(), icon: <Ticket size={14} /> },
-          { label: "Organizers", value: related_organizers.length.toLocaleString(), icon: <Users size={14} /> },
-          { label: "Trend score", value: Math.round(topic.trending_score).toLocaleString(), icon: <Fire size={14} /> },
-        ]}
-      />
+      <TopicMetricStrip topic={topic} organizerCount={related_organizers.length} />
 
       <section className="space-y-4">
         <div>

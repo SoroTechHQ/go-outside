@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -16,6 +18,7 @@ import type {
   TrendingEvent,
   TrendingOrganizer,
   TrendingSnippet,
+  TrendingTopic,
 } from "../../lib/trending/types";
 
 function compactNumber(value: number) {
@@ -115,6 +118,84 @@ export function MetricStrip({
         </div>
       ))}
     </div>
+  );
+}
+
+export function TopicHeroCard({
+  topic,
+  organizerCount,
+}: {
+  topic: TrendingTopic;
+  organizerCount: number;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[30px] border border-[var(--border-subtle)] bg-[linear-gradient(180deg,rgba(74,159,99,0.08)_0%,rgba(255,255,255,0)_100%)]">
+      <div className="p-5 md:p-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-red-500">
+            <Fire size={10} weight="fill" />
+            Trending topic
+          </span>
+          <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+            {Math.round(topic.trending_score)} score
+          </span>
+          <span className="rounded-full bg-[var(--bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+            {topic.count} mentions
+          </span>
+          <span className="rounded-full bg-[var(--bg-card)] px-3 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+            {topic.event_count} linked events
+          </span>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {["Mentions", "Media", "Events", "Organizers"].map((label) => (
+            <a
+              key={label}
+              href={`#${label.toLowerCase()}`}
+              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)]"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+
+        {topic.lead_event_slug && (
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href={`/events/${topic.lead_event_slug}`}
+              className="rounded-full bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-white"
+            >
+              Open lead event
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-card)]/70 px-5 py-4 md:px-6">
+        <p className="text-[12px] leading-relaxed text-[var(--text-tertiary)]">
+          The topic index only accepts cleaned tags and hashtags. Generic filler terms are filtered out so this page surfaces actual scenes, interests, and event conversations instead of random words.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function TopicMetricStrip({
+  topic,
+  organizerCount,
+}: {
+  topic: TrendingTopic;
+  organizerCount: number;
+}) {
+  return (
+    <MetricStrip
+      items={[
+        { label: "Snippets", value: topic.count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
+        { label: "Events", value: topic.event_count.toLocaleString(), icon: <Ticket size={14} /> },
+        { label: "Organizers", value: organizerCount.toLocaleString(), icon: <Users size={14} /> },
+        { label: "Trend score", value: Math.round(topic.trending_score).toLocaleString(), icon: <Fire size={14} /> },
+      ]}
+    />
   );
 }
 
@@ -219,7 +300,7 @@ export function OrganizerMiniList({ organizers }: { organizers: TrendingOrganize
       {organizers.map((organizer) => (
         <Link
           key={organizer.id}
-          href={organizer.username ? `/${organizer.username}` : `/dashboard/trending/organizers/${organizer.id}`}
+          href={organizer.username ? `/${organizer.username}` : `/dashboard/user/${organizer.id}`}
           className="flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3 transition hover:border-[var(--border-default)]"
         >
           <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">

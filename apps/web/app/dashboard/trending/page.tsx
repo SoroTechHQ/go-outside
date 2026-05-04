@@ -352,21 +352,11 @@ export default function TrendingPage() {
                   <div
                     key={org.id}
                     className="flex w-full cursor-pointer gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 text-left transition hover:border-[var(--border-default)]"
-                    onClick={() => {
-                      if (org.username) {
-                        router.push(`/${org.username}`);
-                      } else {
-                        router.push(`/dashboard/trending/organizers/${org.id}`);
-                      }
-                    }}
+                    onClick={() => router.push(org.username ? `/${org.username}` : `/dashboard/user/${org.id}`)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        if (org.username) {
-                          router.push(`/${org.username}`);
-                        } else {
-                          router.push(`/dashboard/trending/organizers/${org.id}`);
-                        }
+                        router.push(org.username ? `/${org.username}` : `/dashboard/user/${org.id}`);
                       }
                     }}
                     role="link"
@@ -374,7 +364,7 @@ export default function TrendingPage() {
                   >
                     <div className="relative shrink-0">
                       <Link
-                        href={org.username ? `/${org.username}` : `/dashboard/trending/organizers/${org.id}`}
+                        href={org.username ? `/${org.username}` : `/dashboard/user/${org.id}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="h-16 w-16 rounded-xl overflow-hidden bg-[var(--bg-muted)]">
@@ -393,7 +383,7 @@ export default function TrendingPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link
-                        href={org.username ? `/${org.username}` : `/dashboard/trending/organizers/${org.id}`}
+                        href={org.username ? `/${org.username}` : `/dashboard/user/${org.id}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{org.name}</p>
@@ -407,22 +397,7 @@ export default function TrendingPage() {
                         <span className="text-[12px] text-[var(--text-secondary)]">
                           {compactNumber(org.follower_count)} followers · {org.event_count} events
                         </span>
-                        <div className="flex items-center gap-3 text-[12px] font-semibold">
-                          <Link
-                            href={org.username ? `/${org.username}` : `/dashboard/trending/organizers/${org.id}`}
-                            className="text-[var(--text-secondary)]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            View profile
-                          </Link>
-                          <Link
-                            href={`/dashboard/trending/organizers/${org.username ?? org.id}`}
-                            className="flex items-center gap-1 text-[var(--brand)]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <TrendUp size={12} weight="bold" /> Why trending
-                          </Link>
-                        </div>
+                        <ArrowRight size={14} className="shrink-0 text-[var(--text-tertiary)]" />
                       </div>
                     </div>
                   </div>
