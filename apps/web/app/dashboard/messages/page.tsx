@@ -291,6 +291,9 @@ function ConversationPreview(
 ) {
   const { active, channel, latestMessagePreview, onOpenChannel, onSelect, unread } = props;
   const { client } = useChatContext("ConversationPreview");
+  const [hovered, setHovered] = useState(false);
+  const [actioning, setActioning] = useState<"accept" | "decline" | null>(null);
+
   const participant = getPrimaryParticipant(channel, client.userID);
   const convType = getChannelConversationType(channel);
   const previewText =
@@ -298,13 +301,46 @@ function ConversationPreview(
       ? latestMessagePreview
       : getLastMessageText(channel);
 
+  const channelData = channel.data as Record<string, unknown> | undefined;
+  const isIncomingRequest =
+    channelData?.go_channel_state === "pending" && channelData?.go_initiated_by !== client.userID;
+  const isUnread = (unread ?? 0) > 0;
+
+  const handleAccept = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActioning("accept");
+    try {
+      await fetch(`/api/chat/requests/${channel.id}/accept`, { method: "POST" });
+    } finally {
+      setActioning(null);
+    }
+  };
+
+  const handleDecline = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActioning("decline");
+    try {
+      await fetch(`/api/chat/requests/${channel.id}/decline`, { method: "POST" });
+    } finally {
+      setActioning(null);
+    }
+  };
+
   return (
     <button
-      className={`go-stream-conversation ${active ? "go-stream-conversation--active" : ""}`}
+      className={[
+        "go-stream-conversation",
+        active ? "go-stream-conversation--active" : "",
+        isUnread ? "go-stream-conversation--unread" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       onClick={(event) => {
         onSelect?.(event);
         onOpenChannel(channel);
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       type="button"
     >
       <div className="go-stream-conversation__avatar">
@@ -324,10 +360,31 @@ function ConversationPreview(
           </div>
           <span className="go-stream-conversation__time">{formatConversationTime(channel)}</span>
         </div>
-        <p className="go-stream-conversation__preview">{previewText}</p>
+        {isIncomingRequest && hovered ? (
+          <div className="go-stream-conversation__req-actions">
+            <button
+              className="go-stream-conversation__req-btn go-stream-conversation__req-btn--accept"
+              disabled={actioning !== null}
+              onClick={(e) => void handleAccept(e)}
+              type="button"
+            >
+              {actioning === "accept" ? "Accepting…" : "Accept"}
+            </button>
+            <button
+              className="go-stream-conversation__req-btn go-stream-conversation__req-btn--decline"
+              disabled={actioning !== null}
+              onClick={(e) => void handleDecline(e)}
+              type="button"
+            >
+              {actioning === "decline" ? "Declining…" : "Decline"}
+            </button>
+          </div>
+        ) : (
+          <p className="go-stream-conversation__preview">{previewText}</p>
+        )}
       </div>
 
-      {unread ? <span className="go-stream-conversation__unread">{unread > 99 ? "99+" : unread}</span> : null}
+      {isUnread && !isIncomingRequest ? <span className="go-stream-conversation__unread-dot" /> : null}
     </button>
   );
 }
@@ -515,7 +572,7 @@ function ComposeConversation({
   );
 }
 
-type InboxTab = "primary" | "requests";
+type InboxTab = "primary" | "general" | "requests";
 
 function MessagesShell({
   dmUserId,
@@ -532,6 +589,7 @@ function MessagesShell({
   const [inbox, setInbox] = useState<InboxTab>("primary");
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const [requestCount, setRequestCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedChannelCid, setSelectedChannelCid] = useState<string | undefined>(starterChannelCid);
   const [activeConvType, setActiveConvType] = useState<GoConversationType>("friend_dm");
   const dmOpenedRef = useRef(false);
@@ -709,17 +767,14 @@ function MessagesShell({
       <aside className="go-stream-chat__sidebar">
         <div className="go-stream-sidebar__header">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="go-stream-sidebar__eyebrow">Inbox</p>
-              <h1 className="go-stream-sidebar__title">Messages</h1>
-            </div>
+            <h1 className="go-stream-sidebar__title">Messages</h1>
             <button
               aria-label="Compose message"
               className="go-stream-sidebar__compose"
               onClick={handleOpenCompose}
               type="button"
             >
-              <PencilSimple size={17} weight="bold" />
+              <PencilSimple size={20} weight="bold" />
             </button>
           </div>
 
@@ -727,16 +782,25 @@ function MessagesShell({
             <button
               aria-selected={inbox === "primary"}
               className={`go-stream-inbox-tab${inbox === "primary" ? " go-stream-inbox-tab--active" : ""}`}
-              onClick={() => setInbox("primary")}
+              onClick={() => { setInbox("primary"); setSearchQuery(""); }}
               role="tab"
               type="button"
             >
               Primary
             </button>
             <button
+              aria-selected={inbox === "general"}
+              className={`go-stream-inbox-tab${inbox === "general" ? " go-stream-inbox-tab--active" : ""}`}
+              onClick={() => { setInbox("general"); setSearchQuery(""); }}
+              role="tab"
+              type="button"
+            >
+              General
+            </button>
+            <button
               aria-selected={inbox === "requests"}
               className={`go-stream-inbox-tab${inbox === "requests" ? " go-stream-inbox-tab--active" : ""}`}
-              onClick={() => setInbox("requests")}
+              onClick={() => { setInbox("requests"); setSearchQuery(""); }}
               role="tab"
               type="button"
             >
@@ -748,9 +812,25 @@ function MessagesShell({
           </div>
         </div>
 
-        {inbox === "primary" ? (
+        <div className="go-stream-sidebar__search">
+          <MagnifyingGlass size={16} weight="bold" />
+          <input
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search"
+            type="text"
+            value={searchQuery}
+          />
+        </div>
+
+        {inbox === "requests" && (
+          <p className="go-stream-sidebar__requests-hint">
+            These are from people you don&rsquo;t follow.
+          </p>
+        )}
+
+        {inbox === "primary" || inbox === "general" ? (
           <ChannelList
-            key="primary"
+            key="active"
             EmptyStateIndicator={ChannelListEmptyState}
             LoadingIndicator={LoadingIndicator}
             Preview={(previewProps) => (
@@ -765,6 +845,7 @@ function MessagesShell({
                 { go_channel_state: { $exists: false } },
                 { go_channel_state: "pending", go_initiated_by: identity.id },
               ],
+              ...(searchQuery.trim() ? { name: { $autocomplete: searchQuery.trim() } } : {}),
             } as unknown as Parameters<typeof ChannelList>[0]["filters"]}
             options={{ limit: 20, presence: true, state: true, watch: true }}
             setActiveChannelOnMount={!isMobile}
@@ -780,7 +861,7 @@ function MessagesShell({
                 </div>
                 <div>
                   <p className="go-stream-empty__title">No message requests</p>
-                  <p className="go-stream-empty__copy">When someone new messages you, it'll appear here.</p>
+                  <p className="go-stream-empty__copy">When someone new messages you, it&apos;ll appear here.</p>
                 </div>
               </div>
             )}
@@ -793,6 +874,7 @@ function MessagesShell({
               members: { $in: [identity.id] },
               type: "messaging",
               go_channel_state: "pending",
+              ...(searchQuery.trim() ? { name: { $autocomplete: searchQuery.trim() } } : {}),
             } as unknown as Parameters<typeof ChannelList>[0]["filters"]}
             options={{ limit: 20, presence: true, state: true, watch: true }}
             setActiveChannelOnMount={false}

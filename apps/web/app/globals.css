@@ -353,7 +353,7 @@ a {
 
 .go-stream-chat {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 360px minmax(0, 1fr);
   height: 100%;
   position: relative;
 }
@@ -390,91 +390,122 @@ a {
 }
 
 .go-stream-sidebar__header {
-  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
-  padding: 1.75rem 1.25rem 1.25rem;
+  padding: 16px 16px 0;
 }
 
 .go-stream-sidebar__eyebrow {
-  color: var(--brand);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  margin: 0;
-  text-transform: uppercase;
+  display: none;
 }
 
 .go-stream-sidebar__title {
   color: var(--text-primary);
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  margin: 0.25rem 0 0;
-  line-height: 1.1;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .go-stream-sidebar__compose {
   align-items: center;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
   cursor: pointer;
   display: flex;
-  height: 36px;
+  height: 32px;
   justify-content: center;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  width: 36px;
+  transition: color 0.15s, background 0.15s;
+  width: 32px;
 }
 
 .go-stream-sidebar__compose:hover {
-  background: var(--brand-dim);
-  border-color: var(--brand);
-  color: var(--brand);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
 }
 
 /* ── Inbox tabs ── */
 .go-stream-inbox-tabs {
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
-  gap: 4px;
-  margin-top: 1rem;
+  margin-top: 12px;
 }
 
 .go-stream-inbox-tab {
   align-items: center;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-bottom: 2px solid transparent;
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
-  font-size: 0.82rem;
-  font-weight: 600;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
   gap: 5px;
-  padding: 5px 10px;
-  transition: background 0.15s, color 0.15s;
+  height: 44px;
+  justify-content: center;
+  margin-bottom: -1px;
+  padding: 0 8px;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .go-stream-inbox-tab:hover {
-  background: var(--bg-surface);
   color: var(--text-primary);
 }
 
 .go-stream-inbox-tab--active {
-  background: var(--brand-dim);
-  color: var(--brand);
+  border-bottom-color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 .go-stream-inbox-tab__badge {
   background: var(--brand);
   border-radius: 9999px;
   color: #fff;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   line-height: 1;
   min-width: 16px;
   padding: 2px 5px;
   text-align: center;
+}
+
+/* ── Sidebar search ── */
+.go-stream-sidebar__search {
+  align-items: center;
+  background: var(--bg-surface);
+  border: none;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 8px;
+  height: 36px;
+  margin: 8px 16px;
+  padding: 0 12px;
+}
+
+.go-stream-sidebar__search input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  flex: 1;
+  font-size: 14px;
+  outline: none;
+}
+
+.go-stream-sidebar__search input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* ── Requests helper text ── */
+.go-stream-sidebar__requests-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 8px 16px;
 }
 
 /* Channel list */
@@ -513,15 +544,16 @@ a {
   align-items: center;
   background: transparent;
   border: none;
-  border-radius: 18px;
+  border-radius: 0;
   display: grid;
-  gap: 0.85rem;
+  gap: 12px;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  margin: 0.15rem 0.6rem;
-  padding: 0.85rem 0.9rem;
+  height: 72px;
+  margin: 0;
+  padding: 8px 16px;
   text-align: left;
-  transition: background 0.16s ease, transform 0.16s ease;
-  width: calc(100% - 1.2rem);
+  transition: background 0.16s ease;
+  width: 100%;
 }
 
 .go-stream-conversation:hover,
@@ -535,12 +567,12 @@ a {
   border-radius: 999px;
   color: var(--text-primary);
   display: flex;
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  height: 48px;
+  height: 44px;
   justify-content: center;
   position: relative;
-  width: 48px;
+  width: 44px;
 }
 
 .go-stream-conversation__avatar img,
@@ -566,14 +598,14 @@ a {
 
 .go-stream-conversation__online,
 .go-stream-user-avatar__status {
-  background: var(--brand);
-  border: 2px solid #fff;
+  background: #00BA88;
+  border: 2px solid var(--bg-card);
   border-radius: 999px;
-  bottom: 2px;
-  height: 12px;
+  bottom: 1px;
+  height: 10px;
   position: absolute;
-  right: 1px;
-  width: 12px;
+  right: 0;
+  width: 10px;
 }
 
 .go-stream-conversation__body {
@@ -589,41 +621,86 @@ a {
 
 .go-stream-conversation__title {
   color: var(--text-primary);
-  font-size: 0.97rem;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 1.2;
   margin: 0;
-}
-
-.go-stream-conversation__time {
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-
-.go-stream-conversation__preview {
-  color: var(--text-secondary);
-  font-size: 0.92rem;
-  line-height: 1.35;
-  margin: 0.18rem 0 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.go-stream-conversation__unread {
-  align-items: center;
-  background: var(--brand);
-  border-radius: 999px;
-  color: #fff;
-  display: inline-flex;
-  font-size: 0.72rem;
+.go-stream-conversation--unread .go-stream-conversation__title {
   font-weight: 700;
-  height: 22px;
-  justify-content: center;
-  min-width: 22px;
-  padding: 0 0.42rem;
+}
+
+.go-stream-conversation__time {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.go-stream-conversation__preview {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.35;
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.go-stream-conversation--unread .go-stream-conversation__preview {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Blue unread dot */
+.go-stream-conversation__unread-dot {
+  background: #0095F6;
+  border-radius: 999px;
+  flex-shrink: 0;
+  height: 8px;
+  width: 8px;
+}
+
+/* Accept / Decline inline links on request rows */
+.go-stream-conversation__req-actions {
+  display: flex;
+  gap: 12px;
+  margin: 2px 0 0;
+}
+
+.go-stream-conversation__req-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+  transition: opacity 0.15s;
+}
+
+.go-stream-conversation__req-btn:disabled {
+  opacity: 0.5;
+}
+
+.go-stream-conversation__req-btn--accept {
+  color: var(--brand);
+}
+
+.go-stream-conversation__req-btn--decline {
+  color: var(--text-secondary);
+}
+
+.go-stream-conversation__req-btn--accept:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.go-stream-conversation__req-btn--decline:hover:not(:disabled) {
+  color: var(--text-primary);
 }
 
 /* ── Thread panel ── */
@@ -1021,8 +1098,17 @@ a {
   border-right-color: rgba(255, 255, 255, 0.08);
 }
 
-:root[data-theme="dark"] .go-stream-sidebar__header {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+:root[data-theme="dark"] .go-stream-sidebar__search {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.48);
+}
+
+:root[data-theme="dark"] .go-stream-sidebar__search input {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme="dark"] .go-stream-sidebar__search input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 :root[data-theme="dark"] .go-stream-sidebar__compose {
@@ -1049,8 +1135,8 @@ a {
 
 :root[data-theme="dark"] .go-stream-conversation__online,
 :root[data-theme="dark"] .go-stream-user-avatar__status {
-  border-color: #111513;
-  box-shadow: 0 0 0 2px rgba(8, 127, 24, 0.18);
+  border-color: #121714;
+  box-shadow: 0 0 0 2px rgba(0, 186, 136, 0.18);
 }
 
 :root[data-theme="dark"] .go-stream-conversation__time {
@@ -1677,11 +1763,15 @@ a {
   }
 
   .go-stream-sidebar__header {
-    padding: 1rem 1rem 0.875rem;
+    padding: 14px 14px 0;
   }
 
   .go-stream-sidebar__title {
-    font-size: 1.35rem;
+    font-size: 16px;
+  }
+
+  .go-stream-sidebar__search {
+    margin: 8px 14px;
   }
 
   .go-stream-chat__thread {
