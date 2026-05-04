@@ -1,11 +1,35 @@
 "use client";
 
 import { useRef, useState, useMemo } from "react";
-import { ImageSquare, PaperPlaneTilt, SpinnerGap, X } from "@phosphor-icons/react";
-import { useChannelStateContext } from "stream-chat-react";
+import { ImageSquare, LockSimple, PaperPlaneTilt, SpinnerGap, X } from "@phosphor-icons/react";
+import { useChannelStateContext, useChatContext } from "stream-chat-react";
 import { compressChatImage } from "../../lib/chat/compress-image";
 
 type UploadState = "idle" | "compressing" | "uploading";
+
+function useRequestState() {
+  const { channel } = useChannelStateContext("GoMessageInput");
+  const { client } = useChatContext("GoMessageInput");
+
+  const channelData = channel.data as Record<string, unknown> | undefined;
+  const channelState = channelData?.go_channel_state as string | undefined;
+  const initiatedBy = channelData?.go_initiated_by as string | undefined;
+
+  const isPending = channelState === "pending";
+  const amSender = isPending && initiatedBy === client.userID;
+  const amRecipient = isPending && !!initiatedBy && initiatedBy !== client.userID;
+
+  const senderAlreadySent =
+    amSender && channel.state.messages.some((m) => m.user?.id === client.userID);
+
+  return {
+    isPending,
+    amSender,
+    amRecipient,
+    isLockedAsSender: amSender && senderAlreadySent,
+    isLockedAsRecipient: amRecipient,
+  };
+}
 
 export function GoMessageInput() {
   const { channel } = useChannelStateContext("GoMessageInput");
@@ -20,6 +44,10 @@ export function GoMessageInput() {
     () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches,
     [],
   );
+
+  const { isPending, isLockedAsSender, isLockedAsRecipient } = useRequestState();
+  const isLocked = isLockedAsSender || isLockedAsRecipient;
+  const noMedia = isPending;
 
   const busy = uploadState !== "idle";
   const canSend = (text.trim().length > 0 || pending !== null) && !busy;
@@ -54,10 +82,7 @@ export function GoMessageInput() {
 
     const messageText = text.trim();
     setText("");
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     try {
       if (pending) {
@@ -65,7 +90,6 @@ export function GoMessageInput() {
         const { file: uploadedUrl } = await channel.sendImage(pending.file);
         URL.revokeObjectURL(pending.url);
         setPending(null);
-
         await channel.sendMessage({
           text: messageText || undefined,
           attachments: [{ type: "image", image_url: uploadedUrl, fallback: "Image" }],
@@ -90,10 +114,24 @@ export function GoMessageInput() {
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setText(e.target.value);
-    // Auto-grow
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="go-message-input go-message-input--locked">
+        <div className="go-message-input__lock">
+          <LockSimple size={15} weight="bold" />
+          <span>
+            {isLockedAsSender
+              ? "Waiting for them to accept your request…"
+              : "Accept this request above to start replying"}
+          </span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -132,8 +170,9 @@ export function GoMessageInput() {
         <button
           aria-label="Attach image"
           className="go-message-input__attach"
-          disabled={busy}
+          disabled={busy || noMedia}
           onClick={() => fileRef.current?.click()}
+          title={noMedia ? "No attachments until request is accepted" : undefined}
           type="button"
         >
           {uploadState === "compressing" ? (
