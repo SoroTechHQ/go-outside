@@ -23,6 +23,10 @@ export async function PlatformOrganizersPage({ searchParams }: Props) {
     ? searchParams.sort
     : 'created_at'
   const order = searchParams.order === 'asc'
+  const sort2 = SORT_OPTIONS.some((o) => o.value === searchParams.sort2)
+    ? searchParams.sort2
+    : ''
+  const order2 = searchParams.order2 === 'asc'
   const q = searchParams.q?.trim() ?? ''
   const regex = searchParams.regex === '1'
   const offset = (page - 1) * limit
@@ -62,9 +66,9 @@ export async function PlatformOrganizersPage({ searchParams }: Props) {
     }
   }
 
-  const { data: organizers, count: filteredCount } = await query
-    .order(sort, { ascending: order })
-    .range(offset, offset + limit - 1)
+  let orgsQuery = query.order(sort, { ascending: order })
+  if (sort2) orgsQuery = orgsQuery.order(sort2, { ascending: order2 })
+  const { data: organizers, count: filteredCount } = await orgsQuery.range(offset, offset + limit - 1)
 
   const total = filteredCount ?? 0
 
@@ -73,6 +77,7 @@ export async function PlatformOrganizersPage({ searchParams }: Props) {
     limit: String(limit),
     sort,
     order: order ? 'asc' : 'desc',
+    ...(sort2 && { sort2, order2: order2 ? 'asc' : 'desc' }),
     ...(regex && { regex: '1' }),
   }
 
@@ -128,7 +133,7 @@ export async function PlatformOrganizersPage({ searchParams }: Props) {
         <SectionBlock title="Verified organizers directory" subtitle="All organizer profiles on the platform">
           <AdminTableControls
             sortOptions={SORT_OPTIONS}
-            currentParams={{ q, limit: String(limit), sort, order: order ? 'asc' : 'desc', regex }}
+            currentParams={{ q, limit: String(limit), sort, order: order ? 'asc' : 'desc', sort2, order2: order2 ? 'asc' : 'desc', regex }}
             searchPlaceholder="Search organizer name…"
           />
 

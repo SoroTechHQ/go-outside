@@ -56,6 +56,10 @@ export async function PlatformEventsPage({ searchParams }: Props) {
     ? searchParams.sort
     : "created_at"
   const order = searchParams.order === "asc"
+  const sort2 = SORT_OPTIONS.some((o) => o.value === searchParams.sort2)
+    ? searchParams.sort2
+    : ""
+  const order2 = searchParams.order2 === "asc"
   const q = searchParams.q?.trim() ?? ""
   const regex = searchParams.regex === "1"
   const offset = (page - 1) * limit
@@ -86,9 +90,9 @@ export async function PlatformEventsPage({ searchParams }: Props) {
     }
   }
 
-  const { data: rawEvents, count: filteredCount } = await query
-    .order(sort, { ascending: order })
-    .range(offset, offset + limit - 1)
+  let eventsQuery = query.order(sort, { ascending: order })
+  if (sort2) eventsQuery = eventsQuery.order(sort2, { ascending: order2 })
+  const { data: rawEvents, count: filteredCount } = await eventsQuery.range(offset, offset + limit - 1)
 
   const eventsData = (rawEvents ?? []) as unknown as EventRow[]
   const total = filteredCount ?? 0
@@ -98,6 +102,7 @@ export async function PlatformEventsPage({ searchParams }: Props) {
     limit: String(limit),
     sort,
     order: order ? "asc" : "desc",
+    ...(sort2 && { sort2, order2: order2 ? "asc" : "desc" }),
     ...(regex && { regex: "1" }),
   }
 
@@ -113,7 +118,7 @@ export async function PlatformEventsPage({ searchParams }: Props) {
         <SectionBlock subtitle="All events ordered by creation date — publish or feature directly from this table." title="Event index">
           <AdminTableControls
             sortOptions={SORT_OPTIONS}
-            currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", regex }}
+            currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", sort2, order2: order2 ? "asc" : "desc", regex }}
             searchPlaceholder="Search title or slug…"
           />
 
