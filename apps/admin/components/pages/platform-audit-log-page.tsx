@@ -2,6 +2,14 @@ import { DashboardShell } from '../dashboard-shell'
 import { SectionBlock, MiniPill } from '../dashboard-primitives'
 import type { AccentTone } from '../dashboard-primitives'
 import { supabaseAdmin } from '../../lib/supabase'
+import { AdminTableControls } from '../AdminTableControls'
+import { AdminPagination } from '../AdminPagination'
+
+const SORT_OPTIONS = [
+  { label: 'Date (newest)', value: 'created_at' },
+  { label: 'Action type', value: 'action_type' },
+  { label: 'Entity type', value: 'entity_type' },
+]
 
 function actionTone(action: string): AccentTone {
   if (action.startsWith('delete') || action.startsWith('ban') || action.startsWith('remove')) return 'coral'
@@ -32,15 +40,50 @@ function detailsPreview(details: unknown) {
   return str.length > 80 ? str.slice(0, 80) + '…' : str
 }
 
-export async function PlatformAuditLogPage() {
-  const { data: logs } = await supabaseAdmin
+type Props = { searchParams: Record<string, string> }
+
+export async function PlatformAuditLogPage({ searchParams }: Props) {
+  const page = Math.max(1, parseInt(searchParams.page ?? '1', 10))
+  const limit = [25, 50, 100].includes(parseInt(searchParams.limit ?? '', 10))
+    ? parseInt(searchParams.limit, 10)
+    : 50
+  const sort = SORT_OPTIONS.some((o) => o.value === searchParams.sort)
+    ? searchParams.sort
+    : 'created_at'
+  const order = searchParams.order === 'asc'
+  const q = searchParams.q?.trim() ?? ''
+  const regex = searchParams.regex === '1'
+  const offset = (page - 1) * limit
+
+  let query = supabaseAdmin
     .from('admin_activity_log')
-    .select(`
-      id, action_type, entity_type, entity_id, details, ip_address, created_at,
-      admin:users!admin_activity_log_admin_id_fkey(first_name, last_name, email)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(100)
+    .select(
+      `id, action_type, entity_type, entity_id, details, ip_address, created_at,
+       admin:users!admin_activity_log_admin_id_fkey(first_name, last_name, email)`,
+      { count: 'exact' }
+    )
+
+  if (q) {
+    if (regex) {
+      query = query.filter('action_type', 'imatch', q)
+    } else {
+      query = query.or(`action_type.ilike.%${q}%,entity_type.ilike.%${q}%,ip_address.ilike.%${q}%`)
+    }
+  }
+
+  const { data: logs, count: filteredCount } = await query
+    .order(sort, { ascending: order })
+    .range(offset, offset + limit - 1)
+
+  const total = filteredCount ?? 0
+
+  const currentParams: Record<string, string> = {
+    ...(q && { q }),
+    limit: String(limit),
+    sort,
+    order: order ? 'asc' : 'desc',
+    ...(regex && { regex: '1' }),
+  }
 
   return (
     <DashboardShell
@@ -48,9 +91,17 @@ export async function PlatformAuditLogPage() {
       title="Audit Log"
       subtitle="Immutable record of all admin actions."
     >
-      <SectionBlock title="Recent Admin Activity" subtitle="Last 100 actions, newest first. Read-only.">
+      <SectionBlock title="Admin Activity" subtitle="Paginated log of all admin actions — read-only.">
+        <AdminTableControls
+          sortOptions={SORT_OPTIONS}
+          currentParams={{ q, limit: String(limit), sort, order: order ? 'asc' : 'desc', regex }}
+          searchPlaceholder="Search action, entity, IP…"
+        />
+
         {!logs?.length ? (
-          <p className="text-sm text-[var(--text-secondary)]">No admin activity recorded yet.</p>
+          <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
+            {q ? `No log entries matching "${q}".` : 'No admin activity recorded yet.'}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -72,9 +123,7 @@ export async function PlatformAuditLogPage() {
                       <td className="py-3 pr-4 whitespace-nowrap">
                         {admin ? (
                           <div>
-                            <p className="font-medium text-[var(--text-primary)]">
-                              {admin.first_name} {admin.last_name}
-                            </p>
+                            <p className="font-medium text-[var(--text-primary)]">{admin.first_name} {admin.last_name}</p>
                             <p className="text-xs text-[var(--text-tertiary)]">{admin.email}</p>
                           </div>
                         ) : (
@@ -82,24 +131,16 @@ export async function PlatformAuditLogPage() {
                         )}
                       </td>
                       <td className="py-3 pr-4">
-                        <MiniPill tone={actionTone(log.action_type ?? '')}>
-                          {log.action_type ?? '—'}
-                        </MiniPill>
+                        <MiniPill tone={actionTone(log.action_type ?? '')}>{log.action_type ?? '—'}</MiniPill>
                       </td>
                       <td className="py-3 pr-4">
                         <span className="font-medium text-[var(--text-primary)]">{log.entity_type ?? '—'}</span>
-                        <span className="ml-2 text-xs font-mono text-[var(--text-tertiary)]">
-                          {truncateId(log.entity_id)}
-                        </span>
+                        <span className="ml-2 text-xs font-mono text-[var(--text-tertiary)]">{truncateId(log.entity_id)}</span>
                       </td>
                       <td className="py-3 pr-4 max-w-[220px]">
-                        <span className="truncate text-xs font-mono text-[var(--text-secondary)]">
-                          {detailsPreview(log.details)}
-                        </span>
+                        <span className="truncate text-xs font-mono text-[var(--text-secondary)]">{detailsPreview(log.details)}</span>
                       </td>
-                      <td className="py-3 pr-4 text-xs font-mono text-[var(--text-secondary)]">
-                        {log.ip_address ?? '—'}
-                      </td>
+                      <td className="py-3 pr-4 text-xs font-mono text-[var(--text-secondary)]">{log.ip_address ?? '—'}</td>
                       <td className="py-3 whitespace-nowrap text-xs text-[var(--text-secondary)]">
                         {log.created_at ? formatDate(log.created_at) : '—'}
                       </td>
@@ -110,6 +151,8 @@ export async function PlatformAuditLogPage() {
             </table>
           </div>
         )}
+
+        <AdminPagination total={total} page={page} limit={limit} currentParams={currentParams} />
       </SectionBlock>
     </DashboardShell>
   )
