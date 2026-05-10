@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../../lib/supabase";
 import { DashboardShell } from "../dashboard-shell";
-import { MetricTile, MiniPill, PageHero, SectionBlock } from "../dashboard-primitives";
+import { MetricTile, MiniPill, PageGuide,  SectionBlock } from "../dashboard-primitives";
 import { TicketCsvExport } from "../tickets/TicketCsvExport";
 import { RefundButton } from "../tickets/RefundButton";
 
@@ -49,10 +49,13 @@ export async function PlatformTicketsPage() {
   return (
     <DashboardShell mode="admin" title="Tickets" subtitle="All issued tickets, check-ins and refunds.">
       <div className="space-y-6">
-        <PageHero
-          eyebrow="Platform Ops"
-          title="Tickets"
-          description="All issued tickets, check-ins and refunds."
+        <PageGuide
+          title="Manage tickets across all events"
+          tips={[
+            "Each row is a ticket purchase — the status shows whether it's active, checked-in, or refunded.",
+            "Click Refund on any active ticket to process a refund for an attendee.",
+            "Use the CSV Export button to download the full list for reconciliation or reporting.",
+          ]}
         />
 
         {/* KPI Row */}

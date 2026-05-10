@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../../lib/supabase";
 import { DashboardShell } from "../dashboard-shell";
-import { MetricTile, MiniPill, PageHero, SectionBlock } from "../dashboard-primitives";
+import { MetricTile, MiniPill, PageGuide,  SectionBlock } from "../dashboard-primitives";
 import { DismissQueueItemButton, CloseReportButton } from "../moderation/ModerationActions";
 
 function daysAgo(dateStr: string) {
@@ -80,10 +80,14 @@ export async function PlatformModerationPage() {
   return (
     <DashboardShell mode="admin" title="Moderation" subtitle="Reports queue and content review.">
       <div className="space-y-6">
-        <PageHero
-          eyebrow="Trust & Safety"
-          title="Moderation"
-          description="Reports queue and content review."
+        <PageGuide
+          title="Review flagged content and user reports"
+          tips={[
+            "High-priority items (shown in red) involve repeated or severe violations — review these first.",
+            "Dismiss a queue item if the content turns out to be fine after review.",
+            "Close a report once you've taken action (removed content, warned or suspended the user).",
+            "You can suspend a user directly from any report card — this logs the action automatically.",
+          ]}
         />
 
         {/* KPI Row */}
