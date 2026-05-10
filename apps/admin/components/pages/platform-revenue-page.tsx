@@ -38,6 +38,10 @@ export async function PlatformRevenuePage({ searchParams }: Props) {
     ? searchParams.sort
     : "created_at"
   const order = searchParams.order === "asc"
+  const sort2 = TX_SORT_OPTIONS.some((o) => o.value === searchParams.sort2)
+    ? searchParams.sort2
+    : ""
+  const order2 = searchParams.order2 === "asc"
   const q = searchParams.q?.trim() ?? ""
   const regex = searchParams.regex === "1"
   const offset = (page - 1) * limit
@@ -121,9 +125,9 @@ export async function PlatformRevenuePage({ searchParams }: Props) {
     }
   }
 
-  const { data: transactions, count: filteredCount } = await txQuery
-    .order(sort, { ascending: order })
-    .range(offset, offset + limit - 1)
+  let sortedTxQuery = txQuery.order(sort, { ascending: order })
+  if (sort2) sortedTxQuery = sortedTxQuery.order(sort2, { ascending: order2 })
+  const { data: transactions, count: filteredCount } = await sortedTxQuery.range(offset, offset + limit - 1)
 
   const txTotal = filteredCount ?? 0
 
@@ -132,6 +136,7 @@ export async function PlatformRevenuePage({ searchParams }: Props) {
     limit: String(limit),
     sort,
     order: order ? "asc" : "desc",
+    ...(sort2 && { sort2, order2: order2 ? "asc" : "desc" }),
     ...(regex && { regex: "1" }),
   }
 
@@ -197,7 +202,7 @@ export async function PlatformRevenuePage({ searchParams }: Props) {
         <SectionBlock title="Transactions" subtitle="Paginated — search by reference, status, or channel">
           <AdminTableControls
             sortOptions={TX_SORT_OPTIONS}
-            currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", regex }}
+            currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", sort2, order2: order2 ? "asc" : "desc", regex }}
             searchPlaceholder="Search reference, status, channel…"
           />
 
