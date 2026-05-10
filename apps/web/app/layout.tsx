@@ -7,6 +7,7 @@ import NextTopLoader from "nextjs-toploader";
 import "stream-chat-react/dist/css/v2/index.css";
 import { ConditionalChrome } from "../components/layout/ConditionalChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
+import { TrackingProvider } from "../components/tracking/TrackingProvider";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -44,9 +45,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ClerkProvider>
           <Providers>
             <ThemeScript />
-            <AppShellProvider>
-              <ConditionalChrome>{children}</ConditionalChrome>
-            </AppShellProvider>
+            <TrackingProvider>
+              <AppShellProvider>
+                <ConditionalChrome>{children}</ConditionalChrome>
+              </AppShellProvider>
+            </TrackingProvider>
           </Providers>
         </ClerkProvider>
       </body>

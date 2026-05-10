@@ -5,7 +5,7 @@ import type { AttendeeTicket } from "@gooutside/demo-data";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { getTicketById } from "../../../../lib/db/tickets";
 import { getEventBySlug } from "../../../../lib/db/events";
-import { TicketQr } from "../../../../components/ticket-qr";
+import { LiveTicketQR, TicketQrStatic } from "../../../../components/ticket-qr";
 import { AtroposTicket } from "../../../../components/wallet/AtroposTicket";
 
 // ─── Tier styles ──────────────────────────────────────────────────────────────
@@ -203,14 +203,16 @@ export default async function WalletTicketPage({
 
             {/* ── QR code — pops forward most ── */}
             <div className="relative mt-5 flex justify-center" data-atropos-offset="6">
-              <div className={isPast ? "opacity-40 grayscale" : ""}>
-                <TicketQr reference={ticket.reference} />
-              </div>
-              {isPast && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <WarningCircle size={36} className="text-orange-400" weight="fill" />
-                  <span className="text-xs font-semibold text-orange-300">No longer valid</span>
-                </div>
+              {isPast ? (
+                <>
+                  <TicketQrStatic reference={ticket.reference} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                    <WarningCircle size={36} className="text-orange-400" weight="fill" />
+                    <span className="text-xs font-semibold text-orange-300">No longer valid</span>
+                  </div>
+                </>
+              ) : (
+                <LiveTicketQR ticketId={ticket.id} />
               )}
             </div>
 

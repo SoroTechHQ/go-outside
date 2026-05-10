@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTracking } from "../tracking/TrackingProvider";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -170,29 +171,48 @@ function CardHoverActions({ event }: { event: FeedEventItem }) {
   );
 }
 
-// ── Hover prefetch for event detail ──────────────────────────
+// ── Event hover — prefetch + algorithm signals + admin tracking ──
 
-function useHoverPrefetch(slug: string) {
+function useEventHover(event: { id: string; slug: string }) {
   const qc = useQueryClient();
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { trackHoverStart } = useTracking();
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const trackingCleanup = useRef<(() => void) | null>(null);
 
-  const onMouseEnter = () => {
-    timerRef.current = setTimeout(() => {
+  const onMouseEnter = useCallback(() => {
+    // Prefetch event detail at 800ms
+    prefetchTimer.current = setTimeout(() => {
       void qc.prefetchQuery({
-        queryKey:  ["event", slug],
-        queryFn:   async () => {
-          const res = await fetch(`/api/events/${slug}`);
+        queryKey: ["event", event.slug],
+        queryFn: async () => {
+          const res = await fetch(`/api/events/${event.slug}`);
           if (!res.ok) return null;
           return res.json();
         },
         staleTime: 5 * 60_000,
       });
     }, 800);
-  };
 
-  const onMouseLeave = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  };
+    // Fire card_long_dwell at 3.5s — writes to graph_edges, boosts algorithm velocity
+    dwellTimer.current = setTimeout(() => {
+      void fetch("/api/interactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: event.id, edgeType: "card_long_dwell" }),
+      });
+    }, 3500);
+
+    // Admin micro-event tracking — writes to user_micro_events for behavioral profile
+    trackingCleanup.current = trackHoverStart(event.id, "event");
+  }, [event.id, event.slug, qc, trackHoverStart]);
+
+  const onMouseLeave = useCallback(() => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
+    if (dwellTimer.current) clearTimeout(dwellTimer.current);
+    trackingCleanup.current?.();
+    trackingCleanup.current = null;
+  }, []);
 
   return { onMouseEnter, onMouseLeave };
 }
@@ -208,7 +228,7 @@ function ImageCard({
   feedIndex?: number;
   onCardClick?: () => void;
 }) {
-  const { onMouseEnter, onMouseLeave } = useHoverPrefetch(event.slug);
+  const { onMouseEnter, onMouseLeave } = useEventHover(event);
   // Real banner from Supabase Storage, with category-colour fallback
   const bannerUrl = event.bannerUrl || event.gallery?.[0];
   // Gallery images from DB (up to 4 extra slots)

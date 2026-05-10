@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react'
 import { MiniPill } from './dashboard-primitives'
+import { AdminBtn, AdminLinkBtn } from './AdminBtn'
 import { suspendUser, activateUser, makeOrganizer } from '../app/users/actions'
 
 type AccentTone = 'brand' | 'cyan' | 'violet' | 'coral' | 'amber'
@@ -111,33 +112,38 @@ function UserRow({ user }: { user: User }) {
       </td>
       {/* Actions */}
       <td className="py-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {user.is_active ? (
-            <button
-              disabled={isPending}
+            <AdminBtn
+              variant="danger"
+              isPending={isPending}
+              pendingLabel="Suspending…"
               onClick={() => startTransition(() => suspendUser(user.id))}
-              className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(251,113,133,0.18)] bg-[rgba(251,113,133,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-coral)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Suspend
-            </button>
+            </AdminBtn>
           ) : (
-            <button
-              disabled={isPending}
+            <AdminBtn
+              variant="primary"
+              isPending={isPending}
+              pendingLabel="Activating…"
               onClick={() => startTransition(() => activateUser(user.id))}
-              className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(74,222,128,0.18)] bg-[rgba(74,222,128,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brand)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Activate
-            </button>
+            </AdminBtn>
           )}
           {user.role !== 'organizer' ? (
-            <button
-              disabled={isPending}
+            <AdminBtn
+              variant="warning"
+              isPending={isPending}
               onClick={() => startTransition(() => makeOrganizer(user.id))}
-              className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(167,139,250,0.18)] bg-[rgba(167,139,250,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-violet)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Make Organizer
-            </button>
+            </AdminBtn>
           ) : null}
+          <AdminLinkBtn variant="info" href={`/users/${user.id}`}>
+            Lens ↗
+          </AdminLinkBtn>
         </div>
       </td>
     </tr>

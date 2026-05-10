@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle, WarningCircle } from "@phosphor-icons/react";
 import type { AttendeeTicket, EventItem } from "@gooutside/demo-data";
-import { TicketQr } from "../ticket-qr";
+import { TicketQrStatic } from "../ticket-qr";
 
 // ─── Tier styles ──────────────────────────────────────────────────────────────
 
@@ -92,7 +92,7 @@ function FullTicketCard({ ticket, event, cardIndex, totalCards }: {
       <div className={`relative mt-5 h-px ${s.divider}`} />
 
       <div className="relative mt-5 flex justify-center">
-        <div className="opacity-40 grayscale"><TicketQr reference={ticket.reference} /></div>
+        <div><TicketQrStatic reference={ticket.reference} /></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
           <WarningCircle size={34} className="text-orange-400" weight="fill" />
           <span className="text-xs font-semibold text-orange-300">Event Ended</span>

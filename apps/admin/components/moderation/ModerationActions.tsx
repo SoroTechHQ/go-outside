@@ -2,33 +2,32 @@
 
 import { useTransition } from "react";
 import { dismissQueueItem, closeReport } from "../../app/moderation/actions";
+import { AdminBtn } from "../AdminBtn";
 
 export function DismissQueueItemButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
   return (
-    <button
-      disabled={isPending}
-      onClick={() => {
-        startTransition(() => dismissQueueItem(id));
-      }}
-      className="inline-flex items-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-40"
+    <AdminBtn
+      variant="ghost"
+      isPending={isPending}
+      pendingLabel="Dismissing…"
+      onClick={() => startTransition(() => dismissQueueItem(id))}
     >
-      {isPending ? "Dismissing…" : "Dismiss"}
-    </button>
+      Dismiss
+    </AdminBtn>
   );
 }
 
 export function CloseReportButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
   return (
-    <button
-      disabled={isPending}
-      onClick={() => {
-        startTransition(() => closeReport(id));
-      }}
-      className="inline-flex items-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-40"
+    <AdminBtn
+      variant="warning"
+      isPending={isPending}
+      pendingLabel="Closing…"
+      onClick={() => startTransition(() => closeReport(id))}
     >
-      {isPending ? "Closing…" : "Close"}
-    </button>
+      Close report
+    </AdminBtn>
   );
 }
