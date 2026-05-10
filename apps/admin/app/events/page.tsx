@@ -1,5 +1,13 @@
 import { PlatformEventsPage } from "../../components/pages/platform-events-page";
 
-export default function EventsPage() {
-  return <PlatformEventsPage />;
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function EventsPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const flat = Object.fromEntries(
+    Object.entries(sp).map(([k, v]) => [k, Array.isArray(v) ? v[0] : (v ?? "")])
+  );
+  return <PlatformEventsPage searchParams={flat} />;
 }
