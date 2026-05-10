@@ -164,17 +164,14 @@ export function AppSidebar({ mode }: { mode: "admin" | "organizer" }) {
         {/* Logo */}
         <div className={`flex h-16 shrink-0 items-center border-b border-[var(--border-subtle)] px-5 ${wide ? "justify-start" : "justify-center"}`}>
           {wide ? (
-            <div>
-              <Image
-                src="/logo-full.png"
-                alt="GoOutside"
-                width={120}
-                height={34}
-                style={{ objectFit: "contain" }}
-                priority
-              />
-              <div className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{subtitle}</div>
-            </div>
+            <Image
+              src="/logo-full.png"
+              alt="GoOutside"
+              width={120}
+              height={34}
+              style={{ objectFit: "contain" }}
+              priority
+            />
           ) : (
             <Image
               src="/logo-mini.png"

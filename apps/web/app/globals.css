@@ -2180,3 +2180,22 @@ a {
   display: flex;
 }
 
+/* ── QR sweep-bar animation ───────────────────────────────────────────────── */
+.sweep-bar {
+  position: absolute;
+  inset: 0;
+  width: 60%;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(47, 143, 69, 0.18) 50%,
+    transparent 100%
+  );
+  animation: qr-sweep 3s ease-in-out infinite;
+}
+
+@keyframes qr-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+

@@ -331,6 +331,48 @@ function computeUrgency(startDatetime: string) {
   return 0.1;
 }
 
+// Returns Map<categorySlug, boost 0-2> based on user's hover dwell history
+async function getUserCategoryBoosts(
+  supabaseUserId: string,
+  events: EventItem[],
+): Promise<Map<string, number>> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data } = await supabaseAdmin
+    .from("user_micro_events")
+    .select("target_entity_id, hover_duration_ms")
+    .eq("user_id", supabaseUserId)
+    .eq("event_type", "hover_event")
+    .not("target_entity_id", "is", null)
+    .gte("created_at", thirtyDaysAgo)
+    .limit(500);
+
+  if (!data || data.length === 0) return new Map();
+
+  // Map event IDs to category slugs from the already-loaded events list
+  const eventCategoryMap = new Map<string, string>();
+  for (const ev of events) eventCategoryMap.set(ev.id, ev.categorySlug);
+
+  // Sum dwell time per category
+  const categoryDwell = new Map<string, number>();
+  for (const row of data) {
+    const slug = eventCategoryMap.get(row.target_entity_id as string);
+    if (slug) {
+      categoryDwell.set(slug, (categoryDwell.get(slug) ?? 0) + (Number(row.hover_duration_ms) || 0));
+    }
+  }
+
+  if (categoryDwell.size === 0) return new Map();
+
+  // Normalize: most-hovered category gets boost 2, others proportional
+  const maxDwell = Math.max(...categoryDwell.values());
+  const boosts = new Map<string, number>();
+  for (const [slug, dwell] of categoryDwell) {
+    boosts.set(slug, (dwell / maxDwell) * 2);
+  }
+  return boosts;
+}
+
 function scoreEvent(
   event: RankedEvent,
   scarcity: ScarcityRow | undefined,
@@ -338,6 +380,7 @@ function scoreEvent(
   socialScore: number,
   userInterests: string[],
   userCity: string | null,
+  behavioralCategoryBoost: number = 0,
 ) {
   const interestIdx = userInterests.indexOf(event.categorySlug);
   const interest =
@@ -364,7 +407,8 @@ function scoreEvent(
     urgency +
     featuredBonus +
     trendingBonus +
-    scarcityBonus
+    scarcityBonus +
+    behavioralCategoryBoost  // 0-2 pts from actual hover behavior
   );
 }
 
@@ -433,9 +477,14 @@ export async function loadFeedPage({
   ]);
 
   const eventIds = allEvents.map((event) => event.id);
-  const socialResult = feedProfile
-    ? await getSocialSignals(feedProfile.id, eventIds)
-    : { scores: new Map<string, number>(), friendNamesByEvent: new Map<string, string[]>() };
+  const [socialResult, categoryBoosts] = await Promise.all([
+    feedProfile
+      ? getSocialSignals(feedProfile.id, eventIds)
+      : Promise.resolve({ scores: new Map<string, number>(), friendNamesByEvent: new Map<string, string[]>() }),
+    feedProfile
+      ? getUserCategoryBoosts(feedProfile.id, allEvents)
+      : Promise.resolve(new Map<string, number>()),
+  ]);
 
   const { scores: socialSignals, friendNamesByEvent } = socialResult;
 
@@ -447,8 +496,8 @@ export async function loadFeedPage({
 
   const scored = [...source].sort(
     (left, right) =>
-      scoreEvent(right as RankedEvent, scarcityMap.get(right.id), edgeWeightsMap.get(right.id) ?? 0, socialSignals.get(right.id) ?? 0, interests, city) -
-      scoreEvent(left as RankedEvent, scarcityMap.get(left.id), edgeWeightsMap.get(left.id) ?? 0, socialSignals.get(left.id) ?? 0, interests, city),
+      scoreEvent(right as RankedEvent, scarcityMap.get(right.id), edgeWeightsMap.get(right.id) ?? 0, socialSignals.get(right.id) ?? 0, interests, city, categoryBoosts.get(right.categorySlug) ?? 0) -
+      scoreEvent(left as RankedEvent, scarcityMap.get(left.id), edgeWeightsMap.get(left.id) ?? 0, socialSignals.get(left.id) ?? 0, interests, city, categoryBoosts.get(left.categorySlug) ?? 0),
   );
 
   // Mark top 40% of ranked events as AI-picked

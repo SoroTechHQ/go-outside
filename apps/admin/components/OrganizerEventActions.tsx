@@ -63,6 +63,12 @@ export function OrganizerEventActions({
         >
           Attendees
         </button>
+        <Link
+          href={`/organizer/events/${eventId}/checkin`}
+          className="inline-flex items-center rounded-lg border border-[var(--brand)]/30 bg-[var(--brand)]/10 px-3 py-1.5 text-xs font-semibold text-[var(--brand)] transition hover:bg-[var(--brand)]/20"
+        >
+          Check In
+        </Link>
       </div>
 
       {open && (

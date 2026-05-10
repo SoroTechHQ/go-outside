@@ -7,6 +7,7 @@ import {
   verifyOrganizer,
   suspendOrganizerProfile,
 } from '../app/organizers/actions'
+import { AdminBtn } from './AdminBtn'
 
 type Applicant = {
   id: string
@@ -102,24 +103,26 @@ export function ApplicationCard({ app }: { app: OrganizerApplication }) {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <button
-          disabled={isPending}
+        <AdminBtn
+          variant="primary"
+          isPending={isPending}
+          pendingLabel="Approving…"
           onClick={() =>
             startTransition(() =>
               approveApplication(app.id, app.applicant?.id ?? '')
             )
           }
-          className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(74,222,128,0.18)] bg-[rgba(74,222,128,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brand)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Approve
-        </button>
-        <button
-          disabled={isPending}
+        </AdminBtn>
+        <AdminBtn
+          variant="danger"
+          isPending={isPending}
+          pendingLabel="Rejecting…"
           onClick={() => startTransition(() => rejectApplication(app.id))}
-          className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(251,113,133,0.18)] bg-[rgba(251,113,133,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-coral)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Reject
-        </button>
+        </AdminBtn>
       </div>
     </div>
   )
@@ -192,26 +195,28 @@ function OrganizerRow({ org }: { org: OrganizerProfile }) {
       </td>
       <td className="py-4 pr-4 text-sm text-[var(--text-secondary)]">{formatDate(org.verified_at)}</td>
       <td className="py-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {!isVerified ? (
-            <button
-              disabled={isPending}
+            <AdminBtn
+              variant="primary"
+              isPending={isPending}
+              pendingLabel="Verifying…"
               onClick={() => startTransition(() => verifyOrganizer(org.id))}
-              className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(74,222,128,0.18)] bg-[rgba(74,222,128,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brand)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Verify
-            </button>
+              ✓ Verify
+            </AdminBtn>
           ) : null}
           {org.status !== 'suspended' ? (
-            <button
-              disabled={isPending}
+            <AdminBtn
+              variant="danger"
+              isPending={isPending}
+              pendingLabel="Suspending…"
               onClick={() => startTransition(() => suspendOrganizerProfile(org.id))}
-              className="inline-flex cursor-pointer items-center rounded-full border border-[rgba(251,113,133,0.18)] bg-[rgba(251,113,133,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-coral)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Suspend
-            </button>
+            </AdminBtn>
           ) : (
-            <span className="inline-flex items-center rounded-full border border-[rgba(251,113,133,0.18)] bg-[rgba(251,113,133,0.1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-coral)]">
+            <span className="inline-flex items-center rounded-lg border border-[rgba(251,113,133,0.25)] bg-[rgba(251,113,133,0.1)] px-3.5 py-1.5 text-[11.5px] font-semibold text-[var(--accent-coral)]">
               Suspended
             </span>
           )}

@@ -98,7 +98,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
     { href: "/", label: "Home", icon: House },
     { href: "/trending", label: "Trending", icon: TrendUp },
     { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
-    { href: "/wallets", label: "Wallets", icon: Wallet },
+    { href: "/wallets", label: "Wallet", icon: Wallet },
     {
       href: "/notifications",
       label: "Notifications",
