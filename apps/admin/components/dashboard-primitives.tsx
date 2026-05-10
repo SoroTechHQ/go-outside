@@ -35,36 +35,32 @@ export function accentSurfaceClass(tone: AccentTone) {
   }[tone];
 }
 
-export function PageHero({
-  eyebrow,
+export function PageGuide({
   title,
-  description,
-  actions,
+  tips,
 }: {
-  eyebrow?: string;
   title: string;
-  description: string;
-  actions?: ReactNode;
+  tips: string[];
 }) {
   return (
-    <ShellCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(74,222,128,0.1),rgba(56,189,248,0.08),transparent_68%),var(--bg-card)]">
-      <div className="grid gap-6 lg:grid-cols-[1fr,auto] lg:items-end">
-        <div>
-          {eyebrow ? (
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--accent-cyan)]">
-              {eyebrow}
-            </p>
-          ) : null}
-          <h2 className="mt-3 font-display text-4xl italic text-[var(--text-primary)] md:text-5xl">
-            {title}
-          </h2>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--text-secondary)]">
-            {description}
-          </p>
-        </div>
-        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+    <div className="flex gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-5 py-4">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--accent-cyan)]">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
       </div>
-    </ShellCard>
+      <div>
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+        <ul className="mt-1.5 space-y-0.5">
+          {tips.map((tip) => (
+            <li key={tip} className="text-xs leading-5 text-[var(--text-secondary)]">
+              {tip}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
@@ -86,7 +82,7 @@ export function MetricTile({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{label}</p>
-          <p className="mt-3 font-display text-3xl italic text-[var(--text-primary)]">{value}</p>
+          <p className="mt-3 font-display text-3xl font-semibold text-[var(--text-primary)]">{value}</p>
         </div>
         <span className={cn("text-xs font-semibold", accentTextClass(accent))}>{trend}</span>
       </div>
@@ -112,7 +108,7 @@ export function SectionBlock({
     <ShellCard className={className}>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h3 className="font-display text-2xl italic text-[var(--text-primary)]">{title}</h3>
+          <h3 className="font-display text-xl font-semibold text-[var(--text-primary)]">{title}</h3>
           {subtitle ? <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p> : null}
         </div>
         {action}

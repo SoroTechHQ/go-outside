@@ -1,8 +1,9 @@
-import { demoData } from "@gooutside/demo-data";
-import { Button, FauxSelect, FieldLabel, ShellCard, TextArea, TextInput } from "@gooutside/ui";
+import { ShellCard } from "@gooutside/ui";
+import { supabaseAdmin } from "../../lib/supabase";
 import { DashboardShell } from "../dashboard-shell";
-import { MiniPill, PageHero, SectionBlock } from "../dashboard-primitives";
+import { MiniPill, PageGuide, SectionBlock } from "../dashboard-primitives";
 import { DonutChart, MultiBarChart } from "../charts/AdminCharts";
+import { NotificationComposer } from "../NotificationComposer";
 
 const channelMix = [
   { label: "Push", value: 44, tone: "brand" as const },
@@ -11,56 +12,76 @@ const channelMix = [
   { label: "In-app", value: 12, tone: "violet" as const },
 ];
 
-export function PlatformNotificationsPage() {
+function relativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+type BroadcastRow = {
+  title: string | null;
+  body: string | null;
+  channel: string | null;
+  created_at: string | null;
+};
+
+export async function PlatformNotificationsPage() {
+  // Fetch recent broadcast notifications — deduplicate by title to show unique campaigns
+  const { data: rawNotifications } = await supabaseAdmin
+    .from("notifications")
+    .select("title, body, channel, created_at")
+    .eq("type", "broadcast")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  // Deduplicate: keep the first (most recent) occurrence of each title
+  const seen = new Set<string>();
+  const recentSends: BroadcastRow[] = [];
+  for (const row of rawNotifications ?? []) {
+    const key = row.title ?? "";
+    if (!seen.has(key)) {
+      seen.add(key);
+      recentSends.push(row as BroadcastRow);
+      if (recentSends.length >= 8) break;
+    }
+  }
+
+  const channelTone = (ch: string | null): "brand" | "cyan" | "amber" | "violet" => {
+    if (ch === "push") return "brand";
+    if (ch === "email") return "cyan";
+    if (ch === "sms") return "amber";
+    return "violet";
+  };
+
   return (
     <DashboardShell mode="admin" subtitle="Broadcasts, lifecycle messaging, and campaign review" title="Notifications">
       <div className="space-y-6">
-        <PageHero
-          eyebrow="UI page"
-          title="Messaging now feels like a full campaign surface."
-          description="This page extends the previous broadcast form with the kind of supporting analytics panels the boilerplate uses throughout its UI pages."
+        <PageGuide
+          title="Send messages and broadcasts to your users"
+          tips={[
+            "Choose your audience first — you can target all users, organizers only, a specific city, or a pulse tier.",
+            "Push notifications reach users instantly on their phones. Email is better for detailed updates.",
+            "Use Preview Templates to start from a pre-written message and edit it to fit your campaign.",
+            "Save Draft stores your message locally so you can finish it later.",
+          ]}
         />
 
         <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
           <ShellCard>
-            <div className="flex items-center justify-between gap-4">
+            <div className="mb-6 flex items-center justify-between gap-4">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent-cyan)]">
                   Campaign builder
                 </p>
-                <h2 className="mt-3 font-display text-3xl italic text-[var(--text-primary)]">New broadcast</h2>
-              </div>
-              <MiniPill tone="violet">Draft autosaved</MiniPill>
-            </div>
-            <div className="mt-6 grid gap-5 lg:grid-cols-2">
-              <div>
-                <FieldLabel>Campaign title</FieldLabel>
-                <TextInput value="Weekend picks are live" />
-              </div>
-              <div>
-                <FieldLabel>Audience</FieldLabel>
-                <FauxSelect value="All attendees in Accra and Kumasi" />
+                <h2 className="mt-2 font-display text-xl font-semibold text-[var(--text-primary)]">New broadcast</h2>
               </div>
             </div>
-            <div className="mt-5 grid gap-5 lg:grid-cols-2">
-              <div>
-                <FieldLabel>Primary channel</FieldLabel>
-                <FauxSelect value="Push + Email" />
-              </div>
-              <div>
-                <FieldLabel>Send window</FieldLabel>
-                <TextInput value="Friday, 6:15 PM GMT" />
-              </div>
-            </div>
-            <div className="mt-5">
-              <FieldLabel>Message</FieldLabel>
-              <TextArea value="Weekend picks are live. Discover rooftop sessions, food pop-ups, and community runs happening across Accra this weekend." />
-            </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button>Schedule send</Button>
-              <Button variant="ghost">Preview templates</Button>
-              <Button variant="secondary">Save draft</Button>
-            </div>
+            <NotificationComposer />
           </ShellCard>
 
           <SectionBlock subtitle="Which channels are driving engagement" title="Channel split">
@@ -90,26 +111,30 @@ export function PlatformNotificationsPage() {
 
           <ShellCard>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent-amber)]">Recent sends</p>
-            <div className="mt-5 space-y-4">
-              {demoData.adminDashboard.activities.map((item, index) => (
-                <div
-                  key={item.title}
-                  className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[var(--text-primary)]">{item.title}</p>
-                      <p className="mt-1 text-sm text-[var(--text-secondary)]">{item.meta}</p>
+            <div className="mt-5 space-y-3">
+              {recentSends.length === 0 ? (
+                <p className="text-sm text-[var(--text-tertiary)]">No broadcasts sent yet.</p>
+              ) : (
+                recentSends.map((item) => (
+                  <div
+                    key={`${item.title}-${item.created_at}`}
+                    className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-[var(--text-primary)]">{item.title ?? "Untitled"}</p>
+                        <p className="mt-0.5 line-clamp-1 text-sm text-[var(--text-secondary)]">{item.body}</p>
+                      </div>
+                      <MiniPill tone={channelTone(item.channel)}>
+                        {item.channel ?? "in-app"}
+                      </MiniPill>
                     </div>
-                    <MiniPill tone={(["brand", "cyan", "amber", "violet"] as const)[index % 4]}>
-                      {["Sent", "Testing", "Queued", "Paused"][index % 4]}
-                    </MiniPill>
+                    <p className="mt-3 text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                      {item.created_at ? relativeTime(item.created_at) : "—"}
+                    </p>
                   </div>
-                  <p className="mt-3 text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                    {item.timeLabel}
-                  </p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </ShellCard>
         </div>

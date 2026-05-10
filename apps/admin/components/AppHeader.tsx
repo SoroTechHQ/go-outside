@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { useSidebar } from "../context/SidebarContext";
-import { ThemeIconButton, ThemeToggleSwitch } from "./theme-controls";
+import { ThemeIconButton } from "./theme-controls";
 
 export function AppHeader({
   title,
@@ -46,7 +46,7 @@ export function AppHeader({
           )}
         </button>
         <div>
-          <h1 className="font-display text-xl italic text-[var(--text-primary)]">{title}</h1>
+          <h1 className="font-display text-lg font-semibold text-[var(--text-primary)]">{title}</h1>
           <p className="hidden text-xs text-[var(--text-tertiary)] sm:block">{subtitle}</p>
         </div>
       </div>
@@ -64,10 +64,6 @@ export function AppHeader({
             placeholder="Search… ⌘K"
             className="h-9 w-64 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--neon)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--neon)]/10"
           />
-        </div>
-
-        <div className="hidden xl:flex">
-          <ThemeToggleSwitch compact />
         </div>
 
         <ThemeIconButton />

@@ -6,7 +6,7 @@ import {
   AccentDot,
   MetricTile,
   MiniPill,
-  PageHero,
+  PageGuide, 
   SectionBlock,
 } from "../dashboard-primitives";
 import { AdminRevenueChart } from "../charts/AdminRevenueChart";
@@ -100,10 +100,14 @@ export async function PlatformDashboardPage() {
       subtitle="Platform health at a glance."
     >
       <div className="space-y-6">
-        <PageHero
-          eyebrow="Live data"
-          title="Platform at a glance."
-          description="Real-time metrics pulled directly from the GoOutside database. User registrations, live events, gross revenue month-to-date, and moderation queue pressure — all in one place."
+        <PageGuide
+          title="Welcome to your Admin Dashboard"
+          tips={[
+            "The 4 tiles show live counts: total users, published events, revenue this month, and items awaiting moderation.",
+            "Use the Revenue chart to spot busy periods — spikes typically line up with popular event launches.",
+            "Watch the Pending Moderation count — when it rises, open the Moderation page to review flagged content.",
+            "Recent Activity on the right shows the last admin actions taken across the platform.",
+          ]}
         />
 
         {/* KPI tiles */}

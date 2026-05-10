@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../../lib/supabase";
 import { DashboardShell } from "../dashboard-shell";
-import { MetricTile, MiniPill, PageHero, SectionBlock } from "../dashboard-primitives";
+import { MetricTile, MiniPill, PageGuide,  SectionBlock } from "../dashboard-primitives";
 import { RevenueAreaChart } from "../charts/RevenueAreaChart";
 
 function sumAmounts(rows: { amount: number }[] | null): number {
@@ -108,10 +108,14 @@ export async function PlatformRevenuePage() {
   return (
     <DashboardShell mode="admin" title="Revenue" subtitle="Payments, transactions and financial overview.">
       <div className="space-y-6">
-        <PageHero
-          eyebrow="Platform Finance"
-          title="Revenue"
-          description="Payments, transactions and financial overview."
+        <PageGuide
+          title="Track all payments and financial performance"
+          tips={[
+            "The 4 tiles show revenue for today, the last 7 days, this month, and all time — all from confirmed payments only.",
+            "The area chart shows daily revenue over the last 30 days — spikes usually line up with event launch days.",
+            "Top Events shows which events have generated the most revenue across the platform.",
+            "Scroll down to see individual transactions with their payment channel (Paystack), status, and buyer.",
+          ]}
         />
 
         {/* KPI Row */}
