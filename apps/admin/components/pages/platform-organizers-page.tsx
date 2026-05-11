@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '../../lib/supabase'
 import { DashboardShell } from '../dashboard-shell'
 import { MetricTile, SectionBlock } from '../dashboard-primitives'
-import { ApplicationCard, OrganizersTable } from '../OrganizersActions'
+import { ApplicationCard } from '../OrganizersActions'
+import { OrganizersDataTable, type OrganizerRow } from '../organizers/OrganizersDataTable'
 import { AdminTableControls } from '../AdminTableControls'
 import { AdminPagination } from '../AdminPagination'
 
@@ -130,21 +131,13 @@ export async function PlatformOrganizersPage({ searchParams }: Props) {
           )}
         </SectionBlock>
 
-        <SectionBlock title="Verified organizers directory" subtitle="All organizer profiles on the platform">
+        <SectionBlock title="Verified organizers directory" subtitle="Click a column header to sort. Click a row to open.">
           <AdminTableControls
             sortOptions={SORT_OPTIONS}
             currentParams={{ q, limit: String(limit), sort, order: order ? 'asc' : 'desc', sort2, order2: order2 ? 'asc' : 'desc', regex }}
             searchPlaceholder="Search organizer name…"
           />
-
-          {(organizers ?? []).length === 0 ? (
-            <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
-              {q ? `No organizers matching "${q}".` : 'No organizer profiles found.'}
-            </p>
-          ) : (
-            <OrganizersTable organizers={organizers as any} />
-          )}
-
+          <OrganizersDataTable organizers={(organizers ?? []) as unknown as OrganizerRow[]} searchQuery={q} />
           <AdminPagination total={total} page={page} limit={limit} currentParams={currentParams} />
         </SectionBlock>
       </div>

@@ -1,9 +1,9 @@
 import { supabaseAdmin } from '../../lib/supabase'
 import { DashboardShell } from '../dashboard-shell'
 import { MetricTile, SectionBlock } from '../dashboard-primitives'
-import { UsersTable } from '../UsersTable'
 import { AdminTableControls } from '../AdminTableControls'
 import { AdminPagination } from '../AdminPagination'
+import { UsersDataTable, type UserRow } from '../users/UsersDataTable'
 
 const SORT_OPTIONS = [
   { label: 'Date joined', value: 'created_at' },
@@ -31,7 +31,6 @@ export async function PlatformUsersPage({ searchParams }: Props) {
   const regex = searchParams.regex === '1'
   const offset = (page - 1) * limit
 
-  // KPI counts (independent of pagination)
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const [{ count: totalUsers }, { count: activeUsers }, { count: organizersCount }, { count: newThisWeek }] =
     await Promise.all([
@@ -41,7 +40,6 @@ export async function PlatformUsersPage({ searchParams }: Props) {
       supabaseAdmin.from('users').select('id', { count: 'exact', head: true }).gte('created_at', oneWeekAgo),
     ])
 
-  // Build paginated query
   let query = supabaseAdmin
     .from('users')
     .select(
@@ -63,7 +61,7 @@ export async function PlatformUsersPage({ searchParams }: Props) {
   if (sort2) usersQuery = usersQuery.order(sort2, { ascending: order2 })
   const { data: users, count: filteredCount } = await usersQuery.range(offset, offset + limit - 1)
 
-  const allUsers = users ?? []
+  const allUsers = (users ?? []) as unknown as UserRow[]
   const total = filteredCount ?? 0
 
   const currentParams: Record<string, string> = {
@@ -78,7 +76,6 @@ export async function PlatformUsersPage({ searchParams }: Props) {
   return (
     <DashboardShell mode="admin" title="Users" subtitle="Browse and manage all platform members.">
       <div className="space-y-6">
-        {/* KPI row */}
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <MetricTile
             accent="brand"
@@ -110,30 +107,14 @@ export async function PlatformUsersPage({ searchParams }: Props) {
           />
         </div>
 
-        <SectionBlock
-          title="People index"
-          subtitle="Account review and manual operations"
-        >
+        <SectionBlock title="People index" subtitle="Click a column header to sort. Select rows for bulk actions.">
           <AdminTableControls
             sortOptions={SORT_OPTIONS}
             currentParams={{ q, limit: String(limit), sort, order: order ? 'asc' : 'desc', sort2, order2: order2 ? 'asc' : 'desc', regex }}
             searchPlaceholder="Search name, email, city…"
           />
-
-          {allUsers.length === 0 ? (
-            <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
-              {q ? `No users matching "${q}".` : 'No users found.'}
-            </p>
-          ) : (
-            <UsersTable users={allUsers} />
-          )}
-
-          <AdminPagination
-            total={total}
-            page={page}
-            limit={limit}
-            currentParams={currentParams}
-          />
+          <UsersDataTable users={allUsers} searchQuery={q} />
+          <AdminPagination total={total} page={page} limit={limit} currentParams={currentParams} />
         </SectionBlock>
       </div>
     </DashboardShell>

@@ -1,10 +1,10 @@
 import { supabaseAdmin } from "../../lib/supabase";
 import { DashboardShell } from "../dashboard-shell";
-import { MetricTile, MiniPill, PageGuide, SectionBlock } from "../dashboard-primitives";
+import { MetricTile, PageGuide, SectionBlock } from "../dashboard-primitives";
 import { TicketCsvExport } from "../tickets/TicketCsvExport";
-import { RefundButton } from "../tickets/RefundButton";
 import { AdminTableControls } from "../AdminTableControls";
 import { AdminPagination } from "../AdminPagination";
+import { TicketsDataTable } from "../tickets/TicketsDataTable";
 
 const SORT_OPTIONS = [
   { label: "Date issued", value: "created_at" },
@@ -116,7 +116,7 @@ export async function PlatformTicketsPage({ searchParams }: Props) {
 
         <SectionBlock
           title="Ticket index"
-          subtitle="Paginated ticket list — search by attendee name or email"
+          subtitle="Click a column header to sort. Use ••• to refund."
           action={<TicketCsvExport tickets={rows} />}
         >
           <AdminTableControls
@@ -124,52 +124,7 @@ export async function PlatformTicketsPage({ searchParams }: Props) {
             currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", sort2, order2: order2 ? "asc" : "desc", regex }}
             searchPlaceholder="Search attendee name or email…"
           />
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  {["Attendee", "Event", "Type", "Price", "Status", "Checked In", "Issued", "Actions"].map((h) => (
-                    <th key={h} className="pb-3 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)] pr-4">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)]">
-                {rows.map((ticket) => {
-                  const attendee = ticket.attendee_name?.trim() || ticket.attendee_email || "—";
-                  const canRefund = ticket.status !== "refunded" && ticket.status !== "cancelled";
-                  return (
-                    <tr key={ticket.id}>
-                      <td className="py-3 pr-4 font-medium text-[var(--text-primary)]">{attendee}</td>
-                      <td className="py-3 pr-4 text-[var(--text-secondary)]">{ticket.event?.title ?? "—"}</td>
-                      <td className="py-3 pr-4 text-[var(--text-secondary)]">{ticket.ticket_type?.name ?? "—"}</td>
-                      <td className="py-3 pr-4 font-semibold text-[var(--text-primary)]">{fmtGHS(ticket.purchase_price)}</td>
-                      <td className="py-3 pr-4">
-                        <MiniPill tone={ticketStatusTone(ticket.status)}>{ticket.status ?? "unknown"}</MiniPill>
-                      </td>
-                      <td className="py-3 pr-4 text-[var(--text-tertiary)]">
-                        {ticket.checked_in_at ? new Date(ticket.checked_in_at).toLocaleString("en-GH") : "—"}
-                      </td>
-                      <td className="py-3 pr-4 text-[var(--text-tertiary)]">
-                        {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString("en-GH") : "—"}
-                      </td>
-                      <td className="py-3">{canRefund ? <RefundButton ticketId={ticket.id} /> : null}</td>
-                    </tr>
-                  );
-                })}
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-sm text-[var(--text-tertiary)]">
-                      {q ? `No tickets matching "${q}".` : "No tickets found."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
+          <TicketsDataTable tickets={rows as any} searchQuery={q} />
           <AdminPagination total={filteredTotal} page={page} limit={limit} currentParams={currentParams} />
         </SectionBlock>
       </div>
