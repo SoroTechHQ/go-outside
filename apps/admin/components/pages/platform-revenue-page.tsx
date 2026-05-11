@@ -4,6 +4,7 @@ import { MetricTile, MiniPill, PageGuide, SectionBlock } from "../dashboard-prim
 import { RevenueAreaChart } from "../charts/RevenueAreaChart";
 import { AdminTableControls } from "../AdminTableControls";
 import { AdminPagination } from "../AdminPagination";
+import { RevenueDataTable, type TransactionRow } from "../revenue/RevenueDataTable";
 
 const TX_SORT_OPTIONS = [
   { label: "Date (newest)", value: "created_at" },
@@ -199,52 +200,13 @@ export async function PlatformRevenuePage({ searchParams }: Props) {
           </div>
         </SectionBlock>
 
-        <SectionBlock title="Transactions" subtitle="Paginated — search by reference, status, or channel">
+        <SectionBlock title="Transactions" subtitle="Click a column header to sort. Use ••• for quick actions.">
           <AdminTableControls
             sortOptions={TX_SORT_OPTIONS}
             currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", sort2, order2: order2 ? "asc" : "desc", regex }}
             searchPlaceholder="Search reference, status, channel…"
           />
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)]">
-                  {["Buyer", "Event", "Amount", "Channel", "Status", "Date"].map((h) => (
-                    <th key={h} className="pb-3 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)] pr-4">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)]">
-                {(transactions ?? []).map((tx) => {
-                  const buyer = (tx.buyer as unknown) as { first_name: string; last_name: string } | null;
-                  const event = (tx.event as unknown) as { title: string } | null;
-                  const buyerName = buyer ? `${buyer.first_name ?? ""} ${buyer.last_name ?? ""}`.trim() || "—" : "—";
-                  const eventTitle = event?.title ?? "—";
-                  return (
-                    <tr key={tx.id}>
-                      <td className="py-3 pr-4 font-medium text-[var(--text-primary)]">{buyerName}</td>
-                      <td className="py-3 pr-4 text-[var(--text-secondary)]">{eventTitle}</td>
-                      <td className="py-3 pr-4 font-semibold text-[var(--text-primary)]">{fmtGHS(tx.amount ?? 0)}</td>
-                      <td className="py-3 pr-4 text-[var(--text-secondary)]">{tx.payment_channel ?? "—"}</td>
-                      <td className="py-3 pr-4">
-                        <MiniPill tone={statusBadgeTone(tx.status ?? "")}>{tx.status ?? "unknown"}</MiniPill>
-                      </td>
-                      <td className="py-3 text-[var(--text-tertiary)]">
-                        {tx.created_at ? new Date(tx.created_at as string).toLocaleDateString("en-GH") : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {(transactions ?? []).length === 0 && (
-                  <tr><td colSpan={6} className="py-6 text-center text-sm text-[var(--text-tertiary)]">
-                    {q ? `No transactions matching "${q}".` : "No transactions found."}
-                  </td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
+          <RevenueDataTable transactions={(transactions ?? []) as unknown as TransactionRow[]} searchQuery={q} />
           <AdminPagination total={txTotal} page={page} limit={limit} currentParams={currentParams} />
         </SectionBlock>
       </div>
