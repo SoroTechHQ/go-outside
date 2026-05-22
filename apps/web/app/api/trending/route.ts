@@ -6,7 +6,7 @@ import {
 } from "../../../lib/trending/server";
 import type { TrendSection, TrendingResponse } from "../../../lib/trending/types";
 
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 function isSection(value: string | null): value is TrendSection {
   return value === "events" || value === "organizers" || value === "topics";

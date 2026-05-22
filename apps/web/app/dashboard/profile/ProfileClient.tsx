@@ -28,7 +28,8 @@ import { PulseScoreBanner, PulseBreakdown } from "./components/PulseScoreBanner"
 import { ScenePersonalityCard } from "./components/ScenePersonalityCard";
 import { BeenThereTab } from "./components/BeenThereTab";
 import { SnippetsTab } from "./components/SnippetsTab";
-import { TweetsTab } from "./components/TweetsTab";
+import { PostFeed } from "../../../components/posts/PostFeed";
+import { BecomeOrganizerCard } from "./components/BecomeOrganizerCard";
 import { FollowingTab } from "./components/FollowingTab";
 import { FriendsTab } from "./components/FriendsTab";
 import { EditProfileSheet } from "./components/EditProfileSheet";
@@ -40,7 +41,7 @@ type TabId = "been-there" | "snippets" | "tweets" | "following" | "friends";
 const TABS: { id: TabId; label: string }[] = [
   { id: "been-there", label: "Been There" },
   { id: "snippets",   label: "Snippets" },
-  { id: "tweets",     label: "Tweets" },
+  { id: "tweets",     label: "Posts" },
   { id: "following",  label: "Following" },
   { id: "friends",    label: "Friends" },
 ];
@@ -486,6 +487,9 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
               onTap={() => setPulseOpen(true)}
             />
             {pastTickets.length >= 2 && <ScenePersonalityCard />}
+            {currentProfile.isOwnProfile && currentProfile.role === "attendee" && (
+              <BecomeOrganizerCard />
+            )}
           </div>
 
           {/* ── Sticky tab bar ──────────────────────────────────────────────── */}
@@ -514,7 +518,14 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
           <div className="pb-12 pt-4">
             {activeTab === "been-there" && <BeenThereTab tickets={pastTickets} events={pastEvents} />}
             {activeTab === "snippets"   && <SnippetsTab />}
-            {activeTab === "tweets"     && <TweetsTab tweetIds={currentProfile.importedTweetIds} />}
+            {activeTab === "tweets"     && (
+              <PostFeed
+                profileClerkId={currentProfile.clerkId}
+                profileName={currentProfile.name}
+                profileAvatarUrl={currentProfile.avatarUrl}
+                isOwnProfile={currentProfile.isOwnProfile}
+              />
+            )}
             {activeTab === "following"  && <FollowingTab />}
             {activeTab === "friends"    && <FriendsTab />}
           </div>
