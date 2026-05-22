@@ -49,8 +49,13 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
   useEffect(() => {
     if (!clerkId) return;
 
+    const channelName = `pulse:${clerkId}`;
+    // Remove any existing channel with this name before creating a new one
+    const existing = supabaseBrowser.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+    if (existing) void supabaseBrowser.removeChannel(existing);
+
     const channel = supabaseBrowser
-      .channel(`pulse:${clerkId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {

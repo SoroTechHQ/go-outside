@@ -82,11 +82,20 @@ function Donut({ organic, boosted }: { organic: number; boosted: number }) {
 }
 
 function BarChart({ series }: { series: Array<{ label: string; value: number }> }) {
+  const allZero = series.every((s) => s.value === 0);
+  if (allZero) {
+    return (
+      <div className="flex h-44 flex-col items-center justify-center gap-3 rounded-[16px] bg-[var(--bg-muted)]/50">
+        <Ticket size={22} className="text-[var(--text-tertiary)]" weight="thin" />
+        <p className="text-[12px] text-[var(--text-tertiary)]">Ticket sales will appear here once you have purchases</p>
+      </div>
+    );
+  }
   const max = Math.max(...series.map((s) => s.value), 1);
   return (
     <div className="flex h-44 items-end gap-3">
       {series.map((point, index) => {
-        const height = Math.max(14, Math.round((point.value / max) * 100));
+        const height = Math.max(4, Math.round((point.value / max) * 100));
         return (
           <div key={`${point.label}-${index}`} className="group flex flex-1 flex-col items-center gap-3">
             <div className="flex h-full w-full items-end">
@@ -219,16 +228,19 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${getActivityTone(item.tone)}`}>
                     <Sparkle size={16} weight="fill" />
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-[var(--text-primary)]">{item.title}</p>
-                    <p className="mt-1 text-[12px] leading-6 text-[var(--text-secondary)]">{item.body}</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">{item.body}</p>
                     <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{item.timeLabel}</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-[13px] text-[var(--text-secondary)]">Nothing here yet — activity appears as tickets sell and events go live.</p>
+            <div className="mt-4 flex flex-col items-center gap-2 py-6 text-center">
+              <TrendUp size={22} className="text-[var(--text-tertiary)]" weight="thin" />
+              <p className="text-[13px] text-[var(--text-secondary)]">Activity appears here as tickets sell, followers join, and events go live.</p>
+            </div>
           )}
         </article>
 
@@ -253,12 +265,15 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
                     </div>
                     <span className="text-[12px] font-semibold text-amber-500">{"★".repeat(snippet.rating)}</span>
                   </div>
-                  <p className="mt-3 text-[12px] leading-6 text-[var(--text-secondary)]">{snippet.text}</p>
+                  <p className="mt-3 text-[12px] leading-relaxed text-[var(--text-secondary)]">{snippet.text}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-[13px] text-[var(--text-secondary)]">No snippets yet — they appear after attendees post about your events.</p>
+            <div className="mt-4 flex flex-col items-center gap-2 py-6 text-center">
+              <Star size={22} className="text-[var(--text-tertiary)]" weight="thin" />
+              <p className="text-[13px] text-[var(--text-secondary)]">Snippets appear after attendees post about your events.</p>
+            </div>
           )}
         </article>
       </section>
@@ -268,39 +283,111 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
 
 function EventsTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
   const { overview, recentEvents } = dashboard;
+
+  const live = recentEvents.filter((e) => e.statusLabel === "Live").length;
+  const draft = recentEvents.filter((e) => e.statusLabel === "Draft").length;
+  const past = recentEvents.filter((e) => e.statusLabel === "Past" || e.statusLabel === "Sold Out").length;
+
+  const drafts = recentEvents.filter((e) => e.statusLabel === "Draft");
+  const liveEvents = recentEvents.filter((e) => e.statusLabel === "Live");
+  const otherEvents = recentEvents.filter((e) => e.statusLabel !== "Draft" && e.statusLabel !== "Live");
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {/* Status breakdown mini-KPIs */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { label: "Total events", value: dashboard.organizer.totalEvents.toString() },
-          { label: "Tickets sold", value: overview.ticketSales.toLocaleString() },
-          { label: "Revenue", value: formatMoney(overview.revenue) },
-          { label: "Conversion", value: `${overview.conversionRate}%` },
+          { label: "Live now", value: live.toString(), tone: "text-[var(--brand)] bg-[var(--brand)]/10" },
+          { label: "Drafts", value: draft.toString(), tone: "text-amber-500 bg-amber-500/10" },
+          { label: "Past / Sold out", value: past.toString(), tone: "text-[var(--text-tertiary)] bg-[var(--bg-muted)]" },
+          { label: "Tickets sold", value: overview.ticketSales.toLocaleString(), tone: "text-[var(--text-primary)] bg-[var(--bg-muted)]" },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+          <div key={kpi.label} className={`rounded-[20px] border border-[var(--border-subtle)] p-4 shadow-[0_4px_24px_rgba(5,12,8,0.06)] ${kpi.tone.split(" ")[1]}`}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{kpi.label}</p>
-            <p className="mt-2 text-[1.4rem] font-bold tabular-nums leading-none text-[var(--text-primary)]">{kpi.value}</p>
+            <p className={`mt-2 text-[1.5rem] font-bold tabular-nums leading-none ${kpi.tone.split(" ")[0]}`}>{kpi.value}</p>
           </div>
         ))}
       </div>
-      <div className="rounded-[30px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">All events</p>
-          <Link className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-black" href="/organizer/events/new">
-            <Sparkle size={14} weight="fill" /> New Event
+
+      {/* Drafts — quick publish */}
+      {drafts.length > 0 && (
+        <div className="rounded-[24px] border border-amber-500/20 bg-amber-500/5 p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">Drafts ready to publish</p>
+              <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{drafts.length} event{drafts.length > 1 ? "s" : ""} waiting — publish to start selling tickets</p>
+            </div>
+            <Link className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[12px] font-semibold text-amber-500" href="/organizer/events">
+              Review all
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {drafts.slice(0, 2).map((event) => (
+              <div key={event.id} className="flex items-center gap-3 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{event.title}</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{event.dateLabel} · {event.venue}</p>
+                </div>
+                <Link className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1.5 text-[12px] font-semibold text-black" href={`/organizer/events/${event.id}`}>
+                  Publish
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Live events */}
+      {liveEvents.length > 0 && (
+        <div className="rounded-[30px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--brand)]" />
+              <p className="text-[13px] font-semibold text-[var(--text-primary)]">Live now</p>
+            </div>
+            <Link className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-black" href="/organizer/events/new">
+              <Sparkle size={14} weight="fill" /> New Event
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {liveEvents.map((event) => (
+              <Link key={event.id} href={`/organizer/events/${event.id}`} className="block">
+                <EventCardMini {...event} />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Past / Sold out events */}
+      {otherEvents.length > 0 && (
+        <div className="rounded-[30px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
+          <p className="mb-4 text-[13px] font-semibold text-[var(--text-primary)]">Past & sold out</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {otherEvents.map((event) => (
+              <Link key={event.id} href={`/organizer/events/${event.id}`} className="block">
+                <EventCardMini {...event} />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No events at all */}
+      {recentEvents.length === 0 && (
+        <div className="rounded-[30px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-10 text-center shadow-[0_16px_44px_rgba(6,14,9,0.08)]">
+          <CalendarBlank size={32} className="mx-auto mb-3 text-[var(--text-tertiary)]" weight="thin" />
+          <p className="text-[15px] font-semibold text-[var(--text-primary)]">No events yet</p>
+          <p className="mt-1 text-[13px] text-[var(--text-tertiary)]">Create your first event to start selling tickets.</p>
+          <Link className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-2.5 text-[13px] font-semibold text-black" href="/organizer/events/new">
+            <Sparkle size={14} weight="fill" /> Create event
           </Link>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {recentEvents.map((event) => (
-            <Link key={event.id} href={`/organizer/events/${event.id}`} className="block">
-              <EventCardMini {...event} />
-            </Link>
-          ))}
-        </div>
-        <Link className="mt-5 flex items-center gap-2 text-[13px] font-semibold text-[var(--brand)]" href="/organizer/events">
-          Manage all events <ArrowSquareOut size={14} />
-        </Link>
-      </div>
+      )}
+
+      <Link className="flex items-center gap-2 text-[13px] font-semibold text-[var(--brand)]" href="/organizer/events">
+        Manage all events <ArrowSquareOut size={14} />
+      </Link>
     </div>
   );
 }
@@ -624,16 +711,16 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
         </div>
 
         {/* Tabs */}
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-wrap gap-1.5">
           {TABS.map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`rounded-full px-3.5 py-2 text-[12px] font-medium transition ${
+              className={`rounded-full px-4 py-2.5 text-[13px] font-semibold transition-all ${
                 activeTab === tab
-                  ? "bg-[var(--brand)]/10 text-[var(--brand)]"
-                  : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "bg-[var(--brand)] text-black shadow-[0_2px_12px_var(--brand)/30]"
+                  : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
               }`}
             >
               {tab}

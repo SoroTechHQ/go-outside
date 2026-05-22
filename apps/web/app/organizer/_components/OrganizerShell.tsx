@@ -333,28 +333,35 @@ export function OrganizerShell({
                 )}
               </div>
 
-              {/* Quick actions */}
-              {!iconOnly && (
-                <div className="mt-5">
+              {/* Next event or create CTA */}
+              {!iconOnly && ownEvents.length > 0 && (
+                <div className="mt-4">
                   <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                    Quick actions
+                    Next up
                   </p>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <Link
-                      href="/organizer/events/new"
-                      className="flex flex-col items-center gap-1.5 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-3 text-[11px] font-medium text-[var(--text-secondary)] transition-all duration-150 hover:scale-[1.01] hover:border-[var(--brand)]/30 hover:text-[var(--brand)] hover:shadow-md active:scale-[0.99]"
-                    >
-                      <Plus size={15} weight="bold" />
-                      New Event
-                    </Link>
-                    <Link
-                      href="/organizer/create-post"
-                      className="flex flex-col items-center gap-1.5 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-3 text-[11px] font-medium text-[var(--text-secondary)] transition-all duration-150 hover:scale-[1.01] hover:border-[var(--brand)]/30 hover:text-[var(--brand)] hover:shadow-md active:scale-[0.99]"
-                    >
-                      <NotePencil size={15} />
-                      Create Post
-                    </Link>
-                  </div>
+                  <Link
+                    href={`/organizer/events/${ownEvents[0]!.id}`}
+                    className="mt-2 flex items-center gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2.5 transition hover:border-[var(--brand)]/30"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--brand)]/12 text-[var(--brand)]">
+                      <CalendarBlank size={14} weight="fill" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{ownEvents[0]!.title}</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)]">{ownEvents[0]!.date ?? "No date set"}</p>
+                    </div>
+                  </Link>
+                </div>
+              )}
+              {!iconOnly && ownEvents.length === 0 && (
+                <div className="mt-4">
+                  <Link
+                    href="/organizer/events/new"
+                    className="flex items-center gap-2 rounded-[14px] border border-dashed border-[var(--border-subtle)] px-3 py-2.5 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
+                  >
+                    <Plus size={13} weight="bold" />
+                    Create your first event
+                  </Link>
                 </div>
               )}
 

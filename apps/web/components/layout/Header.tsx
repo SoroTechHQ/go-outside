@@ -11,7 +11,6 @@ import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
 import { useAppShell } from "./AppShellContext";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { useCart } from "../cart/CartContext";
-import { PulseScorePillConnected } from "../pulse/PulseScorePill";
 
 type HeaderProps = {
   appShell?: boolean;
@@ -34,7 +33,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
   const { peekPanelWidth } = useAppShell();
   const { totalCount, openCart } = useCart();
   const stableSidebarOffset = 88;
-  const isHome      = pathname === "/";
   const isSearch    = pathname === "/search";
   const isMessages  = pathname === "/messages" || pathname === "/dashboard/messages";
   const isWallets   = pathname === "/wallets" || pathname.startsWith("/wallets/") || pathname.startsWith("/dashboard/wallets");
@@ -45,11 +43,15 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
     totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
   if (isMessages || isWallets || isProfile || isEventDetail) return null;
 
+  const isHome = pathname === "/home" || pathname === "/";
+
   if (appShell) {
     return (
       <>
-        <header className="sticky top-0 z-40 hidden md:flex pointer-events-none">
-          {isHome ? (
+        {/* Desktop header */}
+        {isHome ? (
+          /* Home: keep original animated hero search widget */
+          <header className="sticky top-0 z-40 hidden md:flex pointer-events-none">
             <div
               className="pointer-events-none absolute top-0 px-4 md:px-6"
               style={{
@@ -92,59 +94,88 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
                 </div>
               </div>
             </div>
-          ) : null}
-          <div
-            className="pointer-events-auto flex justify-center px-4 md:px-6"
-            style={{
-              width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
-              marginLeft: `${stableSidebarOffset}px`,
-              transition: "width 0.3s ease-in-out",
-            }}
-          >
             <div
-              className={`flex w-full justify-center transition-[height,padding,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHome ? "items-start" : "items-center"}`}
+              className="pointer-events-auto flex justify-center px-4 md:px-6"
               style={{
-                height: isHome ? `${160 - easedHomeProgress * 52}px` : isCompact ? 72 : 84,
-                paddingTop: isHome ? `${28 - easedHomeProgress * 11}px` : isCompact ? 16 : 18,
-                paddingBottom: isHome ? `${22 - easedHomeProgress * 10}px` : isCompact ? 10 : 14,
-                transform: isHome ? `translateY(${8 - easedHomeProgress * 4}px)` : undefined,
+                width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
+                marginLeft: `${stableSidebarOffset}px`,
+                transition: "width 0.3s ease-in-out",
               }}
             >
-              {isHome ? (
+              <div
+                className="flex w-full items-start justify-center transition-[height,padding,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{
+                  height: `${160 - easedHomeProgress * 52}px`,
+                  paddingTop: `${28 - easedHomeProgress * 11}px`,
+                  paddingBottom: `${22 - easedHomeProgress * 10}px`,
+                  transform: `translateY(${8 - easedHomeProgress * 4}px)`,
+                }}
+              >
                 <HomeSearchHero
                   compactProgress={compactProgress}
                   miniProgress={miniProgress}
                   mode={isMini ? "mini" : isCompact ? "compact" : "expanded"}
                 />
-              ) : !isSearch ? (
-                <div className="w-full max-w-2xl mx-auto">
-                  <SearchPillExpanded compact={isCompact} />
-                </div>
-              ) : null}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        ) : (
+          /* Non-home app pages: compact 72px bar with search pill + icons */
+          <header
+            className="sticky top-0 z-40 hidden md:flex items-center border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] backdrop-blur-xl"
+            style={{
+              width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
+              marginLeft: `${stableSidebarOffset}px`,
+              height: 72,
+              transition: "width 0.3s ease-in-out",
+            }}
+          >
+            <div className="flex w-full items-center gap-4 px-6">
+              {!isSearch ? (
+                <div className="flex-1 max-w-2xl mx-auto">
+                  <SearchPillExpanded compact />
+                </div>
+              ) : (
+                <div className="flex-1" />
+              )}
+              <div className="flex shrink-0 items-center gap-2">
+                <NotificationBell />
+                <button
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] ${totalCount === 0 ? "hidden" : ""}`}
+                    onClick={openCart}
+                    type="button"
+                    suppressHydrationWarning
+                  >
+                    <ShoppingCart size={17} weight="bold" />
+                    <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
+                      {totalCount}
+                    </span>
+                  </button>
+                <ThemeToggle />
+              </div>
+            </div>
+          </header>
+        )}
 
+        {/* Mobile header */}
         <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
           <div className="flex items-center justify-between gap-3">
             <Link href="/">
               <Image src="/logo-mini.png" alt="GoOutside" width={32} height={32} style={{ objectFit: "contain" }} />
             </Link>
             <div className="flex items-center gap-1.5">
-              <PulseScorePillConnected />
               <NotificationBell />
-              {totalCount > 0 && (
-                <button
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95"
+              <button
+                  className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 ${totalCount === 0 ? "hidden" : ""}`}
                   onClick={openCart}
                   type="button"
+                  suppressHydrationWarning
                 >
                   <ShoppingCart size={17} weight="bold" />
-                  <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
+                  <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
                     {totalCount}
                   </span>
                 </button>
-              )}
               <ThemeToggle />
               <Link
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
@@ -173,18 +204,17 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
           )}
           <div className="flex items-center gap-2">
             <NotificationBell />
-            {totalCount > 0 && (
-              <button
-                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)]"
+            <button
+                className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] ${totalCount === 0 ? "hidden" : ""}`}
                 onClick={openCart}
                 type="button"
+                suppressHydrationWarning
               >
                 <ShoppingCart size={17} weight="bold" />
-                <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
+                <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
                   {totalCount}
                 </span>
               </button>
-            )}
             <ThemeToggle />
             <Link
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition hover:opacity-90"
@@ -202,7 +232,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
             <Image src="/logo-mini.png" alt="GoOutside" width={32} height={32} style={{ objectFit: "contain" }} />
           </Link>
           <div className="flex items-center gap-1.5">
-            <PulseScorePillConnected />
             <Link
               className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)]"
               href="/search"
