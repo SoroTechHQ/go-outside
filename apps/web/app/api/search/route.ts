@@ -249,12 +249,12 @@ async function fetchEvents(
     return rankByInterests(rpcData as EventRow[], userInterests);
   }
 
-  // Hard fallback: title ilike without date filter (maximises recall for typeahead)
+  // Hard fallback: title OR description ilike + tags overlap (maximises recall for typeahead)
   let fallback = supabaseAdmin
     .from("events")
     .select(EVENT_SELECT)
     .eq("status", "published")
-    .ilike("title", `%${q}%`)
+    .or(`title.ilike.%${q}%,description.ilike.%${q}%,tags.cs.{${q}}`)
     .order("trending_score", { ascending: false })
     .limit(limit);
   if (categories.length > 0) fallback = fallback.overlaps("tags", categories);

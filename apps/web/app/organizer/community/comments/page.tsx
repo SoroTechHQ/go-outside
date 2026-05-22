@@ -21,7 +21,7 @@ export default async function OrganizerCommentsPage() {
   const { data: posts } = await supabaseAdmin
     .from("posts")
     .select(`
-      id, body, likes_count, created_at,
+      id, body, like_count, created_at,
       users (first_name, last_name, avatar_url),
       events (id, title, slug)
     `)
@@ -40,7 +40,7 @@ export default async function OrganizerCommentsPage() {
   type PostRow = {
     id: string;
     body: string;
-    likes_count: number | null;
+    like_count: number | null;
     created_at: string;
     users: { first_name: string; last_name: string; avatar_url: string | null } | null;
     events: { id: string; title: string; slug: string } | null;

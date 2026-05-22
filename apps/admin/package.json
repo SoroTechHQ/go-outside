@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.2.1",
     "@gooutside/demo-data": "workspace:*",
     "@gooutside/ui": "workspace:*",
     "@supabase/supabase-js": "^2",

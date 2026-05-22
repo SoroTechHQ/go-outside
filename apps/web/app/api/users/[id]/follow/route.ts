@@ -22,6 +22,14 @@ export async function POST(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Write behavioral signal to graph_edges for recommendation engine
+  void supabaseAdmin
+    .from("graph_edges")
+    .upsert(
+      { source_id: me.id, target_id: targetUserId, edge_type: "follow", weight: 1.0 },
+      { onConflict: "source_id,target_id,edge_type" },
+    );
+
   // Create a notification for the target user
   await supabaseAdmin.from("notifications").insert({
     user_id: targetUserId,

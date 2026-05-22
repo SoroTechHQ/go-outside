@@ -23,14 +23,16 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
   const user = await getOrCreateSupabaseUser();
   if (!user) redirect("/sign-in");
 
-  const dashboard =
-    user.role === "organizer" || user.role === "admin"
-      ? await getOrganizerDashboardData(user.id)
-      : null;
+  if (user.role !== "organizer" && user.role !== "admin") {
+    redirect("/home");
+  }
+
+  const dashboard = await getOrganizerDashboardData(user.id);
+  if (!dashboard) redirect("/home");
 
   const fallbackName = `${user.first_name} ${user.last_name}`.trim() || user.first_name;
 
-  const ownEvents = (dashboard?.recentEvents ?? []).map((e) => ({
+  const ownEvents = (dashboard.recentEvents ?? []).map((e) => ({
     id: e.id,
     title: e.title,
     date: null as string | null,
@@ -40,10 +42,10 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
   return (
     <div className="h-screen overflow-hidden">
       <OrganizerShell
-        organizer={dashboard?.organizer ?? null}
-        organizerName={dashboard?.organizer.name ?? fallbackName}
+        organizer={dashboard.organizer ?? null}
+        organizerName={dashboard.organizer?.name ?? fallbackName}
         ownEvents={ownEvents}
-        verified={Boolean(dashboard?.organizer.verified)}
+        verified={Boolean(dashboard.organizer?.verified)}
       >
         {children}
       </OrganizerShell>

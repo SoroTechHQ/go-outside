@@ -10,6 +10,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@clerk/nextjs':
+        specifier: ^7.2.1
+        version: 7.2.1(next@15.5.14(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@gooutside/demo-data':
         specifier: workspace:*
         version: link:../../packages/demo-data
@@ -173,6 +176,9 @@ importers:
       stream-chat-react:
         specifier: ^13.11.0
         version: 13.14.4(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(stream-chat@9.41.1)(typescript@5.9.3)
+      svix:
+        specifier: ^1.94.0
+        version: 1.94.0
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.5.0
@@ -2671,6 +2677,9 @@ packages:
 
   svix@1.88.0:
     resolution: {integrity: sha512-vm/JrrUd3bVyBE+3L33TIyVSs8gS5fYx7lrISvKlDJXTYX1ACH4REX8P1tHxsSKoZi/rvifM1t0XRc5Vc45THw==}
+
+  svix@1.94.0:
+    resolution: {integrity: sha512-FuP5nJez1P/SeK+4zOBI8RrNhtrzMTBSvwuD4yGGsn+Af2yQazid6OwPu3fpZpMifOJxrJua0su/dYB5fe4v9Q==}
 
   swr@2.3.4:
     resolution: {integrity: sha512-bYd2lrhc+VarcpkgWclcUi92wYCpOgMws9Sd1hG1ntAu0NEy+14CbotuFjshBU2kt9rYj9TSmDcybpxpeTU1fg==}
@@ -5300,6 +5309,10 @@ snapshots:
     dependencies:
       standardwebhooks: 1.0.0
       uuid: 10.0.0
+
+  svix@1.94.0:
+    dependencies:
+      standardwebhooks: 1.0.0
 
   swr@2.3.4(react@19.2.4):
     dependencies:

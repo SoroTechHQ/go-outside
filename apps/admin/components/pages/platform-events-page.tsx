@@ -80,14 +80,92 @@ export async function PlatformEventsPage({ searchParams }: Props) {
           <MetricTile accent="coral" label="Cancelled events" meta="Events that have been cancelled" trend="Cancelled" value={String(cancelled ?? 0)} />
         </div>
 
-        <SectionBlock subtitle="Click a column header to sort. Select rows for bulk actions." title="Event index">
-          <AdminTableControls
-            sortOptions={SORT_OPTIONS}
-            currentParams={{ q, limit: String(limit), sort, order: order ? "asc" : "desc", sort2, order2: order2 ? "asc" : "desc", regex }}
-            searchPlaceholder="Search title or slug…"
-          />
-          <EventsDataTable events={eventsData} searchQuery={q} />
-          <AdminPagination total={total} page={page} limit={limit} currentParams={currentParams} />
+        {/* Events table */}
+        <SectionBlock
+          subtitle="All events ordered by creation date — publish or feature directly from this table."
+          title="Event index"
+        >
+          {eventsData.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)]">No events found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--border-subtle)]">
+                    {["Title", "Organizer", "Category", "Date", "Tickets", "Status", "Actions"].map((heading) => (
+                      <th
+                        key={heading}
+                        className="pb-3 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]"
+                      >
+                        {heading}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)]">
+                  {eventsData.map((event) => {
+                    const organizerName = event.organizer
+                      ? [event.organizer.first_name, event.organizer.last_name].filter(Boolean).join(" ") || "Unknown"
+                      : "Unknown";
+                    const categoryName = event.categories?.name ?? "General";
+
+                    return (
+                      <tr key={event.id}>
+                        {/* Title */}
+                        <td className="py-4 pr-4">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-semibold text-[var(--text-primary)]">{event.title}</span>
+                            {event.is_landmark && (
+                              <MiniPill tone="amber">Landmark</MiniPill>
+                            )}
+                            {event.is_sponsored && (
+                              <MiniPill tone="violet">Sponsored</MiniPill>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Organizer */}
+                        <td className="py-4 pr-4">
+                          <div className="flex items-center gap-3">
+                            <AvatarStack names={[organizerName]} />
+                            <span className="font-medium text-[var(--text-primary)]">{organizerName}</span>
+                          </div>
+                        </td>
+
+                        {/* Category */}
+                        <td className="py-4 pr-4 text-[var(--text-secondary)]">{categoryName}</td>
+
+                        {/* Date */}
+                        <td className="py-4 pr-4 text-[var(--text-secondary)]">
+                          {formatDate(event.start_datetime)}
+                        </td>
+
+                        {/* Tickets */}
+                        <td className="py-4 pr-4 text-[var(--text-secondary)]">
+                          {event.tickets_sold ?? 0} / {event.total_capacity ?? "Unlimited"}
+                        </td>
+
+                        {/* Status badge */}
+                        <td className="py-4 pr-4">
+                          <MiniPill tone={statusTone(event.status)}>{event.status}</MiniPill>
+                        </td>
+
+                        {/* Actions (client component) */}
+                        <td className="py-4">
+                          <EventActionsRow
+                            id={event.id}
+                            slug={event.slug ?? event.id}
+                            status={event.status}
+                            isFeatured={event.is_featured ?? false}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </SectionBlock>
       </div>
     </DashboardShell>

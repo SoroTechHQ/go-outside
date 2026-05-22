@@ -24,6 +24,7 @@ const interDisplay = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.app"),
   title: "GoOutside",
   description: "Social-first event discovery and platform for Ghana.",
   icons: {

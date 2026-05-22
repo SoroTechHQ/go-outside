@@ -29,11 +29,19 @@ import {
   ForkKnife,
   MagnifyingGlass,
 } from "@phosphor-icons/react";
-import {
-  events as demoEvents,
-  getOrganizerById,
-  getEventImage,
-} from "@gooutside/demo-data";
+import { getEventImage } from "@gooutside/demo-data";
+
+type OrgEvent = {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  categorySlug: string | null;
+  eyebrow: string | null;
+  dateLabel: string | null;
+  venue: string | null;
+  banner_url?: string | null;
+};
 
 /* ── Constants ────────────────────────────────────────────────────────────── */
 
@@ -307,14 +315,23 @@ export default function OrganizerProfilePage() {
 
   const { data: organizer } = useQuery({
     queryKey: ["organizer", id],
-    queryFn: () => getOrganizerById(id) ?? getOrganizerById("org-sankofa-sessions")!,
-    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await fetch(`/api/organizers/${id}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    staleTime: 5 * 60_000,
   });
 
-  const { data: orgEvents = [] } = useQuery({
+  const { data: orgEvents = [] } = useQuery<OrgEvent[]>({
     queryKey: ["organizer-events", id],
-    queryFn: () => demoEvents.filter((e) => e.organizerId === id),
-    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${id}/events`);
+      if (!res.ok) return [];
+      const json = await res.json() as { events?: OrgEvent[] };
+      return json.events ?? [];
+    },
+    staleTime: 5 * 60_000,
     enabled: !!id,
   });
 
@@ -524,7 +541,7 @@ export default function OrganizerProfilePage() {
                     >
                       <div className="relative aspect-[2.4/1] overflow-hidden">
                         <img
-                          src={getEventImage(undefined, upcomingEvents[0].categorySlug)}
+                          src={getEventImage(undefined, upcomingEvents[0].categorySlug ?? undefined)}
                           alt={upcomingEvents[0].title}
                           className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                         />
@@ -556,7 +573,7 @@ export default function OrganizerProfilePage() {
                           onClick={() => router.push(`/events/${event.slug}`)}
                           className="group relative aspect-[0.85] overflow-hidden rounded-[18px] text-left"
                         >
-                          <img src={getEventImage(undefined, event.categorySlug)} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" />
+                          <img src={getEventImage(undefined, event.categorySlug ?? undefined)} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" />
                           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04)_0%,rgba(0,0,0,0.72)_100%)]" />
                           <div className="absolute bottom-0 left-0 right-0 p-3">
                             <p className="text-[11px] font-semibold leading-tight text-white">{event.title}</p>
@@ -578,7 +595,7 @@ export default function OrganizerProfilePage() {
                           onClick={() => router.push(`/events/${event.slug}`)}
                           className="group relative aspect-[0.85] overflow-hidden rounded-[18px] opacity-75 transition-opacity hover:opacity-100"
                         >
-                          <img src={getEventImage(undefined, event.categorySlug)} alt={event.title} className="h-full w-full object-cover grayscale-[25%] transition group-hover:grayscale-0 duration-500" />
+                          <img src={getEventImage(undefined, event.categorySlug ?? undefined)} alt={event.title} className="h-full w-full object-cover grayscale-[25%] transition group-hover:grayscale-0 duration-500" />
                           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.04)_0%,rgba(0,0,0,0.72)_100%)]" />
                           <div className="absolute left-2.5 top-2.5">
                             <span className="rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[8px] font-semibold uppercase text-white/80 backdrop-blur-sm">Past</span>
