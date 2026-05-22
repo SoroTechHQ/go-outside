@@ -30,8 +30,8 @@ export type PostEvent = {
 export type Post = {
   id: string;
   body: string;
-  media_urls: string[];
-  likes_count: number;
+  image_url: string | null;
+  like_count: number;
   created_at: string;
   users: PostAuthor;
   events: PostEvent;
@@ -105,8 +105,8 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
   }
 
   const displayLikes = liked
-    ? (post.likes_count + (likeData?.liked === liked ? 0 : liked ? 1 : -1))
-    : post.likes_count;
+    ? (post.like_count + (likeData?.liked === liked ? 0 : liked ? 1 : -1))
+    : post.like_count;
 
   return (
     <article className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 transition hover:border-[var(--border-default)]">
@@ -134,11 +134,11 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
       <p className="mt-3 text-[14px] leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{post.body}</p>
 
       {/* Optional image or video */}
-      {post.media_urls?.[0] && (
+      {post.image_url && (
         <div className="relative mt-3 overflow-hidden rounded-xl bg-zinc-900">
-          {/\.(mp4|mov|webm|qt)(\?|$)/i.test(post.media_urls[0]) ? (
+          {/\.(mp4|mov|webm|qt)(\?|$)/i.test(post.image_url) ? (
             <video
-              src={post.media_urls[0]}
+              src={post.image_url}
               controls
               preload="metadata"
               className="w-full max-h-[360px] object-contain"
@@ -146,7 +146,7 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
           ) : (
             <div className="aspect-[16/9]">
               <Image
-                src={getImageUrl(post.media_urls[0], { width: 800, quality: 72, format: "webp" }) ?? post.media_urls[0]}
+                src={getImageUrl(post.image_url, { width: 800, quality: 72, format: "webp" }) ?? post.image_url}
                 alt="Post image"
                 fill
                 sizes="(max-width: 640px) 100vw, 640px"

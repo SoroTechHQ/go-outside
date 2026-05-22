@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Webhook } from "svix";
 import { supabaseAdmin } from "../../../../lib/supabase";
 
 /**
@@ -8,9 +9,11 @@ import { supabaseAdmin } from "../../../../lib/supabase";
  *   Webhooks → Add Endpoint → https://yourapp.com/api/webhooks/clerk
  *   Events: user.created, user.updated, user.deleted
  *
- * Add CLERK_WEBHOOK_SECRET to .env.local.
+ * Add CLERK_WEBHOOK_SECRET to .env.local (from Clerk dashboard webhook signing secret).
  * For local dev: use `npx ngrok http 3000` and update the endpoint URL.
  */
+
+export const dynamic = "force-dynamic";
 
 type ClerkEmailAddress = {
   id:             string;
@@ -30,17 +33,35 @@ type ClerkUserEvent = {
 };
 
 export async function POST(req: NextRequest) {
-  // Signature verification (requires `svix` package + CLERK_WEBHOOK_SECRET)
-  // For now we check a shared secret header as a simpler guard
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const headerSecret = req.headers.get("x-clerk-secret");
-    if (headerSecret !== webhookSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!webhookSecret) {
+    console.error("[webhook/clerk] CLERK_WEBHOOK_SECRET is not set");
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
-  const event = (await req.json()) as ClerkUserEvent;
+  const svixId        = req.headers.get("svix-id") ?? "";
+  const svixTimestamp = req.headers.get("svix-timestamp") ?? "";
+  const svixSignature = req.headers.get("svix-signature") ?? "";
+
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return NextResponse.json({ error: "Missing svix headers" }, { status: 400 });
+  }
+
+  const body = await req.text();
+
+  let event: ClerkUserEvent;
+  try {
+    const wh = new Webhook(webhookSecret);
+    event = wh.verify(body, {
+      "svix-id":        svixId,
+      "svix-timestamp": svixTimestamp,
+      "svix-signature": svixSignature,
+    }) as ClerkUserEvent;
+  } catch (err) {
+    console.error("[webhook/clerk] signature verification failed:", err);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
   const { type, data } = event;
 
   const primaryEmail = data.email_addresses.find(
@@ -67,7 +88,7 @@ export async function POST(req: NextRequest) {
           first_name: data.first_name ?? "User",
           last_name:  data.last_name ?? "",
         })
-        .eq("id", existing.id);
+        .eq("id", (existing as { id: string }).id);
     } else {
       await supabaseAdmin.from("users").insert({
         clerk_id:   data.id,

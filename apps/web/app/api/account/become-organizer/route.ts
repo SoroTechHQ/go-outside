@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
   if (csrf) return csrf;
 
   const body = await req.json() as Record<string, unknown>;
-  const orgName     = typeof body.organization_name === "string" ? body.organization_name.trim() : "";
-  const orgBio      = typeof body.bio === "string" ? body.bio.trim() : "";
+  const orgName      = typeof body.organization_name === "string" ? body.organization_name.trim() : "";
+  const orgBio       = typeof body.bio === "string" ? body.bio.trim() : "";
   const primaryScene = typeof body.primary_scene === "string" ? body.primary_scene.trim() : null;
 
   if (!orgName) return jsonError(400, "Organization name is required");
@@ -29,17 +29,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, already: true });
   }
 
+  // Check platform config: does organizer registration require manual approval?
+  const { data: config } = await supabaseAdmin
+    .from("admin_config")
+    .select("value")
+    .eq("key", "organizer_approval_required")
+    .maybeSingle();
+
+  const approvalRequired = (config as { value: unknown } | null)?.value === true
+    || (config as { value: unknown } | null)?.value === "true";
+
+  const profileStatus = approvalRequired ? "pending" : "approved";
+  const userRole      = approvalRequired ? "attendee" : "organizer";
+
   const { error: userErr } = await supabaseAdmin
     .from("users")
     .update({
       account_type:          "organizer",
-      role:                  "organizer",
-      is_verified_organizer: true,
+      role:                  userRole,
+      is_verified_organizer: !approvalRequired,
       organizer_bio:         orgBio || null,
       organizer_category:    primaryScene ? [primaryScene] : null,
       updated_at:            new Date().toISOString(),
     })
-    .eq("id", existing.id);
+    .eq("id", (existing as { id: string }).id);
 
   if (userErr) {
     console.error("[become-organizer] users update", userErr);
@@ -50,10 +63,10 @@ export async function POST(req: NextRequest) {
     .from("organizer_profiles")
     .upsert(
       {
-        user_id:           existing.id,
+        user_id:           (existing as { id: string }).id,
         organization_name: orgName,
         bio:               orgBio || null,
-        status:            "approved",
+        status:            profileStatus,
         updated_at:        new Date().toISOString(),
       },
       { onConflict: "user_id" }
@@ -64,5 +77,5 @@ export async function POST(req: NextRequest) {
     return jsonError(500, "Failed to create organizer profile");
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, pending: approvalRequired });
 }

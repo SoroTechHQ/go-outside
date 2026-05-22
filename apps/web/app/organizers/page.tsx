@@ -1,11 +1,10 @@
-import { organizers as demoOrganizers } from "@gooutside/demo-data";
 import { getOrganizers } from "../../lib/db/organizers";
 import { Button, SectionHeader, ShellCard } from "@gooutside/ui";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 
 export default async function OrganizersPage() {
   const organizers = await getOrganizers();
-  const visibleOrganizers = organizers.length > 0 ? organizers : demoOrganizers;
+  const visibleOrganizers = organizers;
 
   return (
     <main className="page-grid min-h-screen pb-24">

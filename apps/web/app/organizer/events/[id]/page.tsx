@@ -58,7 +58,7 @@ export default async function OrganizerEventDetailPage({
       .limit(6),
     supabaseAdmin
       .from("posts")
-      .select("id, body, likes_count, created_at, users (first_name, last_name)")
+      .select("id, body, like_count, created_at, users (first_name, last_name)")
       .eq("event_id", id)
       .order("created_at", { ascending: false })
       .limit(10),
@@ -293,7 +293,7 @@ export default async function OrganizerEventDetailPage({
                         <p className="text-[11px] text-[var(--text-tertiary)]">{formatRelative(post.created_at)}</p>
                       </div>
                     </div>
-                    <span className="shrink-0 text-[12px] text-[var(--text-tertiary)]">♡ {post.likes_count ?? 0}</span>
+                    <span className="shrink-0 text-[12px] text-[var(--text-tertiary)]">♡ {post.like_count ?? 0}</span>
                   </div>
                   <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">{post.body}</p>
                 </div>

@@ -32,12 +32,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
 async function adjustLikesCount(postId: string, delta: 1 | -1) {
   const { data: cur } = await supabaseAdmin
     .from("posts")
-    .select("likes_count")
+    .select("like_count")
     .eq("id", postId)
     .maybeSingle();
   if (!cur) return;
-  const next = Math.max(0, ((cur as { likes_count: number }).likes_count ?? 0) + delta);
-  await supabaseAdmin.from("posts").update({ likes_count: next }).eq("id", postId);
+  const next = Math.max(0, ((cur as { like_count: number }).like_count ?? 0) + delta);
+  await supabaseAdmin.from("posts").update({ like_count: next }).eq("id", postId);
 }
 
 // POST /api/posts/[id]/like  — like a post

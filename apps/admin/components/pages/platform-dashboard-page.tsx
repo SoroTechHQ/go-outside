@@ -131,7 +131,7 @@ export async function PlatformDashboardPage() {
             label="Revenue MTD"
             meta="Gross revenue from paid tickets this month"
             trend="GHS"
-            value={`₵${revenueMTD.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={`GHS ${revenueMTD.toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           />
           <MetricTile
             accent="coral"
@@ -190,7 +190,7 @@ export async function PlatformDashboardPage() {
                           {ev.start_datetime ? formatDate(ev.start_datetime) : "TBD"}
                         </td>
                         <td className="py-4 pr-4 text-[var(--text-secondary)]">
-                          {ev.tickets_sold ?? 0} / {ev.total_capacity ?? "∞"}
+                          {ev.tickets_sold ?? 0} / {ev.total_capacity ?? "Unlimited"}
                         </td>
                         <td className="py-4">
                           <MiniPill tone="brand">{ev.status}</MiniPill>
