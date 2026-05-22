@@ -8,6 +8,8 @@ export type PulseTier =
 
 export type UserProfile = {
   id: string;
+  clerkId: string;
+  role: "admin" | "organizer" | "attendee";
   name: string;
   handle: string;
   bio: string;

@@ -9,7 +9,9 @@ import {
   CalendarBlank,
   ChartBar,
   ChatCircle,
+  ChatsCircle,
   Hash,
+  MegaphoneSimple,
   MoonStars,
   NotePencil,
   PencilSimple,
@@ -48,14 +50,14 @@ function buildNavGroups(openPostModal: () => void): Array<{ label: string; items
       label: "Growth",
       items: [
         { href: "/organizer/analytics", label: "Analytics", icon: ChartBar },
-        { label: "Ad Manager", icon: ChartBar, badge: "Soon" },
+        { label: "Ad Manager", icon: MegaphoneSimple, badge: "Soon" },
         { href: "/organizer/hashtags", label: "Hashtags", icon: Hash },
       ],
     },
     {
       label: "Community",
       items: [
-        { href: "/messages", label: "Messages", icon: NotePencil },
+        { href: "/dashboard/messages", label: "Messages", icon: ChatsCircle },
         { href: "/organizer/community/comments", label: "Comments", icon: ChatCircle },
         { href: "/organizer/community/snippets", label: "Snippets", icon: Star },
       ],
@@ -201,7 +203,7 @@ function OrganizerSidebarProfile({
           </div>
         </div>
         <Link
-          href="/organizer"
+          href="/dashboard/profile"
           className="shrink-0 rounded-full border border-[var(--border-subtle)] p-1.5 text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
           title="Edit profile"
         >

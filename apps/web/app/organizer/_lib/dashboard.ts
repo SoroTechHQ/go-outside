@@ -37,6 +37,15 @@ type OrganizerEventRow = {
   custom_location: string | null;
 };
 
+export type OrganizerPost = {
+  id: string;
+  body: string;
+  imageUrl: string | null;
+  likeCount: number;
+  createdAt: string;
+  eventTitle: string | null;
+};
+
 export type OrganizerDashboardData = {
   organizer: {
     name: string;
@@ -50,6 +59,7 @@ export type OrganizerDashboardData = {
     verified: boolean;
     totalEvents: number;
   };
+  posts: OrganizerPost[];
   overview: {
     ticketSales: number;
     ticketSalesDelta: string;
@@ -177,7 +187,7 @@ function getStatusTone(status: OrganizerDashboardData["recentEvents"][number]["s
 }
 
 export async function getOrganizerDashboardData(userId: string): Promise<OrganizerDashboardData | null> {
-  const [{ data: profile }, { data: events }] = await Promise.all([
+  const [{ data: profile }, { data: events }, { count: followerCount }, { data: rawPosts }] = await Promise.all([
     supabaseAdmin
       .from("organizer_profiles")
       .select(`
@@ -216,6 +226,16 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       .eq("organizer_id", userId)
       .order("start_datetime", { ascending: false })
       .limit(8),
+    supabaseAdmin
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", userId),
+    supabaseAdmin
+      .from("posts")
+      .select("id, body, image_url, like_count, created_at, events(title)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(6),
   ]);
 
   if (!profile) return null;
@@ -229,10 +249,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
     (sum, event) => sum + event.tickets_sold * 11 + event.saves_count * 17,
     0,
   );
-  const followerCount = Math.max(
-    180,
-    Math.round(eventCount * 126 + ticketSales * 0.72 + revenue / 850),
-  );
+  const realFollowerCount = followerCount ?? 0;
   const boostedReach = clamp(Math.round(eventViews * 0.35), 120, Math.max(120, eventViews));
   const organicReach = Math.max(240, eventViews - boostedReach);
   const conversionRate = clamp(
@@ -281,6 +298,15 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
 
   const organizerName = organizerProfile.organization_name;
 
+  const posts: OrganizerPost[] = (rawPosts ?? []).map((p: Record<string, unknown>) => ({
+    id: p.id as string,
+    body: (p.body as string) ?? "",
+    imageUrl: (p.image_url as string | null) ?? null,
+    likeCount: (p.like_count as number) ?? 0,
+    createdAt: p.created_at as string,
+    eventTitle: (p.events as { title: string } | null)?.title ?? null,
+  }));
+
   return {
     organizer: {
       name: organizerName,
@@ -299,8 +325,8 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
     overview: {
       ticketSales,
       ticketSalesDelta: `+${Math.max(8, Math.round(ticketSales * 0.18))}% vs last month`,
-      followerCount,
-      followerDelta: `+${Math.max(24, Math.round(followerCount * 0.06))} this week`,
+      followerCount: realFollowerCount,
+      followerDelta: `+${Math.max(1, Math.round(realFollowerCount * 0.06))} this week`,
       eventViews,
       eventViewsDelta: `${eventViews > 1600 ? "+" : "-"}${Math.max(3, Math.round(eventViews * 0.04))}% this week`,
       revenue,
@@ -309,6 +335,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       organicReach,
       boostedReach,
     },
+    posts,
     salesSeries: buildSalesSeries(ticketSales),
     recentEvents,
     hashtags: Array.from(new Set(hashtags)).slice(0, 10),
@@ -324,7 +351,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
         id: "new-followers",
         tone: "purple",
         title: "Audience growth",
-        body: `${Math.max(18, Math.round(followerCount * 0.04))} new followers came in from event shares and profile visits.`,
+        body: `${Math.max(1, Math.round(realFollowerCount * 0.04))} new followers came in from event shares and profile visits.`,
         timeLabel: "48 min ago",
       },
       {

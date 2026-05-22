@@ -9,6 +9,8 @@ import {
   ChatsCircle,
   Compass,
   Hash,
+  Heart,
+  Image,
   MegaphoneSimple,
   Sparkle,
   Star,
@@ -449,6 +451,15 @@ function AdCampaignsTab() {
   );
 }
 
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 function PostsTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
   return (
     <div className="space-y-5">
@@ -486,10 +497,51 @@ function PostsTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
         </div>
       )}
 
-      <div className="flex flex-col items-center justify-center rounded-[20px] border border-dashed border-[var(--border-subtle)] py-14 text-center">
-        <ChatsCircle size={28} className="text-[var(--text-tertiary)]" weight="thin" />
-        <p className="mt-3 text-[13px] text-[var(--text-secondary)]">Your published posts will appear here.</p>
-      </div>
+      {dashboard.posts.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {dashboard.posts.map((post) => (
+            <article key={post.id} className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+              {post.imageUrl && (
+                <div className="mb-3 overflow-hidden rounded-[14px] bg-[var(--bg-muted)]">
+                  <img src={post.imageUrl} alt="" className="h-40 w-full object-cover" />
+                </div>
+              )}
+              {!post.imageUrl && (
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[14px] bg-[var(--bg-elevated)]">
+                  <Image size={18} className="text-[var(--text-tertiary)]" weight="thin" />
+                </div>
+              )}
+              <p className="line-clamp-3 text-[13px] leading-relaxed text-[var(--text-primary)]">{post.body}</p>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
+                  <Heart size={12} />
+                  <span>{post.likeCount}</span>
+                  {post.eventTitle && (
+                    <>
+                      <span className="mx-1">·</span>
+                      <Ticket size={12} />
+                      <span className="truncate max-w-[120px]">{post.eventTitle}</span>
+                    </>
+                  )}
+                </div>
+                <span className="text-[11px] text-[var(--text-tertiary)]">{timeAgo(post.createdAt)}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center rounded-[20px] border border-dashed border-[var(--border-subtle)] py-14 text-center">
+          <ChatsCircle size={28} className="text-[var(--text-tertiary)]" weight="thin" />
+          <p className="mt-3 text-[13px] text-[var(--text-secondary)]">No posts yet — create one to engage your audience.</p>
+          <Link
+            href="/organizer/create-post"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-black transition hover:opacity-90"
+          >
+            <Sparkle size={14} weight="fill" />
+            Write your first post
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

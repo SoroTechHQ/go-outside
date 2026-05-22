@@ -172,11 +172,12 @@ export default function TrendingPage() {
   const [tab, setTab] = useState<TabType>("events");
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useQuery<TrendingResponse>({
+  const { data, isLoading, isError } = useQuery<TrendingResponse>({
     queryKey: ["trending", tab],
     queryFn: () => fetchTrending(tab),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   const filteredEvents = (data?.events ?? []).filter((e) =>
@@ -256,6 +257,10 @@ export default function TrendingPage() {
             <div className="space-y-3">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : isError ? (
+                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">
+                  Could not load trending events — please try again.
+                </p>
               ) : filteredEvents.length === 0 ? (
                 <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">
                   No trending events in the last 48h yet.
@@ -343,6 +348,10 @@ export default function TrendingPage() {
               </p>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : isError ? (
+                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">
+                  Could not load trending organizers — please try again.
+                </p>
               ) : filteredOrgs.length === 0 ? (
                 <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">
                   No trending organizers yet.
@@ -416,6 +425,10 @@ export default function TrendingPage() {
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="h-14 rounded-2xl bg-[var(--bg-muted)] animate-pulse" />
                 ))
+              ) : isError ? (
+                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">
+                  Could not load trending topics — please try again.
+                </p>
               ) : filteredTopics.length === 0 ? (
                 <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">
                   No trending topics yet — post some snippets!

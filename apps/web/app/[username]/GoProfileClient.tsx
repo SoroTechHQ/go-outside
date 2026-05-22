@@ -983,6 +983,8 @@ export default function GoProfileClient({
                 snippetCount:      0,
                 topCategories:     [],
                 importedTweetIds:  [],
+                clerkId:           clerkId,
+                role:              "attendee",
                 isOwnProfile:      true,
               }}
               onClose={() => setEditOpen(false)}

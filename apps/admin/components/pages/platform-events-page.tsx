@@ -1,15 +1,38 @@
 import { supabaseAdmin } from "../../lib/supabase";
 import { DashboardShell } from "../dashboard-shell";
-import { MetricTile, SectionBlock } from "../dashboard-primitives";
+import { MetricTile, MiniPill, SectionBlock, AvatarStack } from "../dashboard-primitives";
 import { AdminTableControls } from "../AdminTableControls";
 import { AdminPagination } from "../AdminPagination";
 import { EventsDataTable, type EventRow } from "../events/EventsDataTable";
+import { EventActionsRow } from "../EventActionsRow";
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function statusTone(status: string): "brand" | "amber" | "coral" | "cyan" | "violet" {
+  if (status === "published") return "brand";
+  if (status === "draft") return "amber";
+  if (status === "cancelled") return "coral";
+  return "cyan";
+}
 
 const SORT_OPTIONS = [
   { label: "Date created", value: "created_at" },
   { label: "Event date", value: "start_datetime" },
   { label: "Tickets sold", value: "tickets_sold" },
   { label: "Title A–Z", value: "title" },
+]
+
+const STATUS_FILTERS = [
+  { label: "All", value: "" },
+  { label: "Live", value: "published" },
+  { label: "Draft", value: "draft" },
+  { label: "Cancelled", value: "cancelled" },
 ]
 
 type Props = { searchParams: Record<string, string> }
@@ -29,6 +52,9 @@ export async function PlatformEventsPage({ searchParams }: Props) {
   const order2 = searchParams.order2 === "asc"
   const q = searchParams.q?.trim() ?? ""
   const regex = searchParams.regex === "1"
+  const statusFilter = STATUS_FILTERS.some((s) => s.value === searchParams.status)
+    ? searchParams.status
+    : ""
   const offset = (page - 1) * limit
 
   const [{ count: live }, { count: draft }, { count: cancelled }] = await Promise.all([
@@ -46,6 +72,10 @@ export async function PlatformEventsPage({ searchParams }: Props) {
        organizer:users!events_organizer_id_fkey(first_name, last_name)`,
       { count: "exact" }
     )
+
+  if (statusFilter) {
+    query = query.eq("status", statusFilter)
+  }
 
   if (q) {
     if (regex) {
@@ -69,11 +99,23 @@ export async function PlatformEventsPage({ searchParams }: Props) {
     order: order ? "asc" : "desc",
     ...(sort2 && { sort2, order2: order2 ? "asc" : "desc" }),
     ...(regex && { regex: "1" }),
+    ...(statusFilter && { status: statusFilter }),
+  }
+
+  const tableControlParams = {
+    q,
+    limit: String(limit),
+    sort,
+    order: order ? "asc" : "desc",
+    sort2,
+    order2: order2 ? "asc" : "desc",
+    regex,
   }
 
   return (
     <DashboardShell mode="admin" subtitle="Review, approve and feature events." title="Events">
       <div className="space-y-6">
+        {/* KPI tiles */}
         <div className="grid gap-5 sm:grid-cols-3">
           <MetricTile accent="brand" label="Live events" meta="Currently published and discoverable" trend="Published" value={String(live ?? 0)} />
           <MetricTile accent="amber" label="Draft events" meta="Awaiting organizer submission or admin approval" trend="Draft" value={String(draft ?? 0)} />
@@ -82,11 +124,49 @@ export async function PlatformEventsPage({ searchParams }: Props) {
 
         {/* Events table */}
         <SectionBlock
-          subtitle="All events ordered by creation date — publish or feature directly from this table."
+          subtitle={`${total.toLocaleString()} event${total !== 1 ? "s" : ""} — search, filter, and manage directly from this table.`}
           title="Event index"
         >
+          {/* Status filter tabs */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {STATUS_FILTERS.map((sf) => {
+              const params = new URLSearchParams({ ...currentParams, status: sf.value, page: "1" })
+              if (!sf.value) params.delete("status")
+              const isActive = statusFilter === sf.value
+              return (
+                <a
+                  key={sf.value || "all"}
+                  href={`?${params.toString()}`}
+                  className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition ${
+                    isActive
+                      ? "bg-[var(--brand)]/15 text-[var(--brand)]"
+                      : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {sf.label}
+                  {sf.value === "published" && live != null && (
+                    <span className="ml-1.5 rounded-full bg-[var(--brand)]/20 px-1.5 py-0.5 text-[10px]">{live}</span>
+                  )}
+                  {sf.value === "draft" && draft != null && (
+                    <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-500">{draft}</span>
+                  )}
+                  {sf.value === "cancelled" && cancelled != null && (
+                    <span className="ml-1.5 rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[10px] text-rose-500">{cancelled}</span>
+                  )}
+                </a>
+              )
+            })}
+          </div>
+
+          {/* Search + sort controls */}
+          <AdminTableControls
+            sortOptions={SORT_OPTIONS}
+            currentParams={tableControlParams}
+            searchPlaceholder="Search by title or slug…"
+          />
+
           {eventsData.length === 0 ? (
-            <p className="text-sm text-[var(--text-tertiary)]">No events found.</p>
+            <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">No events found matching your filters.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -110,11 +190,14 @@ export async function PlatformEventsPage({ searchParams }: Props) {
                     const categoryName = event.categories?.name ?? "General";
 
                     return (
-                      <tr key={event.id}>
+                      <tr key={event.id} className="transition-colors hover:bg-[var(--bg-muted)]/40">
                         {/* Title */}
                         <td className="py-4 pr-4">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className="font-semibold text-[var(--text-primary)]">{event.title}</span>
+                            {event.is_featured && (
+                              <MiniPill tone="cyan">Featured</MiniPill>
+                            )}
                             {event.is_landmark && (
                               <MiniPill tone="amber">Landmark</MiniPill>
                             )}
@@ -136,13 +219,14 @@ export async function PlatformEventsPage({ searchParams }: Props) {
                         <td className="py-4 pr-4 text-[var(--text-secondary)]">{categoryName}</td>
 
                         {/* Date */}
-                        <td className="py-4 pr-4 text-[var(--text-secondary)]">
-                          {formatDate(event.start_datetime)}
+                        <td className="py-4 pr-4 whitespace-nowrap text-[var(--text-secondary)]">
+                          {event.start_datetime ? formatDate(event.start_datetime) : "TBD"}
                         </td>
 
                         {/* Tickets */}
-                        <td className="py-4 pr-4 text-[var(--text-secondary)]">
-                          {event.tickets_sold ?? 0} / {event.total_capacity ?? "Unlimited"}
+                        <td className="py-4 pr-4 whitespace-nowrap text-[var(--text-secondary)]">
+                          <span className="font-medium text-[var(--text-primary)]">{event.tickets_sold ?? 0}</span>
+                          <span className="text-[var(--text-tertiary)]"> / {event.total_capacity ?? "∞"}</span>
                         </td>
 
                         {/* Status badge */}
@@ -166,6 +250,14 @@ export async function PlatformEventsPage({ searchParams }: Props) {
               </table>
             </div>
           )}
+
+          {/* Pagination */}
+          <AdminPagination
+            total={total}
+            page={page}
+            limit={limit}
+            currentParams={currentParams}
+          />
         </SectionBlock>
       </div>
     </DashboardShell>

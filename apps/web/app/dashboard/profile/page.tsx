@@ -76,6 +76,8 @@ export default async function ProfilePage() {
 
   const profile: UserProfile = {
     id:               user.id,
+    clerkId:          user.clerk_id,
+    role:             user.role,
     name:             `${user.first_name} ${user.last_name}`.trim(),
     handle:           (user as unknown as { username?: string }).username
                         ?? user.first_name.toLowerCase().replace(/\s/g, "."),
