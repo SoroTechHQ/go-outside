@@ -143,6 +143,18 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function formatTimeAgo(value: string): string {
+  const diff = Date.now() - new Date(value).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(value).toLocaleDateString("en-GH", { month: "short", day: "numeric" });
+}
+
 function formatDateLabel(value: string | null) {
   if (!value) return "No date";
   const d = new Date(value);
@@ -164,12 +176,14 @@ function buildSocialLinks(input: Record<string, string> | null | undefined) {
 
 function buildSalesSeries(totalTickets: number) {
   const labels = ["M", "T", "W", "T", "F", "S", "S"];
+  if (totalTickets === 0) {
+    return labels.map((label) => ({ label, value: 0 }));
+  }
   const weights = [0.36, 0.52, 0.44, 0.78, 1, 0.88, 0.62];
-  const peak = Math.max(18, Math.round(totalTickets / 7));
-
+  const peak = Math.max(1, Math.round(totalTickets / 7));
   return labels.map((label, index) => ({
     label,
-    value: Math.max(8, Math.round(peak * weights[index])),
+    value: Math.round(peak * weights[index]!),
   }));
 }
 
@@ -186,8 +200,20 @@ function getStatusTone(status: OrganizerDashboardData["recentEvents"][number]["s
   return "live" as const;
 }
 
+function deltaLabel(thisWeek: number, lastWeek: number, suffix = "this week"): string {
+  if (lastWeek === 0 && thisWeek === 0) return "No activity yet";
+  if (lastWeek === 0) return `+${thisWeek} ${suffix}`;
+  const pct = Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct}% vs last week`;
+}
+
 export async function getOrganizerDashboardData(userId: string): Promise<OrganizerDashboardData | null> {
-  const [{ data: profile }, { data: events }, { count: followerCount }, { data: rawPosts }] = await Promise.all([
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [{ data: profile }, { data: events }, { count: followerCount }, { data: rawPosts }, { data: rawNotifications }, { data: rawSnippets }, { count: followersThisWeek }, { count: followersLastWeek }] = await Promise.all([
     supabaseAdmin
       .from("organizer_profiles")
       .select(`
@@ -236,6 +262,30 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(6),
+    supabaseAdmin
+      .from("notifications")
+      .select("id, type, title, body, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabaseAdmin
+      .from("snippets")
+      .select("id, body, rating, is_public, created_at, users(first_name, last_name), events!inner(title, organizer_id)")
+      .eq("events.organizer_id", userId)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .limit(4),
+    supabaseAdmin
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", userId)
+      .gte("created_at", weekAgo),
+    supabaseAdmin
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", userId)
+      .gte("created_at", twoWeeksAgo)
+      .lt("created_at", weekAgo),
   ]);
 
   if (!profile) return null;
@@ -324,13 +374,13 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
     },
     overview: {
       ticketSales,
-      ticketSalesDelta: `+${Math.max(8, Math.round(ticketSales * 0.18))}% vs last month`,
+      ticketSalesDelta: ticketSales === 0 ? "No ticket sales yet" : `${ticketSales} total sold`,
       followerCount: realFollowerCount,
-      followerDelta: `+${Math.max(1, Math.round(realFollowerCount * 0.06))} this week`,
+      followerDelta: deltaLabel(followersThisWeek ?? 0, followersLastWeek ?? 0),
       eventViews,
-      eventViewsDelta: `${eventViews > 1600 ? "+" : "-"}${Math.max(3, Math.round(eventViews * 0.04))}% this week`,
+      eventViewsDelta: eventViews === 0 ? "No views yet" : `${eventViews.toLocaleString()} total views`,
       revenue,
-      revenueDelta: `+${Math.max(10, Math.round((revenue || 12000) / 2600))}% this month`,
+      revenueDelta: revenue === 0 ? "No revenue yet" : `GH₵${revenue.toLocaleString()} total`,
       conversionRate,
       organicReach,
       boostedReach,
@@ -339,62 +389,35 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
     salesSeries: buildSalesSeries(ticketSales),
     recentEvents,
     hashtags: Array.from(new Set(hashtags)).slice(0, 10),
-    activity: [
-      {
-        id: "ticket-spike",
-        tone: "green",
-        title: "Ticket spike",
-        body: `${organizerName} picked up ${Math.max(12, Math.round(ticketSales * 0.08))} new purchases in the last 24 hours.`,
-        timeLabel: "12 min ago",
-      },
-      {
-        id: "new-followers",
-        tone: "purple",
-        title: "Audience growth",
-        body: `${Math.max(1, Math.round(realFollowerCount * 0.04))} new followers came in from event shares and profile visits.`,
-        timeLabel: "48 min ago",
-      },
-      {
-        id: "comment-burst",
-        tone: "amber",
-        title: "Community activity",
-        body: `Questions are clustering around ${recentEvents[0]?.title ?? "your latest event"}; pinning a reply would clean that thread up fast.`,
-        timeLabel: "1h ago",
-      },
-      {
-        id: "boost-window",
-        tone: "coral",
-        title: "Boost window",
-        body: "Your strongest reach window is Thursday to Saturday evenings right now.",
-        timeLabel: "Today",
-      },
-    ],
-    snippets: [
-      {
-        id: "snippet-1",
-        user: "Ama O.",
-        rating: 5,
-        text: "Line moved quickly, sound was clean, and the room actually felt curated.",
-        eventTitle: recentEvents[0]?.title ?? "Latest event",
-        featured: true,
-      },
-      {
-        id: "snippet-2",
-        user: "Kofi M.",
-        rating: 4,
-        text: "Good crowd mix and the DJ pacing was right. Would come earlier next time.",
-        eventTitle: recentEvents[1]?.title ?? "Community event",
-        featured: false,
-      },
-      {
-        id: "snippet-3",
-        user: "Efua A.",
-        rating: 5,
-        text: "The event card convinced me first, but the actual experience delivered even more.",
-        eventTitle: recentEvents[2]?.title ?? "Upcoming event",
-        featured: false,
-      },
-    ],
+    activity: (rawNotifications ?? []).map((n: Record<string, unknown>) => {
+      const toneMap: Record<string, OrganizerDashboardData["activity"][number]["tone"]> = {
+        new_follower: "purple",
+        ticket_purchase: "green",
+        event_reminder: "amber",
+        milestone: "green",
+      };
+      return {
+        id: n.id as string,
+        tone: toneMap[n.type as string] ?? "amber",
+        title: n.title as string,
+        body: n.body as string,
+        timeLabel: formatTimeAgo(n.created_at as string),
+      };
+    }),
+    snippets: (rawSnippets ?? []).map((s: Record<string, unknown>) => {
+      const user = s.users as { first_name: string; last_name: string } | null;
+      const event = s.events as { title: string } | null;
+      const firstName = user?.first_name ?? "Someone";
+      const lastName = user?.last_name ?? "";
+      return {
+        id: s.id as string,
+        user: `${firstName} ${lastName.slice(0, 1)}.`.trim(),
+        rating: s.rating as number,
+        text: s.body as string,
+        eventTitle: event?.title ?? "Your event",
+        featured: (s.rating as number) >= 5,
+      };
+    }),
   };
 }
 

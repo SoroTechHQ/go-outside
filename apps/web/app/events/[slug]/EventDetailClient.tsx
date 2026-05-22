@@ -58,10 +58,13 @@ const REEL_THUMBNAILS = [
 ];
 
 function getEventImages(event: EventItem): string[] {
+  // Use the real banner + gallery first; fall back to category placeholders
+  const real = [event.bannerUrl, ...(event.gallery ?? [])].filter(Boolean) as string[];
   const base = Math.max(0, ALL_SLUGS.indexOf(event.categorySlug));
-  return Array.from({ length: 9 }, (_, i) =>
-    getEventImage(undefined, ALL_SLUGS[(base + i) % ALL_SLUGS.length]),
-  );
+  while (real.length < 9) {
+    real.push(getEventImage(undefined, ALL_SLUGS[(base + real.length) % ALL_SLUGS.length]));
+  }
+  return real;
 }
 
 // ── Photo lightbox ─────────────────────────────────────────────────────────────

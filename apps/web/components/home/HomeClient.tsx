@@ -13,14 +13,17 @@ import {
   Fire,
   HeartStraight,
   Images,
+  Lightning,
   MapPin,
+  Rows,
+  SquaresFour,
   Sparkle,
   TrendUp,
   UsersThree,
   Warning,
 } from "@phosphor-icons/react";
+import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { categories, getCategoryEmoji } from "@gooutside/demo-data";
-import HomeSearchHero from "../search/HomeSearchHero";
 import { EventSidePane } from "./EventSidePane";
 import { useAppShell } from "../layout/AppShellContext";
 import {
@@ -29,7 +32,6 @@ import {
   useSavedEvents,
   getFilteredEvents,
 } from "../../hooks/useEventsQuery";
-import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FeedEventItem } from "../../lib/app-contracts";
 import { pickSectionHeader } from "../../lib/feed-sections";
@@ -65,7 +67,7 @@ const FRIEND_CLUSTERS = [
 
 const PULSE_BADGES = ["Gold badge x3", "Night owl"];
 
-const CARDS_PER_SECTION = 3;
+const CARDS_PER_SECTION = 4;
 
 type SponsoredSpotlight = {
   href: string;
@@ -223,10 +225,12 @@ function ImageCard({
   event,
   feedIndex = 0,
   onCardClick,
+  compact = false,
 }: {
   event: FeedEventItem;
   feedIndex?: number;
   onCardClick?: () => void;
+  compact?: boolean;
 }) {
   const { onMouseEnter, onMouseLeave } = useEventHover(event);
   // Real banner from Supabase Storage, with category-colour fallback
@@ -263,10 +267,10 @@ function ImageCard({
       tabIndex={0}
     >
       {/* ── Photo grid ── */}
-      <div className="relative flex aspect-[3/2] overflow-hidden rounded-t-[var(--radius-card-lg)] sm:aspect-[8/3]">
+      <div className={`relative flex overflow-hidden rounded-t-[var(--radius-card-lg)] ${compact ? "aspect-[4/3]" : "aspect-[3/2] sm:aspect-[8/3]"}`}>
 
-        {/* Hero image — full-width on mobile, left 56% on sm+ */}
-        <div className="relative w-full shrink-0 overflow-hidden sm:w-[56%]">
+        {/* Hero image — full-width in compact mode, left 56% on sm+ otherwise */}
+        <div className={`relative shrink-0 overflow-hidden ${compact ? "w-full" : "w-full sm:w-[56%]"}`}>
           {bannerUrl ? (
             <div
               aria-label={event.title}
@@ -293,19 +297,20 @@ function ImageCard({
 
           {/* Bottom text block */}
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-            {/* Social proof */}
+            {/* Social proof — green-tinted when real friend data, neutral otherwise */}
             <div className="mb-2 flex items-center gap-1.5">
               <div className="flex items-center">
                 {avatars.map((url, i) => (
                   <img
                     key={i}
                     alt=""
-                    className={`h-[26px] w-[26px] rounded-full border-[1.5px] border-white/80 object-cover ${i > 0 ? "-ml-2" : ""}`}
+                    className={`h-[26px] w-[26px] rounded-full border-[1.5px] object-cover ${i > 0 ? "-ml-2" : ""} ${friendNames.length > 0 ? "border-[var(--brand)]/80" : "border-white/80"}`}
                     src={url}
                   />
                 ))}
               </div>
-              <span className="rounded-full bg-black/52 px-2 py-0.5 text-[0.62rem] font-semibold text-white backdrop-blur-sm">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold backdrop-blur-sm ${friendNames.length > 0 ? "bg-[var(--brand)]/28 text-white ring-1 ring-[var(--brand)]/40" : "bg-black/52 text-white"}`}>
+                {friendNames.length > 0 && <UsersThree size={9} weight="fill" className="shrink-0" />}
                 {socialProofText}
               </span>
             </div>
@@ -314,7 +319,7 @@ function ImageCard({
             <ScarcityBadge scarcity={event.scarcity} />
 
             {/* Title */}
-            <p className="text-[1.1rem] font-semibold leading-tight tracking-[-0.03em] sm:text-[1.3rem]">
+            <p className={`font-semibold leading-tight tracking-[-0.03em] ${compact ? "text-[1rem]" : "text-[1.1rem] sm:text-[1.3rem]"}`}>
               {event.title}
             </p>
 
@@ -346,8 +351,8 @@ function ImageCard({
           </div>
         </div>
 
-        {/* 2×2 image grid — real gallery from DB */}
-        <div className="hidden sm:grid flex-1 grid-cols-2 grid-rows-2 gap-0.5">
+        {/* 2×2 image grid — real gallery from DB, hidden in compact mode */}
+        <div className={`flex-1 grid-cols-2 grid-rows-2 gap-0.5 ${compact ? "hidden" : "hidden sm:grid"}`}>
           {Array.from({ length: 4 }, (_, i) => {
             const img = galleryImages[i] ?? bannerUrl;
             return (
@@ -453,24 +458,113 @@ function SponsoredAdCard({ spotlight }: { spotlight: SponsoredSpotlight }) {
   );
 }
 
-// ── Feed skeleton ──────────────────────────────────────────────
+// ── Skeleton primitives ────────────────────────────────────────
+
+function SponsoredSkeleton() {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)]">
+      <div className="min-h-[180px] bg-[var(--bg-muted)] sm:min-h-[220px] md:aspect-[4/1] md:min-h-0" />
+    </div>
+  );
+}
 
 function FeedSkeleton() {
   return (
-    <div className="space-y-4">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="animate-pulse overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)]">
-          <div className="aspect-[8/3] w-full bg-[var(--bg-muted)]" />
-          <div className="flex items-center justify-between gap-3 px-3.5 py-3">
-            <div className="space-y-2">
-              <div className="h-4 w-48 rounded-full bg-[var(--bg-muted)]" />
-              <div className="h-3 w-32 rounded-full bg-[var(--bg-muted)]" />
-            </div>
-            <div className="h-8 w-20 rounded-full bg-[var(--bg-muted)]" />
+    <div className="space-y-10">
+      {[0, 1, 2].map((section) => (
+        <div key={section}>
+          <div className="animate-pulse mb-4 space-y-2">
+            <div className="h-2.5 w-20 rounded-full bg-[var(--bg-muted)]" />
+            <div className="h-7 w-52 rounded-full bg-[var(--bg-muted)]" />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            {[0, 1].map((i) => (
+              <div key={i} className="animate-pulse overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)]">
+                <div className="aspect-[4/3] w-full bg-[var(--bg-muted)]" />
+                <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+                  <div className="space-y-2">
+                    <div className="h-4 w-36 rounded-full bg-[var(--bg-muted)]" />
+                    <div className="h-3 w-24 rounded-full bg-[var(--bg-muted)]" />
+                  </div>
+                  <div className="h-8 w-16 rounded-full bg-[var(--bg-muted)]" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ))}
     </div>
+  );
+}
+
+// ── This Weekend stories-style row ────────────────────────────
+
+const WEEKEND_GRADIENT_POOL = [
+  "from-[#1a3a22] to-[#0d1f12]",
+  "from-[#2a1a3a] to-[#130d1f]",
+  "from-[#3a2a1a] to-[#1f150d]",
+  "from-[#1a2a3a] to-[#0d151f]",
+  "from-[#3a1a1a] to-[#1f0d0d]",
+  "from-[#1a3a3a] to-[#0d1f1f]",
+];
+
+function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCardClick: (e: FeedEventItem) => void }) {
+  if (events.length === 0) return null;
+
+  return (
+    <section className="mt-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Lightning size={14} weight="fill" className="text-[var(--brand)]" />
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">This Weekend</p>
+        </div>
+        <Link href="/?when=this+weekend" className="text-[12px] font-semibold text-[var(--brand)]">See all</Link>
+      </div>
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
+        {events.map((event, idx) => {
+          const gradient = WEEKEND_GRADIENT_POOL[idx % WEEKEND_GRADIENT_POOL.length]!;
+          return (
+            <button
+              key={event.id}
+              type="button"
+              onClick={() => onCardClick(event)}
+              className="group relative h-[180px] w-[130px] shrink-0 overflow-hidden rounded-[20px] border border-white/8 text-left transition active:scale-[0.97]"
+            >
+              {event.bannerUrl ? (
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.06]"
+                  style={{ backgroundImage: `url(${event.bannerUrl})` }}
+                />
+              ) : (
+                <div className={`absolute inset-0 bg-gradient-to-b ${event.bannerTone ?? gradient}`} />
+              )}
+              <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.3)_50%,rgba(0,0,0,0.06)_100%)]" />
+
+              {/* AI picked badge */}
+              {event._aiPicked && (
+                <div className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand)] shadow-lg">
+                  <Sparkle size={10} weight="fill" className="text-white" />
+                </div>
+              )}
+
+              {/* Bottom text */}
+              <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.15em] text-white/70">
+                  {event.eyebrow}
+                </p>
+                <p className="mt-0.5 text-[0.78rem] font-semibold leading-tight text-white">
+                  {event.title.length > 28 ? event.title.slice(0, 28).trimEnd() + "…" : event.title}
+                </p>
+                <p className="mt-1 inline-flex items-center gap-0.5 rounded-full bg-black/40 px-2 py-0.5 text-[0.6rem] font-semibold text-white/90 backdrop-blur-sm">
+                  <CalendarBlank size={8} />
+                  {event.dateLabel}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -483,6 +577,7 @@ export function HomeClient() {
   const { setPeekPanelWidth } = useAppShell();
 
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
+  const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
 
   const fireInteraction = useCallback((eventId: string, edgeType: string) => {
     void fetch("/api/interactions", {
@@ -524,6 +619,17 @@ export function HomeClient() {
     () => visibleEvents.filter((e) => e.trending).slice(0, 3),
     [visibleEvents],
   );
+
+  // Weekend events — filter by dateLabel containing weekend day names
+  const weekendEvents = useMemo(() => {
+    const WEEKEND_TERMS = ["fri", "sat", "sun", "weekend", "dec", "jan", "feb"];
+    const candidates = visibleEvents.filter((e) => {
+      const label = e.dateLabel.toLowerCase();
+      return WEEKEND_TERMS.some((t) => label.includes(t));
+    });
+    // Fallback to trending if no weekend matches
+    return (candidates.length >= 3 ? candidates : visibleEvents.filter((e) => e.trending)).slice(0, 8);
+  }, [visibleEvents]);
 
   // Dynamic section headers — seeded per page load, stable during scroll
   const sessionSeed = useMemo(() => Math.floor(Date.now() / 1000 / 60), []);
@@ -576,10 +682,6 @@ export function HomeClient() {
     <>
       <div className="w-full overflow-x-hidden">
         <main className="page-grid min-h-screen overflow-x-hidden pb-32 md:pb-16">
-          <div className="px-3 pt-5 md:hidden">
-            <HomeSearchHero mode="mobile" />
-          </div>
-
           <div className="container-shell px-4 pt-3 md:px-6">
             {hasFilters && (
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-highlight-border)] bg-[var(--brand-dim)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--home-shadow)]">
@@ -601,46 +703,75 @@ export function HomeClient() {
             className={`container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
           >
             <div className="min-w-0">
-              {/* Sponsored banner */}
-              {!isLoading && (
-                <motion.section
-                  className="mt-4"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                >
+              {/* Sponsored banner — skeleton while loading */}
+              <section className="mt-4">
+                {isLoading ? (
+                  <SponsoredSkeleton />
+                ) : (
                   <SponsoredAdCard spotlight={sponsoredSpotlight} />
-                </motion.section>
-              )}
+                )}
+              </section>
 
-              {/* Category filter chips — from @gooutside/demo-data (matches DB slugs) */}
+              {/* Category filter chips + layout toggle */}
               <section className="mt-5">
-                <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
-                  <button
-                    className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${selectedCategories.length === 0 ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
-                    onClick={clearFilters}
-                    type="button"
-                  >
-                    All events
-                  </button>
-                  {categories.map((category) => {
-                    const active = selectedCategories.includes(category.slug);
-                    return (
-                      <button
-                        key={category.slug}
-                        className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
-                        onClick={() => updateCategory(category.slug)}
-                        type="button"
-                      >
-                        {getCategoryEmoji(category.slug)} {category.name}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center gap-2">
+                  <div className="no-scrollbar -mx-0 flex flex-1 gap-2 overflow-x-auto pb-1 md:flex-wrap">
+                    <button
+                      className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${selectedCategories.length === 0 ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
+                      onClick={clearFilters}
+                      type="button"
+                    >
+                      All events
+                    </button>
+                    {categories.map((category) => {
+                      const active = selectedCategories.includes(category.slug);
+                      return (
+                        <button
+                          key={category.slug}
+                          className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
+                          onClick={() => updateCategory(category.slug)}
+                          type="button"
+                        >
+                          {getCategoryEmoji(category.slug)} {category.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Layout toggle — desktop only */}
+                  <div className="hidden shrink-0 items-center gap-0.5 rounded-full border border-[var(--home-highlight-border)] bg-[var(--bg-card)] p-1 md:flex">
+                    <button
+                      type="button"
+                      aria-label="Single column"
+                      onClick={() => setFeedLayout("single")}
+                      className={`flex h-7 w-7 items-center justify-center rounded-full transition ${feedLayout === "single" ? "bg-[var(--brand)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
+                    >
+                      <Rows size={13} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Grid view"
+                      onClick={() => setFeedLayout("grid")}
+                      className={`flex h-7 w-7 items-center justify-center rounded-full transition ${feedLayout === "grid" ? "bg-[var(--brand)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
+                    >
+                      <SquaresFour size={13} weight="bold" />
+                    </button>
+                  </div>
                 </div>
               </section>
 
+              {/* This Weekend stories row */}
+              {!isLoading && weekendEvents.length > 0 && (
+                <ThisWeekendRow
+                  events={weekendEvents}
+                  onCardClick={(event) => {
+                    setSelectedEvent(event);
+                    fireInteraction(event.id, "peek_open");
+                  }}
+                />
+              )}
+
               {/* Infinite scroll feed */}
-              <section className="mt-4 space-y-4">
+              <section className="mt-4 space-y-10">
                 {isLoading && <FeedSkeleton />}
 
                 {isError && (
@@ -650,50 +781,47 @@ export function HomeClient() {
                   </div>
                 )}
 
-                {!isLoading && visibleEvents.map((event, idx) => {
-                  const isFirstInSection = idx % CARDS_PER_SECTION === 0;
-                  const sectionIdx = Math.floor(idx / CARDS_PER_SECTION);
-                  const section = sectionHeaders[sectionIdx];
-                  return (
-                    <Fragment key={event._feedKey}>
-                      {isFirstInSection && section && (
-                        <motion.div
-                          className={idx === 0 ? "mb-1 mt-4" : "mb-1 mt-10"}
-                          initial={{ opacity: 0, y: 10 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true, margin: "-40px" }}
-                          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        >
-                          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
-                            {section.resolvedEyebrow}
-                          </p>
-                          <h2 className="mt-1.5 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-[1.85rem]">
-                            {section.resolvedTitle}
-                          </h2>
-                          {section.subtext && (
-                            <p className="mt-1 text-[0.8rem] text-[var(--text-secondary)]">{section.subtext}</p>
-                          )}
-                        </motion.div>
-                      )}
-                      <motion.div
-                        className="min-w-0"
-                        initial={{ opacity: 0, y: 16 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-20px" }}
-                        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1], delay: (idx % CARDS_PER_SECTION) * 0.06 }}
-                      >
-                        <ImageCard
-                          event={event}
-                          feedIndex={event._feedIndex}
-                          onCardClick={() => {
-                            setSelectedEvent(event);
-                            fireInteraction(event.id, "peek_open");
-                          }}
-                        />
-                      </motion.div>
-                    </Fragment>
-                  );
-                })}
+                {!isLoading && (() => {
+                  const grouped: FeedEventItem[][] = [];
+                  for (let i = 0; i < visibleEvents.length; i += CARDS_PER_SECTION) {
+                    grouped.push(visibleEvents.slice(i, i + CARDS_PER_SECTION));
+                  }
+                  return grouped.map((sectionEvents, sectionIdx) => {
+                    const section = sectionHeaders[sectionIdx];
+                    return (
+                      <Fragment key={`section-${sectionIdx}`}>
+                        {section && (
+                          <div className={sectionIdx === 0 ? "mb-3 mt-2" : "mb-3"}>
+                            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
+                              {section.resolvedEyebrow}
+                            </p>
+                            <h2 className="mt-1.5 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] md:text-[1.85rem]">
+                              {section.resolvedTitle}
+                            </h2>
+                            {section.subtext && (
+                              <p className="mt-1 text-[0.8rem] text-[var(--text-secondary)]">{section.subtext}</p>
+                            )}
+                          </div>
+                        )}
+                        <div className={feedLayout === "grid" ? "grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4" : "flex flex-col gap-3"}>
+                          {sectionEvents.map((event) => (
+                            <div key={event._feedKey} className="min-w-0">
+                              <ImageCard
+                                event={event}
+                                feedIndex={event._feedIndex}
+                                onCardClick={() => {
+                                  setSelectedEvent(event);
+                                  fireInteraction(event.id, "peek_open");
+                                }}
+                                compact={feedLayout === "grid"}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </Fragment>
+                    );
+                  });
+                })()}
 
                 {/* Loading more spinner */}
                 {isFetchingNextPage && (
@@ -727,9 +855,6 @@ export function HomeClient() {
                   initial={{ opacity: 0, x: 24 }}
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {/* Weekend AI assistant */}
-                  <WeekendAssistant />
-
                   {/* Pulse score widget */}
                   <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
                     <div className="flex items-center justify-between gap-3">
@@ -757,71 +882,32 @@ export function HomeClient() {
                     </div>
                   </section>
 
-                  {/* Friendtivities — real events from feed */}
+                  {/* Weekend AI assistant */}
+                  <WeekendAssistant />
+
+                  {/* Social signals — friends + trending combined */}
                   <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">Friendtivities</p>
-                        <h3 className="mt-1 text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Plans in motion</h3>
-                      </div>
-                      <Link className="text-xs font-medium text-[var(--brand)]" href="/notifications">See all</Link>
+                      <h3 className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">What's moving</h3>
+                      <Link className="text-xs font-medium text-[var(--brand)]" href="/dashboard/activity">See all</Link>
                     </div>
-                    <div className="space-y-2.5">
-                      {(trendingCards.length > 0 ? trendingCards : visibleEvents).slice(0, 2).map((event, index) => {
+                    <div className="space-y-2">
+                      {(trendingCards.length > 0 ? trendingCards : visibleEvents).slice(0, 3).map((event, index) => {
                         const cluster = FRIEND_CLUSTERS[index % FRIEND_CLUSTERS.length]!;
                         return (
-                          <Link key={event.id} className="block rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
-                                <UsersThree size={16} weight="regular" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-[var(--text-primary)]">{cluster.labels.join(", ")}</p>
-                                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{cluster.note}</p>
-                                <p className="mt-2 truncate text-xs font-medium text-[var(--text-primary)]">{event.title}</p>
-                              </div>
+                          <Link key={event.id} className="flex items-center gap-3 rounded-[12px] bg-[var(--bg-elevated)] p-2.5 transition hover:bg-[var(--bg-muted)]" href={`/events/${event.slug}`}>
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--home-avatar-bg)] text-[var(--brand)]">
+                              {index === 0 ? <Fire size={14} weight="fill" /> : <UsersThree size={14} weight="regular" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{event.title}</p>
+                              <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">{cluster.labels.join(", ")} · {cluster.note}</p>
                             </div>
                           </Link>
                         );
                       })}
                     </div>
                   </section>
-
-                  {/* Trending now — real feed data */}
-                  {trendingCards.length > 0 && (
-                    <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
-                      <div className="mb-3 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <TrendUp size={18} weight="bold" className="text-[var(--brand)]" />
-                          <h3 className="text-[1.1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Trending now</h3>
-                        </div>
-                        <Link className="text-xs font-medium text-[var(--brand)]" href="/events">See all</Link>
-                      </div>
-                      <div className="space-y-2.5">
-                        {trendingCards.map((event, index) => (
-                          <Link key={event.id} className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/30" href={`/events/${event.slug}`}>
-                            <span className="text-lg font-semibold text-[var(--text-tertiary)]">{index + 1}</span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-[var(--text-primary)]">{event.title}</p>
-                              <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.locationLine}</p>
-                            </div>
-                            <Fire size={15} weight="fill" className="text-[var(--brand)]" />
-                          </Link>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Messages shortcut */}
-                  <Link className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)] transition hover:-translate-y-0.5 hover:shadow-[var(--home-shadow-strong)]" href="/dashboard/messages">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--home-avatar-bg)] text-[var(--brand)]">
-                      <ChatCircleDots size={20} weight="regular" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Messages</p>
-                      <p className="mt-1 text-sm text-[var(--text-secondary)]">Open your inbox</p>
-                    </div>
-                  </Link>
                 </motion.aside>
               ) : null}
             </AnimatePresence>

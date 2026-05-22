@@ -22,8 +22,8 @@ export const FEED_SECTION_POOL: SectionConfig[] = [
   },
   {
     id: "algorithm-loves-you",
-    eyebrow: "The algorithm",
-    title: "We think you'll love these:",
+    eyebrow: "Picked for you ✦",
+    title: "We think you'll love these",
     weight: 9,
   },
   {
