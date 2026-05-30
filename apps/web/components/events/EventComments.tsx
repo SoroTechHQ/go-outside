@@ -25,7 +25,8 @@ type Comment = {
   created_at: string;
   users: {
     id: string;
-    display_name: string;
+    first_name: string | null;
+    last_name: string | null;
     username: string | null;
     avatar_url: string | null;
   } | null;
@@ -99,7 +100,8 @@ function GifPicker({ onSelect }: { onSelect: (url: string) => void }) {
 
 function CommentCard({ comment }: { comment: Comment }) {
   const user = comment.users;
-  const initials = user?.display_name?.slice(0, 2).toUpperCase() ?? "??";
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Anonymous";
+  const initials = displayName.slice(0, 2).toUpperCase();
   const timeAgo = getTimeAgo(comment.created_at);
 
   return (
@@ -121,7 +123,7 @@ function CommentCard({ comment }: { comment: Comment }) {
               className="text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--brand)] transition"
               href={user?.id ? `/dashboard/user/${user.id}` : "#"}
             >
-              {user?.display_name ?? "Anonymous"}
+              {displayName}
             </Link>
             {user?.username && (
               <span className="text-xs text-[var(--text-tertiary)]">@{user.username}</span>
