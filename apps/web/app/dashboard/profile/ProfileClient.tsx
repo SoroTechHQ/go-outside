@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Avatar from "boring-avatars";
@@ -98,38 +99,61 @@ function ProfileStats({ stats }: { stats: StatItem[] }) {
   );
 }
 
-/* ── Followers sheet ─────────────────────────────────────────────────────── */
+/* ── Followers / Following sheet — real data ─────────────────────────────── */
 
-type MiniFollower = { id: string; name: string; handle: string; tier: string; tierColor: string };
+type RealUser = {
+  id: string;
+  clerk_id: string;
+  username: string | null;
+  first_name: string;
+  last_name: string | null;
+  avatar_url: string | null;
+  pulse_tier: string | null;
+  pulse_score: number | null;
+};
 
-const MOCK_MY_FOLLOWERS: MiniFollower[] = [
-  { id: "ama-k",        name: "Ama Koomson",  handle: "@ama.k",         tier: "Scene Kid",   tierColor: "#4a9f63" },
-  { id: "yaw-darko",    name: "Yaw Darko",    handle: "@yawdarko",       tier: "City Native", tierColor: "#c87c2a" },
-  { id: "esi-m",        name: "Esi Mensah",   handle: "@esi.m_accra",    tier: "Scene Kid",   tierColor: "#4a9f63" },
-  { id: "user-kwame",   name: "Kwame Asante", handle: "@kwame.asante",   tier: "Regular",     tierColor: "#4a9f63" },
-  { id: "user-abena",   name: "Abena Kyei",   handle: "@abena.k",        tier: "Explorer",    tierColor: "#4a9f63" },
-  { id: "user-nii",     name: "Nii Ofori",    handle: "@nii.ofori",      tier: "Scene Kid",   tierColor: "#4a9f63" },
-];
+const TIER_COLORS: Record<string, string> = {
+  Newcomer: "#888", Explorer: "#4a9f63", Regular: "#4a9f63",
+  "Scene Kid": "#4a9f63", "City Native": "#c87c2a", Legend: "#DAA520",
+};
 
 function FollowersSheet({
   open,
   onClose,
   count,
   label,
+  clerkId,
+  type,
 }: {
   open: boolean;
   onClose: () => void;
   count: number;
   label: string;
+  clerkId: string;
+  type: "followers" | "following";
 }) {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
-  const filtered = MOCK_MY_FOLLOWERS.filter(
-    (f) =>
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
-      f.handle.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: ["profile-people", clerkId, type],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${clerkId}/followers?type=${type}`);
+      if (!res.ok) return { users: [] as RealUser[] };
+      return res.json() as Promise<{ users: RealUser[] }>;
+    },
+    enabled: open,
+    staleTime: 60_000,
+  });
+
+  const people = data?.users ?? [];
+
+  const filtered = people.filter((p) => {
+    const name = `${p.first_name} ${p.last_name ?? ""}`.toLowerCase();
+    const handle = (p.username ?? "").toLowerCase();
+    const q = search.toLowerCase();
+    return name.includes(q) || handle.includes(q);
+  });
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -162,34 +186,55 @@ function FollowersSheet({
           />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto py-2">
-        {filtered.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => { onClose(); router.push(`/dashboard/user/${f.id}`); }}
-            className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
-          >
-            <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
-              <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
-            </div>
-            <div className="min-w-0 flex-1 text-left">
-              <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
-              <p className="truncate text-[11px] text-[var(--text-tertiary)]">{f.handle}</p>
-            </div>
-            <span
-              className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
-              style={{
-                color: f.tierColor,
-                backgroundColor: `${f.tierColor}18`,
-                border: `1px solid ${f.tierColor}30`,
-              }}
+      <div className="flex-1 overflow-y-auto py-2 pb-20">
+        {isLoading && (
+          <div className="space-y-1 px-5 py-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-2">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-[var(--bg-muted)]" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-24 animate-pulse rounded bg-[var(--bg-muted)]" />
+                  <div className="h-2.5 w-16 animate-pulse rounded bg-[var(--bg-muted)]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {!isLoading && filtered.map((p) => {
+          const name = `${p.first_name} ${p.last_name ?? ""}`.trim();
+          const handle = p.username ? `@${p.username}` : "";
+          const tier = p.pulse_tier ?? "Newcomer";
+          const tierColor = TIER_COLORS[tier] ?? "#888";
+          return (
+            <button
+              key={p.id}
+              onClick={() => { onClose(); router.push(`/go/${p.username ?? p.clerk_id}`); }}
+              className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)] active:scale-[0.99]"
             >
-              {f.tier}
-            </span>
-          </button>
-        ))}
-        {filtered.length === 0 && (
-          <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">No results found.</p>
+              <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
+                {p.avatar_url ? (
+                  <img src={p.avatar_url} alt={name} className="h-full w-full object-cover" />
+                ) : (
+                  <Avatar size={40} name={name} variant="beam" colors={AVATAR_COLORS} />
+                )}
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{name}</p>
+                <p className="truncate text-[11px] text-[var(--text-tertiary)]">{handle}</p>
+              </div>
+              <span
+                className="shrink-0 rounded-full px-2.5 py-0.5 text-[9px] font-bold"
+                style={{ color: tierColor, backgroundColor: `${tierColor}18`, border: `1px solid ${tierColor}30` }}
+              >
+                {tier}
+              </span>
+            </button>
+          );
+        })}
+        {!isLoading && filtered.length === 0 && (
+          <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">
+            {people.length === 0 ? "Nobody here yet." : "No results found."}
+          </p>
         )}
       </div>
     </>
@@ -203,9 +248,9 @@ function FollowersSheet({
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
-      {/* Mobile: bottom sheet */}
+      {/* Mobile: bottom sheet — sits above the bottom nav (nav is ~80px) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-[60] flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -213,7 +258,7 @@ function FollowersSheet({
       </div>
       {/* Desktop: centered modal */}
       <div
-        className={`fixed left-1/2 top-1/2 z-50 hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+        className={`fixed left-1/2 top-1/2 z-[60] hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
         }`}
       >
@@ -676,6 +721,8 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
         onClose={() => setFollowersOpen(false)}
         count={currentProfile.friendCount}
         label="Followers"
+        clerkId={currentProfile.clerkId}
+        type="followers"
       />
 
       {/* ── Following sheet ───────────────────────────────────────────────────── */}
@@ -684,6 +731,8 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
         onClose={() => setFollowingOpen(false)}
         count={currentProfile.followingCount}
         label="Following"
+        clerkId={currentProfile.clerkId}
+        type="following"
       />
     </>
   );
