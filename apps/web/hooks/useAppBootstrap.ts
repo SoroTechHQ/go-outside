@@ -19,7 +19,8 @@ export function useAppBootstrap() {
   return useQuery({
     queryKey: appBootstrapQueryKey,
     queryFn: fetchAppBootstrap,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 20_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
   });
 }

@@ -135,7 +135,7 @@ function PeopleSheet({
           />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className="flex-1 overflow-y-auto py-2 pb-20">
         {filtered.map((person) => (
           <button
             key={person.id}
@@ -187,9 +187,9 @@ function PeopleSheet({
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
-      {/* Mobile: bottom sheet */}
+      {/* Mobile: bottom sheet — z-[60] sits above bottom nav */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-[60] flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -197,7 +197,7 @@ function PeopleSheet({
       </div>
       {/* Desktop: centered modal */}
       <div
-        className={`fixed left-1/2 top-1/2 z-50 hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+        className={`fixed left-1/2 top-1/2 z-[60] hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
         }`}
       >
@@ -527,12 +527,61 @@ export default function UserProfilePage() {
     enabled: !!userId,
   });
 
-  const { data: followers = [] } = useQuery({
+  // For real users: fetch from real API. For mock seed users: fall back to mock data.
+  const { data: realFollowers } = useQuery({
+    queryKey: ["user-real-followers", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${userId}/followers?type=followers`);
+      if (!res.ok) return { users: [] };
+      const d = await res.json() as { users: { id: string; clerk_id: string; username: string | null; first_name: string; last_name: string | null; avatar_url: string | null; pulse_tier: string | null }[] };
+      return d;
+    },
+    staleTime: 60_000,
+    enabled: isRealUser,
+  });
+
+  const { data: realFollowing } = useQuery({
+    queryKey: ["user-real-following", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${userId}/followers?type=following`);
+      if (!res.ok) return { users: [] };
+      const d = await res.json() as { users: { id: string; clerk_id: string; username: string | null; first_name: string; last_name: string | null; avatar_url: string | null; pulse_tier: string | null }[] };
+      return d;
+    },
+    staleTime: 60_000,
+    enabled: isRealUser,
+  });
+
+  const { data: mockFollowers = [] } = useQuery({
     queryKey: ["user-followers", userId],
     queryFn: () => getUserFollowers(userId),
     staleTime: Infinity,
     enabled: !!userId && !isRealUser,
   });
+
+  function toMiniUser(u: { id: string; clerk_id: string; username: string | null; first_name: string; last_name: string | null; avatar_url: string | null; pulse_tier: string | null }): MiniUser {
+    return {
+      id: u.clerk_id,
+      name: `${u.first_name} ${u.last_name ?? ""}`.trim(),
+      handle: u.username ? `@${u.username}` : "",
+      avatarUrl: u.avatar_url,
+      pulseTier: u.pulse_tier ?? "Newcomer",
+    };
+  }
+
+  const followers: MiniUser[] = isRealUser
+    ? (realFollowers?.users ?? []).map(toMiniUser)
+    : mockFollowers;
+
+  const followingPeople: MiniUser[] = isRealUser
+    ? (realFollowing?.users ?? []).map(toMiniUser)
+    : MOCK_FOLLOWING.filter((f) => f.type === "person").map((f) => ({
+        id: f.id,
+        name: f.name,
+        handle: f.tag,
+        avatarUrl: null,
+        pulseTier: "tierBadge" in f ? (f.tierBadge ?? "Explorer") : "Explorer",
+      }));
 
   // Derive display values — prefer real profile, fall back to mock
   const displayName    = realProfile?.name ?? mockProfile?.name ?? "User";
@@ -901,13 +950,7 @@ export default function UserProfilePage() {
         open={followingOpen}
         onClose={() => setFollowingOpen(false)}
         title={`Following · ${followingCount}`}
-        people={MOCK_FOLLOWING.filter((f) => f.type === "person").map((f) => ({
-          id: f.id,
-          name: f.name,
-          handle: f.tag,
-          avatarUrl: null,
-          pulseTier: "tierBadge" in f ? (f.tierBadge ?? "Explorer") : "Explorer",
-        }))}
+        people={followingPeople}
       />
     </main>
   );
