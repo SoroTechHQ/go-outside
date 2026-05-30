@@ -9,11 +9,11 @@ import {
   ChatCircleDots,
   GearSix,
   House,
+  MagnifyingGlass,
   MoonStars,
   ShoppingCart,
   SignOut,
   SunDim,
-  TrendUp,
   UserCircle,
   Wallet,
 } from "@phosphor-icons/react";
@@ -96,7 +96,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
   const isExpanded = isDesktop && hovered;
   const navItems: NavItem[] = [
     { href: "/", label: "Home", icon: House },
-    { href: "/trending", label: "Trending", icon: TrendUp },
+    { href: "/trending", label: "Explore", icon: MagnifyingGlass },
     { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
     { href: "/wallets", label: "Wallet", icon: Wallet },
     {
