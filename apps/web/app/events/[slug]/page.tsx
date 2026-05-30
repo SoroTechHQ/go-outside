@@ -22,7 +22,7 @@ export async function generateMetadata({
   const ogParams = new URLSearchParams({
     type:     "event",
     title:    event.title,
-    subtitle: [event.eyebrow, event.venueName].filter(Boolean).join(" · "),
+    subtitle: [event.eyebrow, event.venue].filter(Boolean).join(" · "),
     tag:      event.categorySlug ?? "",
     meta:     event.city ?? "Accra",
     ...(event.bannerUrl ? { image: event.bannerUrl } : {}),

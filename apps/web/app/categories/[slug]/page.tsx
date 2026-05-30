@@ -1,9 +1,37 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getCategoryBySlug } from "../../../lib/db/categories";
 import { getEventsByCategory } from "../../../lib/db/events";
 import { getOrganizers } from "../../../lib/db/organizers";
 import { AppIcon, Button, EventCard, ShellCard } from "@gooutside/ui";
 import type { Organizer } from "@gooutside/demo-data";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await getCategoryBySlug(slug).catch(() => null);
+  if (!category) return {};
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
+  const ogParams = new URLSearchParams({
+    type:     "category",
+    title:    category.name,
+    subtitle: `Browse ${category.name} events in Ghana`,
+  });
+  const ogImage = `${siteUrl}/api/og?${ogParams.toString()}`;
+  return {
+    title: `${category.name} Events`,
+    description: `Discover the best ${category.name} events in Ghana on GoOutside.`,
+    openGraph: {
+      title: `${category.name} Events in Ghana`,
+      description: `Discover the best ${category.name} events on GoOutside.`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: category.name }],
+    },
+    twitter: { card: "summary_large_image", images: [ogImage] },
+  };
+}
 
 export default async function CategoryPage({
   params,

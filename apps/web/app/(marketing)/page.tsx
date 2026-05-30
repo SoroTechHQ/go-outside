@@ -1,8 +1,25 @@
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 import { supabaseAdmin } from "../../lib/supabase";
 import { LandingClient } from "./LandingClient";
 import { LANDING_EVENTS, TICKER_EVENTS, CATEGORY_COLORS } from "../../lib/landing-data";
 import type { LandingEvent, TickerEvent } from "../../lib/landing-data";
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
+
+export const metadata: Metadata = {
+  title: "GoOutside — What's on in Accra?",
+  description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
+  openGraph: {
+    title: "GoOutside — What's on in Accra?",
+    description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
+    images: [{ url: `${SITE_URL}/api/og?type=default`, width: 1200, height: 630, alt: "GoOutside" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [`${SITE_URL}/api/og?type=default`],
+  },
+};
 
 /* ── Category name normalisation ─────────────────────────────────────── */
 
