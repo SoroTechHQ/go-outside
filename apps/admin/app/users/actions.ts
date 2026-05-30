@@ -23,3 +23,19 @@ export async function makeOrganizer(id: string) {
     .eq('id', id)
   revalidatePath('/users')
 }
+
+export async function makeAdmin(id: string) {
+  await supabaseAdmin
+    .from('users')
+    .update({ role: 'admin' })
+    .eq('id', id)
+  revalidatePath('/users')
+}
+
+export async function removeAdmin(id: string) {
+  await supabaseAdmin
+    .from('users')
+    .update({ role: 'attendee' })
+    .eq('id', id)
+  revalidatePath('/users')
+}
