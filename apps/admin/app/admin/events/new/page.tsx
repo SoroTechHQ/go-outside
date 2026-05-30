@@ -2,12 +2,13 @@ import { DashboardShell } from "../../../../components/dashboard-shell";
 import { PageGuide } from "../../../../components/dashboard-primitives";
 import { CreateEventForm } from "../../../../components/CreateEventForm";
 
-export default function AdminNewEventPage({
+export default async function AdminNewEventPage({
   searchParams,
 }: {
-  searchParams: { sponsored?: string };
+  searchParams: Promise<{ sponsored?: string }>;
 }) {
-  const defaultSponsored = searchParams.sponsored === "1";
+  const params = await searchParams;
+  const defaultSponsored = params.sponsored === "1";
 
   return (
     <DashboardShell

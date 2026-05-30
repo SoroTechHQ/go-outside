@@ -15,7 +15,19 @@ export async function generateMetadata({
   if (!event) return {};
 
   const description = event.shortDescription ?? event.description?.slice(0, 160) ?? "";
-  const url = `https://gooutside.app/events/${slug}`;
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
+  const pageUrl = `${siteUrl}/events/${slug}`;
+
+  // Dynamic OG image — branded template with event cover
+  const ogParams = new URLSearchParams({
+    type:     "event",
+    title:    event.title,
+    subtitle: [event.eyebrow, event.venueName].filter(Boolean).join(" · "),
+    tag:      event.categorySlug ?? "",
+    meta:     event.city ?? "Accra",
+    ...(event.bannerUrl ? { image: event.bannerUrl } : {}),
+  });
+  const ogImage = `${siteUrl}/api/og?${ogParams.toString()}`;
 
   return {
     title: `${event.title} | GoOutside`,
@@ -23,15 +35,15 @@ export async function generateMetadata({
     openGraph: {
       title: event.title,
       description,
-      url,
+      url: pageUrl,
       type: "website",
-      images: event.bannerUrl ? [{ url: event.bannerUrl, width: 1200, height: 630, alt: event.title }] : [],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: event.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: event.title,
       description,
-      images: event.bannerUrl ? [event.bannerUrl] : [],
+      images: [ogImage],
     },
   };
 }
