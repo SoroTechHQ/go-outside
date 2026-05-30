@@ -24,7 +24,7 @@ export async function GET(
     .from("snippets")
     .select(`
       id, body, vibe_tags, gif_url, rating, created_at,
-      users ( id, display_name, username, avatar_url )
+      users ( id, first_name, last_name, username, avatar_url )
     `)
     .eq("event_id", event.id)
     .eq("is_public", true)
