@@ -17,6 +17,7 @@ export type TrendingEvent = {
   saves_count: number;
   tickets_sold: number;
   snippet_count: number;
+  rank_change: "up" | "same" | "down";
   organizer: {
     id: string;
     username: string | null;

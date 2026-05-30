@@ -74,6 +74,8 @@ type EventRow = {
   avg_rating: number | null;
   tags: string[] | null;
   organizer_id: string;
+  trending_score: number | null;   // stored from last run — used for rank_change
+  venue_city: string | null;       // from joined venues
 };
 
 type UserRow = {
@@ -230,7 +232,9 @@ async function getEventRows(): Promise<EventRow[]> {
     .from("events")
     .select(`
       id, title, slug, banner_url, start_datetime, end_datetime, price_label,
-      views_count, saves_count, tickets_sold, reviews_count, avg_rating, tags, organizer_id
+      views_count, saves_count, tickets_sold, reviews_count, avg_rating, tags, organizer_id,
+      trending_score,
+      venues (city)
     `)
     .eq("status", "published")
     .gte("end_datetime", hoursAgo(24))
@@ -241,7 +245,12 @@ async function getEventRows(): Promise<EventRow[]> {
     return [];
   }
 
-  return (data ?? []).filter((row) => !row.end_datetime || row.end_datetime >= hoursAgo(24)) as EventRow[];
+  return ((data ?? []).filter((row) => !row.end_datetime || row.end_datetime >= hoursAgo(24)) as unknown as Array<EventRow & { venues: { city: string } | { city: string }[] | null }>)
+    .map((row) => {
+      const venuesField = row.venues;
+      const venueCity = Array.isArray(venuesField) ? (venuesField[0]?.city ?? null) : (venuesField?.city ?? null);
+      return { ...row, venue_city: venueCity } as EventRow;
+    });
 }
 
 async function getRecentEventEdges(): Promise<EdgeRow[]> {
@@ -334,7 +343,7 @@ async function hydrateSnippets(rows: SnippetRow[]): Promise<TrendingSnippet[]> {
   });
 }
 
-async function buildEventContext(limit?: number, persistScores = false): Promise<EventContext> {
+async function buildEventContext(limit?: number, persistScores = false, userCity?: string | null): Promise<EventContext> {
   const [eventRows, edges, snippets] = await Promise.all([
     getEventRows(),
     getRecentEventEdges(),
@@ -404,11 +413,26 @@ async function buildEventContext(limit?: number, persistScores = false): Promise
       score += reviews * 2.25;
       score += rating * 1.5;
 
+      // Location boost — events in the user's city rank higher
+      if (userCity && event.venue_city) {
+        const cityMatch = event.venue_city.toLowerCase().includes(userCity.toLowerCase())
+          || userCity.toLowerCase().includes(event.venue_city.toLowerCase());
+        if (cityMatch) score += 8;
+      }
+
       if (daysUntil != null) {
         if (daysUntil >= 0 && daysUntil <= 3) score += 7;
         else if (daysUntil <= 7) score += 4.5;
         else if (daysUntil <= 14) score += 2;
       }
+
+      // Rank change: compare new score to last stored score
+      const prevScore = Number(event.trending_score ?? 0);
+      const rank_change: "up" | "same" | "down" =
+        prevScore === 0 ? "same"
+        : score > prevScore * 1.08 ? "up"
+        : score < prevScore * 0.92 ? "down"
+        : "same";
 
       const organizerUser = userMap.get(event.organizer_id);
 
@@ -420,6 +444,7 @@ async function buildEventContext(limit?: number, persistScores = false): Promise
         start_datetime: event.start_datetime,
         price_label: event.price_label,
         trending_score: Number(score.toFixed(1)),
+        rank_change,
         views_count: views,
         saves_count: saves,
         tickets_sold: tickets,
@@ -468,8 +493,8 @@ async function buildEventContext(limit?: number, persistScores = false): Promise
   };
 }
 
-export async function getTrendingEvents(limit = 20, persistScores = false) {
-  const { events } = await buildEventContext(limit, persistScores);
+export async function getTrendingEvents(limit = 20, persistScores = false, userCity?: string | null) {
+  const { events } = await buildEventContext(limit, persistScores, userCity);
   return events;
 }
 
