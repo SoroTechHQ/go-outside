@@ -13,6 +13,8 @@ const STANDALONE_ROUTES = [
   "/",
   "/waitlist",
   "/ad-waitlist",
+  "/ad-alpha",
+  "/alpha",
   "/sign-in",
   "/sign-up",
   "/onboarding",

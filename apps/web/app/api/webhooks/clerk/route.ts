@@ -78,6 +78,8 @@ export async function POST(req: NextRequest) {
       .eq("email", email)
       .maybeSingle();
 
+    let supabaseUserId: string;
+
     if (existing) {
       // Adopt the existing profile: re-link it to the new Clerk ID
       await supabaseAdmin
@@ -89,15 +91,48 @@ export async function POST(req: NextRequest) {
           last_name:  data.last_name ?? "",
         })
         .eq("id", (existing as { id: string }).id);
+      supabaseUserId = (existing as { id: string }).id;
     } else {
-      await supabaseAdmin.from("users").insert({
-        clerk_id:   data.id,
-        email,
-        first_name: data.first_name ?? "User",
-        last_name:  data.last_name ?? "",
-        avatar_url: data.image_url ?? null,
-        role:       "attendee",
-      });
+      const { data: newUser } = await supabaseAdmin
+        .from("users")
+        .insert({
+          clerk_id:   data.id,
+          email,
+          first_name: data.first_name ?? "User",
+          last_name:  data.last_name ?? "",
+          avatar_url: data.image_url ?? null,
+          role:       "attendee",
+        })
+        .select("id")
+        .single();
+      supabaseUserId = (newUser as { id: string } | null)?.id ?? "";
+    }
+
+    // ── Auto-award Founding Explorer if this email was pre-invited ──────────
+    // When you call POST /api/alpha/invite with an email, that row lands in
+    // alpha_testers (status='invited'). The moment the person actually creates
+    // their account here, we award the badge + 2× PP multiplier automatically.
+    if (supabaseUserId && email) {
+      const { data: tester } = await supabaseAdmin
+        .from("alpha_testers")
+        .select("id, status")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (tester && tester.status === "invited") {
+        // Award badge + set is_founding_member + 90-day 2× multiplier
+        await supabaseAdmin.rpc("award_founding_member_badge", {
+          p_user_id: supabaseUserId,
+        });
+
+        // Mark tester as active and link their user_id
+        await supabaseAdmin
+          .from("alpha_testers")
+          .update({ status: "active", joined_at: new Date().toISOString(), user_id: supabaseUserId })
+          .eq("id", tester.id);
+
+        console.log(`[webhook/clerk] Founding Explorer awarded to ${email}`);
+      }
     }
   }
 
