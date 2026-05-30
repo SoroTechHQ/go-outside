@@ -46,7 +46,7 @@ export const FEED_SECTION_POOL: SectionConfig[] = [
   },
   {
     id: "main-character",
-    eyebrow: "Main character",
+    eyebrow: "Main character Energy",
     title: "Events for people who don't waste weekends",
     weight: 7,
   },
@@ -239,10 +239,12 @@ export function pickSectionHeader(
   friendNames: string[],
   hour: number,
   dayOfWeek: number,
+  excludeIds: ReadonlySet<string> = new Set(),
 ): SectionConfig & { resolvedTitle: string; resolvedEyebrow: string } {
   const hasFriends = friendNames.length > 0;
 
   const eligible = FEED_SECTION_POOL.filter((s) => {
+    if (excludeIds.has(s.id)) return false;
     const c = s.condition;
     if (!c) return true;
     if (c.requiresFriends && !hasFriends) return false;
@@ -252,14 +254,20 @@ export function pickSectionHeader(
       if (from <= to) {
         if (hour < from || hour > to) return false;
       } else {
-        // wraps midnight (e.g. 22–4)
         if (hour < from && hour > to) return false;
       }
     }
     return true;
   });
 
-  const pool = eligible.length > 0 ? eligible : FEED_SECTION_POOL.filter((s) => !s.condition);
+  // Fall back to any unused unconditional entry, then to full pool if somehow exhausted
+  const pool =
+    eligible.length > 0
+      ? eligible
+      : FEED_SECTION_POOL.filter((s) => !s.condition && !excludeIds.has(s.id)).length > 0
+        ? FEED_SECTION_POOL.filter((s) => !s.condition && !excludeIds.has(s.id))
+        : FEED_SECTION_POOL.filter((s) => !s.condition);
+
   const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
 
   const seed = seededRandom(sessionSeed * 31337 + sectionIdx * 7919);
@@ -278,4 +286,20 @@ export function pickSectionHeader(
   const resolvedEyebrow = picked.eyebrow.replace("{friend}", friend);
 
   return { ...picked, resolvedTitle, resolvedEyebrow };
+}
+
+/** Pick N unique section headers in one call — guaranteed no duplicates. */
+export function pickSectionHeaders(
+  count: number,
+  sessionSeed: number,
+  friendNames: string[],
+  hour: number,
+  dayOfWeek: number,
+): Array<SectionConfig & { resolvedTitle: string; resolvedEyebrow: string }> {
+  const used = new Set<string>();
+  return Array.from({ length: count }, (_, i) => {
+    const header = pickSectionHeader(i, sessionSeed, friendNames, hour, dayOfWeek, used);
+    used.add(header.id);
+    return header;
+  });
 }

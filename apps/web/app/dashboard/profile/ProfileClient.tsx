@@ -320,7 +320,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
     { icon: Ticket,    value: currentProfile.eventsAttended, label: "Events",    onClick: () => goToTab("been-there") },
     { icon: Users,     value: currentProfile.friendCount,    label: "Followers", onClick: () => setFollowersOpen(true) },
     { icon: UserCheck, value: currentProfile.followingCount, label: "Following", onClick: () => setFollowingOpen(true) },
-    { icon: Lightning, value: currentProfile.pulseScore,     label: "XP",        onClick: () => setPulseOpen(true) },
+    { icon: Lightning, value: currentProfile.pulseScore,     label: "Pulse",     onClick: () => setPulseOpen(true) },
   ];
 
   return (

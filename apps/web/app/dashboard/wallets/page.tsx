@@ -71,7 +71,7 @@ export default async function WalletsPage() {
                 {pulseTier}
               </span>
               <p className="mt-3 font-display text-[2.6rem] font-bold italic leading-none tracking-tight text-white">
-                {pulseScore.toLocaleString()} XP
+                {pulseScore.toLocaleString()} pts
               </p>
               <p className="mt-2 text-[11px] text-white/40">
                 Earned across {tickets.length} event{tickets.length !== 1 ? "s" : ""}

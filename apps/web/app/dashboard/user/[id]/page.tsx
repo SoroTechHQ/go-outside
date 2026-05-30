@@ -277,7 +277,7 @@ function PulseCard({ score, tier, tierColor }: { score: number; tier: string; ti
           </span>
           <div className="flex items-center gap-1 text-[10px] text-white/30">
             <Lightning size={11} />
-            XP Score
+            Pulse Score
           </div>
         </div>
         <p className="mt-3 font-display text-[2.4rem] font-bold italic leading-none text-white">
@@ -567,7 +567,7 @@ export default function UserProfilePage() {
     { icon: Ticket,    value: ticketsCount,   label: "Events",    onClick: () => setTab("been-there") },
     { icon: Users,     value: followerCount,  label: "Followers", onClick: () => setFollowersOpen(true) },
     { icon: UserCheck, value: followingCount, label: "Following", onClick: () => setFollowingOpen(true) },
-    { icon: Lightning, value: displayPulse,   label: "XP",        onClick: () => setTab("snippets") },
+    { icon: Lightning, value: displayPulse,   label: "Pulse",     onClick: () => setTab("snippets") },
   ];
 
   return (

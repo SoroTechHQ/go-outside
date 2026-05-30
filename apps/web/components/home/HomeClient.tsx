@@ -36,9 +36,9 @@ import {
   useCategories,
 } from "../../hooks/useEventsQuery";
 import { CategoryIcon } from "../../lib/category-icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FeedEventItem } from "../../lib/app-contracts";
-import { pickSectionHeader } from "../../lib/feed-sections";
+import { pickSectionHeaders } from "../../lib/feed-sections";
 
 // ── Unsplash avatar pool (social proof) ──────────────────────────────────────
 const AVATAR_POOL = [
@@ -69,7 +69,14 @@ const FRIEND_CLUSTERS = [
   { labels: ["Jojo"], note: "rated it 5 stars" },
 ];
 
-const PULSE_BADGES = ["Gold badge x3", "Night owl"];
+type PulseData = {
+  pulse_score: number;
+  pulse_tier: string;
+  progress_pct: number;
+  pts_to_next_tier: number | null;
+  next_tier_label: string | null;
+  city_rank_label: string | null;
+};
 
 const CARDS_PER_SECTION = 4;
 
@@ -430,50 +437,57 @@ function SponsoredAdCard({ spotlight }: { spotlight: SponsoredSpotlight }) {
       rel={spotlight.external ? "noreferrer noopener" : undefined}
       target={spotlight.external ? "_blank" : undefined}
     >
-      <div className="relative min-h-[180px] overflow-hidden sm:min-h-[220px] md:aspect-[4/1] md:min-h-0">
+      <div className="relative min-h-[148px] overflow-hidden sm:min-h-[166px] md:aspect-[5/1] md:min-h-0">
+        {/* Background image */}
         {bannerUrl ? (
           <div
             aria-label={spotlight.title}
             className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
             role="img"
-            style={{ backgroundImage: `url(${bannerUrl})`, aspectRatio: "3/1" }}
+            style={{ backgroundImage: `url(${bannerUrl})` }}
           />
         ) : (
           <div className={`absolute inset-0 bg-gradient-to-br ${spotlight.bannerTone}`} />
         )}
-        <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(5,8,6,0.82)_0%,rgba(5,8,6,0.38)_60%,rgba(5,8,6,0.14)_100%)] md:bg-[linear-gradient(90deg,rgba(5,8,6,0.76)_0%,rgba(5,8,6,0.42)_42%,rgba(5,8,6,0.18)_100%)]" />
-        {/* Ad badge — top right */}
+        {/* Gradient: heavy on left (text), fades right (CTAs breathe) */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(4,7,5,0.96)_0%,rgba(4,7,5,0.82)_38%,rgba(4,7,5,0.45)_62%,rgba(4,7,5,0.08)_100%)]" />
+
+        {/* Ad badge */}
         <div className="absolute right-3 top-3">
-          <span className="rounded-md border border-white/20 bg-black/55 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/70 backdrop-blur-sm">
+          <span className="rounded-md border border-white/20 bg-black/55 px-2 py-0.5 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-white/65 backdrop-blur-sm">
             Ad
           </span>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-7">
-          <div className="mb-2.5 flex flex-wrap items-center gap-2 md:mb-4 md:gap-3">
-            <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">
-              {spotlight.label}
-            </span>
-            <span className="rounded-full border border-[var(--brand)] bg-[rgba(47,143,69,0.18)] px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-[#8bd98f] md:px-4 md:py-2 md:text-[0.74rem]">
-              {spotlight.eyebrow}
-            </span>
+
+        {/* Content row: text left · CTAs right */}
+        <div className="absolute inset-0 flex items-center justify-between gap-3 px-4 py-3 md:px-6 md:py-4">
+          {/* Left — all text */}
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-black/50 px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/90">
+                {spotlight.label}
+              </span>
+              <span className="rounded-full border border-[var(--brand)]/60 bg-[rgba(47,143,69,0.2)] px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[#a3e9a7]">
+                {spotlight.eyebrow}
+              </span>
+            </div>
+            <h3 className="truncate text-[1.05rem] font-semibold leading-tight tracking-[-0.02em] text-white sm:text-[1.2rem] md:text-[1.5rem]">
+              {spotlight.title}
+            </h3>
+            <p className="mt-1 line-clamp-1 text-[0.76rem] text-white/78 sm:line-clamp-2 md:text-[0.88rem]">
+              {spotlight.teaser}
+            </p>
+            <p className="mt-1 truncate text-[0.72rem] text-white/65 md:text-[0.84rem]">
+              {spotlight.dateLabel} · {spotlight.venue}
+            </p>
           </div>
-          <h3 className="text-[1.25rem] font-semibold leading-tight tracking-[-0.03em] text-white md:max-w-[540px] md:text-[1.85rem]">
-            {spotlight.title}
-          </h3>
-          <p className="mt-2 max-w-[720px] text-[0.8rem] leading-relaxed text-white/82 md:text-[0.95rem]">
-            {spotlight.teaser}
-          </p>
-          <p className="mt-1.5 text-[0.8rem] text-white/75 md:mt-2 md:text-[0.92rem]">
-            {spotlight.dateLabel} · {spotlight.venue}
-          </p>
-          <p className="mt-1 text-[0.78rem] text-white/68 md:text-[0.9rem]">
-            {spotlight.locationLine}
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2 md:mt-5 md:gap-3">
-            <span className="rounded-full border border-white/20 bg-white/12 px-3.5 py-2 text-[0.82rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2.5 md:text-[0.95rem]">
+
+          {/* Right — CTA buttons stacked */}
+          <div className="shrink-0 flex flex-col items-stretch gap-2">
+            <span className="whitespace-nowrap rounded-full border border-white/22 bg-white/10 px-3 py-1.5 text-center text-[0.72rem] font-semibold text-white backdrop-blur-sm md:px-4 md:py-2 md:text-[0.84rem]">
               {spotlight.priceLabel}
             </span>
-            <span className="rounded-full bg-[#7ed03d] px-4 py-2 text-[0.82rem] font-semibold text-white md:px-6 md:py-2.5 md:text-[0.95rem]">
+            <span className="whitespace-nowrap rounded-full bg-[#7ed03d] px-3 py-1.5 text-center text-[0.72rem] font-semibold text-white md:px-4 md:py-2 md:text-[0.84rem]">
               View Event →
             </span>
           </div>
@@ -488,7 +502,7 @@ function SponsoredAdCard({ spotlight }: { spotlight: SponsoredSpotlight }) {
 function SponsoredSkeleton() {
   return (
     <div className="animate-pulse overflow-hidden rounded-[var(--radius-card-lg)] border border-[var(--home-border)] bg-[var(--bg-card)]">
-      <div className="min-h-[180px] bg-[var(--bg-muted)] sm:min-h-[220px] md:aspect-[4/1] md:min-h-0" />
+      <div className="min-h-[148px] bg-[var(--bg-muted)] sm:min-h-[172px] md:aspect-[5/1] md:min-h-0" />
     </div>
   );
 }
@@ -522,69 +536,84 @@ function FeedSkeleton() {
   );
 }
 
-// ── This Weekend stories-style row ────────────────────────────
+// ── This Weekend / This Week — Instagram-style stories row ─────
 
-const WEEKEND_GRADIENT_POOL = [
-  "from-[#1a3a22] to-[#0d1f12]",
-  "from-[#2a1a3a] to-[#130d1f]",
-  "from-[#3a2a1a] to-[#1f150d]",
-  "from-[#1a2a3a] to-[#0d151f]",
-  "from-[#3a1a1a] to-[#1f0d0d]",
-  "from-[#1a3a3a] to-[#0d1f1f]",
-];
+function getSmartDateLabel(iso: string | null): string {
+  if (!iso) return "";
+  const event = new Date(iso);
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const tomorrowStr = new Date(now.getTime() + 86_400_000).toDateString();
+  if (event.toDateString() === todayStr) return "Today";
+  if (event.toDateString() === tomorrowStr) return "Tomorrow";
+  return event.toLocaleDateString("en-GB", { weekday: "short" }); // Mon, Tue…
+}
 
 function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCardClick: (e: FeedEventItem) => void }) {
   if (events.length === 0) return null;
+  const isWeekend = [0, 6].includes(new Date().getDay());
+  const sectionLabel = isWeekend ? "Happening This Weekend" : "Happening This Week";
 
   return (
-    <section className="mt-5">
+    <section className="mt-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Lightning size={14} weight="fill" className="text-[var(--brand)]" />
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">This Weekend</p>
+          <Lightning size={13} weight="fill" className="text-[var(--brand)]" />
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+            {sectionLabel}
+          </p>
         </div>
-        <Link href="/?when=this+weekend" className="text-[12px] font-semibold text-[var(--brand)]">See all</Link>
+        <Link href="/?when=this+weekend" className="text-[11px] font-semibold text-[var(--brand)]">
+          See all
+        </Link>
       </div>
-      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
-        {events.map((event, idx) => {
-          const gradient = WEEKEND_GRADIENT_POOL[idx % WEEKEND_GRADIENT_POOL.length]!;
+
+      <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2">
+        {events.map((event) => {
+          const smartDate = getSmartDateLabel(event.startDatetime);
           return (
             <button
               key={event.id}
               type="button"
               onClick={() => onCardClick(event)}
-              className="group relative h-[180px] w-[130px] shrink-0 overflow-hidden rounded-[20px] border border-white/8 text-left transition active:scale-[0.97]"
+              className="group flex shrink-0 flex-col items-center gap-1.5 transition active:scale-[0.95]"
             >
-              {event.bannerUrl ? (
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.06]"
-                  style={{ backgroundImage: `url(${event.bannerUrl})` }}
-                />
-              ) : (
-                <div className={`absolute inset-0 bg-gradient-to-b ${event.bannerTone ?? gradient}`} />
-              )}
-              <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.3)_50%,rgba(0,0,0,0.06)_100%)]" />
-
-              {/* AI picked badge */}
-              {event._aiPicked && (
-                <div className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand)] shadow-lg">
-                  <Sparkle size={10} weight="fill" className="text-white" />
+              {/* Gradient ring */}
+              <div
+                className="rounded-[24px] p-[2.5px] shadow-sm transition duration-300 group-hover:shadow-md"
+                style={{ background: "linear-gradient(135deg,#bbf451 0%,#4ade80 35%,#22d3ee 65%,#818cf8 100%)" }}
+              >
+                {/* Dark gap — the Instagram-style breathing room between ring and image */}
+                <div className="rounded-[22px] bg-[var(--bg-base,#080d09)] p-[3px]">
+                  {/* Square image */}
+                  <div className="relative h-[80px] w-[80px] overflow-hidden rounded-[19px] bg-[var(--bg-muted)]">
+                    {event.bannerUrl ? (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.07]"
+                        style={{ backgroundImage: `url(${event.bannerUrl})` }}
+                      />
+                    ) : (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${event.bannerTone}`} />
+                    )}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.22)_100%)]" />
+                    {event._aiPicked && (
+                      <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] shadow">
+                        <Sparkle size={7} weight="fill" className="text-white" />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-
-              {/* Bottom text */}
-              <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.15em] text-white/70">
-                  {event.eyebrow}
-                </p>
-                <p className="mt-0.5 text-[0.78rem] font-semibold leading-tight text-white">
-                  {event.title.length > 28 ? event.title.slice(0, 28).trimEnd() + "…" : event.title}
-                </p>
-                <p className="mt-1 inline-flex items-center gap-0.5 rounded-full bg-black/40 px-2 py-0.5 text-[0.6rem] font-semibold text-white/90 backdrop-blur-sm">
-                  <CalendarBlank size={8} />
-                  {event.dateLabel}
-                </p>
               </div>
+
+              {/* Title — single line, truncated with ellipsis so date stays aligned */}
+              <p className="w-[92px] truncate text-center text-[0.63rem] font-semibold leading-tight text-[var(--text-primary)]">
+                {event.title}
+              </p>
+
+              {/* Smart date — always same row, aligned across all cards */}
+              <p className="h-[14px] text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                {smartDate}
+              </p>
             </button>
           );
         })}
@@ -643,6 +672,12 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
 
   // Real categories from DB (replaces hardcoded demo-data)
   const { data: dbCategories = [] } = useCategories();
+
+  const { data: pulseData } = useQuery<PulseData>({
+    queryKey: ["pulse", "me"],
+    queryFn: () => fetch("/api/users/me/pulse").then((r) => r.json()),
+    staleTime: 60_000,
+  });
 
   const fireInteraction = useCallback((eventId: string, edgeType: string) => {
     void fetch("/api/interactions", {
@@ -704,14 +739,10 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
     const numSections = Math.ceil(visibleEvents.length / CARDS_PER_SECTION);
     const hour = now.getHours();
     const day = now.getDay();
-    return Array.from({ length: numSections }, (_, sectionIdx) => {
-      const sectionEvents = visibleEvents.slice(
-        sectionIdx * CARDS_PER_SECTION,
-        (sectionIdx + 1) * CARDS_PER_SECTION,
-      );
-      const friendNames = [...new Set(sectionEvents.flatMap((e) => e._friendNames ?? []))];
-      return pickSectionHeader(sectionIdx, sessionSeed, friendNames, hour, day);
-    });
+    // Collect friend names across all visible events for the friend-template sections
+    const allFriendNames = [...new Set(visibleEvents.flatMap((e) => e._friendNames ?? []))];
+    // Pick N unique headers — no repeats across the entire feed
+    return pickSectionHeaders(numSections, sessionSeed, allFriendNames, hour, day);
   }, [visibleEvents, sessionSeed, now]);
 
   // Sync pane width to AppShellContext
@@ -747,7 +778,7 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
     <>
       <div className="w-full overflow-x-hidden">
         <main className="page-grid min-h-screen overflow-x-hidden pb-32 md:pb-16">
-          <div className="container-shell px-4 pt-3 md:px-6">
+          <div className="container-shell px-4 pt-1 md:px-6">
             {hasFilters && (
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-highlight-border)] bg-[var(--brand-dim)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--home-shadow)]">
                 <span className="font-medium text-[var(--text-primary)]">
@@ -771,11 +802,11 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
           </div>
 
           <div
-            className={`container-shell grid gap-8 px-4 pt-2 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
+            className={`container-shell grid gap-4 px-4 pt-0 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
           >
             <div className="min-w-0">
               {/* Sponsored banner — skeleton while loading */}
-              <section className="mt-4">
+              <section className="mt-1">
                 {isLoading ? (
                   <SponsoredSkeleton />
                 ) : (
@@ -783,8 +814,19 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                 )}
               </section>
 
+              {/* This Weekend / This Week stories row — directly below ad */}
+              {!isLoading && weekendEvents.length > 0 && (
+                <ThisWeekendRow
+                  events={weekendEvents}
+                  onCardClick={(event) => {
+                    setSelectedEvent(event);
+                    fireInteraction(event.id, "peek_open");
+                  }}
+                />
+              )}
+
               {/* Category filter chips + layout toggle */}
-              <section className="mt-5">
+              <section className="mt-4">
                 <div className="flex items-center gap-2">
                   <div className="no-scrollbar -mx-0 flex flex-1 flex-nowrap gap-2 overflow-x-auto pb-1">
                     <button
@@ -831,17 +873,6 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                   </div>
                 </div>
               </section>
-
-              {/* This Weekend stories row */}
-              {!isLoading && weekendEvents.length > 0 && (
-                <ThisWeekendRow
-                  events={weekendEvents}
-                  onCardClick={(event) => {
-                    setSelectedEvent(event);
-                    fireInteraction(event.id, "peek_open");
-                  }}
-                />
-              )}
 
               {/* Infinite scroll feed */}
               <section className="mt-4 space-y-10">
@@ -929,31 +960,47 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {/* Pulse score widget */}
-                  <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
+                  <Link href="/dashboard/rewards">
+                  <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] transition hover:brightness-[0.97] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--pulse-gold)]">Your Pulse</p>
-                        <h3 className="mt-2 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Scene Kid</h3>
-                        <p className="mt-1 text-sm text-[var(--text-secondary)]">153 pts to City Native</p>
+                        <h3 className="mt-2 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                          {pulseData?.pulse_tier ?? "—"}
+                        </h3>
+                        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                          {pulseData?.pts_to_next_tier != null
+                            ? `${pulseData.pts_to_next_tier} pts to ${pulseData.next_tier_label}`
+                            : pulseData ? "You've reached the top tier" : "Loading…"}
+                        </p>
                       </div>
                       <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--pulse-gold)] bg-white/80 dark:bg-[var(--pulse-gold-soft)]">
-                        <span className="text-[1.3rem] font-semibold text-[var(--pulse-gold)]">847</span>
+                        <span className="text-[1.3rem] font-semibold text-[var(--pulse-gold)]">
+                          {pulseData?.pulse_score?.toLocaleString() ?? "—"}
+                        </span>
                       </div>
                     </div>
                     <div className="mt-5">
                       <div className="mb-2 flex items-center justify-between text-[0.68rem] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                        <span>Scene Kid</span><span>City Native</span>
+                        <span>{pulseData?.pulse_tier ?? ""}</span>
+                        <span>{pulseData?.next_tier_label ?? "Max"}</span>
                       </div>
                       <div className="h-2 rounded-full bg-[rgba(var(--pulse-gold-rgb),0.12)]">
-                        <div className="h-2 w-[62%] rounded-full bg-[var(--pulse-gold)]" />
+                        <div
+                          className="h-2 rounded-full bg-[var(--pulse-gold)] transition-all duration-700"
+                          style={{ width: `${pulseData?.progress_pct ?? 0}%` }}
+                        />
                       </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {PULSE_BADGES.map((badge) => (
-                        <span key={badge} className="rounded-full border border-[var(--pulse-gold-border)] bg-[var(--pulse-gold-soft)] px-3 py-1 text-[0.68rem] font-semibold text-[var(--pulse-gold)]">{badge}</span>
-                      ))}
-                    </div>
+                    {pulseData?.city_rank_label && (
+                      <div className="mt-4">
+                        <span className="rounded-full border border-[var(--pulse-gold-border)] bg-[var(--pulse-gold-soft)] px-3 py-1 text-[0.68rem] font-semibold text-[var(--pulse-gold)]">
+                          {pulseData.city_rank_label}
+                        </span>
+                      </div>
+                    )}
                   </section>
+                  </Link>
 
                   {/* Weekend AI assistant */}
                   <WeekendAssistant />
