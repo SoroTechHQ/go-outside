@@ -4,7 +4,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClockCounterClockwise, Fire, MagnifyingGlass, SlidersHorizontal } from "@phosphor-icons/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { categories, events, getCategoryEmoji } from "@gooutside/demo-data";
+import { getCategoryEmoji } from "@gooutside/demo-data";
+
+const categories = [
+  { slug: "music",      name: "Music" },
+  { slug: "food-drink", name: "Food & Drink" },
+  { slug: "arts",       name: "Arts" },
+  { slug: "tech",       name: "Tech" },
+  { slug: "sports",     name: "Sports" },
+  { slug: "networking", name: "Networking" },
+  { slug: "nightlife",  name: "Nightlife" },
+  { slug: "wellness",   name: "Wellness" },
+];
+import type { EventItem } from "@gooutside/demo-data";
+const events: EventItem[] = [];
 import AnimatedSearchPlaceholder from "./AnimatedSearchPlaceholder";
 
 const RECENT_SEARCHES = ["Afrofuture 2025", "Osu rooftop", "Jazz under the stars"];

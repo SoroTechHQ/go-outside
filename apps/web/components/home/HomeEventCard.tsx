@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { getEventImage, type Category, type EventItem, type Organizer } from "@gooutside/demo-data";
 import { useViewportTrack } from "../../hooks/useViewportTrack";
+import { useTracking } from "../tracking/TrackingProvider";
 
 export type EventSignal = {
   ticker: string;
@@ -53,7 +54,26 @@ export function HomeEventCard({
 }: HomeEventCardProps) {
   const cardRef = useRef<HTMLElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const hoverStartRef = useRef<number>(0);
+  const { trackHoverStart } = useTracking();
   useViewportTrack(cardRef, { eventId: event.id, source: "feed" });
+
+  const handleMouseEnter = useCallback(() => {
+    hoverStartRef.current = Date.now();
+    return trackHoverStart(event.id, "event", "event_card");
+  }, [event.id, trackHoverStart]);
+
+  const handleMouseLeaveTracked = useCallback(() => {
+    const dwellMs = Date.now() - hoverStartRef.current;
+    if (dwellMs > 300) {
+      fetch("/api/interactions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ eventId: event.id, edgeType: "hover_exit", dwellMs }),
+        keepalive: true,
+      }).catch(() => undefined);
+    }
+  }, [event.id]);
 
   let longPressTimer: number | undefined;
 
@@ -85,6 +105,8 @@ export function HomeEventCard({
           ? "shadow-[0_0_0_2px_var(--brand),0_0_0_5px_rgba(var(--brand-rgb),0.12)]"
           : "hover:-translate-y-0.5"
       }`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeaveTracked}
       drag={isLane && mode === "mobile" ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.18}
