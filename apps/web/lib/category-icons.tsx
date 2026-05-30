@@ -19,7 +19,7 @@ import {
   Wine,
   Plant,
   Confetti,
-} from "@phosphor-icons/react";
+} from "@phosphor-icons/react/dist/ssr";
 import type { ComponentProps, ReactNode } from "react";
 
 type IconProps = ComponentProps<typeof MusicNote>;
