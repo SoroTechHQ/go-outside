@@ -18,15 +18,18 @@ import {
   ShieldCheck,
   Star,
   Ticket,
+  WhatsappLogo,
   X,
 } from "@phosphor-icons/react";
-import {
-  getCategoryEmoji,
-  type Organizer,
-} from "@gooutside/demo-data";
+import type { Organizer } from "@gooutside/demo-data";
 import type { FeedEventItem } from "../../lib/app-contracts";
 import { EVENT_COMMUNITY_POSTS } from "../../lib/mock-community";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { CategoryIcon } from "../../lib/category-icons";
+import { EventMap } from "../maps/EventMap";
+import { useEventSave } from "../../hooks/useEventSave";
+import { EventComments } from "../events/EventComments";
+import { EventPoliciesGrid } from "../events/EventPoliciesGrid";
 
 type EventItem = FeedEventItem;
 
@@ -81,6 +84,7 @@ const MAX_WIDTH = 960;
 // ── Photo modal ───────────────────────────────────────────────────────────────
 function PhotoModal({ images, initialIndex, onClose }: { images: string[]; initialIndex: number; onClose: () => void }) {
   const [idx, setIdx] = useState(initialIndex);
+  const thumbsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -92,26 +96,48 @@ function PhotoModal({ images, initialIndex, onClose }: { images: string[]; initi
     return () => window.removeEventListener("keydown", h);
   }, [images.length, onClose]);
 
+  useEffect(() => {
+    const strip = thumbsRef.current;
+    const active = strip?.querySelector(`[data-idx="${idx}"]`) as HTMLElement | null;
+    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [idx]);
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/92 backdrop-blur-sm" onClick={onClose}>
-      <button className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={onClose} type="button">
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/92 backdrop-blur-sm" onClick={onClose}>
+      <button className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={onClose} type="button">
         <X size={18} weight="bold" />
       </button>
-      <button className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + images.length) % images.length); }} type="button">
-        <ArrowLeft size={18} weight="bold" />
-      </button>
-      <div className="relative max-h-[88vh] max-w-[88vw] overflow-hidden rounded-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="h-[75vh] w-[75vw] bg-cover bg-center" style={{ backgroundImage: `url(${images[idx]})` }} />
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
-          {images.map((_, i) => (
-            <button key={i} className={`rounded-full transition-all ${i === idx ? "h-1.5 w-5 bg-white" : "h-1.5 w-1.5 bg-white/40 hover:bg-white/70"}`} onClick={() => setIdx(i)} type="button" />
-          ))}
+      <p className="absolute right-6 top-5 pr-12 text-sm text-white/40">{idx + 1} / {images.length}</p>
+
+      <div className="relative flex w-full flex-1 items-center justify-center px-14" onClick={(e) => e.stopPropagation()}>
+        <button className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setIdx((i) => (i - 1 + images.length) % images.length); }} type="button">
+          <ArrowLeft size={18} weight="bold" />
+        </button>
+        <div className="max-h-[70vh] max-w-[84vw] overflow-hidden rounded-2xl">
+          <div className="h-[68vh] w-[80vw] max-w-[84vw] bg-cover bg-center" style={{ backgroundImage: `url(${images[idx]})` }} />
         </div>
+        <button className="absolute right-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % images.length); }} type="button">
+          <ArrowRight size={18} weight="bold" />
+        </button>
       </div>
-      <button className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setIdx((i) => (i + 1) % images.length); }} type="button">
-        <ArrowRight size={18} weight="bold" />
-      </button>
-      <p className="absolute bottom-5 right-6 text-xs text-white/50">{idx + 1} / {images.length}</p>
+
+      <div
+        ref={thumbsRef}
+        className="flex w-full shrink-0 gap-2 overflow-x-auto px-6 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {images.map((src, i) => (
+          <button
+            key={i}
+            data-idx={i}
+            className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${i === idx ? "border-white opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-80"}`}
+            onClick={() => setIdx(i)}
+            type="button"
+          >
+            <img src={src} alt="" className="h-full w-full object-cover" />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -137,9 +163,8 @@ function PaneContent({
   const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
   const reviewCount = 48 + ((event.id?.charCodeAt(1) ?? 66) % 80);
   const lineup = LINEUPS[event.categorySlug] ?? LINEUPS.music ?? [];
-  const mapLat = (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018).toFixed(4);
-  const mapLon = (-0.187 + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018).toFixed(4);
-  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${(Number(mapLon) - 0.022).toFixed(4)}%2C${(Number(mapLat) - 0.015).toFixed(4)}%2C${(Number(mapLon) + 0.022).toFixed(4)}%2C${(Number(mapLat) + 0.015).toFixed(4)}&layer=mapnik&marker=${mapLat}%2C${mapLon}`;
+  const mapLat = event.venueLat ?? (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018);
+  const mapLng = event.venueLng ?? (-0.187 + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018);
 
   return (
     <>
@@ -181,7 +206,8 @@ function PaneContent({
         {/* Title + category */}
         <div>
           <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-dim)] px-2.5 py-0.5 text-[0.7rem] font-semibold text-[var(--brand)]">
-            {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
+            <CategoryIcon slug={event.categorySlug} size={11} weight="bold" />
+            {event.eyebrow}
           </span>
           <h2 className="mt-2.5 text-[1.45rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--text-primary)]">
             {event.title}
@@ -255,68 +281,73 @@ function PaneContent({
         {/* Map */}
         <div>
           <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Location</p>
-          <div className="overflow-hidden rounded-xl border border-[var(--home-border)]">
-            <iframe className="h-[180px] w-full" loading="lazy" src={mapSrc} title={`Map for ${event.venue}`} />
-            <div className="flex items-center justify-between border-t border-[var(--home-border)] bg-[var(--bg-surface)] px-3 py-2">
-              <p className="truncate text-xs text-[var(--text-secondary)]">{event.venue}, {event.locationLine}</p>
-              <a className="ml-2 shrink-0 text-xs font-medium text-[var(--brand)] hover:underline" href={`https://www.openstreetmap.org/?mlat=${mapLat}&mlon=${mapLon}#map=15/${mapLat}/${mapLon}`} rel="noopener noreferrer" target="_blank">Open maps ↗</a>
+          <EventMap
+            lat={mapLat}
+            lng={mapLng}
+            venueName={event.venue}
+            locationLine={event.locationLine}
+            eventTitle={event.title}
+            eventSlug={event.slug}
+          />
+        </div>
+
+        {/* What's happening (activities timeline — only when data exists) */}
+        {(event as any).activities?.length > 0 && (
+          <div>
+            <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">What's happening</p>
+            <div className="relative pl-5">
+              <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-[var(--home-border)]" />
+              <div className="space-y-4">
+                {(event as any).activities.map((act: { title: string; time?: string }, i: number) => (
+                  <div key={i} className="relative flex items-start gap-3">
+                    <div className="absolute -left-5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 border-[var(--brand)] bg-[var(--bg-card)]" />
+                    <div className="min-w-0">
+                      {act.time && (
+                        <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--brand)]">{act.time}</p>
+                      )}
+                      <p className="text-sm font-medium text-[var(--text-primary)]">{act.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* What's happening */}
-        <div>
-          <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">What's happening</p>
-          <div className="space-y-2">
-            {lineup.map((item, i) => (
-              <div key={item} className="flex items-center gap-0 overflow-hidden rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)]">
-                <div className="relative h-16 w-16 shrink-0">
-                  <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${images[(i + 3) % images.length]})` }} />
-                </div>
-                <div className="flex flex-1 items-center gap-2.5 px-3 py-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)]">{i + 1}</span>
-                  <span className="text-sm text-[var(--text-primary)]">{item}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Buzz online */}
-        <div>
-          <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Buzz online</p>
-          <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {SOCIAL_REELS.map((reel, i) => (
-              <a
-                key={i}
-                className="group flex w-[148px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] transition hover:-translate-y-0.5 hover:shadow-lg"
-                href={reel.platform === "instagram" ? "https://instagram.com" : "https://tiktok.com"}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <div className="relative h-[190px] overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${REEL_THUMBNAILS[reel.thumbIdx]})` }}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/65" />
-                  <div
-                    className="absolute left-2 top-2 rounded-full px-2 py-0.5"
-                    style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C" : "#010101" }}
-                  >
-                    <span className="text-[0.58rem] font-bold uppercase tracking-wider text-white">
-                      {reel.platform === "instagram" ? "Insta" : "TikTok"}
-                    </span>
+        {/* Buzz online — only shown when organizer has added social links */}
+        {(event as any).socialLinks?.length > 0 && (
+          <div>
+            <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Buzz online</p>
+            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {(event as any).socialLinks.map((reel: { platform: string; url: string; caption?: string; likes?: number }, i: number) => (
+                <a
+                  key={i}
+                  className="group flex w-[148px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] transition hover:-translate-y-0.5 hover:shadow-lg"
+                  href={reel.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <div className="flex h-[140px] items-center justify-center" style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C22" : "#01010122" }}>
+                    <div className="rounded-full px-2 py-1" style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C" : "#010101" }}>
+                      <span className="text-[0.55rem] font-bold uppercase tracking-wider text-white">{reel.platform === "instagram" ? "Insta" : "TikTok"}</span>
+                    </div>
                   </div>
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white">
-                    <HeartStraight size={11} weight="fill" />
-                    <span className="text-[0.65rem] font-semibold">{reel.likes}</span>
+                  <div className="p-2.5">
+                    {reel.likes != null && (
+                      <div className="mb-1 flex items-center gap-1">
+                        <HeartStraight size={10} weight="fill" className="text-rose-400" />
+                        <span className="text-[0.6rem] font-semibold text-[var(--text-tertiary)]">{reel.likes.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {reel.caption && (
+                      <p className="line-clamp-2 text-[0.68rem] text-[var(--text-secondary)]">{reel.caption}</p>
+                    )}
                   </div>
-                </div>
-                <div className="p-2.5">
-                  <p className="text-[0.68rem] font-semibold text-[var(--text-tertiary)]">{reel.user}</p>
-                  <p className="mt-0.5 line-clamp-2 text-[0.72rem] text-[var(--text-secondary)]">{reel.caption}</p>
-                </div>
-              </a>
-            ))}
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* About the host */}
         <div>
@@ -359,49 +390,16 @@ function PaneContent({
           </div>
         </div>
 
-        {/* What people are saying */}
+        {/* Comments */}
         <div>
-          <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">What people are saying</p>
-          <div className="space-y-2.5">
-            {EVENT_COMMUNITY_POSTS.map((post) => (
-              <div key={post.handle} className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-3.5">
-                <div className="flex items-center gap-2.5">
-                  <Link
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)] transition hover:scale-105"
-                    href={`/dashboard/user/${post.userId}`}
-                  >
-                    {post.avatar}
-                  </Link>
-                  <div className="min-w-0">
-                    <Link
-                      className="text-xs font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
-                      href={`/dashboard/user/${post.userId}`}
-                    >
-                      {post.user}
-                    </Link>
-                    <p className="text-[0.65rem] text-[var(--text-tertiary)]">{post.handle} · {post.time}</p>
-                  </div>
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{post.text}</p>
-              </div>
-            ))}
-          </div>
+          <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Comments</p>
+          <EventComments eventSlug={event.slug} eventId={event.id} compact />
         </div>
 
         {/* Policies */}
         <div>
           <p className="mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Policies</p>
-          <div className="divide-y divide-[var(--home-border)] overflow-hidden rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)]">
-            {POLICIES.map((policy) => (
-              <div key={policy.label} className="flex items-start gap-3 px-4 py-3">
-                <ShieldCheck size={13} weight="fill" className="mt-0.5 shrink-0 text-[var(--brand)]" />
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text-primary)]">{policy.label}</p>
-                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{policy.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <EventPoliciesGrid policies={(event as any).policies} />
         </div>
 
         <div className="h-4" />
@@ -422,6 +420,10 @@ function PaneFooter({
   onToggleSaved: () => void;
   onGetTickets: () => void;
 }) {
+  const whatsappText = encodeURIComponent(
+    `🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.app/events/${event.slug}\n\n_Let's go outside_ 🟢`
+  );
+
   return (
     <div className="shrink-0 border-t border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
       <div className="flex items-center gap-2">
@@ -440,17 +442,21 @@ function PaneFooter({
         >
           <HeartStraight size={17} weight={saved ? "fill" : "regular"} />
         </button>
-        <button
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
-          type="button"
+        <a
+          href={`https://wa.me/?text=${whatsappText}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
         >
-          <PaperPlaneTilt size={16} weight="regular" />
-        </button>
+          <WhatsappLogo size={17} weight="fill" />
+        </a>
         <button
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]"
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${saved ? "border-[var(--brand)]/40 text-[var(--brand)]" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
+          onClick={onToggleSaved}
           type="button"
+          title="Add to wishlist"
         >
-          <BookmarkSimple size={15} weight="regular" />
+          <BookmarkSimple size={15} weight={saved ? "fill" : "regular"} />
         </button>
       </div>
     </div>
@@ -483,7 +489,7 @@ export function EventSidePane({
   const [paneWidth, setPaneWidth] = useState(DEFAULT_WIDTH);
   const [mounted, setMounted] = useState(false);
   const [photoModal, setPhotoModal] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
-  const [saved, setSaved] = useState(false);
+  const { isSaved, toggleSave } = useEventSave(event.id);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
 
   // Mobile bottom sheet state
@@ -633,13 +639,13 @@ export function EventSidePane({
               images={images}
               onClose={onClose}
               onSetPhotoModal={setPhotoModal}
-              onToggleSaved={() => setSaved((v) => !v)}
-              saved={saved}
+              onToggleSaved={toggleSave}
+              saved={isSaved}
             />
           </div>
 
           {/* Sticky footer */}
-          <PaneFooter event={event} onToggleSaved={() => setSaved((v) => !v)} saved={saved} onGetTickets={() => setTicketModalOpen(true)} />
+          <PaneFooter event={event} onToggleSaved={toggleSave} saved={isSaved} onGetTickets={() => setTicketModalOpen(true)} />
         </div>
 
         {photoModal.open && (
@@ -719,13 +725,13 @@ export function EventSidePane({
             images={images}
             onClose={onClose}
             onSetPhotoModal={setPhotoModal}
-            onToggleSaved={() => setSaved((v) => !v)}
-            saved={saved}
+            onToggleSaved={toggleSave}
+            saved={isSaved}
           />
         </div>
 
         {/* Sticky footer */}
-        <PaneFooter event={event} onToggleSaved={() => setSaved((v) => !v)} saved={saved} onGetTickets={() => setTicketModalOpen(true)} />
+        <PaneFooter event={event} onToggleSaved={toggleSave} saved={isSaved} onGetTickets={() => setTicketModalOpen(true)} />
       </div>
 
       {photoModal.open && (
