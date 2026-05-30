@@ -8,6 +8,7 @@ import "stream-chat-react/dist/css/v2/index.css";
 import { ConditionalChrome } from "../components/layout/ConditionalChrome";
 import { AppShellProvider } from "../components/layout/AppShellContext";
 import { TrackingProvider } from "../components/tracking/TrackingProvider";
+import { AlphaProvider } from "../components/alpha/AlphaProvider";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -48,7 +49,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <ThemeScript />
             <TrackingProvider>
               <AppShellProvider>
-                <ConditionalChrome>{children}</ConditionalChrome>
+                <AlphaProvider>
+                  <ConditionalChrome>{children}</ConditionalChrome>
+                </AlphaProvider>
               </AppShellProvider>
             </TrackingProvider>
           </Providers>

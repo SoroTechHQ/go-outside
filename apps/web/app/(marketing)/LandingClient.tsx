@@ -212,9 +212,9 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
     scrollRef.current?.scrollBy({ left: dir * 420, behavior: "smooth" });
   }
 
-  const featuredEvent = displayEvents[0]!;
-  const gridEvents    = displayEvents.slice(1, 5);
-  const weekendEvents = displayEvents.slice(2, 7);
+  const featuredEvent   = displayEvents[0]!;
+  const gridEvents      = displayEvents.slice(1, 5);
+  const recentEvents    = displayEvents.slice(1, 9);
 
   return (
     <>
@@ -403,6 +403,37 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       <TickerBar events={tickerItems} />
 
       {/* ════════════════════════════════════════
+          SECTION 2b — BRANDS / EVENTS STRIP
+      ════════════════════════════════════════ */}
+      <section className="border-y border-black/[0.06] bg-[#fafafa] py-10">
+        <div className="mx-auto max-w-5xl px-5 md:px-8">
+          <p className="mb-6 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[#c0c0c0]">
+            Events you&apos;ll find on GoOutside
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
+            {[
+              { name: "Afronation Ghana",      style: { fontWeight: 800, letterSpacing: "-0.02em" } },
+              { name: "Chale Wote",            style: { fontWeight: 700, fontStyle: "italic" } },
+              { name: "Tidal Rave",            style: { fontWeight: 800 } },
+              { name: "VGMA",                  style: { fontWeight: 900, letterSpacing: "0.1em" } },
+              { name: "Ghana Tech Summit",     style: { fontWeight: 600 } },
+              { name: "Osu Night Market",      style: { fontWeight: 700, fontStyle: "italic" } },
+              { name: "Detty December",        style: { fontWeight: 800 } },
+              { name: "Sankofa Sessions",      style: { fontWeight: 600, fontStyle: "italic" } },
+            ].map(({ name, style }) => (
+              <span
+                key={name}
+                className="text-[15px] text-[#b0b0b0] transition-colors hover:text-[#0f110f]"
+                style={style}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
           SECTION 3 — EVENT CARDS
       ════════════════════════════════════════ */}
       <section className="w-full px-5 py-16 md:px-10">
@@ -435,9 +466,9 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             <motion.div variants={itemVariants} className="min-h-[420px]">
               <EventPreviewCard event={featuredEvent} variant="featured" onClick={() => openLock(featuredEvent)} />
             </motion.div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4" style={{ gridAutoRows: "1fr" }}>
               {gridEvents.map((ev) => (
-                <motion.div key={ev.id} variants={itemVariants}>
+                <motion.div key={ev.id} variants={itemVariants} className="h-full">
                   <EventPreviewCard event={ev} variant="standard" onClick={() => openLock(ev)} />
                 </motion.div>
               ))}
@@ -447,18 +478,18 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       </section>
 
       {/* ════════════════════════════════════════
-          SECTION 4 — THIS WEEKEND
+          SECTION 4 — HAPPENING RECENTLY
       ════════════════════════════════════════ */}
       <section className="py-10">
         <div className="px-5 md:px-10">
           <AnimatedSection className="mb-5 flex items-center justify-between">
             <motion.div variants={itemVariants} className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#2f8f45]" />
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[#2f8f45]" />
               <h3
                 className="text-[22px] font-normal italic text-[#0f110f]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
-                This weekend
+                Happening recently
               </h3>
             </motion.div>
             <motion.div variants={itemVariants} className="flex items-center gap-3">
@@ -489,7 +520,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           className="flex gap-4 overflow-x-auto px-5 pb-5 md:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ scrollSnapType: "x mandatory" }}
         >
-          {weekendEvents.map((ev) => (
+          {recentEvents.map((ev) => (
             <div
               key={ev.id}
               className="w-[300px] shrink-0 sm:w-[340px]"
@@ -729,6 +760,70 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       </section>
 
       {/* ════════════════════════════════════════
+          SECTION 8b — PULSE POINTS
+      ════════════════════════════════════════ */}
+      <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
+        <AnimatedSection className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-16">
+
+          {/* Left: copy */}
+          <div className="flex flex-col justify-center space-y-5">
+            <motion.div variants={itemVariants}>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Pulse Points</p>
+              <h2 className="text-[28px] font-bold text-[#0f110f] md:text-[36px]">
+                Going out earns you more.
+              </h2>
+            </motion.div>
+            <motion.p variants={itemVariants} className="text-[16px] font-light leading-relaxed text-[#6f6f6f]">
+              Every event you attend, ticket you buy, and friend you bring earns Pulse Points.
+              Points unlock tiers — and tiers unlock real rewards you can redeem towards tickets, perks, and exclusive access.
+            </motion.p>
+            <motion.ul variants={itemVariants} className="space-y-3">
+              {[
+                "Earn points by attending events",
+                "Unlock tiers from Newcomer to Legend",
+                "Redeem for tickets and event perks",
+                "2× points for Founding Explorers",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3 text-[14px] text-[#6f6f6f]">
+                  <CheckCircle size={20} color="#2f8f45" weight="fill" className="mt-0.5 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </motion.ul>
+          </div>
+
+          {/* Right: tier cards */}
+          <motion.div variants={itemVariants} className="flex flex-col gap-2.5">
+            {[
+              { tier: "Newcomer",   range: "0 – 499 pts",    color: "#6f6f6f", bg: "#f7f7f7",            border: "rgba(0,0,0,0.07)"         },
+              { tier: "Regular",    range: "500 – 1,499 pts", color: "#2563eb", bg: "rgba(37,99,235,0.05)", border: "rgba(37,99,235,0.15)"    },
+              { tier: "Plugged In", range: "1,500 – 3,999",  color: "#7c3aed", bg: "rgba(124,58,237,0.05)", border: "rgba(124,58,237,0.18)"  },
+              { tier: "Scene King", range: "4,000 – 9,999",  color: "#d97706", bg: "rgba(217,119,6,0.05)",  border: "rgba(217,119,6,0.2)"    },
+              { tier: "Legend",     range: "10,000+ pts",    color: "#2f8f45", bg: "rgba(47,143,69,0.06)",  border: "rgba(47,143,69,0.22)",
+                badge: "Founding Explorer 2× bonus" },
+            ].map(({ tier, range, color, bg, border, badge }) => (
+              <div
+                key={tier}
+                className="flex items-center justify-between rounded-[12px] px-4 py-3"
+                style={{ background: bg, border: `1px solid ${border}` }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+                  <div>
+                    <p className="text-[14px] font-semibold" style={{ color: "#0f110f" }}>{tier}</p>
+                    {badge && (
+                      <p className="text-[11px]" style={{ color }}>{badge}</p>
+                    )}
+                  </div>
+                </div>
+                <span className="text-[12px] font-medium" style={{ color: "#a9a9a9" }}>{range}</span>
+              </div>
+            ))}
+          </motion.div>
+        </AnimatedSection>
+      </section>
+
+      {/* ════════════════════════════════════════
           SECTION 9 — FINAL CTA
       ════════════════════════════════════════ */}
       <section
@@ -767,6 +862,11 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
 
           <motion.p variants={itemVariants} className="mt-5 text-[13px] text-[#c0c0c0]">
             No credit card · Free to browse · Ghanaian-made 🇬🇭
+          </motion.p>
+          <motion.p variants={itemVariants} className="mt-3">
+            <Link href="/docs" className="text-[13px] text-[#c0c0c0] underline-offset-2 hover:text-[#a9a9a9] hover:underline">
+              Help &amp; docs →
+            </Link>
           </motion.p>
         </AnimatedSection>
       </section>

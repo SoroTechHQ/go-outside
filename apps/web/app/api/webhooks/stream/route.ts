@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     // Send Web Push to all stored subscriptions for this user
     const { data: pushUser } = await supabaseAdmin
       .from("users")
-      .select("push_subscriptions")
+      .select("push_subscriptions, unread_nudge_pending_at")
       .eq("clerk_id", clerkId)
       .single();
 
@@ -132,6 +132,14 @@ export async function POST(req: NextRequest) {
           }).catch(() => {})
         )
       );
+    }
+
+    // Mark nudge as pending if not already set — cron will fire a re-engagement push after delay
+    if (!pushUser?.unread_nudge_pending_at) {
+      await supabaseAdmin
+        .from("users")
+        .update({ unread_nudge_pending_at: new Date().toISOString() })
+        .eq("clerk_id", clerkId);
     }
   }
 
