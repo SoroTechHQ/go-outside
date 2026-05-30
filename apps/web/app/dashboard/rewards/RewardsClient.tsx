@@ -24,6 +24,10 @@ import {
   Rocket,
   Diamond,
   ArrowLeft,
+  Question,
+  ShoppingBag,
+  TrendUp,
+  Medal,
 } from "@phosphor-icons/react";
 import type {
   PulseReward,
@@ -794,6 +798,100 @@ function getNextPPMilestone(lifetime: number, badges: RewardsBadge[]) {
   return null;
 }
 
+// ─── How It Works modal ───────────────────────────────────────────────────────
+
+const HOW_IT_WORKS_SECTIONS = [
+  {
+    Icon: Lightning,
+    color: "#4a9f63",
+    title: "Pulse Score",
+    body: "Your overall engagement level on GoOutside. It grows as you attend events, earn achievements, and participate in the community. Your score determines your Tier — from Newcomer all the way to Legend.",
+  },
+  {
+    Icon: ShoppingBag,
+    color: "#F59E0B",
+    title: "Pulse Points",
+    body: "Spendable currency you earn for every action: buying tickets (+50 pts), checking in (+50 pts), saving events (+2 pts), posting snippets (+10 pts), and more. Redeem them in the shop for discounts and perks.",
+  },
+  {
+    Icon: TrendUp,
+    color: "#818CF8",
+    title: "Tiers & Ranking",
+    body: "Six tiers based on your Pulse Score — Newcomer (0–99), Explorer (100–299), Regular (300–599), Scene Kid (600–999), City Native (1,000–1,999), Legend (2,000+). Higher tiers unlock better rewards and exclusive perks.",
+  },
+  {
+    Icon: Medal,
+    color: "#FB923C",
+    title: "Badges",
+    body: "One-time achievements earned by hitting milestones: attending your first event, building a streak, discovering new categories, and more. Each badge awards bonus Pulse Points when unlocked.",
+  },
+] as const;
+
+function HowItWorksModal({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
+    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        className="relative w-full max-w-sm rounded-[24px] border border-[var(--border-card)] bg-[var(--bg-elevated)] p-6 shadow-2xl"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-full p-1.5 text-[var(--text-tertiary)] transition hover:bg-white/8 hover:text-[var(--text-primary)]"
+        >
+          <X size={16} />
+        </button>
+
+        <p className="mb-1 text-[17px] font-bold text-[var(--text-primary)]">How it works</p>
+        <p className="mb-5 text-[12px] text-[var(--text-secondary)]">
+          GoOutside rewards you for discovering, attending, and sharing events.
+        </p>
+
+        <div className="space-y-4">
+          {HOW_IT_WORKS_SECTIONS.map(({ Icon, color, title, body }) => (
+            <div key={title} className="flex gap-3">
+              <div
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]"
+                style={{ backgroundColor: `${color}18` }}
+              >
+                <Icon size={16} weight="fill" style={{ color }} />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-[var(--text-primary)]">{title}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-secondary)]">{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 w-full rounded-[12px] py-3 text-[13px] font-bold text-[var(--brand-contrast)]"
+          style={{ backgroundColor: "var(--brand)" }}
+        >
+          Got it
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ─── Tab strip ────────────────────────────────────────────────────────────────
 
 type TabId = "shop" | "history" | "badges";
@@ -822,6 +920,7 @@ export function RewardsClient({
   const [activeTab, setActiveTab] = useState<TabId>("shop");
   const [redeemTarget, setRedeemTarget] = useState<PulseReward | null>(null);
   const [pp, setPP] = useState(initialPP);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   const badgesEarned = badges.filter((b) => b.earned).length;
   const nextMilestone = getNextPPMilestone(pp.lifetime, badges);
@@ -847,7 +946,7 @@ export function RewardsClient({
             >
               <ArrowLeft size={16} weight="bold" />
             </Link>
-            <div>
+            <div className="flex-1">
               <h1 className="text-[1.5rem] font-bold leading-tight tracking-tight text-[var(--text-primary)]">
                 Pulse Rewards
               </h1>
@@ -855,6 +954,14 @@ export function RewardsClient({
                 Earn and redeem Pulse Points
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowHowItWorks(true)}
+              title="How it works"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-tertiary)] transition hover:border-[var(--border-card)] hover:text-[var(--text-primary)]"
+            >
+              <Question size={16} weight="bold" />
+            </button>
           </div>
 
           {/* ── Stats row ── */}
@@ -994,6 +1101,13 @@ export function RewardsClient({
             onClose={() => setRedeemTarget(null)}
             onSuccess={(newBalance) => handleRedeemSuccess(newBalance)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── How it works modal ── */}
+      <AnimatePresence>
+        {showHowItWorks && (
+          <HowItWorksModal onClose={() => setShowHowItWorks(false)} />
         )}
       </AnimatePresence>
     </>

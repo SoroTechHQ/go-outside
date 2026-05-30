@@ -32,30 +32,36 @@ export function computeStartingScore(opts: {
   return Math.max(score, 10); // minimum 10
 }
 
-export type PulseTier = "newcomer" | "explorer" | "regular" | "city-native" | "legend";
+export type PulseTier = "newcomer" | "explorer" | "regular" | "scene_kid" | "city_native" | "legend";
 
 export interface TierInfo {
+  slug:       PulseTier;
   label:      string;
   bg:         string;
   color:      string;
   min:        number;
+  max:        number;
 }
 
 export const TIER_MAP: TierInfo[] = [
-  { label: "Legend",      bg: "rgba(255,215,0,0.15)",   color: "#FFD700", min: 500 },
-  { label: "City Native", bg: "rgba(95,191,42,0.15)",   color: "#5FBF2A", min: 300 },
-  { label: "Regular",     bg: "rgba(95,191,42,0.10)",   color: "#5FBF2A", min: 150 },
-  { label: "Explorer",    bg: "rgba(74,122,232,0.12)",  color: "#4A7AE8", min: 60  },
-  { label: "Newcomer",    bg: "rgba(255,255,255,0.04)", color: "#6B8C6B", min: 0   },
+  { slug: "legend",      label: "Legend",      bg: "rgba(218,165,32,0.15)",  color: "#DAA520", min: 2000, max: Infinity },
+  { slug: "city_native", label: "City Native", bg: "rgba(200,124,42,0.15)",  color: "#c87c2a", min: 1000, max: 1999    },
+  { slug: "scene_kid",   label: "Scene Kid",   bg: "rgba(74,159,99,0.12)",   color: "#4a9f63", min: 600,  max: 999     },
+  { slug: "regular",     label: "Regular",     bg: "rgba(74,159,99,0.10)",   color: "#4a9f63", min: 300,  max: 599     },
+  { slug: "explorer",    label: "Explorer",    bg: "rgba(74,159,99,0.08)",   color: "#4a9f63", min: 100,  max: 299     },
+  { slug: "newcomer",    label: "Newcomer",    bg: "rgba(255,255,255,0.04)", color: "#9CA3AF", min: 0,    max: 99      },
 ];
 
 export function getTierFromScore(score: number): TierInfo {
-  return TIER_MAP.find((t) => score >= t.min) ?? TIER_MAP[TIER_MAP.length - 1];
+  for (const tier of TIER_MAP) {
+    if (score >= tier.min) return tier;
+  }
+  return TIER_MAP[TIER_MAP.length - 1]!;
 }
 
-/** Slug used to store in DB */
-export function getTierSlug(score: number): string {
-  return getTierFromScore(score).label.toLowerCase().replace(" ", "-");
+/** Slug used to store in DB (e.g. "scene_kid") */
+export function getTierSlug(score: number): PulseTier {
+  return getTierFromScore(score).slug;
 }
 
 export const ONBOARDING_STEPS: Record<string, number> = {

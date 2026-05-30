@@ -43,6 +43,15 @@ export async function POST(req: NextRequest) {
     return jsonError(500, "Could not save event");
   }
 
+  // Fire-and-forget: award Pulse Points for saving an event
+  void supabaseAdmin.rpc("award_pulse_points", {
+    p_user_id: supabaseUserId,
+    p_delta: 2,
+    p_type: "event_saved",
+    p_description: "Saved an event",
+    p_event_id: eventId,
+  });
+
   return jsonNoStore({ saved: true });
 }
 
