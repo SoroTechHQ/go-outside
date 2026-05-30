@@ -166,6 +166,9 @@ export type DbEventRow = {
   categories:        DbCategory;
   venues:            DbVenueRow | null;
   ticket_types:      DbTicketTypeRow[];
+  policies:          { standard: string[]; custom: string[] } | null;
+  activities:        { title: string; time?: string; icon?: string }[] | null;
+  social_links:      { platform: string; url: string; caption?: string; likes?: number }[] | null;
 };
 
 export function adaptEvent(row: DbEventRow): EventItem {
@@ -234,6 +237,9 @@ export function adaptEvent(row: DbEventRow): EventItem {
     venueLng:      venue?.longitude ?? null,
     startDatetime: row.start_datetime,
     endDatetime:   row.end_datetime,
+    policies:      row.policies ?? null,
+    activities:    row.activities ?? null,
+    socialLinks:   row.social_links ?? null,
     // Extra DB fields used for server-side scoring (cast at use site)
     ...({ avgRating: row.avg_rating } as unknown as object),
   } as EventItem;

@@ -11,7 +11,7 @@ import {
   Ticket,
   X,
 } from "@phosphor-icons/react";
-import { getCategoryEmoji } from "@gooutside/demo-data";
+import { CategoryIcon } from "../../lib/category-icons";
 
 const categories = [
   { slug: "music",      name: "Music" },
@@ -250,7 +250,7 @@ function MobileSearchOverlay({
                             }}
                             type="button"
                           >
-                            {getCategoryEmoji(cat.slug)} {cat.name}
+                            <CategoryIcon slug={cat.slug} size={12} weight="bold" className="inline-block" /> {cat.name}
                           </button>
                         ))}
                       </div>

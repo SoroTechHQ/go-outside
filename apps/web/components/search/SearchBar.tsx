@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClockCounterClockwise, Fire, MagnifyingGlass, SlidersHorizontal } from "@phosphor-icons/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { getCategoryEmoji } from "@gooutside/demo-data";
+import { CategoryIcon } from "../../lib/category-icons";
 
 const categories = [
   { slug: "music",      name: "Music" },
@@ -316,7 +316,7 @@ export function SearchBar({
                           }}
                           type="button"
                         >
-                          {getCategoryEmoji(category.slug)} {category.name}
+                          <CategoryIcon slug={category.slug} size={12} weight="bold" className="inline-block" /> {category.name}
                         </button>
                       ))}
                     </div>

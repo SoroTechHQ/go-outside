@@ -20,7 +20,9 @@ import {
   WhatsappLogo,
   X,
 } from "@phosphor-icons/react";
-import { getCategoryEmoji, getEventImage, type EventItem, type Organizer } from "@gooutside/demo-data";
+import { getEventImage, type EventItem, type Organizer } from "@gooutside/demo-data";
+import { CategoryIcon } from "../../../lib/category-icons";
+import { useEventSave } from "../../../hooks/useEventSave";
 import { useTracking } from "../../../components/tracking/TrackingProvider";
 import { GetTicketModal, type EventForTicket } from "../../../components/tickets/GetTicketModal";
 import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
@@ -28,6 +30,8 @@ import { SearchPillExpanded } from "../../../components/search/SearchPillExpande
 import { useAppShell } from "../../../components/layout/AppShellContext";
 import { EventMap } from "../../../components/maps/EventMap";
 import { LiveAttendeeBanner } from "../../../components/maps/LiveAttendeeBanner";
+import { EventComments } from "../../../components/events/EventComments";
+import { EventPoliciesGrid } from "../../../components/events/EventPoliciesGrid";
 
 
 // ── Static content ────────────────────────────────────────────────────────────
@@ -71,6 +75,7 @@ function getEventImages(event: EventItem): string[] {
 // ── Photo lightbox ─────────────────────────────────────────────────────────────
 function PhotoLightbox({ images, startIdx, onClose }: { images: string[]; startIdx: number; onClose: () => void }) {
   const [idx, setIdx] = useState(startIdx);
+  const thumbsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -82,34 +87,59 @@ function PhotoLightbox({ images, startIdx, onClose }: { images: string[]; startI
     return () => window.removeEventListener("keydown", h);
   }, [images.length, onClose]);
 
+  // Scroll active thumbnail into view
+  useEffect(() => {
+    const strip = thumbsRef.current;
+    const active = strip?.querySelector(`[data-idx="${idx}"]`) as HTMLElement | null;
+    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [idx]);
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/95 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm" onClick={onClose}>
       <button className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition" onClick={onClose} type="button">
         <X size={18} weight="bold" />
       </button>
-      <button
-        className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-        onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }}
-        type="button"
-      >
-        <ArrowPrev size={20} weight="bold" />
-      </button>
-      <div className="relative max-h-[90vh] max-w-[90vw] overflow-hidden rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
-        <img src={images[idx]} alt="" className="h-[80vh] w-auto max-w-[90vw] object-cover" />
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
-          {images.slice(0, 9).map((_, i) => (
-            <button key={i} className={`rounded-full transition-all ${i === idx ? "h-1.5 w-5 bg-white" : "h-1.5 w-1.5 bg-white/40 hover:bg-white/70"}`} onClick={() => setIdx(i)} type="button" />
-          ))}
+      <p className="absolute right-6 top-5 pr-12 text-sm text-white/40">{idx + 1} / {images.length}</p>
+
+      {/* Main image row */}
+      <div className="relative flex w-full flex-1 items-center justify-center px-16" onClick={e => e.stopPropagation()}>
+        <button
+          className="absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+          onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }}
+          type="button"
+        >
+          <ArrowPrev size={20} weight="bold" />
+        </button>
+        <div className="max-h-[72vh] max-w-[80vw] overflow-hidden rounded-2xl shadow-2xl">
+          <img src={images[idx]} alt="" className="max-h-[72vh] w-auto max-w-[80vw] object-cover" />
         </div>
+        <button
+          className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+          onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }}
+          type="button"
+        >
+          <ArrowNext size={20} weight="bold" />
+        </button>
       </div>
-      <button
-        className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-        onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }}
-        type="button"
+
+      {/* Thumbnail strip */}
+      <div
+        ref={thumbsRef}
+        className="flex w-full shrink-0 gap-2 overflow-x-auto px-6 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onClick={e => e.stopPropagation()}
       >
-        <ArrowNext size={20} weight="bold" />
-      </button>
-      <p className="absolute bottom-5 right-6 text-sm text-white/50">{idx + 1} / {images.length}</p>
+        {images.map((src, i) => (
+          <button
+            key={i}
+            data-idx={i}
+            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-150 ${i === idx ? "border-white opacity-100 scale-105" : "border-transparent opacity-50 hover:opacity-80"}`}
+            onClick={() => setIdx(i)}
+            type="button"
+          >
+            <img src={src} alt="" className="h-full w-full object-cover" />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -128,7 +158,7 @@ export function EventDetailClient({
   useEventDwell(event.id);
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-  const [saved, setSaved] = useState(false);
+  const { isSaved, toggleSave } = useEventSave(event.id);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const { sidebarWidth } = useAppShell();
   const { trackEvent } = useTracking();
@@ -249,7 +279,7 @@ export function EventDetailClient({
 
             <div className="flex items-center gap-2">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Check out ${event.title}! 🎉\nhttps://www.google.com/maps?q=${resolvedLat},${resolvedLng}`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.app/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={trackShare}
@@ -260,13 +290,13 @@ export function EventDetailClient({
               </a>
               <button
                 className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold transition hover:bg-[var(--bg-surface)] ${
-                  saved ? "text-rose-500" : "text-[var(--text-primary)]"
+                  isSaved ? "text-rose-500" : "text-[var(--text-primary)]"
                 }`}
-                onClick={() => setSaved(v => !v)}
+                onClick={toggleSave}
                 type="button"
               >
-                <HeartStraight size={14} weight={saved ? "fill" : "bold"} />
-                {saved ? "Saved" : "Save"}
+                <HeartStraight size={14} weight={isSaved ? "fill" : "bold"} />
+                {isSaved ? "Saved" : "Save"}
               </button>
             </div>
           </div>
@@ -287,22 +317,25 @@ export function EventDetailClient({
           </p>
           <button
             className={`flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] ${
-              saved ? "text-rose-500" : "text-[var(--text-primary)]"
+              isSaved ? "text-rose-500" : "text-[var(--text-primary)]"
             }`}
-            onClick={() => setSaved(v => !v)}
+            onClick={toggleSave}
             type="button"
           >
-            <HeartStraight size={16} weight={saved ? "fill" : "regular"} />
+            <HeartStraight size={16} weight={isSaved ? "fill" : "regular"} />
           </button>
         </div>
       </div>
 
       {/* ── Photo grid (Airbnb-style) ─────────────────────────────────────────── */}
-      <div className="px-4 pt-[74px] md:px-6 md:pt-[148px]">
+      <div
+        className="pt-[74px] md:pt-[148px] transition-[padding] duration-300"
+        style={{ paddingLeft: `max(1rem, calc(${sidebarWidth}px + 1.5rem))`, paddingRight: "1.5rem" }}
+      >
       <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">
         {/* Main hero — spans 2 cols × 2 rows */}
         <button
-          className="relative col-span-2 row-span-2 overflow-hidden"
+          className="relative col-span-2 row-span-2 overflow-hidden rounded-tl-[28px] rounded-bl-[28px]"
           onClick={() => { setLightboxIdx(0); trackGalleryScroll(); }}
           type="button"
         >
@@ -312,7 +345,7 @@ export function EventDetailClient({
         {[1, 2, 3, 4].map((i, pos) => (
           <button
             key={i}
-            className="relative overflow-hidden"
+            className={`relative overflow-hidden ${pos === 1 ? "rounded-tr-[28px]" : ""} ${pos === 3 ? "rounded-br-[28px]" : ""}`}
             onClick={() => setLightboxIdx(i)}
             type="button"
           >
@@ -353,7 +386,8 @@ export function EventDetailClient({
             {/* Title + category */}
             <div className="border-b border-[var(--home-border)] pb-8">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
-                {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
+                <CategoryIcon slug={event.categorySlug} size={12} weight="bold" />
+                {event.eyebrow}
               </span>
               <h1 className="mt-4 text-[2.4rem] font-semibold leading-tight tracking-[-0.04em] text-[var(--text-primary)] sm:text-[3rem]">
                 {event.title}
@@ -430,23 +464,29 @@ export function EventDetailClient({
               )}
             </div>
 
-            {/* What's happening (lineup) */}
-            <div className="border-b border-[var(--home-border)] py-8">
-              <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">What's happening</h2>
-              <div className="mt-5 space-y-3">
-                {lineup.map((item, i) => (
-                  <div key={item} className="flex items-center gap-4 overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)]">
-                    <div className="relative h-20 w-20 shrink-0">
-                      <img src={images[(i + 3) % images.length]} alt="" className="h-full w-full object-cover" />
-                    </div>
-                    <div className="flex flex-1 items-center gap-3 py-3 pr-4">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.65rem] font-bold text-[var(--brand)]">{i + 1}</span>
-                      <span className="text-[0.95rem] text-[var(--text-primary)]">{item}</span>
-                    </div>
+            {/* What's happening (activities timeline) */}
+            {(event as any).activities?.length > 0 && (
+              <div className="border-b border-[var(--home-border)] py-8">
+                <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">What's happening</h2>
+                <div className="relative mt-5 pl-6">
+                  {/* Vertical timeline line */}
+                  <div className="absolute left-[7px] top-2 bottom-2 w-[2px] bg-[var(--home-border)]" />
+                  <div className="space-y-5">
+                    {(event as any).activities.map((act: { title: string; time?: string }, i: number) => (
+                      <div key={i} className="relative flex items-start gap-4">
+                        <div className="absolute -left-6 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 border-[var(--brand)] bg-[var(--bg-card)]" />
+                        <div className="min-w-0">
+                          {act.time && (
+                            <p className="text-[0.72rem] font-semibold uppercase tracking-wider text-[var(--brand)]">{act.time}</p>
+                          )}
+                          <p className="text-[0.95rem] font-medium text-[var(--text-primary)]">{act.title}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Live attendee banner */}
             {event.startDatetime && event.endDatetime && (
@@ -478,96 +518,51 @@ export function EventDetailClient({
               </div>
             </div>
 
-            {/* Social buzz */}
-            <div className="border-b border-[var(--home-border)] py-8">
-              <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Buzz online</h2>
-              <div className="mt-5 flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {[
-                  { platform: "instagram" as const, user: "@accra.vibes",  likes: "12.4K", caption: "This event is gonna go OFF 🔥 who's coming?",     thumbIdx: 0 },
-                  { platform: "tiktok"    as const, user: "@kofi_events",  likes: "8.2K",  caption: "POV: you're about to have the time of your life",   thumbIdx: 1 },
-                  { platform: "instagram" as const, user: "@nightlife_gh", likes: "5.7K",  caption: "Already have my tickets 🎟️ see you there!",           thumbIdx: 2 },
-                  { platform: "tiktok"    as const, user: "@accra_out",    likes: "3.1K",  caption: "This city never sleeps and I'm here for it",         thumbIdx: 3 },
-                ].map((reel, i) => (
-                  <a
-                    key={i}
-                    className="group flex w-[160px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] transition hover:-translate-y-1 hover:shadow-lg"
-                    href={reel.platform === "instagram" ? "https://instagram.com" : "https://tiktok.com"}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <div className="relative h-[200px] overflow-hidden" style={{ background: `url(${REEL_THUMBNAILS[reel.thumbIdx]}) center/cover` }}>
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60" />
-                      <div className="absolute left-2 top-2 rounded-full px-2 py-0.5" style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C" : "#010101" }}>
-                        <span className="text-[0.58rem] font-bold uppercase tracking-wider text-white">{reel.platform === "instagram" ? "Insta" : "TikTok"}</span>
+            {/* Social buzz — only shown when organizer has added links */}
+            {(event as any).socialLinks?.length > 0 && (
+              <div className="border-b border-[var(--home-border)] py-8">
+                <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Buzz online</h2>
+                <div className="mt-5 flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {(event as any).socialLinks.map((reel: { platform: string; url: string; caption?: string; likes?: number }, i: number) => (
+                    <a
+                      key={i}
+                      className="group flex w-[160px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] transition hover:-translate-y-1 hover:shadow-lg"
+                      href={reel.url}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      <div className="flex h-[200px] items-center justify-center" style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C22" : "#01010122" }}>
+                        <div className="rounded-full px-3 py-1.5" style={{ backgroundColor: reel.platform === "instagram" ? "#E1306C" : "#010101" }}>
+                          <span className="text-xs font-bold uppercase tracking-wider text-white">{reel.platform === "instagram" ? "Instagram" : "TikTok"}</span>
+                        </div>
                       </div>
-                      <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white">
-                        <HeartStraight size={11} weight="fill" />
-                        <span className="text-[0.65rem] font-semibold">{reel.likes}</span>
+                      <div className="p-3">
+                        {reel.likes != null && (
+                          <div className="mb-1 flex items-center gap-1">
+                            <HeartStraight size={11} weight="fill" className="text-rose-400" />
+                            <span className="text-[0.65rem] font-semibold text-[var(--text-tertiary)]">{reel.likes.toLocaleString()} likes</span>
+                          </div>
+                        )}
+                        {reel.caption && (
+                          <p className="line-clamp-2 text-[0.75rem] text-[var(--text-secondary)]">{reel.caption}</p>
+                        )}
                       </div>
-                    </div>
-                    <div className="p-3">
-                      <p className="text-[0.7rem] font-semibold text-[var(--text-tertiary)]">{reel.user}</p>
-                      <p className="mt-0.5 line-clamp-2 text-[0.75rem] text-[var(--text-secondary)]">{reel.caption}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Reviews */}
-            <div className="border-b border-[var(--home-border)] py-8">
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Reviews</h2>
-                <div className="flex items-center gap-1">
-                  <Star size={14} weight="fill" className="text-amber-400" />
-                  <span className="text-sm font-semibold">{rating} · {reviewCount} reviews</span>
+                    </a>
+                  ))}
                 </div>
               </div>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {EVENT_COMMUNITY_POSTS.map((post) => (
-                  <div key={post.handle} className="rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-5">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.65rem] font-bold text-[var(--brand)] transition hover:scale-105"
-                        href={`/dashboard/user/${post.userId}`}
-                      >
-                        {post.avatar}
-                      </Link>
-                      <div className="min-w-0">
-                        <Link
-                          className="text-sm font-semibold text-[var(--text-primary)] transition hover:text-[var(--brand)]"
-                          href={`/dashboard/user/${post.userId}`}
-                        >
-                          {post.user}
-                        </Link>
-                        <p className="text-xs text-[var(--text-tertiary)]">{post.handle} · {post.time}</p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-[0.95rem] leading-relaxed text-[var(--text-secondary)]">{post.text}</p>
-                    <div className="mt-3 flex">
-                      {Array.from({ length: 5 }, (_, i) => (
-                        <Star key={i} size={12} weight={i < 5 ? "fill" : "regular"} className="text-amber-400" />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            )}
+
+            {/* Comments */}
+            <div className="border-b border-[var(--home-border)] py-8">
+              <h2 className="mb-5 text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Comments</h2>
+              <EventComments eventSlug={event.slug} eventId={event.id} />
             </div>
 
             {/* Policies */}
             <div className="py-8">
-              <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Policies</h2>
-              <div className="mt-5 divide-y divide-[var(--home-border)] overflow-hidden rounded-2xl border border-[var(--home-border)] bg-[var(--bg-surface)]">
-                {POLICIES.map(policy => (
-                  <div key={policy.label} className="flex items-start gap-4 px-5 py-4">
-                    <ShieldCheck size={16} weight="fill" className="mt-0.5 shrink-0 text-[var(--brand)]" />
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{policy.label}</p>
-                      <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{policy.detail}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <h2 className="mb-5 text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Policies</h2>
+              <EventPoliciesGrid policies={(event as any).policies} />
             </div>
           </div>
 
@@ -630,15 +625,15 @@ export function EventDetailClient({
                 </button>
                 <div className="flex gap-2">
                   <button
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition ${saved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
-                    onClick={() => setSaved(v => !v)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition ${isSaved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
+                    onClick={toggleSave}
                     type="button"
                   >
-                    <HeartStraight size={15} weight={saved ? "fill" : "regular"} />
-                    {saved ? "Saved" : "Save"}
+                    <HeartStraight size={15} weight={isSaved ? "fill" : "regular"} />
+                    {isSaved ? "Saved" : "Save"}
                   </button>
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`Check out ${event.title}! 🎉\nhttps://www.google.com/maps?q=${resolvedLat},${resolvedLng}`)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.app/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
@@ -681,9 +676,13 @@ export function EventDetailClient({
 
             {/* Save/share below card */}
             <div className="mt-5 flex items-center justify-center gap-3">
-              <button className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] underline hover:text-[var(--text-primary)] transition" type="button">
-                <BookmarkSimple size={14} />
-                Add to wishlist
+              <button
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold underline transition ${isSaved ? "text-[var(--brand)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                onClick={toggleSave}
+                type="button"
+              >
+                <BookmarkSimple size={14} weight={isSaved ? "fill" : "regular"} />
+                {isSaved ? "Saved to wishlist" : "Add to wishlist"}
               </button>
             </div>
           </aside>
