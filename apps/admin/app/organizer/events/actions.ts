@@ -43,6 +43,10 @@ export async function createEvent(formData: FormData) {
   const venueName = (formData.get('venue') as string)?.trim()
   const address = (formData.get('address') as string)?.trim()
   const capacity = Math.max(1, parseInt((formData.get('capacity') as string) || '100', 10))
+  const isSponsored = formData.get('is_sponsored') === 'on'
+  const sponsoredUntilRaw = formData.get('sponsored_until') as string | null
+  const sponsoredUntil = isSponsored && sponsoredUntilRaw ? new Date(sponsoredUntilRaw).toISOString() : null
+  const bannerUrl = (formData.get('banner_url') as string)?.trim() || null
 
   if (!title) return { error: 'Event title is required.' }
   if (!date) return { error: 'Event date is required.' }
@@ -66,6 +70,7 @@ export async function createEvent(formData: FormData) {
     .insert({
       title,
       description,
+      short_description: shortDescription || null,
       slug,
       category_slug: categorySlug,
       status,
@@ -76,6 +81,9 @@ export async function createEvent(formData: FormData) {
       location_address: address || null,
       total_capacity: capacity,
       tickets_sold: 0,
+      is_sponsored: isSponsored,
+      sponsored_until: sponsoredUntil,
+      banner_url: bannerUrl,
     })
     .select('id, slug')
     .single()

@@ -88,6 +88,20 @@ type SponsoredSpotlight = {
   bannerTone: string;
 };
 
+export type SponsoredEventRow = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  short_description: string | null;
+  banner_url: string | null;
+  location_name: string | null;
+  location_address: string | null;
+  start_datetime: string | null;
+  category_slug: string | null;
+  sponsored_until: string | null;
+};
+
 const SUPERCAR_SPECTACLE_SPOTLIGHT: SponsoredSpotlight = {
   href: "https://supercarspectacle.com/",
   external: true,
@@ -428,6 +442,12 @@ function SponsoredAdCard({ spotlight }: { spotlight: SponsoredSpotlight }) {
           <div className={`absolute inset-0 bg-gradient-to-br ${spotlight.bannerTone}`} />
         )}
         <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(5,8,6,0.82)_0%,rgba(5,8,6,0.38)_60%,rgba(5,8,6,0.14)_100%)] md:bg-[linear-gradient(90deg,rgba(5,8,6,0.76)_0%,rgba(5,8,6,0.42)_42%,rgba(5,8,6,0.18)_100%)]" />
+        {/* Ad badge — top right */}
+        <div className="absolute right-3 top-3">
+          <span className="rounded-md border border-white/20 bg-black/55 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-white/70 backdrop-blur-sm">
+            Ad
+          </span>
+        </div>
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-7">
           <div className="mb-2.5 flex flex-wrap items-center gap-2 md:mb-4 md:gap-3">
             <span className="rounded-full bg-black/45 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white md:px-4 md:py-2 md:text-[0.74rem]">
@@ -575,7 +595,44 @@ function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCa
 
 // ── Main HomeClient component ──────────────────────────────────
 
-export function HomeClient() {
+const CATEGORY_LABELS: Record<string, string> = {
+  music: "Music & Concerts",
+  arts: "Arts & Culture",
+  food: "Food & Drink",
+  sports: "Sports & Fitness",
+  networking: "Business & Networking",
+  comedy: "Comedy",
+  fashion: "Fashion",
+  film: "Film & Media",
+  tech: "Tech & Innovation",
+  wellness: "Wellness & Lifestyle",
+  entertainment: "Entertainment",
+  community: "Community & Social",
+  motorsport: "Motorsport",
+};
+
+function dbEventToSpotlight(event: SponsoredEventRow): SponsoredSpotlight {
+  const date = event.start_datetime
+    ? new Date(event.start_datetime).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+    : "Coming soon";
+  const locationLine = [event.location_name, event.location_address].filter(Boolean).join(", ");
+  return {
+    href: `/events/${event.slug}`,
+    external: false,
+    label: "Sponsored",
+    eyebrow: CATEGORY_LABELS[event.category_slug ?? ""] ?? "Event",
+    title: event.title,
+    teaser: event.short_description || event.description || "",
+    dateLabel: date,
+    venue: event.location_name ?? "",
+    locationLine,
+    priceLabel: "Tickets & Registration",
+    bannerUrl: event.banner_url ?? null,
+    bannerTone: "from-[#0a1a12] via-[#0d1a10] to-[#050a05]",
+  };
+}
+
+export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventRow | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -620,7 +677,7 @@ export function HomeClient() {
   // Filtered events for sidebar widgets (same source, client-side filter)
   const filteredEvents = useMemo(() => getFilteredEvents(filters, visibleEvents), [filters, visibleEvents]);
 
-  const sponsoredSpotlight = SUPERCAR_SPECTACLE_SPOTLIGHT;
+  const sponsoredSpotlight = sponsoredEvent ? dbEventToSpotlight(sponsoredEvent) : SUPERCAR_SPECTACLE_SPOTLIGHT;
 
   // Trending cards for sidebar
   const trendingCards = useMemo(

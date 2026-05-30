@@ -11,6 +11,8 @@ import {
   savedEventsQueryKey,
 } from "../../lib/app-contracts";
 import { loadAppBootstrap, loadFeedPage } from "../../lib/server/home-data";
+import { supabaseAdmin } from "../../lib/supabase";
+import type { SponsoredEventRow } from "../../components/home/HomeClient";
 
 export const dynamic = "force-dynamic";
 
@@ -51,9 +53,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   }
 
   const filters = feedFiltersFromSearchParams(resolvedSearchParams);
-  const [bootstrap, initialFeed] = await Promise.all([
+  const [bootstrap, initialFeed, { data: sponsoredEvent }] = await Promise.all([
     loadAppBootstrap({ clerkId }),
     loadFeedPage({ clerkId, filters, page: 0 }),
+    supabaseAdmin
+      .from("events")
+      .select("id, title, slug, description, short_description, banner_url, location_name, location_address, start_datetime, category_slug, sponsored_until")
+      .eq("is_sponsored", true)
+      .eq("status", "published")
+      .gt("start_datetime", new Date().toISOString())
+      .order("start_datetime", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const queryClient = new QueryClient();
@@ -67,7 +78,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={null}>
-        <HomeClient />
+        <HomeClient sponsoredEvent={sponsoredEvent ?? null} />
       </Suspense>
     </HydrationBoundary>
   );

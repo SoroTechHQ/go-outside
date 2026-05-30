@@ -21,12 +21,13 @@ const CATEGORIES = [
 
 const STEPS = ["Basics", "Schedule & Venue", "Tickets", "Review & Publish"];
 
-export function CreateEventForm() {
+export function CreateEventForm({ defaultSponsored = false }: { defaultSponsored?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success?: boolean; error?: string; status?: string } | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSponsored, setIsSponsored] = useState(defaultSponsored);
 
   function handlePublish() {
     submit("published");
@@ -182,6 +183,39 @@ export function CreateEventForm() {
               <p className="text-xs text-[var(--text-tertiary)]">
                 Ticket types (GA, VIP, etc.) can be added after publishing from the Events page.
               </p>
+            </div>
+
+            {/* Sponsored placement */}
+            <div className={`rounded-2xl border p-6 space-y-4 ${isSponsored ? "border-[var(--accent-amber)] bg-[rgba(251,191,36,0.06)]" : "border-[var(--border-card)] bg-[var(--bg-card)]"}`}>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent-amber)]">Sponsored Placement</p>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  name="is_sponsored"
+                  type="checkbox"
+                  checked={isSponsored}
+                  onChange={(e) => setIsSponsored(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent-amber)]"
+                />
+                <span className="text-sm font-medium text-[var(--text-primary)]">Show as sponsored ad on home feed</span>
+              </label>
+              {isSponsored && (
+                <div className="space-y-4 pt-1">
+                  <div>
+                    <label className={labelCls}>Sponsored until</label>
+                    <input name="sponsored_until" type="date" className={`mt-1.5 ${inputCls}`} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Banner image URL</label>
+                    <input
+                      name="banner_url"
+                      type="url"
+                      placeholder="https://…"
+                      className={`mt-1.5 ${inputCls}`}
+                    />
+                    <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Wide landscape image (min 1200×400). Shows on home feed hero card.</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Publish / Draft */}
