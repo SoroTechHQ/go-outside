@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { DM_Sans, Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeScript } from "@gooutside/ui";
 import { SidebarProvider } from "../context/SidebarContext";
 import "./globals.css";
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${inter.variable} font-body`}>
         <ThemeScript />
-        <SidebarProvider>{children}</SidebarProvider>
+        <ClerkProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
