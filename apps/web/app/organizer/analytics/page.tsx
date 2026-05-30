@@ -1,4 +1,5 @@
-import { ChartBar, Compass, Eye, Funnel, Star, TrendUp, UsersThree } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
+import { BookmarkSimple, ChartBar, Compass, CursorClick, Eye, Funnel, Star, Ticket, TrendUp, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import {
   getOrganizerAudienceData,
   getOrganizerDashboardData,
@@ -261,23 +262,104 @@ export default async function OrganizerAnalyticsPage() {
           <Star size={16} className="text-[var(--brand)]" weight="fill" />
           <p className="text-[15px] font-semibold text-[var(--text-primary)]">Age bands</p>
         </div>
-        <div className="mt-4 flex items-end gap-3 h-32">
-          {audience.ageBands.map((band) => (
-            <div key={band.label} className="flex flex-1 flex-col items-center gap-2">
-              <p className="text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">
-                {band.share}%
-              </p>
-              <div className="flex w-full items-end">
-                <div
-                  className="w-full rounded-t-[10px] bg-[var(--brand)]/60 transition-all"
-                  style={{ height: `${(band.share / 40) * 80}px` }}
-                />
-              </div>
-              <p className="text-[10px] text-[var(--text-tertiary)]">{band.label}</p>
+        {(() => {
+          const maxShare = Math.max(...audience.ageBands.map((b) => b.share), 1);
+          return (
+            <div className="mt-4 flex h-32 items-end gap-3">
+              {audience.ageBands.map((band) => (
+                <div key={band.label} className="flex flex-1 flex-col items-center gap-2">
+                  <p className="text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">
+                    {band.share}%
+                  </p>
+                  <div className="flex w-full items-end">
+                    <div
+                      className="w-full rounded-t-[10px] bg-[var(--brand)]/60 transition-all hover:bg-[var(--brand)]"
+                      style={{ height: `${Math.max(4, (band.share / maxShare) * 80)}px` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-[var(--text-tertiary)]">{band.label}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </div>
+
+      {/* Per-event breakdown */}
+      {dashboard.recentEvents.length > 0 && (
+        <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[15px] font-semibold text-[var(--text-primary)]">Analytics by event</p>
+              <p className="mt-0.5 text-[12px] text-[var(--text-secondary)]">Click any event to see its full breakdown.</p>
+            </div>
+            <Link
+              href="/organizer/events"
+              className="text-[12px] font-semibold text-[var(--brand)] hover:underline"
+            >
+              All events →
+            </Link>
+          </div>
+
+          {/* Column headers */}
+          <div className="mt-5 hidden grid-cols-[minmax(0,1fr)_80px_80px_80px_80px_44px] items-center gap-3 px-1 sm:grid">
+            {["Event", "Sold", "Saves", "Clicks", "Revenue", ""].map((h) => (
+              <p key={h} className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{h}</p>
+            ))}
+          </div>
+
+          <div className="mt-2 space-y-2">
+            {dashboard.recentEvents.map((ev) => {
+              const statusColor =
+                ev.statusLabel === "Live" ? "bg-[var(--brand)]/12 text-[var(--brand)]" :
+                ev.statusLabel === "Draft" ? "bg-amber-500/12 text-amber-500" :
+                "bg-[var(--bg-muted)] text-[var(--text-tertiary)]";
+
+              return (
+                <div
+                  key={ev.id}
+                  className="group grid grid-cols-1 gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 transition hover:border-[var(--brand)]/20 hover:bg-[var(--bg-card)] sm:grid-cols-[minmax(0,1fr)_80px_80px_80px_80px_44px] sm:items-center sm:gap-3"
+                >
+                  {/* Title */}
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand)]">{ev.title}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColor}`}>{ev.statusLabel}</span>
+                      <span className="text-[11px] text-[var(--text-tertiary)]">{ev.dateLabel}</span>
+                    </div>
+                    {/* Mobile inline stats */}
+                    <div className="mt-2 flex flex-wrap gap-3 sm:hidden">
+                      <span className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)]"><Ticket size={11} /> {ev.sold} sold</span>
+                      <span className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)]"><BookmarkSimple size={11} /> —</span>
+                    </div>
+                  </div>
+
+                  {/* Desktop stats */}
+                  <p className="hidden text-[13px] font-semibold tabular-nums text-[var(--text-primary)] sm:block">
+                    {ev.capacity ? `${ev.sold}/${ev.capacity}` : ev.sold}
+                  </p>
+                  <p className="hidden text-[13px] tabular-nums text-[var(--text-secondary)] sm:block">—</p>
+                  <p className="hidden text-[13px] tabular-nums text-[var(--text-secondary)] sm:block">—</p>
+                  <p className="hidden text-[13px] font-semibold tabular-nums text-[var(--text-primary)] sm:block">
+                    {ev.revenue > 0
+                      ? new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 0 }).format(ev.revenue)
+                      : "—"}
+                  </p>
+
+                  {/* Analytics link */}
+                  <Link
+                    href={`/organizer/events/${ev.id}/analytics`}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--border-subtle)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/30 hover:text-[var(--brand)]"
+                  >
+                    <ChartBar size={12} weight="fill" />
+                    <span className="hidden sm:inline">View</span>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

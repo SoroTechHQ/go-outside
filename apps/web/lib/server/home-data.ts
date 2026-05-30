@@ -486,27 +486,61 @@ export async function loadFeedPage({
 
   const { scores: socialSignals, friendNamesByEvent } = socialResult;
 
-  const filtered = applyFilters(allEvents, filters);
-  const source = filtered.length > 0 ? filtered : filters.categories.length > 0 || filters.query || filters.when ? [] : allEvents;
+  // Filter out past events (never show events that already ended)
+  const futureEvents = allEvents.filter((e) =>
+    !e.endDatetime || new Date(e.endDatetime).getTime() > Date.now()
+  );
+
+  const filtered = applyFilters(futureEvents, filters);
+  const source = filtered.length > 0 ? filtered : filters.categories.length > 0 || filters.query || filters.when ? [] : futureEvents;
 
   const interests = feedProfile?.interests ?? [];
   const city = feedProfile?.city ?? null;
 
-  const scored = [...source].sort(
-    (left, right) =>
-      scoreEvent(right as RankedEvent, scarcityMap.get(right.id), edgeWeightsMap.get(right.id) ?? 0, socialSignals.get(right.id) ?? 0, interests, city, categoryBoosts.get(right.categorySlug) ?? 0) -
-      scoreEvent(left as RankedEvent, scarcityMap.get(left.id), edgeWeightsMap.get(left.id) ?? 0, socialSignals.get(left.id) ?? 0, interests, city, categoryBoosts.get(left.categorySlug) ?? 0),
-  );
+  // Stable per-event exploration noise (seeded by event id — consistent within a session but varies per event)
+  const noiseFor = (id: string): number => {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0;
+    return ((h >>> 0) % 100) / 1000; // 0–0.099 pts — small enough not to override real signals
+  };
+
+  const scoreOf = (e: typeof source[0]) =>
+    scoreEvent(
+      e as RankedEvent,
+      scarcityMap.get(e.id),
+      edgeWeightsMap.get(e.id) ?? 0,
+      socialSignals.get(e.id) ?? 0,
+      interests,
+      city,
+      categoryBoosts.get(e.categorySlug) ?? 0,
+    ) + noiseFor(e.id);
+
+  const scored = [...source].sort((a, b) => scoreOf(b) - scoreOf(a));
+
+  // Category diversity: no more than 3 events of the same category in the first 12 slots
+  const diversified: typeof scored = [];
+  const catCounts: Record<string, number> = {};
+  const overflow: typeof scored = [];
+  for (const e of scored) {
+    const count = catCounts[e.categorySlug] ?? 0;
+    if (count < 3 || diversified.length >= 12) {
+      diversified.push(e);
+      catCounts[e.categorySlug] = count + 1;
+    } else {
+      overflow.push(e);
+    }
+  }
+  const reranked = [...diversified, ...overflow];
 
   // Mark top 40% of ranked events as AI-picked
-  const aiPickThreshold = Math.ceil(scored.length * 0.4);
+  const aiPickThreshold = Math.ceil(reranked.length * 0.4);
 
   const pageLimit = limit > 0 ? limit : page === 0 ? INITIAL_COUNT : PAGE_SIZE;
   const startIndex = limit > 0 ? 0 : page === 0 ? 0 : INITIAL_COUNT + (page - 1) * PAGE_SIZE;
-  const hasMore = !featuredOnly && limit < 0 && scored.length > startIndex + pageLimit;
+  const hasMore = !featuredOnly && limit < 0 && reranked.length > startIndex + pageLimit;
 
   return {
-    items: scored.slice(startIndex, startIndex + pageLimit).map((event, index) => {
+    items: reranked.slice(startIndex, startIndex + pageLimit).map((event, index) => {
       const globalRank = startIndex + index;
       return toPublicFeedEvent(
         event as RankedEvent,
@@ -518,7 +552,7 @@ export async function loadFeedPage({
     }),
     nextPage: page + 1,
     hasMore,
-    total: scored.length,
+    total: reranked.length,
   };
 }
 

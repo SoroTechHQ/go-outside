@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CalendarBlank,
+  CheckCircle,
   Hash,
   Image as ImageIcon,
   Minus,
@@ -195,7 +196,9 @@ export function CreatePostModal({ organizerName, ownEvents, open, onClose }: Pro
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {success ? (
                 <div className="flex flex-col items-center py-8 text-center">
-                  <span className="text-3xl">🎉</span>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-dim)]">
+                    <CheckCircle size={32} weight="duotone" className="text-[var(--brand)]" />
+                  </div>
                   <p className="mt-3 text-[15px] font-semibold text-[var(--text-primary)]">Post published!</p>
                   <p className="mt-1 text-[13px] text-[var(--text-secondary)]">Closing in a moment…</p>
                 </div>

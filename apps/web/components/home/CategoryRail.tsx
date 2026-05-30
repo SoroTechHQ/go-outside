@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { Plus, X } from "@phosphor-icons/react";
+import { CategoryIcon } from "../../lib/category-icons";
+import type { DbCategory } from "../../hooks/useEventsQuery";
 
 interface CategoryRailProps {
-  categories: Array<{ id: string; name: string; slug: string; icon: string; event_count: number }>;
+  categories: DbCategory[];
   selected: string[];
   onClear: () => void;
   onToggle: (slug: string) => void;
@@ -15,7 +17,6 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
 
   return (
     <div className="relative z-20">
-      {/* Seamless pill row — no hard border, glass background */}
       <div className="container-shell relative py-3">
         <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
           {/* All Events */}
@@ -37,7 +38,7 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
             return (
               <button
                 key={category.id}
-                className={`h-8 shrink-0 whitespace-nowrap rounded-full px-4 text-[13px] font-semibold transition-all duration-200 ${
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[13px] font-semibold transition-all duration-200 ${
                   active
                     ? "bg-[var(--brand)] text-[var(--brand-contrast)] shadow-[var(--brand-shadow)]"
                     : "border border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)] hover:border-[color:var(--home-highlight-border)] hover:bg-[color:var(--home-highlight-bg)] hover:text-[var(--brand)]"
@@ -45,7 +46,8 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
                 onClick={() => onToggle(category.slug)}
                 type="button"
               >
-                {category.icon} {category.name}
+                <CategoryIcon slug={category.slug} iconKey={category.icon_key} size={13} weight="bold" />
+                {category.name}
               </button>
             );
           })}
@@ -63,13 +65,13 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
       </div>
 
       {/* Desktop popover */}
-      {open ? (
-        <div className="absolute right-6 top-[calc(100%+0.5rem)] z-30 hidden w-[380px] rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] p-5 shadow-[var(--home-shadow-strong)] backdrop-blur-xl md:block">
+      {open && (
+        <div className="absolute right-6 top-[calc(100%+0.5rem)] z-30 hidden w-[400px] rounded-[24px] border border-[color:var(--home-border)] bg-[color:var(--home-surface-strong)] p-5 shadow-[var(--home-shadow-strong)] backdrop-blur-xl md:block">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="font-display text-2xl italic text-[var(--text-primary)]">Browse categories</p>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Pin scenes and the feed reorders around them.
+                Pick one and the feed reorders around it.
               </p>
             </div>
             <button
@@ -94,18 +96,22 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
                   onClick={() => onToggle(category.slug)}
                   type="button"
                 >
-                  <p className="text-lg">{category.icon}</p>
-                  <p className="mt-1.5 text-sm font-semibold">{category.name}</p>
-                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{category.event_count} events</p>
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${active ? "bg-[var(--brand)] text-white" : "bg-[color:var(--home-border)] text-[var(--text-secondary)]"}`}>
+                    <CategoryIcon slug={category.slug} iconKey={category.icon_key} size={16} weight="bold" />
+                  </div>
+                  <p className="mt-2 text-sm font-semibold">{category.name}</p>
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                    {category.event_count > 0 ? `${category.event_count} event${category.event_count !== 1 ? "s" : ""}` : "No upcoming events"}
+                  </p>
                 </button>
               );
             })}
           </div>
         </div>
-      ) : null}
+      )}
 
       {/* Mobile sheet */}
-      {open ? (
+      {open && (
         <div className="fixed inset-0 z-40 md:hidden">
           <button
             aria-label="Close categories"
@@ -128,22 +134,29 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {categories.map((category) => (
-                <button
-                  key={category.slug}
-                  className={`rounded-[18px] border px-4 py-3.5 text-left transition-all duration-200 ${
-                    selected.includes(category.slug)
-                      ? "border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] text-[var(--brand)]"
-                      : "border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)]"
-                  }`}
-                  onClick={() => onToggle(category.slug)}
-                  type="button"
-                >
-                  <p className="text-lg">{category.icon}</p>
-                  <p className="mt-1.5 text-sm font-semibold">{category.name}</p>
-                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{category.event_count} events</p>
-                </button>
-              ))}
+              {categories.map((category) => {
+                const active = selected.includes(category.slug);
+                return (
+                  <button
+                    key={category.slug}
+                    className={`rounded-[18px] border px-4 py-3.5 text-left transition-all duration-200 ${
+                      active
+                        ? "border-[color:var(--home-highlight-border)] bg-[color:var(--home-highlight-bg)] text-[var(--brand)]"
+                        : "border-[color:var(--home-border)] bg-[color:var(--home-surface-soft)] text-[var(--text-secondary)]"
+                    }`}
+                    onClick={() => onToggle(category.slug)}
+                    type="button"
+                  >
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${active ? "bg-[var(--brand)] text-white" : "bg-[color:var(--home-border)] text-[var(--text-secondary)]"}`}>
+                      <CategoryIcon slug={category.slug} iconKey={category.icon_key} size={16} weight="bold" />
+                    </div>
+                    <p className="mt-2 text-sm font-semibold">{category.name}</p>
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                      {category.event_count > 0 ? `${category.event_count} event${category.event_count !== 1 ? "s" : ""}` : "No upcoming events"}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-4 pb-safe">
               <button
@@ -156,7 +169,7 @@ export function CategoryRail({ categories, selected, onClear, onToggle }: Catego
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

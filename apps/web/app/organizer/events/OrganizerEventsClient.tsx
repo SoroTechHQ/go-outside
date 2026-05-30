@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowSquareOut,
@@ -21,6 +21,13 @@ import {
 import EventCardMini from "../_components/EventCardMini";
 import { ConfirmModal } from "../_components/ConfirmModal";
 import { MessageAttendeesModal } from "../_components/MessageAttendeesModal";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "../../../components/ui/dropdown-menu";
 import type { OrganizerEventListItem } from "../_lib/dashboard";
 
 function formatMoney(n: number) {
@@ -54,124 +61,77 @@ function KebabMenu({
   onDelete: (id: string, sold: number) => void;
   onStatusChange: (id: string, status: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
   const isPublished = event.statusTone === "live" || event.statusTone === "sold";
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        type="button"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v); }}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
-        aria-label="Event actions"
-      >
-        <DotsThreeVertical size={18} weight="bold" />
-      </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+          aria-label="Event actions"
+        >
+          <DotsThreeVertical size={18} weight="bold" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem asChild>
+          <Link href={`/organizer/events/new?edit=${event.id}`} className="flex items-center gap-2.5 cursor-pointer">
+            <PencilSimple size={14} />
+            Edit event
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={`/events/${event.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 cursor-pointer">
+            <ArrowSquareOut size={14} />
+            Preview public page
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="flex items-center gap-2.5 cursor-pointer"
+          onSelect={() => onMessage(event.id, event.title, event.sold)}
+        >
+          <PaperPlaneTilt size={14} />
+          Message attendees
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="flex items-center gap-2.5 cursor-pointer"
+          onSelect={() => onDuplicate(event.id)}
+        >
+          <Copy size={14} />
+          Duplicate as draft
+        </DropdownMenuItem>
 
-      {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-52 overflow-hidden rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-card)] py-1 shadow-xl">
-          <MenuItem
-            icon={PencilSimple}
-            label="Edit event"
-            href={`/organizer/events/new?edit=${event.id}`}
-            onClick={() => setOpen(false)}
-          />
-          <MenuItem
-            icon={ArrowSquareOut}
-            label="Preview public page"
-            href={`/events/${event.slug}`}
-            newTab
-            onClick={() => setOpen(false)}
-          />
-          <MenuItem
-            icon={PaperPlaneTilt}
-            label="Message attendees"
-            onClick={() => { setOpen(false); onMessage(event.id, event.title, event.sold); }}
-          />
-          <MenuItem
-            icon={Copy}
-            label="Duplicate as draft"
-            onClick={() => { setOpen(false); onDuplicate(event.id); }}
-          />
+        <DropdownMenuSeparator />
 
-          <div className="my-1 border-t border-[var(--border-subtle)]" />
+        {isPublished ? (
+          <DropdownMenuItem
+            className="flex items-center gap-2.5 cursor-pointer"
+            onSelect={() => onStatusChange(event.id, "draft")}
+          >
+            <EyeSlash size={14} />
+            Unpublish
+          </DropdownMenuItem>
+        ) : event.statusLabel === "Draft" ? (
+          <DropdownMenuItem
+            className="flex items-center gap-2.5 cursor-pointer"
+            onSelect={() => onStatusChange(event.id, "published")}
+          >
+            <Eye size={14} />
+            Publish
+          </DropdownMenuItem>
+        ) : null}
 
-          {isPublished ? (
-            <MenuItem
-              icon={EyeSlash}
-              label="Unpublish"
-              onClick={() => { setOpen(false); onStatusChange(event.id, "draft"); }}
-            />
-          ) : event.statusLabel === "Draft" ? (
-            <MenuItem
-              icon={Eye}
-              label="Publish"
-              onClick={() => { setOpen(false); onStatusChange(event.id, "published"); }}
-            />
-          ) : null}
-
-          <MenuItem
-            icon={Trash}
-            label="Delete event"
-            destructive
-            onClick={() => { setOpen(false); onDelete(event.id, event.sold); }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MenuItem({
-  icon: Icon,
-  label,
-  href,
-  newTab,
-  destructive,
-  onClick,
-}: {
-  icon: typeof PencilSimple;
-  label: string;
-  href?: string;
-  newTab?: boolean;
-  destructive?: boolean;
-  onClick?: () => void;
-}) {
-  const cls = `flex w-full items-center gap-3 px-3.5 py-2 text-[13px] transition hover:bg-[var(--bg-muted)] ${
-    destructive ? "text-red-500 hover:text-red-600" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-  }`;
-
-  if (href) {
-    return (
-      <Link
-        className={cls}
-        href={href}
-        target={newTab ? "_blank" : undefined}
-        rel={newTab ? "noopener noreferrer" : undefined}
-        onClick={onClick}
-      >
-        <Icon size={15} />
-        {label}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" className={cls} onClick={onClick}>
-      <Icon size={15} />
-      {label}
-    </button>
+        <DropdownMenuItem
+          className="flex items-center gap-2.5 cursor-pointer text-red-500 focus:text-red-500"
+          onSelect={() => onDelete(event.id, event.sold)}
+        >
+          <Trash size={14} />
+          Delete event
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

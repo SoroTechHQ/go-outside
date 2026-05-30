@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useWizard } from "../WizardContext";
+import { CategoryIcon } from "../../../../../lib/category-icons";
 
 type Category = { id: string; name: string; slug: string };
 
@@ -39,53 +40,64 @@ export function Step1Basics() {
 
   return (
     <div className="space-y-6">
+      {/* Title */}
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
           Event title
         </label>
         <input
           ref={titleRef}
-          className="mt-2 w-full rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[15px] font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+          className="mt-2 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10"
           maxLength={120}
           placeholder="e.g. Afrobeats Night Vol. 8"
           type="text"
           value={state.title}
           onChange={(e) => setField("title", e.target.value)}
         />
+        <p className="mt-1.5 text-right text-[11px] text-[var(--text-tertiary)]">{state.title.length}/120</p>
       </div>
 
+      {/* Category */}
       {categories.length > 0 && (
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
             Category
           </label>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                className={`rounded-[14px] border px-3 py-3 text-left text-[13px] font-medium transition ${
-                  state.categoryId === cat.id
-                    ? "border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]"
-                    : "border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)]/25 hover:text-[var(--text-primary)]"
-                }`}
-                type="button"
-                onClick={() => setField("categoryId", cat.id)}
-              >
-                {cat.name}
-              </button>
-            ))}
+          <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Choose one — this controls where your event appears in the app.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {categories.map((cat) => {
+              const isSelected = state.categoryId === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left text-[13px] font-medium transition ${
+                    isSelected
+                      ? "border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]"
+                      : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--brand)]/25 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
+                  }`}
+                  type="button"
+                  onClick={() => setField("categoryId", cat.id)}
+                >
+                  <span className="flex h-6 w-6 items-center justify-center">
+                    <CategoryIcon slug={cat.slug} size={16} weight="bold" />
+                  </span>
+                  <span className="truncate text-[12px]">{cat.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
+      {/* Short description */}
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
           Short description
         </label>
         <textarea
-          className="mt-2 w-full resize-none rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+          className="mt-2 w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10"
           maxLength={200}
-          placeholder="One or two sentences that show up on the event card."
+          placeholder="One or two sentences shown on the event card."
           rows={3}
           value={state.shortDescription}
           onChange={(e) => setField("shortDescription", e.target.value)}
@@ -95,11 +107,12 @@ export function Step1Basics() {
         </p>
       </div>
 
+      {/* Tags */}
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-          Tags
+          Tags <span className="normal-case font-normal tracking-normal text-[var(--text-tertiary)]">(optional)</span>
         </label>
-        <div className="mt-2 flex min-h-[48px] flex-wrap items-center gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2">
+        <div className="mt-2 flex min-h-[50px] flex-wrap items-center gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5">
           {state.tags.map((tag) => (
             <span
               key={tag}
@@ -116,8 +129,8 @@ export function Step1Basics() {
             </span>
           ))}
           <input
-            className="min-w-[120px] flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
-            placeholder="Type a tag and press Enter"
+            className="min-w-[140px] flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+            placeholder="Type a tag and press Enter…"
             type="text"
             value={tagInput}
             onBlur={() => {
@@ -130,7 +143,7 @@ export function Step1Basics() {
             onKeyDown={handleTagKeyDown}
           />
         </div>
-        <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Press Enter or comma to add a tag</p>
+        <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Press Enter or comma to add</p>
       </div>
     </div>
   );

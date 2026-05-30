@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarBlank, CheckCircle, Clock } from "@phosphor-icons/react";
+import { CalendarBlank, CheckCircle, Clock, MapPin, Ticket } from "@phosphor-icons/react";
 import { useWizard } from "../WizardContext";
 import { DateTimePicker } from "../../../../../components/ui/DateTimePicker";
 
@@ -12,46 +12,35 @@ export function Step6Publish() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const summaryItems = [
-    { label: "Title", value: state.title || "—" },
-    {
-      label: "Date",
-      value: state.startDatetime
-        ? new Date(state.startDatetime).toLocaleDateString("en-GH", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })
-        : "—",
-    },
-    {
-      label: "Location",
-      value: state.isOnline
-        ? "Online"
-        : state.customLocation ?? (state.venueId ? "Venue selected" : "—"),
-    },
-    {
-      label: "Tickets",
-      value:
-        state.ticketTypes.length === 0
-          ? "No tiers added"
-          : state.ticketTypes.map((t) => `${t.name} (${t.price === 0 ? "Free" : `GHS ${t.price}`})`).join(", "),
-    },
-    { label: "Banner", value: state.bannerUrl ? "Uploaded" : "Not set" },
-  ];
+  const dateLabel = state.startDatetime
+    ? new Date(state.startDatetime).toLocaleDateString("en-GH", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+    : null;
+  const timeLabel = state.startDatetime
+    ? new Date(state.startDatetime).toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" })
+    : null;
+  const endTimeLabel = state.endDatetime
+    ? new Date(state.endDatetime).toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" })
+    : null;
+  const locationLabel = state.isOnline
+    ? "Online event"
+    : state.customLocation ?? (state.venueId ? "Venue selected" : null);
+  const lowestPrice = state.ticketTypes.length > 0
+    ? Math.min(...state.ticketTypes.map((t) => t.price))
+    : null;
+  const priceLabel = lowestPrice === null
+    ? "No tickets added"
+    : lowestPrice === 0
+    ? "Free"
+    : `From GHS ${lowestPrice.toLocaleString()}`;
 
   async function submit(publish: boolean) {
     setError(null);
-
-    // Client-side validation before hitting the API
     if (!state.title?.trim()) { setError("Event title is required."); return; }
     if (!state.startDatetime)  { setError("Start date and time are required."); return; }
     if (!state.categoryId)     { setError("Please select an event category."); return; }
 
     setSubmitting(true);
     try {
-      // If a Supabase draft already exists, update + publish it; otherwise create fresh
       const url = state.draftId
         ? `/api/organizer/events/${state.draftId}/publish`
         : "/api/organizer/events";
@@ -100,35 +89,106 @@ export function Step6Publish() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-          Summary
-        </p>
-        <div className="mt-4 space-y-3">
-          {summaryItems.map((item) => (
-            <div
-              key={item.label}
-              className="flex items-start justify-between gap-4 rounded-[12px] bg-[var(--bg-card)] px-4 py-3"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                {item.label}
-              </p>
-              <p className="text-right text-[13px] text-[var(--text-primary)]">{item.value}</p>
+
+      {/* Visual event preview card */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Preview</p>
+        <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">This is how your event will appear to attendees.</p>
+
+        <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+          {/* Banner */}
+          {state.bannerUrl ? (
+            <img
+              src={state.bannerUrl}
+              alt="Event banner"
+              className="h-44 w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-44 items-center justify-center bg-gradient-to-br from-[var(--brand)]/20 to-[var(--brand)]/5">
+              <p className="text-[13px] font-medium text-[var(--brand)]/50">No banner uploaded</p>
             </div>
-          ))}
+          )}
+
+          {/* Card body */}
+          <div className="p-5">
+            <h2 className="text-[17px] font-bold leading-snug text-[var(--text-primary)]">
+              {state.title || <span className="italic text-[var(--text-tertiary)]">Event title</span>}
+            </h2>
+
+            {state.shortDescription && (
+              <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                {state.shortDescription}
+              </p>
+            )}
+
+            <div className="mt-4 space-y-2">
+              {dateLabel && (
+                <div className="flex items-center gap-2.5 text-[13px] text-[var(--text-secondary)]">
+                  <CalendarBlank size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
+                  <span>
+                    {dateLabel}
+                    {timeLabel && ` · ${timeLabel}`}
+                    {endTimeLabel && ` – ${endTimeLabel}`}
+                  </span>
+                </div>
+              )}
+              {locationLabel && (
+                <div className="flex items-center gap-2.5 text-[13px] text-[var(--text-secondary)]">
+                  <MapPin size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
+                  <span className="truncate">{locationLabel}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2.5 text-[13px] text-[var(--text-secondary)]">
+                <Ticket size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
+                <span>{priceLabel}</span>
+              </div>
+            </div>
+
+            {/* Ticket tiers pills */}
+            {state.ticketTypes.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {state.ticketTypes.map((t) => (
+                  <span
+                    key={t.name}
+                    className="rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-2.5 py-1 text-[11px] font-medium text-[var(--brand)]"
+                  >
+                    {t.name} · {t.price === 0 ? "Free" : `GHS ${t.price.toLocaleString()}`}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Gallery strip */}
+            {state.galleryUrls.length > 0 && (
+              <div className="mt-4 flex gap-2 overflow-x-auto">
+                {state.galleryUrls.slice(0, 5).map((url) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt=""
+                    className="h-16 w-24 shrink-0 rounded-xl object-cover"
+                  />
+                ))}
+                {state.galleryUrls.length > 5 && (
+                  <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-muted)] text-[12px] font-semibold text-[var(--text-tertiary)]">
+                    +{state.galleryUrls.length - 5}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Publishing options */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-          Publishing
-        </p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Publishing</p>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
           <button
-            className={`flex flex-col rounded-[16px] border p-4 text-left transition ${
+            className={`flex flex-col rounded-2xl border p-4 text-left transition ${
               state.publishNow
                 ? "border-[var(--brand)]/40 bg-[var(--brand)]/8"
-                : "border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--brand)]/25"
+                : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--brand)]/25 hover:bg-[var(--bg-card)]"
             }`}
             type="button"
             onClick={() => setField("publishNow", true)}
@@ -138,17 +198,15 @@ export function Step6Publish() {
               size={20}
               weight={state.publishNow ? "fill" : "regular"}
             />
-            <p className="mt-2 text-[13px] font-semibold text-[var(--text-primary)]">Publish now</p>
-            <p className="mt-1 text-[12px] text-[var(--text-secondary)]">
-              Goes live immediately on the feed.
-            </p>
+            <p className="mt-2.5 text-[13px] font-semibold text-[var(--text-primary)]">Publish now</p>
+            <p className="mt-1 text-[12px] text-[var(--text-secondary)]">Goes live immediately on the feed.</p>
           </button>
 
           <button
-            className={`flex flex-col rounded-[16px] border p-4 text-left transition ${
+            className={`flex flex-col rounded-2xl border p-4 text-left transition ${
               !state.publishNow
                 ? "border-[var(--brand)]/40 bg-[var(--brand)]/8"
-                : "border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--brand)]/25"
+                : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--brand)]/25 hover:bg-[var(--bg-card)]"
             }`}
             type="button"
             onClick={() => setField("publishNow", false)}
@@ -158,10 +216,8 @@ export function Step6Publish() {
               size={20}
               weight={!state.publishNow ? "fill" : "regular"}
             />
-            <p className="mt-2 text-[13px] font-semibold text-[var(--text-primary)]">Save as draft</p>
-            <p className="mt-1 text-[12px] text-[var(--text-secondary)]">
-              Saved privately until you&apos;re ready.
-            </p>
+            <p className="mt-2.5 text-[13px] font-semibold text-[var(--text-primary)]">Save as draft</p>
+            <p className="mt-1 text-[12px] text-[var(--text-secondary)]">Saved privately until you&apos;re ready.</p>
           </button>
         </div>
       </div>
@@ -177,21 +233,19 @@ export function Step6Publish() {
       )}
 
       {error && (
-        <div className="rounded-[14px] bg-rose-500/10 px-4 py-3 text-[13px] text-rose-400">
+        <div className="rounded-2xl bg-rose-500/10 px-4 py-3 text-[13px] text-rose-400">
           {error}
         </div>
       )}
 
-      <div className="flex gap-3">
-        <button
-          className="flex-1 rounded-full bg-[var(--brand)] py-3 text-[13px] font-semibold text-black transition hover:bg-[#4fa824] active:scale-[0.97] disabled:opacity-50"
-          disabled={submitting || !state.title}
-          type="button"
-          onClick={() => submit(state.publishNow)}
-        >
-          {submitting ? "Creating…" : state.publishNow ? "Publish event" : "Save draft"}
-        </button>
-      </div>
+      <button
+        className="w-full rounded-full bg-[var(--brand)] py-3.5 text-[14px] font-semibold text-black transition hover:bg-[#4fa824] active:scale-[0.97] disabled:opacity-50"
+        disabled={submitting || !state.title}
+        type="button"
+        onClick={() => submit(state.publishNow)}
+      >
+        {submitting ? "Creating…" : state.publishNow ? "🚀 Publish event" : "Save as draft"}
+      </button>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ChatCircle,
+  MapPin,
   NavigationArrow,
   UserCircle,
   Users,
@@ -157,7 +158,7 @@ export function LiveMapModal({ eventId, eventName, venueLat, venueLng, onClose }
           >
             <div className="flex flex-col items-center">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500 shadow-lg">
-                <span className="text-sm">📍</span>
+                <MapPin size={16} weight="fill" className="text-white" />
               </div>
               <div className="mt-1 max-w-[100px] truncate rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
                 Venue

@@ -6,7 +6,7 @@ import { getFeaturedEvents } from "../../lib/db/events";
 import { getCategories } from "../../lib/db/categories";
 import { getOrganizers } from "../../lib/db/organizers";
 import { Button, EventCard } from "@gooutside/ui";
-import { CATEGORY_EMOJIS } from "@gooutside/demo-data";
+import { CategoryIcon } from "../../lib/category-icons";
 import MessagesFAB from "../../components/messages/MessagesFAB";
 import type { Category, Organizer } from "@gooutside/demo-data";
 
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
                   key={interest.slug}
                   className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
                 >
-                  <span>{CATEGORY_EMOJIS[interest.slug] ?? "✨"}</span>
+                  <CategoryIcon slug={interest.slug} size={14} weight="bold" />
                   {interest.name}
                 </span>
               ))}

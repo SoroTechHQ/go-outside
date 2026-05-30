@@ -176,11 +176,25 @@ export function useSearchEvents(filters: FeedFilters, enabled = true) {
 
 // ─── useCategories — for filter chips ────────────────────────
 
+export type DbCategory = {
+  id:          string;
+  name:        string;
+  slug:        string;
+  icon_key:    string;
+  color:       string | null;
+  event_count: number;
+};
+
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
-    queryFn: async () => null,
-    staleTime: Infinity,
+    queryFn: async (): Promise<DbCategory[]> => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) return [];
+      const json = await res.json() as { categories: DbCategory[] };
+      return json.categories ?? [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 min
   });
 }
 

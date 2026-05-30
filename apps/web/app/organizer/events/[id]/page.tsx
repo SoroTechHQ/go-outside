@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowSquareOut, ChatCircle } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowSquareOut, ChartBar, ChatCircle } from "@phosphor-icons/react/dist/ssr";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { CopyLinkButton } from "./CopyLinkButton";
@@ -105,13 +105,20 @@ export default async function OrganizerEventDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <CopyLinkButton slug={ev.slug} />
           <Link
-            className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+            className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--brand)] hover:border-[var(--brand)]/30"
+            href={`/organizer/events/${ev.id}/analytics`}
+          >
+            <ChartBar size={14} weight="fill" />
+            Analytics
+          </Link>
+          <Link
+            className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
             href={`/events/${ev.slug}`}
             rel="noopener noreferrer"
             target="_blank"
           >
             <ArrowSquareOut size={14} />
-            Preview page
+            Preview
           </Link>
           <EventDetailActions
             eventId={ev.id}

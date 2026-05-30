@@ -505,17 +505,25 @@ function AudienceTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
       {/* Age breakdown */}
       <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
         <p className="text-[15px] font-semibold text-[var(--text-primary)]">Age bands</p>
-        <div className="mt-4 flex h-32 items-end gap-3">
-          {ageBands.map((band) => (
-            <div key={band.label} className="flex flex-1 flex-col items-center gap-2">
-              <p className="text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{band.share}%</p>
-              <div className="flex w-full items-end">
-                <div className="w-full rounded-t-[10px] bg-[var(--brand)]/60 transition-all hover:bg-[var(--brand)]" style={{ height: `${(band.share / 40) * 80}px` }} />
-              </div>
-              <p className="text-[10px] text-[var(--text-tertiary)]">{band.label}</p>
+        {(() => {
+          const maxShare = Math.max(...ageBands.map((b) => b.share), 1);
+          return (
+            <div className="mt-4 flex h-32 items-end gap-3">
+              {ageBands.map((band) => (
+                <div key={band.label} className="flex flex-1 flex-col items-center gap-2">
+                  <p className="text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{band.share}%</p>
+                  <div className="flex w-full items-end">
+                    <div
+                      className="w-full rounded-t-[10px] bg-[var(--brand)]/60 transition-all hover:bg-[var(--brand)]"
+                      style={{ height: `${Math.max(4, (band.share / maxShare) * 80)}px` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-[var(--text-tertiary)]">{band.label}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -673,64 +681,57 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
 
   return (
-    <div className="p-4 md:p-6 xl:p-8">
+    <div className="flex flex-col">
       {/* Header */}
-      <section className="rounded-[30px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-5 py-5 shadow-[0_16px_44px_rgba(6,14,9,0.08)] md:px-7">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-5 pb-0 pt-5 md:px-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[1.4rem] font-bold tracking-tight text-[var(--text-primary)]">Dashboard</h1>
-              <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
-                Live workspace
-              </span>
-            </div>
-            <p className="mt-2 max-w-[680px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
-              Track sales, shape audience growth, and keep your next event cycle moving.
-            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Organizer Studio</p>
+            <h1 className="mt-1 text-[1.4rem] font-bold tracking-tight text-[var(--text-primary)]">Dashboard</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-4 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
-              href="/messages"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+              href="/dashboard/messages"
             >
-              <ChatsCircle size={16} /> Messages
+              <ChatsCircle size={15} /> Messages
             </Link>
             <Link
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-4 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
               href="/organizer/calendar"
             >
-              <CalendarBlank size={16} /> Schedule
+              <CalendarBlank size={15} /> Calendar
             </Link>
             <Link
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-black transition hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand)] px-3.5 py-2 text-[13px] font-semibold text-black transition hover:opacity-90 active:scale-[0.97]"
               href="/organizer/events/new"
             >
-              <Sparkle size={16} weight="fill" /> New Event
+              <Sparkle size={15} weight="fill" /> New Event
             </Link>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="mt-6 flex flex-wrap gap-1.5">
+        <div className="mt-5 flex overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`rounded-full px-4 py-2.5 text-[13px] font-semibold transition-all ${
+              className={`shrink-0 border-b-2 px-4 pb-3 pt-0.5 text-[13px] font-semibold transition-colors ${
                 activeTab === tab
-                  ? "bg-[var(--brand)] text-black shadow-[0_2px_12px_var(--brand)/30]"
-                  : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+                  ? "border-[var(--brand)] text-[var(--brand)]"
+                  : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
               {tab}
             </button>
           ))}
         </div>
-      </section>
+      </header>
 
       {/* Tab content */}
-      <div className="mt-6">
+      <div className="p-5 md:p-7">
         {activeTab === "Overview" && <OverviewTab dashboard={dashboard} />}
         {activeTab === "Events" && <EventsTab dashboard={dashboard} />}
         {activeTab === "Audience" && <AudienceTab dashboard={dashboard} />}
