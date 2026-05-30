@@ -79,8 +79,8 @@ async function fetchLandingEvents(visitorCity: string | null): Promise<{ events:
       ticket_types(price, price_type, is_active)
     `)
     .eq("status", "published")
-    .gt("start_datetime", new Date().toISOString())
-    .limit(40);
+    .order("start_datetime", { ascending: true })
+    .limit(60);
 
   if (error || !data || data.length < 3) {
     return { events: LANDING_EVENTS, tickerItems: TICKER_EVENTS };
@@ -165,10 +165,10 @@ export default async function LandingPage() {
 
   const { events, tickerItems } = await fetchLandingEvents(visitorCity);
 
-  // Ensure we always have at least 7 events for the layout (featured + grid + weekend row)
-  const padded = events.length >= 7 ? events : [
+  // Ensure we always have at least 9 events (featured + 4-grid + 4 recent row)
+  const padded = events.length >= 9 ? events : [
     ...events,
-    ...LANDING_EVENTS.slice(0, Math.max(0, 7 - events.length)),
+    ...LANDING_EVENTS.slice(0, Math.max(0, 9 - events.length)),
   ];
 
   return <LandingClient events={padded} tickerItems={tickerItems} />;
