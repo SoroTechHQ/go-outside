@@ -5,7 +5,7 @@ import { useTransition } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { AdminDataTable, BulkAction, RowAction } from "../admin/table/AdminDataTable"
 import { MiniPill } from "../dashboard-primitives"
-import { suspendUser, activateUser, makeOrganizer } from "../../app/users/actions"
+import { suspendUser, activateUser, makeOrganizer, makeAdmin, removeAdmin } from "../../app/users/actions"
 
 export type UserRow = {
   id: string
@@ -219,8 +219,20 @@ function useUserRowActions(): RowAction<UserRow>[] {
     {
       label: "Make Organizer",
       variant: "warning",
-      hidden: (row) => row.role === "organizer",
+      hidden: (row) => row.role === "organizer" || row.role === "admin",
       onClick: (row) => startTransition(() => makeOrganizer(row.id)),
+    },
+    {
+      label: "Promote to Admin",
+      variant: "warning",
+      hidden: (row) => row.role === "admin",
+      onClick: (row) => startTransition(() => makeAdmin(row.id)),
+    },
+    {
+      label: "Remove Admin",
+      variant: "danger",
+      hidden: (row) => row.role !== "admin",
+      onClick: (row) => startTransition(() => removeAdmin(row.id)),
     },
   ]
 }
