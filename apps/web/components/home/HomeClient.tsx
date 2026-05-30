@@ -18,12 +18,13 @@ import {
   Rows,
   SquaresFour,
   Sparkle,
+  Ticket,
   TrendUp,
   UsersThree,
   Warning,
+  XCircle,
 } from "@phosphor-icons/react";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
-import { categories, getCategoryEmoji } from "@gooutside/demo-data";
 import { EventSidePane } from "./EventSidePane";
 import { useAppShell } from "../layout/AppShellContext";
 import {
@@ -31,7 +32,9 @@ import {
   useSaveEvent,
   useSavedEvents,
   getFilteredEvents,
+  useCategories,
 } from "../../hooks/useEventsQuery";
+import { CategoryIcon } from "../../lib/category-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FeedEventItem } from "../../lib/app-contracts";
 import { pickSectionHeader } from "../../lib/feed-sections";
@@ -110,7 +113,7 @@ function ScarcityBadge({ scarcity }: { scarcity: FeedEventItem["scarcity"] }) {
     sold_out: "bg-[var(--text-tertiary)] text-white",
   } as const;
 
-  const icon = scarcity.state === "sold_out" ? "🚫" : "🎫";
+  const ScarcityIcon = scarcity.state === "sold_out" ? XCircle : Ticket;
   const label = scarcity.state === "sold_out"
     ? "Sold out"
     : scarcity.label ?? (scarcity.ticketsRemaining != null ? `${scarcity.ticketsRemaining} left` : "Selling fast");
@@ -118,7 +121,7 @@ function ScarcityBadge({ scarcity }: { scarcity: FeedEventItem["scarcity"] }) {
   return (
     <div className="mb-2">
       <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.63rem] font-bold shadow-sm ${styles[scarcity.state as keyof typeof styles] ?? styles.low}`}>
-        {icon} {label}
+        <ScarcityIcon size={10} weight="fill" /> {label}
       </span>
     </div>
   );
@@ -292,7 +295,8 @@ function ImageCard({
           {/* Category pill — AI-picked events get a Sparkle accent */}
           <div className={`absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm ${event._aiPicked ? "border-[var(--brand)]/50 bg-[var(--brand)]/25" : "border-white/18 bg-black/28"}`}>
             {event._aiPicked && <Sparkle size={9} weight="fill" className="text-[var(--brand)] shrink-0" />}
-            {getCategoryEmoji(event.categorySlug)} {event.eyebrow}
+            <CategoryIcon slug={event.categorySlug} size={10} weight="bold" />
+            {event.eyebrow}
           </div>
 
           {/* Bottom text block */}
@@ -579,6 +583,9 @@ export function HomeClient() {
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
   const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
 
+  // Real categories from DB (replaces hardcoded demo-data)
+  const { data: dbCategories = [] } = useCategories();
+
   const fireInteraction = useCallback((eventId: string, edgeType: string) => {
     void fetch("/api/interactions", {
       method: "POST",
@@ -723,16 +730,17 @@ export function HomeClient() {
                     >
                       All events
                     </button>
-                    {categories.map((category) => {
+                    {dbCategories.map((category) => {
                       const active = selectedCategories.includes(category.slug);
                       return (
                         <button
                           key={category.slug}
-                          className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
+                          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${active ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
                           onClick={() => updateCategory(category.slug)}
                           type="button"
                         >
-                          {getCategoryEmoji(category.slug)} {category.name}
+                          <CategoryIcon slug={category.slug} iconKey={category.icon_key} size={13} weight="bold" />
+                          {category.name}
                         </button>
                       );
                     })}

@@ -1,4 +1,3 @@
-import { SectionHeader } from "@gooutside/ui";
 import { getOrCreateSupabaseUser } from "../../../lib/db/users";
 import { NotificationFeed } from "./_components/NotificationFeed";
 
@@ -18,14 +17,10 @@ export default async function NotificationsPage() {
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
       <div className="container-shell px-4 py-8 md:py-10">
-        <SectionHeader
-          eyebrow="Inbox"
-          index="01"
-          title="Notifications"
-          description="Follows, mentions, replies, reminders, and event updates in one feed."
-        />
-
-        <div className="mx-auto mt-8 max-w-[680px]">
+        <div className="mx-auto max-w-[680px]">
+          <h1 className="text-[1.8rem] font-bold tracking-[-0.04em] text-[var(--text-primary)]">
+            Notifications
+          </h1>
           <NotificationFeed userId={user.id} />
         </div>
       </div>

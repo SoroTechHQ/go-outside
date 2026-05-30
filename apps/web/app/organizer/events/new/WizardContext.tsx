@@ -30,6 +30,7 @@ export type WizardState = {
   isOnline: boolean;
   onlinePlatform: string | null;
   onlineLink: string | null;
+  ghanaPostCode: string | null;
   ticketTypes: TicketTypeInput[];
   bannerUrl: string | null;
   galleryUrls: string[];
@@ -98,6 +99,7 @@ const baseInitialState: WizardState = {
   isOnline: false,
   onlinePlatform: null,
   onlineLink: null,
+  ghanaPostCode: null,
   ticketTypes: [],
   bannerUrl: null,
   galleryUrls: [],

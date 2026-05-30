@@ -190,10 +190,10 @@ function PulseHistorySheet({
     follow:         "Followed someone",
     mutual_follow:  "Mutual follow",
     review:         "Posted a review",
-    first_event:    "First event! 🎉",
-    first_friend:   "First friend! 🤝",
-    rockstar:       "Rockstar night! 🌟",
-    scene_veteran:  "Scene Veteran! 🏆",
+    first_event:    "First event!",
+    first_friend:   "First friend!",
+    rockstar:       "Rockstar night!",
+    scene_veteran:  "Scene Veteran!",
   };
 
   return (
@@ -235,7 +235,7 @@ function PulseHistorySheet({
         )}
 
         {!isLoading && history.length === 0 && (
-          <p className="py-8 text-center text-[13px] text-[var(--text-tertiary)]">No activity yet. Start going out! 🎉</p>
+          <p className="py-8 text-center text-[13px] text-[var(--text-tertiary)]">No activity yet. Start going out!</p>
         )}
 
         {history.map((item) => (

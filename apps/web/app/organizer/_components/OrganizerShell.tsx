@@ -88,7 +88,7 @@ function NavItem({ item, iconOnly }: { item: ShellItem; iconOnly: boolean }) {
     isSoon
       ? "cursor-not-allowed opacity-40"
       : active
-      ? "bg-[var(--brand)]/10 text-[var(--brand)] border-l-2 border-[var(--brand)] font-semibold"
+      ? "bg-[var(--brand)]/10 text-[var(--brand)] font-semibold"
       : item.href || item.onClick
       ? "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
       : "cursor-default text-[var(--text-tertiary)]"

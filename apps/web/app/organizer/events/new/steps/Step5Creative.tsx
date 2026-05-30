@@ -39,7 +39,7 @@ export function Step5Creative() {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
     setGalleryUploading(true);
-    for (const file of files.slice(0, 6 - state.galleryUrls.length)) {
+    for (const file of files.slice(0, 12 - state.galleryUrls.length)) {
       const url = await uploadFile(file, `events/gallery_${Date.now()}`);
       if (url) dispatch({ type: "ADD_GALLERY", url });
     }
@@ -107,15 +107,15 @@ export function Step5Creative() {
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
           Gallery images{" "}
           <span className="normal-case tracking-normal font-normal text-[var(--text-tertiary)]">
-            (up to 6)
+            ({state.galleryUrls.length}/12)
           </span>
         </label>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
           {state.galleryUrls.map((url) => (
-            <div key={url} className="relative">
+            <div key={url} className="relative aspect-square">
               <img
                 alt=""
-                className="h-24 w-full rounded-[12px] object-cover"
+                className="h-full w-full rounded-[12px] object-cover"
                 src={url}
               />
               <button
@@ -127,9 +127,9 @@ export function Step5Creative() {
               </button>
             </div>
           ))}
-          {state.galleryUrls.length < 6 && (
+          {state.galleryUrls.length < 12 && (
             <button
-              className="flex h-24 items-center justify-center rounded-[12px] border border-dashed border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
+              className="flex aspect-square items-center justify-center rounded-[12px] border border-dashed border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
               type="button"
               onClick={() => galleryRef.current?.click()}
             >

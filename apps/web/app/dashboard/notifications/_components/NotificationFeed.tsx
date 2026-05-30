@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BellSimple } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabaseBrowser } from "../../../../lib/supabase-browser";
 import {
@@ -97,12 +98,15 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
 
   if (allItems.length === 0) {
     return (
-      <div className="rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-6 py-16 text-center">
-        <h3 className="font-display text-3xl italic text-[var(--text-primary)]">
-          All caught up
+      <div className="mt-8 rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-6 py-16 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-dim)]">
+          <BellSimple size={28} weight="duotone" className="text-[var(--brand)]" />
+        </div>
+        <h3 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">
+          Nothing yet
         </h3>
-        <p className="mt-3 text-sm text-[var(--text-secondary)]">
-          Follows, mentions, replies, and event updates will show up here.
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          When someone follows you, buys a ticket, or an event you saved gets updated, it'll show up here.
         </p>
       </div>
     );
