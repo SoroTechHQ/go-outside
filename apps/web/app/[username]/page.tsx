@@ -52,21 +52,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name  = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || username;
   const score = user.pulse_score ?? 0;
   const tier  = (user as unknown as Record<string, unknown>).pulse_tier as string ?? "Explorer";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
+
+  const ogParams = new URLSearchParams({
+    type:     "user",
+    title:    name,
+    subtitle: `${tier} · Pulse ${score}`,
+    tag:      user.location_city_name ?? "",
+    ...(user.avatar_url ? { image: user.avatar_url } : {}),
+    ...(user.is_verified_organizer ? { verified: "1" } : {}),
+  });
+  const ogImage = `${siteUrl}/api/og?${ogParams.toString()}`;
+  const description = `${tier} · Pulse ${score} · gooutside.club/${username}`;
 
   return {
     title: `${name} on GoOutside`,
-    description: `${tier} · Pulse ${score} · gooutside.club/${username}`,
+    description,
     openGraph: {
       title: `${name} on GoOutside`,
       description: `${tier} · Pulse ${score}`,
-      images: user.avatar_url ? [{ url: user.avatar_url }] : [],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: name }],
       type: "profile",
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${name} on GoOutside`,
       description: `${tier} · Pulse ${score}`,
-      images: user.avatar_url ? [user.avatar_url] : [],
+      images: [ogImage],
     },
   };
 }

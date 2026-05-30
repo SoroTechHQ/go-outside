@@ -24,18 +24,29 @@ const interDisplay = Inter({
   variable: "--font-display",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.app"),
-  title: "GoOutside",
-  description: "Social-first event discovery and platform for Ghana.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "GoOutside", template: "%s | GoOutside" },
+  description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
   icons: {
     icon: "/favicon-icon.png",
     apple: "/favicon-icon.png",
   },
   openGraph: {
-    title: "GoOutside",
-    description: "Social-first event discovery and platform for Ghana.",
-    images: [{ url: "/logo-full.png" }],
+    siteName: "GoOutside",
+    title: "GoOutside — What's on in Accra?",
+    description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
+    images: [{ url: `/api/og?type=default`, width: 1200, height: 630, alt: "GoOutside" }],
+    type: "website",
+    locale: "en_GH",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GoOutside — What's on in Accra?",
+    description: "Social-first event discovery for Ghana.",
+    images: [`/api/og?type=default`],
   },
 };
 
