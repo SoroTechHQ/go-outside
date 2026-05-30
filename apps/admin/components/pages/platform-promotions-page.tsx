@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { DashboardShell } from '../dashboard-shell'
 import { SectionBlock, MiniPill } from '../dashboard-primitives'
 import { ToggleFeaturedButton, ToggleSponsoredButton, CampaignStatusButton } from '../PromotionActions'
@@ -40,8 +41,24 @@ export async function PlatformPromotionsPage() {
   return (
     <DashboardShell mode="admin" title="Promotions" subtitle="Featured events and ad campaigns.">
       <div className="space-y-8">
+        {/* Quick actions */}
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/admin/events/new?sponsored=1"
+            className="inline-flex items-center gap-2 rounded-xl border border-[rgba(251,191,36,0.4)] bg-[rgba(251,191,36,0.1)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-amber)] transition hover:bg-[rgba(251,191,36,0.18)]"
+          >
+            <span>＋</span> Create Sponsored Event
+          </Link>
+          <Link
+            href="/organizer/events/new"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+          >
+            Create Regular Event
+          </Link>
+        </div>
+
         {/* Section 1 — Featured Events */}
-        <SectionBlock title="Featured Events" subtitle="Events currently marked as featured or sponsored.">
+        <SectionBlock title="Featured Events" subtitle="Events currently marked as featured or sponsored. Only the earliest upcoming sponsored event shows on the home feed.">
           {!featured?.length ? (
             <p className="text-sm text-[var(--text-secondary)]">No featured or sponsored events.</p>
           ) : (
