@@ -9,7 +9,7 @@ const EVENT_SELECT = `
   avg_rating, reviews_count, saves_count, tags,
   organizer_id, is_online, custom_location,
   categories (id, name, slug, icon_key, color, is_active, sort_order),
-  venues (id, name, city, address),
+  venues (id, name, city, address, latitude, longitude),
   ticket_types (id, name, price, price_type, quantity_total, quantity_sold, is_active)
 `;
 
