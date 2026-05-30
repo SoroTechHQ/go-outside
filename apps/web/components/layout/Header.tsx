@@ -66,13 +66,13 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
                   style={{
                     width: `${1020 - easedHomeProgress * 188}px`,
                     minWidth: "648px",
-                    height: `${154 - easedHomeProgress * 14}px`,
+                    height: `${112 - easedHomeProgress * 4}px`,
                   }}
                 >
                   <div
                     className="absolute inset-x-0 top-0"
                     style={{
-                      height: `${176 - easedHomeProgress * 30}px`,
+                      height: `${130 - easedHomeProgress * 22}px`,
                       background: `linear-gradient(180deg,
                         rgba(var(--brand-rgb),${0.16 + easedHomeProgress * 0.08}),
                         rgba(var(--brand-rgb),${0.05 + easedHomeProgress * 0.06}) 38%,
@@ -82,7 +82,7 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
                   <div
                     className="absolute inset-x-0 top-0"
                     style={{
-                      height: `${128 + easedHomeProgress * 26}px`,
+                      height: `${90 + easedHomeProgress * 22}px`,
                       opacity: 0.46 + easedHomeProgress * 0.34,
                       background: `linear-gradient(180deg,
                         rgba(var(--bg-card-rgb),0.99) 0%,
@@ -105,9 +105,9 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
               <div
                 className="flex w-full items-start justify-center transition-[height,padding,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
                 style={{
-                  height: `${160 - easedHomeProgress * 52}px`,
-                  paddingTop: `${28 - easedHomeProgress * 11}px`,
-                  paddingBottom: `${22 - easedHomeProgress * 10}px`,
+                  height: `${112 - easedHomeProgress * 4}px`,
+                  paddingTop: `${22 - easedHomeProgress * 8}px`,
+                  paddingBottom: `${6 - easedHomeProgress * 2}px`,
                   transform: `translateY(${8 - easedHomeProgress * 4}px)`,
                 }}
               >
