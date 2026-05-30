@@ -11,6 +11,7 @@ import {
   ChatCircle,
   ChatsCircle,
   Hash,
+  MapTrifold,
   MegaphoneSimple,
   MoonStars,
   NotePencil,
@@ -52,6 +53,12 @@ function buildNavGroups(openPostModal: () => void): Array<{ label: string; items
         { href: "/organizer/analytics", label: "Analytics", icon: ChartBar },
         { label: "Ad Manager", icon: MegaphoneSimple, badge: "Soon" },
         { href: "/organizer/hashtags", label: "Hashtags", icon: Hash },
+      ],
+    },
+    {
+      label: "Live",
+      items: [
+        { href: "/organizer/live", label: "Live Attendees", icon: MapTrifold },
       ],
     },
     {

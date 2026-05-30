@@ -60,6 +60,12 @@ export type EventItem = {
   ticketTypes: TicketType[];
   gallery: string[];
   tags: string[];
+  // Location coordinates (from venue record)
+  venueLat: number | null;
+  venueLng: number | null;
+  // ISO timestamps for live-window calculation
+  startDatetime: string | null;
+  endDatetime: string | null;
 };
 
 export type Review = {

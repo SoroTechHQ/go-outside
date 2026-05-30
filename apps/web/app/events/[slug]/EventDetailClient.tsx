@@ -14,10 +14,10 @@ import {
   HeartStraight,
   Images,
   MapPin,
-  PaperPlaneTilt,
   ShieldCheck,
   Star,
   Ticket,
+  WhatsappLogo,
   X,
 } from "@phosphor-icons/react";
 import { getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
@@ -26,6 +26,8 @@ import { GetTicketModal, type EventForTicket } from "../../../components/tickets
 import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
 import { SearchPillExpanded } from "../../../components/search/SearchPillExpanded";
 import { useAppShell } from "../../../components/layout/AppShellContext";
+import { EventMap } from "../../../components/maps/EventMap";
+import { LiveAttendeeBanner } from "../../../components/maps/LiveAttendeeBanner";
 
 type EventItem = (typeof events)[number];
 
@@ -121,6 +123,9 @@ export function EventDetailClient({
   event: EventItem;
   organizer: Organizer;
 }) {
+  // Resolve coordinates: use real venue coords if available, else derive from event id (demo fallback)
+  const resolvedLat = event.venueLat ?? (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018);
+  const resolvedLng = event.venueLng ?? (-0.187  + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018);
   useEventDwell(event.id);
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
@@ -162,9 +167,6 @@ export function EventDetailClient({
           ],
   };
 
-  const mapLat = (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018).toFixed(4);
-  const mapLon = (-0.187 + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018).toFixed(4);
-  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${(Number(mapLon) - 0.022).toFixed(4)}%2C${(Number(mapLat) - 0.015).toFixed(4)}%2C${(Number(mapLon) + 0.022).toFixed(4)}%2C${(Number(mapLat) + 0.015).toFixed(4)}&layer=mapnik&marker=${mapLat}%2C${mapLon}`;
 
   return (
     <>
@@ -193,13 +195,15 @@ export function EventDetailClient({
             </p>
 
             <div className="flex items-center gap-2">
-              <button
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
-                type="button"
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Check out ${event.title}! 🎉\nhttps://www.google.com/maps?q=${resolvedLat},${resolvedLng}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[#25D366] hover:text-[#25D366]"
               >
-                <PaperPlaneTilt size={14} weight="bold" />
+                <WhatsappLogo size={14} weight="fill" />
                 Share
-              </button>
+              </a>
               <button
                 className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold transition hover:bg-[var(--bg-surface)] ${
                   saved ? "text-rose-500" : "text-[var(--text-primary)]"
@@ -389,16 +393,33 @@ export function EventDetailClient({
               </div>
             </div>
 
+            {/* Live attendee banner */}
+            {event.startDatetime && event.endDatetime && (
+              <div className="py-4">
+                <LiveAttendeeBanner
+                  eventId={event.id}
+                  eventName={event.title}
+                  venueLat={resolvedLat}
+                  venueLng={resolvedLng}
+                  startDatetime={event.startDatetime}
+                  endDatetime={event.endDatetime}
+                />
+              </div>
+            )}
+
             {/* Map */}
             <div className="border-b border-[var(--home-border)] py-8">
               <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Location</h2>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">{event.venue}, {event.locationLine}</p>
-              <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--home-border)]">
-                <iframe className="h-[280px] w-full" loading="lazy" src={mapSrc} title={`Map for ${event.venue}`} />
-                <div className="flex items-center justify-between border-t border-[var(--home-border)] bg-[var(--bg-surface)] px-4 py-3">
-                  <p className="truncate text-sm text-[var(--text-secondary)]">{event.venue}, {event.locationLine}</p>
-                  <a className="ml-3 shrink-0 text-sm font-semibold text-[var(--brand)] hover:underline" href={`https://www.openstreetmap.org/?mlat=${mapLat}&mlon=${mapLon}#map=15/${mapLat}/${mapLon}`} rel="noopener noreferrer" target="_blank">Open maps ↗</a>
-                </div>
+              <div className="mt-5">
+                <EventMap
+                  lat={resolvedLat}
+                  lng={resolvedLng}
+                  venueName={event.venue}
+                  locationLine={event.locationLine}
+                  eventTitle={event.title}
+                  eventSlug={event.slug}
+                />
               </div>
             </div>
 
@@ -561,10 +582,15 @@ export function EventDetailClient({
                     <HeartStraight size={15} weight={saved ? "fill" : "regular"} />
                     {saved ? "Saved" : "Save"}
                   </button>
-                  <button className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)] hover:text-[var(--brand)]" type="button">
-                    <PaperPlaneTilt size={15} weight="regular" />
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`Check out ${event.title}! 🎉\nhttps://www.google.com/maps?q=${resolvedLat},${resolvedLng}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
+                  >
+                    <WhatsappLogo size={15} weight="fill" />
                     Share
-                  </button>
+                  </a>
                 </div>
                 <p className="text-center text-xs text-[var(--text-tertiary)]">You won't be charged yet</p>
               </div>

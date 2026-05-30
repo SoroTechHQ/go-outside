@@ -58,7 +58,6 @@ type FeedProfile = {
 };
 
 type RankedEvent = EventItem & {
-  startDatetime?: string;
   avgRating?: number | null;
 };
 
@@ -439,7 +438,6 @@ function toPublicFeedEvent(
 ): FeedEventItem {
   const {
     avgRating: _avgRating,
-    startDatetime: _startDatetime,
     ...publicEvent
   } = event;
 

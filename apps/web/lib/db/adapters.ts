@@ -134,10 +134,12 @@ export type DbTicketTypeRow = {
 };
 
 export type DbVenueRow = {
-  id:   string;
-  name: string;
-  city: string;
-  address: string;
+  id:        string;
+  name:      string;
+  city:      string;
+  address:   string;
+  latitude:  number | null;
+  longitude: number | null;
 };
 
 export type DbEventRow = {
@@ -228,8 +230,12 @@ export function adaptEvent(row: DbEventRow): EventItem {
     })),
     gallery: (row.gallery_urls ?? []).map((url) => withThumbnailTransform(url) ?? url),
     tags:    row.tags ?? [],
-    // Extra DB fields used for server-side scoring (not in EventItem type, cast at use site)
-    ...({ startDatetime: row.start_datetime, avgRating: row.avg_rating } as unknown as object),
+    venueLat:      venue?.latitude  ?? null,
+    venueLng:      venue?.longitude ?? null,
+    startDatetime: row.start_datetime,
+    endDatetime:   row.end_datetime,
+    // Extra DB fields used for server-side scoring (cast at use site)
+    ...({ avgRating: row.avg_rating } as unknown as object),
   } as EventItem;
 }
 
