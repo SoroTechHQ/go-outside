@@ -94,6 +94,13 @@ const adminNav: NavItem[] = [
       <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M7 6h6M7 10h6M7 14h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
     ),
   },
+  {
+    label: "Team",
+    href: "/team",
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="7" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.6"/><circle cx="14" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.6"/><path d="M1 17v-.5a6 6 0 0 1 12 0v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M13 13.5a6 6 0 0 1 6 5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+    ),
+  },
 ];
 
 const organizerNav: NavItem[] = [
