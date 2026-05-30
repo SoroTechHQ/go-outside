@@ -960,46 +960,46 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {/* Pulse score widget */}
-                  <Link href="/dashboard/rewards">
-                  <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] transition hover:brightness-[0.97] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--pulse-gold)]">Your Pulse</p>
-                        <h3 className="mt-2 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                          {pulseData?.pulse_tier ?? "—"}
-                        </h3>
-                        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                          {pulseData?.pts_to_next_tier != null
-                            ? `${pulseData.pts_to_next_tier} pts to ${pulseData.next_tier_label}`
-                            : pulseData ? "You've reached the top tier" : "Loading…"}
-                        </p>
+                  <Link href="/dashboard/rewards" className="block">
+                    <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] transition hover:brightness-[0.97] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--pulse-gold)]">Your Pulse</p>
+                          <h3 className="mt-2 text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                            {pulseData?.pulse_tier ?? "—"}
+                          </h3>
+                          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                            {pulseData?.pts_to_next_tier != null
+                              ? `${pulseData.pts_to_next_tier} pts to ${pulseData.next_tier_label}`
+                              : pulseData ? "You've reached the top tier" : "Loading…"}
+                          </p>
+                        </div>
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--pulse-gold)] bg-white/80 dark:bg-[var(--pulse-gold-soft)]">
+                          <span className="text-[1.3rem] font-semibold text-[var(--pulse-gold)]">
+                            {pulseData?.pulse_score?.toLocaleString() ?? "—"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--pulse-gold)] bg-white/80 dark:bg-[var(--pulse-gold-soft)]">
-                        <span className="text-[1.3rem] font-semibold text-[var(--pulse-gold)]">
-                          {pulseData?.pulse_score?.toLocaleString() ?? "—"}
-                        </span>
+                      <div className="mt-5">
+                        <div className="mb-2 flex items-center justify-between text-[0.68rem] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                          <span>{pulseData?.pulse_tier ?? ""}</span>
+                          <span>{pulseData?.next_tier_label ?? "Max"}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[rgba(var(--pulse-gold-rgb),0.12)]">
+                          <div
+                            className="h-2 rounded-full bg-[var(--pulse-gold)] transition-all duration-700"
+                            style={{ width: `${pulseData?.progress_pct ?? 0}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-5">
-                      <div className="mb-2 flex items-center justify-between text-[0.68rem] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                        <span>{pulseData?.pulse_tier ?? ""}</span>
-                        <span>{pulseData?.next_tier_label ?? "Max"}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-[rgba(var(--pulse-gold-rgb),0.12)]">
-                        <div
-                          className="h-2 rounded-full bg-[var(--pulse-gold)] transition-all duration-700"
-                          style={{ width: `${pulseData?.progress_pct ?? 0}%` }}
-                        />
-                      </div>
-                    </div>
-                    {pulseData?.city_rank_label && (
-                      <div className="mt-4">
-                        <span className="rounded-full border border-[var(--pulse-gold-border)] bg-[var(--pulse-gold-soft)] px-3 py-1 text-[0.68rem] font-semibold text-[var(--pulse-gold)]">
-                          {pulseData.city_rank_label}
-                        </span>
-                      </div>
-                    )}
-                  </section>
+                      {pulseData?.city_rank_label && (
+                        <div className="mt-4">
+                          <span className="rounded-full border border-[var(--pulse-gold-border)] bg-[var(--pulse-gold-soft)] px-3 py-1 text-[0.68rem] font-semibold text-[var(--pulse-gold)]">
+                            {pulseData.city_rank_label}
+                          </span>
+                        </div>
+                      )}
+                    </section>
                   </Link>
 
                   {/* Weekend AI assistant */}

@@ -62,7 +62,7 @@ export function WeekendAssistant() {
   }
 
   return (
-    <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--bg-card)] overflow-hidden">
+    <div className="rounded-[var(--radius-card-lg)] border border-[var(--border-subtle)] bg-[var(--bg-card)] overflow-hidden shadow-[var(--home-shadow)]">
       {/* Header — always visible */}
       <button
         onClick={() => setOpen((v) => !v)}

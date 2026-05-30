@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Gift,
@@ -798,6 +800,114 @@ function getNextPPMilestone(lifetime: number, badges: RewardsBadge[]) {
   return null;
 }
 
+// ─── Live Pulse Score card ────────────────────────────────────────────────────
+
+type PulseData = {
+  pulse_score: number;
+  pulse_tier: string;
+  pulse_tier_slug: string;
+  pulse_points_balance: number;
+  progress_pct: number;
+  pts_to_next_tier: number | null;
+  next_tier_label: string | null;
+  city: string | null;
+  city_rank_percent: number | null;
+  city_rank_label: string | null;
+};
+
+const TIER_COLORS: Record<string, string> = {
+  newcomer:    "#9CA3AF",
+  explorer:    "#4a9f63",
+  regular:     "#4a9f63",
+  scene_kid:   "#4a9f63",
+  city_native: "#c87c2a",
+  legend:      "#DAA520",
+};
+
+function PulseScoreCard({ pulse }: { pulse: PulseData | undefined }) {
+  const tierSlug = pulse?.pulse_tier_slug ?? "newcomer";
+  const tierColor = TIER_COLORS[tierSlug] ?? "#9CA3AF";
+  const score = pulse?.pulse_score ?? 0;
+  const progressPct = pulse?.progress_pct ?? 0;
+
+  return (
+    <div
+      className="relative mb-4 overflow-hidden rounded-[20px] p-5"
+      style={{
+        background: "linear-gradient(135deg,#0e2212 0%,#152a1a 55%,#0b1a10 100%)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: `radial-gradient(ellipse at top right,${tierColor}22,transparent 55%)` }}
+      />
+
+      <div className="relative flex items-start justify-between gap-4">
+        {/* Left — tier + score */}
+        <div>
+          <span
+            className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em]"
+            style={{
+              color: tierColor,
+              backgroundColor: `${tierColor}18`,
+              border: `1px solid ${tierColor}38`,
+            }}
+          >
+            {pulse?.pulse_tier ?? "—"}
+          </span>
+
+          <p
+            className="mt-3 font-display text-[2.4rem] font-bold italic leading-none text-white"
+          >
+            {score.toLocaleString()}
+            <span className="ml-2 text-[1rem] font-normal text-white/30">pts</span>
+          </p>
+
+          <p className="mt-1.5 text-[11px] text-white/40">
+            {pulse?.pts_to_next_tier != null
+              ? `${pulse.pts_to_next_tier.toLocaleString()} pts to ${pulse.next_tier_label}`
+              : pulse ? "Maximum tier reached" : "Loading…"}
+          </p>
+        </div>
+
+        {/* Right — city rank pill */}
+        {pulse?.city_rank_label && (
+          <div
+            className="shrink-0 rounded-full px-3 py-1 text-[10px] font-bold"
+            style={{
+              backgroundColor: `${tierColor}20`,
+              color: tierColor,
+              border: `1px solid ${tierColor}38`,
+            }}
+          >
+            {pulse.city_rank_label}
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div className="relative mt-4">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPct}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="h-full rounded-full"
+            style={{
+              backgroundColor: tierColor,
+              boxShadow: `0 0 8px ${tierColor}55`,
+            }}
+          />
+        </div>
+        <div className="mt-1.5 flex justify-between text-[10px] text-white/30">
+          <span>{pulse?.pulse_tier ?? ""}</span>
+          <span>{pulse?.next_tier_label ?? "Max tier"}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── How It Works modal ───────────────────────────────────────────────────────
 
 const HOW_IT_WORKS_SECTIONS = [
@@ -917,10 +1027,22 @@ export function RewardsClient({
   ledger,
   badges,
 }: RewardsClientProps) {
+  const router = useRouter();
+  const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>("shop");
   const [redeemTarget, setRedeemTarget] = useState<PulseReward | null>(null);
   const [pp, setPP] = useState(initialPP);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  // Live pulse score — updates after redemptions and in real time
+  const { data: pulse } = useQuery<PulseData>({
+    queryKey: ["pulse", "me"],
+    queryFn: () => fetch("/api/users/me/pulse").then((r) => r.json()),
+    staleTime: 30_000,
+  });
+
+  // Keep pp balance in sync with live pulse data (PP balance comes from the same API)
+  const liveBalance = pulse?.pulse_points_balance ?? pp.balance;
 
   const badgesEarned = badges.filter((b) => b.earned).length;
   const nextMilestone = getNextPPMilestone(pp.lifetime, badges);
@@ -931,6 +1053,9 @@ export function RewardsClient({
   function handleRedeemSuccess(newBalance: number) {
     setPP((prev) => ({ ...prev, balance: newBalance }));
     setRedeemTarget(null);
+    // Refresh pulse query and re-run the server component to pick up the new ledger entry
+    void qc.invalidateQueries({ queryKey: ["pulse", "me"] });
+    router.refresh();
   }
 
   return (
@@ -964,10 +1089,13 @@ export function RewardsClient({
             </button>
           </div>
 
+          {/* ── Live Pulse Score card ── */}
+          <PulseScoreCard pulse={pulse} />
+
           {/* ── Stats row ── */}
           <div className="mb-4 flex gap-2">
             <StatCard
-              value={pp.balance.toLocaleString()}
+              value={liveBalance.toLocaleString()}
               sub="Available"
               label="Pulse Points"
               highlight
@@ -1077,7 +1205,7 @@ export function RewardsClient({
               {activeTab === "shop" && (
                 <RewardsShopTab
                   rewards={rewards}
-                  balance={pp.balance}
+                  balance={liveBalance}
                   onRedeem={setRedeemTarget}
                 />
               )}
@@ -1097,7 +1225,7 @@ export function RewardsClient({
         {redeemTarget && (
           <RedeemModal
             reward={redeemTarget}
-            balance={pp.balance}
+            balance={liveBalance}
             onClose={() => setRedeemTarget(null)}
             onSuccess={(newBalance) => handleRedeemSuccess(newBalance)}
           />
