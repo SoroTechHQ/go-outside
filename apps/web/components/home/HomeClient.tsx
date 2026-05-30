@@ -22,6 +22,7 @@ import {
   TrendUp,
   UsersThree,
   Warning,
+  X,
   XCircle,
 } from "@phosphor-icons/react";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
@@ -693,14 +694,20 @@ export function HomeClient() {
             {hasFilters && (
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-[var(--home-highlight-border)] bg-[var(--brand-dim)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--home-shadow)]">
                 <span className="font-medium text-[var(--text-primary)]">
-                  {filteredEvents.length} result{filteredEvents.length === 1 ? "" : "s"} for your current plan
+                  {filteredEvents.length} result{filteredEvents.length === 1 ? "" : "s"}
+                  {selectedCategories.length > 0
+                    ? ` in ${selectedCategories.map((s) => dbCategories.find((c) => c.slug === s)?.name ?? s).join(", ")}`
+                    : query
+                      ? ` matching "${query}"`
+                      : ""}
                 </span>
                 <button
-                  className="rounded-full border border-[var(--home-highlight-border)] bg-[var(--bg-card)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand)]"
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--home-highlight-border)] bg-[var(--bg-card)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]"
                   onClick={clearFilters}
                   type="button"
                 >
-                  Reset
+                  <X size={11} weight="bold" />
+                  Clear filter
                 </button>
               </div>
             )}
@@ -722,7 +729,7 @@ export function HomeClient() {
               {/* Category filter chips + layout toggle */}
               <section className="mt-5">
                 <div className="flex items-center gap-2">
-                  <div className="no-scrollbar -mx-0 flex flex-1 gap-2 overflow-x-auto pb-1 md:flex-wrap">
+                  <div className="no-scrollbar -mx-0 flex flex-1 flex-nowrap gap-2 overflow-x-auto pb-1">
                     <button
                       className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition active:scale-95 ${selectedCategories.length === 0 ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[var(--home-highlight-border)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
                       onClick={clearFilters}
@@ -741,6 +748,7 @@ export function HomeClient() {
                         >
                           <CategoryIcon slug={category.slug} iconKey={category.icon_key} size={13} weight="bold" />
                           {category.name}
+                          {active && <X size={12} weight="bold" className="ml-0.5 opacity-80" />}
                         </button>
                       );
                     })}

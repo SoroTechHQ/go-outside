@@ -1,4 +1,5 @@
-import { events as demoEvents, type EventItem } from "@gooutside/demo-data";
+import type { EventItem } from "@gooutside/demo-data";
+const demoEvents: EventItem[] = [];
 
 export type CommunityProfile = {
   id: string;

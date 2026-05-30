@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useEventDwell } from "../../../hooks/useEventDwell";
 import Link from "next/link";
 import {
@@ -20,8 +20,8 @@ import {
   WhatsappLogo,
   X,
 } from "@phosphor-icons/react";
-import { getCategoryEmoji, getEventImage } from "@gooutside/demo-data";
-import type { events, Organizer } from "@gooutside/demo-data";
+import { getCategoryEmoji, getEventImage, type EventItem, type Organizer } from "@gooutside/demo-data";
+import { useTracking } from "../../../components/tracking/TrackingProvider";
 import { GetTicketModal, type EventForTicket } from "../../../components/tickets/GetTicketModal";
 import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
 import { SearchPillExpanded } from "../../../components/search/SearchPillExpanded";
@@ -29,7 +29,6 @@ import { useAppShell } from "../../../components/layout/AppShellContext";
 import { EventMap } from "../../../components/maps/EventMap";
 import { LiveAttendeeBanner } from "../../../components/maps/LiveAttendeeBanner";
 
-type EventItem = (typeof events)[number];
 
 // ── Static content ────────────────────────────────────────────────────────────
 const ALL_SLUGS = ["music", "food", "sports", "arts", "tech", "nightlife", "culture", "outdoors"];
@@ -132,6 +131,60 @@ export function EventDetailClient({
   const [saved, setSaved] = useState(false);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const { sidebarWidth } = useAppShell();
+  const { trackEvent } = useTracking();
+  const ticketSectionRef = useRef<HTMLDivElement>(null);
+  const priceRevealFired = useRef(false);
+
+  // price_reveal: fire once when ticket section enters viewport
+  useEffect(() => {
+    if (!ticketSectionRef.current || priceRevealFired.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && !priceRevealFired.current) {
+          priceRevealFired.current = true;
+          fetch("/api/interactions", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ eventId: event.id, edgeType: "price_reveal" }),
+            keepalive: true,
+          }).catch(() => undefined);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(ticketSectionRef.current);
+    return () => observer.disconnect();
+  }, [event.id]);
+
+  function trackShare() {
+    trackEvent({ event_type: "share_tap", target_entity_id: event.id, entity_type: "event" });
+    fetch("/api/interactions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ eventId: event.id, edgeType: "share_tap" }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }
+
+  function trackOrganizerTap() {
+    fetch("/api/interactions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ eventId: event.id, edgeType: "organizer_tap" }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }
+
+  function trackGalleryScroll() {
+    trackEvent({ event_type: "image_scroll", target_entity_id: event.id, entity_type: "event" });
+    fetch("/api/interactions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ eventId: event.id, edgeType: "image_scroll" }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }
 
   const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
   const reviewCount = 48 + ((event.id?.charCodeAt(1) ?? 66) % 80);
@@ -199,6 +252,7 @@ export function EventDetailClient({
                 href={`https://wa.me/?text=${encodeURIComponent(`Check out ${event.title}! 🎉\nhttps://www.google.com/maps?q=${resolvedLat},${resolvedLng}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={trackShare}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[#25D366] hover:text-[#25D366]"
               >
                 <WhatsappLogo size={14} weight="fill" />
@@ -249,7 +303,7 @@ export function EventDetailClient({
         {/* Main hero — spans 2 cols × 2 rows */}
         <button
           className="relative col-span-2 row-span-2 overflow-hidden"
-          onClick={() => setLightboxIdx(0)}
+          onClick={() => { setLightboxIdx(0); trackGalleryScroll(); }}
           type="button"
         >
           <img src={images[0]} alt={event.title} className="h-full w-full object-cover transition duration-500 hover:scale-[1.02]" />
@@ -317,6 +371,7 @@ export function EventDetailClient({
 
             {/* Host */}
             <Link
+              onClick={trackOrganizerTap}
               className="flex items-center gap-4 border-b border-[var(--home-border)] py-8 transition hover:opacity-90"
               href={`/organizers/${organizer.id}`}
             >
@@ -548,7 +603,7 @@ export function EventDetailClient({
               </div>
 
               {/* Ticket tiers */}
-              <div className="space-y-2 px-6 py-4">
+              <div ref={ticketSectionRef} className="space-y-2 px-6 py-4">
                 {(event.ticketTypes?.length > 0 ? event.ticketTypes : [
                   { name: "General Admission", priceLabel: event.priceLabel, remainingLabel: "Tickets available" },
                   { name: "VIP", priceLabel: event.priceValue === 0 ? "Free" : `GHS ${(event.priceValue * 2.5).toFixed(0)}`, remainingLabel: "Limited seats" },

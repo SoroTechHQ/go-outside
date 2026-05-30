@@ -1,7 +1,38 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { getSupabaseUserIdByClerkId } from "../../../../lib/db/users";
+
+// 90-day visitor cookie — survives sign-out for returning visitor recognition
+const VID_COOKIE = "go_vid";
+const VID_MAX_AGE = 60 * 60 * 24 * 90;
+
+function generateVisitorId(): string {
+  return "v_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+type IpGeo = {
+  city: string; region: string; country: string; countryCode: string;
+  lat: number; lng: number; timezone: string; isp: string; org: string;
+} | null;
+
+async function resolveIpGeo(ip: string): Promise<IpGeo> {
+  // Skip private/loopback IPs
+  if (!ip || ip === "::1" || ip.startsWith("127.") || ip.startsWith("192.168.") || ip.startsWith("10.")) return null;
+  try {
+    const res = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,city,regionName,country,countryCode,lat,lon,timezone,isp,org`,
+      { signal: AbortSignal.timeout(2000) }
+    );
+    if (!res.ok) return null;
+    const d = await res.json() as { status: string; city: string; regionName: string; country: string; countryCode: string; lat: number; lon: number; timezone: string; isp: string; org: string };
+    if (d.status !== "success") return null;
+    return { city: d.city, region: d.regionName, country: d.country, countryCode: d.countryCode, lat: d.lat, lng: d.lon, timezone: d.timezone, isp: d.isp, org: d.org };
+  } catch {
+    return null;
+  }
+}
 
 // POST /api/analytics/collect — receives fingerprint + behavioral events
 // Returns 200 immediately; DB writes are fire-and-forget
@@ -9,6 +40,23 @@ export async function POST(req: NextRequest) {
   const { userId: clerkUserId } = await auth();
   const body = await req.json().catch(() => null);
   if (!body?.type) return NextResponse.json({ ok: true });
+
+  // Read or mint visitor ID cookie
+  const cookieStore = await cookies();
+  let visitorId = cookieStore.get(VID_COOKIE)?.value ?? null;
+  const isNewVisitor = !visitorId;
+  if (!visitorId) visitorId = generateVisitorId();
+
+  const response = NextResponse.json({ ok: true, visitorId });
+
+  // Always refresh cookie TTL
+  response.cookies.set(VID_COOKIE, visitorId, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: VID_MAX_AGE,
+    secure: process.env.NODE_ENV === "production",
+  });
 
   // Resolve Supabase user ID in background — don't block response
   void (async () => {
@@ -24,6 +72,34 @@ export async function POST(req: NextRequest) {
         null;
 
       const ua = req.headers.get("user-agent") ?? null;
+
+      // Merge visitor_id → user_id on sign-in (always keep fresh)
+      if (visitorId) {
+        await supabaseAdmin.from("visitor_profiles").upsert(
+          { visitor_id: visitorId, user_id: userId, last_seen: new Date().toISOString(), updated_at: new Date().toISOString() },
+          { onConflict: "visitor_id", ignoreDuplicates: false }
+        ).select("id").maybeSingle();
+      }
+
+      // Resolve IP geo once per new visitor or daily refresh
+      if (ip && (isNewVisitor || body.type === "session_start")) {
+        const geo = await resolveIpGeo(ip);
+        if (geo && visitorId) {
+          await supabaseAdmin.from("visitor_profiles").update({
+            ip_address: ip,
+            ip_city: geo.city,
+            ip_region: geo.region,
+            ip_country: geo.country,
+            ip_country_code: geo.countryCode,
+            ip_lat: geo.lat,
+            ip_lng: geo.lng,
+            ip_timezone: geo.timezone,
+            ip_isp: geo.isp,
+            ip_org: geo.org,
+            updated_at: new Date().toISOString(),
+          }).eq("visitor_id", visitorId);
+        }
+      }
 
       switch (body.type) {
         case "session_start": {
@@ -258,5 +334,5 @@ export async function POST(req: NextRequest) {
     }
   })();
 
-  return NextResponse.json({ ok: true });
+  return response;
 }

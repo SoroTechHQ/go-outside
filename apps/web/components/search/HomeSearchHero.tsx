@@ -11,7 +11,20 @@ import {
   Ticket,
   X,
 } from "@phosphor-icons/react";
-import { categories, events, getCategoryEmoji } from "@gooutside/demo-data";
+import { getCategoryEmoji } from "@gooutside/demo-data";
+
+const categories = [
+  { slug: "music",      name: "Music" },
+  { slug: "food-drink", name: "Food & Drink" },
+  { slug: "arts",       name: "Arts" },
+  { slug: "tech",       name: "Tech" },
+  { slug: "sports",     name: "Sports" },
+  { slug: "networking", name: "Networking" },
+  { slug: "nightlife",  name: "Nightlife" },
+  { slug: "wellness",   name: "Wellness" },
+];
+import type { EventItem } from "@gooutside/demo-data";
+const events: EventItem[] = [];
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import MobileUnifiedSearch from "./MobileUnifiedSearch";
 import { SearchPillExpanded } from "./SearchPillExpanded";
