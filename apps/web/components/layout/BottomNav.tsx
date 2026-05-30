@@ -8,8 +8,8 @@ import {
   CalendarPlus,
   ChartBar,
   ChatCircleDots,
-  Fire,
   House,
+  MagnifyingGlass,
   UserCircle,
   Wallet,
 } from "@phosphor-icons/react";
@@ -46,8 +46,8 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const msgUnread  = useStreamUnread();
 
   const items: BottomNavItem[] = [
-    { href: "/",          icon: House,         label: "Home" },
-    { href: "/trending",  icon: Fire,          label: "Trending" },
+    { href: "/",          icon: House,          label: "Home" },
+    { href: "/trending",  icon: MagnifyingGlass, label: "Explore" },
     { href: "/host/new",  icon: CalendarPlus,  label: "Host" },
     { href: "/messages",  icon: ChatCircleDots, label: "Messages", badge: msgUnread },
     { href: "/profile",   icon: UserCircle,    label: "Profile" },

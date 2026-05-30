@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -13,12 +13,15 @@ import {
   Lightning,
   MagnifyingGlass,
   Minus,
+  Sparkle,
   Ticket,
   TrendUp,
   UsersThree,
+  X,
 } from "@phosphor-icons/react";
-import { thumbnailUrl as withThumbnailTransform, bannerUrl as withBannerTransform } from "../../../lib/image-url";
-import MobileUnifiedSearch from "../../../components/search/MobileUnifiedSearch";
+import { thumbnailUrl as withThumbnailTransform } from "../../../lib/image-url";
+import { AIChatPanel } from "../../../components/search/AIChatPanel";
+import Avatar from "boring-avatars";
 import type {
   TrendReason,
   TrendingEvent,
@@ -27,22 +30,53 @@ import type {
   TrendingTopic,
 } from "../../../lib/trending/types";
 
-async function fetchTrending(section: string): Promise<TrendingResponse> {
-  const res = await fetch(`/api/trending?section=${section}&limit=20`);
-  if (!res.ok) throw new Error("Failed to fetch trending");
-  return res.json() as Promise<TrendingResponse>;
+// ─── Types ────────────────────────────────────────────────────────────────────
+type SearchTab    = "all" | "events" | "users" | "snippets";
+type TrendingTab  = "events" | "organizers" | "topics";
+type SearchEvent  = { id: string; title: string; slug: string; banner_url: string | null; start_datetime: string | null; price_label: string | null; trending_score: number | null };
+type SearchUser   = { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null; avatar_url: string | null; pulse_tier: string | null; pulse_score: number | null };
+type SearchSnip   = { id: string; body: string; vibe_tags: string[]; created_at: string };
+type SearchResult = { events: SearchEvent[]; users: SearchUser[]; snippets: SearchSnip[]; nextCursor: string | null };
+
+const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
+
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+function useDebounce<T>(val: T, ms: number): T {
+  const [d, setD] = useState(val);
+  useEffect(() => {
+    const t = setTimeout(() => setD(val), ms);
+    return () => clearTimeout(t);
+  }, [val, ms]);
+  return d;
 }
 
-function compactNumber(value: number) {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return `${value}`;
+// ─── Fetch ────────────────────────────────────────────────────────────────────
+async function fetchSearch(q: string, type: SearchTab): Promise<SearchResult> {
+  const p = new URLSearchParams({ type, limit: "20" });
+  if (q) p.set("q", q);
+  const r = await fetch(`/api/search?${p}`);
+  if (!r.ok) throw new Error("Search failed");
+  return r.json() as Promise<SearchResult>;
+}
+
+async function fetchTrending(section: string): Promise<TrendingResponse> {
+  const r = await fetch(`/api/trending?section=${section}&limit=15`);
+  if (!r.ok) throw new Error("Failed");
+  return r.json() as Promise<TrendingResponse>;
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function compact(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return `${n}`;
 }
 
 function reasonSummary(reasons: TrendReason[]) {
   return reasons.slice(0, 2).map((r) => r.value).join(" · ");
 }
 
+// ─── Shared small components ──────────────────────────────────────────────────
 function HeatBadge({ score }: { score: number }) {
   if (!score || score <= 0) return null;
   if (score >= 100) return (
@@ -63,15 +97,15 @@ function HeatBadge({ score }: { score: number }) {
 }
 
 function RankArrow({ change }: { change: "up" | "same" | "down" }) {
-  if (change === "up") return <ArrowUp size={11} weight="bold" className="text-emerald-500" />;
+  if (change === "up")   return <ArrowUp   size={11} weight="bold" className="text-emerald-500" />;
   if (change === "down") return <ArrowDown size={11} weight="bold" className="text-red-400" />;
   return <Minus size={11} weight="bold" className="text-[var(--text-tertiary)]" />;
 }
 
 function SkeletonCard() {
   return (
-    <div className="flex gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 animate-pulse">
-      <div className="h-20 w-20 shrink-0 rounded-xl bg-[var(--bg-muted)]" />
+    <div className="flex gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 animate-pulse">
+      <div className="h-16 w-16 shrink-0 rounded-xl bg-[var(--bg-muted)]" />
       <div className="flex-1 space-y-2 py-1">
         <div className="h-3 w-1/3 rounded bg-[var(--bg-muted)]" />
         <div className="h-4 w-3/4 rounded bg-[var(--bg-muted)]" />
@@ -81,297 +115,439 @@ function SkeletonCard() {
   );
 }
 
-function TrendingEventCard({ event, index }: { event: TrendingEvent; index: number }) {
-  const dateLabel = event.start_datetime
-    ? new Date(event.start_datetime).toLocaleDateString("en-GH", { weekday: "short", month: "short", day: "numeric" })
+// ─── Search result cards ──────────────────────────────────────────────────────
+function EventCard({ e }: { e: SearchEvent }) {
+  const date = e.start_datetime
+    ? new Date(e.start_datetime).toLocaleDateString("en-GH", { weekday: "short", month: "short", day: "numeric" })
     : null;
-
   return (
     <Link
-      href={`/events/${event.slug}`}
-      className="group relative flex w-full gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 text-left transition-all hover:border-[var(--border-default)] hover:shadow-sm"
+      href={`/events/${e.slug}`}
+      className="group flex gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 transition hover:border-[var(--brand)]/30 active:scale-[0.99]"
     >
-      {/* Rank + movement */}
-      <div className="flex w-8 shrink-0 flex-col items-center gap-1.5 pt-1">
-        <span className="text-[18px] font-black leading-none text-[var(--text-tertiary)]">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-        <RankArrow change={event.rank_change} />
-      </div>
-
-      {/* Thumbnail */}
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
-        {event.banner_url && (
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
+        {e.banner_url && (
           <img
-            alt={event.title}
+            alt={e.title}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            src={withThumbnailTransform(event.banner_url) ?? event.banner_url}
+            src={withThumbnailTransform(e.banner_url) ?? e.banner_url}
           />
         )}
-        <div className="absolute inset-0 bg-black/10" />
       </div>
-
-      {/* Info */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <HeatBadge score={event.trending_score} />
-        </div>
-
-        <p className="mt-1 line-clamp-2 text-[14px] font-bold leading-tight text-[var(--text-primary)]">
-          {event.title}
-        </p>
-
-        {dateLabel && (
-          <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[var(--text-tertiary)]">
-            <CalendarBlank size={10} weight="fill" />
-            <span className="truncate">{dateLabel}</span>
-          </div>
-        )}
-
-        {event.reasons.length > 0 && (
-          <p className="mt-1 line-clamp-1 text-[11px] text-[var(--text-tertiary)]">
-            {reasonSummary(event.reasons)}
+        <p className="line-clamp-2 text-[13px] font-bold leading-tight text-[var(--text-primary)]">{e.title}</p>
+        {date && (
+          <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
+            <CalendarBlank size={9} weight="fill" />{date}
           </p>
         )}
-
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[12px] text-[var(--text-tertiary)]">
-            <span className="flex items-center gap-1">
-              <UsersThree size={11} weight="fill" /> {compactNumber(event.snippet_count)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Heart size={11} weight="fill" /> {compactNumber(event.saves_count)}
-            </span>
-            <span className="flex items-center gap-1">
-              <Ticket size={11} weight="fill" /> {event.price_label ?? "Free"}
-            </span>
-          </div>
-          <span className="text-[11px] font-semibold text-[var(--brand)]">
-            {Math.round(event.trending_score)} pts
-          </span>
-        </div>
+        <p className="mt-1 text-[11px] font-medium text-[var(--brand)]">{e.price_label ?? "Free"}</p>
       </div>
     </Link>
   );
 }
 
-type TabType = "events" | "organizers" | "topics";
+function UserCard({ u }: { u: SearchUser }) {
+  const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || "User";
+  const href = u.username ? `/${u.username}` : "#";
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 transition hover:border-[var(--brand)]/30 active:scale-[0.99]"
+    >
+      {u.avatar_url ? (
+        <img alt={name} src={u.avatar_url} className="h-11 w-11 shrink-0 rounded-full object-cover" />
+      ) : (
+        <Avatar size={44} name={name} variant="beam" colors={AVATAR_COLORS} />
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-[13px] font-bold text-[var(--text-primary)]">{name}</p>
+        {u.username && <p className="text-[11px] text-[var(--text-tertiary)]">@{u.username}</p>}
+        {u.pulse_tier && (
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--brand)]">{u.pulse_tier}</p>
+        )}
+      </div>
+    </Link>
+  );
+}
 
-const TABS: { id: TabType; label: string; icon: typeof Fire }[] = [
-  { id: "events",     label: "Events",     icon: Fire },
-  { id: "organizers", label: "Organizers", icon: UsersThree },
-  { id: "topics",     label: "Topics",     icon: Hash },
-];
+function SnippetCard({ s }: { s: SearchSnip }) {
+  return (
+    <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5">
+      <p className="line-clamp-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">{s.body}</p>
+      {s.vibe_tags.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {s.vibe_tags.slice(0, 3).map((tag) => (
+            <span key={tag} className="rounded-full bg-[var(--brand-dim)] px-2 py-0.5 text-[10px] font-medium text-[var(--brand)]">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-export default function TrendingPage() {
-  const [tab, setTab] = useState<TabType>("events");
-  const [search, setSearch] = useState("");
+// ─── Search results section ───────────────────────────────────────────────────
+function SearchResults({
+  q,
+  tab,
+  onTabChange,
+}: {
+  q: string;
+  tab: SearchTab;
+  onTabChange: (t: SearchTab) => void;
+}) {
+  const { data, isLoading, isError } = useQuery<SearchResult>({
+    queryKey: ["explore-search", q, tab],
+    queryFn: () => fetchSearch(q, tab),
+    enabled: q.trim().length >= 1,
+    staleTime: 30_000,
+  });
+
+  const TABS: { id: SearchTab; label: string }[] = [
+    { id: "all",      label: "All" },
+    { id: "events",   label: "Events" },
+    { id: "users",    label: "People" },
+    { id: "snippets", label: "Vibes" },
+  ];
+
+  if (!q.trim()) return null;
+
+  const events   = data?.events   ?? [];
+  const users    = data?.users    ?? [];
+  const snippets = data?.snippets ?? [];
+  const isEmpty  = !isLoading && !isError && events.length === 0 && users.length === 0 && snippets.length === 0;
+
+  return (
+    <div className="mt-3">
+      {/* Type filter tabs */}
+      <div className="mb-4 flex gap-0 overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-1">
+        {TABS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onTabChange(id)}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors ${
+              tab === id
+                ? "bg-[var(--brand)] text-white shadow-sm"
+                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && (
+        <div className="space-y-2.5">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
+      )}
+
+      {isError && (
+        <p className="py-10 text-center text-[13px] text-[var(--text-tertiary)]">Something went wrong — try again.</p>
+      )}
+
+      {isEmpty && (
+        <div className="py-16 text-center">
+          <MagnifyingGlass size={32} className="mx-auto mb-3 text-[var(--text-tertiary)]" weight="regular" />
+          <p className="text-[14px] font-semibold text-[var(--text-secondary)]">No results for &ldquo;{q}&rdquo;</p>
+          <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Try searching something else</p>
+        </div>
+      )}
+
+      {!isLoading && !isError && !isEmpty && (
+        <div className="space-y-6">
+          {(tab === "all" || tab === "events") && events.length > 0 && (
+            <section>
+              {tab === "all" && (
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">Events</p>
+              )}
+              <div className="space-y-2.5">
+                {events.slice(0, tab === "all" ? 3 : 20).map((e) => <EventCard key={e.id} e={e} />)}
+              </div>
+              {tab === "all" && events.length > 3 && (
+                <button
+                  onClick={() => onTabChange("events")}
+                  className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:text-[var(--brand)]"
+                >
+                  See all {events.length} events →
+                </button>
+              )}
+            </section>
+          )}
+
+          {(tab === "all" || tab === "users") && users.length > 0 && (
+            <section>
+              {tab === "all" && (
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">People</p>
+              )}
+              <div className="space-y-2.5">
+                {users.slice(0, tab === "all" ? 3 : 20).map((u) => <UserCard key={u.clerk_id} u={u} />)}
+              </div>
+              {tab === "all" && users.length > 3 && (
+                <button
+                  onClick={() => onTabChange("users")}
+                  className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:text-[var(--brand)]"
+                >
+                  See all {users.length} people →
+                </button>
+              )}
+            </section>
+          )}
+
+          {(tab === "all" || tab === "snippets") && snippets.length > 0 && (
+            <section>
+              {tab === "all" && (
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">Vibes</p>
+              )}
+              <div className="space-y-2.5">
+                {snippets.slice(0, tab === "all" ? 3 : 20).map((s) => <SnippetCard key={s.id} s={s} />)}
+              </div>
+              {tab === "all" && snippets.length > 3 && (
+                <button
+                  onClick={() => onTabChange("snippets")}
+                  className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:text-[var(--brand)]"
+                >
+                  See all {snippets.length} vibes →
+                </button>
+              )}
+            </section>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Trending section (shown when search is empty) ────────────────────────────
+function TrendingPane() {
+  const [tab, setTab] = useState<TrendingTab>("events");
 
   const { data, isLoading, isError } = useQuery<TrendingResponse>({
-    queryKey: ["trending", tab],
+    queryKey: ["explore-trending", tab],
     queryFn: () => fetchTrending(tab),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 2,
   });
 
-  const filteredEvents = (data?.events ?? []).filter((e) =>
-    search === "" || e.title.toLowerCase().includes(search.toLowerCase()),
+  const TABS: { id: TrendingTab; label: string; icon: typeof Fire }[] = [
+    { id: "events",     label: "Events",     icon: Fire },
+    { id: "organizers", label: "Organizers", icon: UsersThree },
+    { id: "topics",     label: "Topics",     icon: Hash },
+  ];
+
+  return (
+    <div className="mt-5">
+      <p className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
+        <Fire size={10} weight="fill" className="text-red-500" /> Trending now
+      </p>
+
+      {/* Tabs */}
+      <div className="mb-4 flex gap-0 overflow-x-auto rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-1">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors ${
+              tab === id
+                ? "bg-[var(--brand)] text-white shadow-sm"
+                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <Icon size={11} weight={tab === id ? "fill" : "regular"} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && (
+        <div className="space-y-2.5">{[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}</div>
+      )}
+      {isError && (
+        <p className="py-10 text-center text-[13px] text-[var(--text-tertiary)]">Could not load — try again.</p>
+      )}
+
+      {!isLoading && !isError && tab === "events" && (
+        <div className="space-y-2.5">
+          {(data?.events ?? []).slice(0, 10).map((event, i) => (
+            <Link
+              key={event.id}
+              href={`/events/${event.slug}`}
+              className="group flex gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 transition hover:border-[var(--brand)]/30 active:scale-[0.99]"
+            >
+              <div className="flex w-6 shrink-0 flex-col items-center gap-1 pt-0.5">
+                <span className="text-[12px] font-black text-[var(--text-tertiary)]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <RankArrow change={event.rank_change} />
+              </div>
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
+                {event.banner_url && (
+                  <img
+                    alt={event.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    src={withThumbnailTransform(event.banner_url) ?? event.banner_url}
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <HeatBadge score={event.trending_score} />
+                <p className="mt-1 line-clamp-2 text-[13px] font-bold leading-tight text-[var(--text-primary)]">
+                  {event.title}
+                </p>
+                <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--text-tertiary)]">
+                  <span className="flex items-center gap-1"><Heart size={10} weight="fill" />{compact(event.saves_count)}</span>
+                  <span className="flex items-center gap-1"><Ticket size={10} weight="fill" />{event.price_label ?? "Free"}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && tab === "organizers" && (
+        <div className="space-y-2.5">
+          {(data?.organizers ?? []).map((org, i) => (
+            <Link
+              key={org.id}
+              href={org.username ? `/${org.username}` : `/dashboard/user/${org.id}`}
+              className="flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 transition hover:border-[var(--brand)]/30 active:scale-[0.99]"
+            >
+              <div className="relative shrink-0">
+                <div className="h-12 w-12 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
+                  {org.logo_url && (
+                    <img alt={org.name} className="h-full w-full object-cover" src={org.logo_url} />
+                  )}
+                </div>
+                <span className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[9px] font-black text-[var(--text-tertiary)]">
+                  {i + 1}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-bold text-[var(--text-primary)]">{org.name}</p>
+                <p className="text-[11px] text-[var(--text-tertiary)]">
+                  {compact(org.follower_count)} followers · {org.event_count} events
+                </p>
+              </div>
+              <HeatBadge score={org.trending_score} />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && tab === "topics" && (
+        <div className="space-y-2">
+          {(data?.topics ?? []).map((topic, i) => (
+            <Link
+              key={topic.tag}
+              href={`/dashboard/trending/topics/${encodeURIComponent(topic.tag)}`}
+              className="flex items-center justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3.5 transition hover:border-[var(--brand)]/30 active:scale-[0.99]"
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-5 text-center text-[11px] font-bold text-[var(--text-tertiary)]">{i + 1}</span>
+                <div>
+                  <p className="text-[13px] font-bold text-[var(--text-primary)]">#{topic.tag}</p>
+                  <p className="text-[11px] text-[var(--text-tertiary)]">
+                    {topic.count} snippets · {topic.event_count} events
+                  </p>
+                </div>
+              </div>
+              <HeatBadge score={topic.trending_score} />
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
-  const filteredOrgs = (data?.organizers ?? []).filter((o) =>
-    search === "" || o.name.toLowerCase().includes(search.toLowerCase()),
-  );
-  const filteredTopics = (data?.topics ?? []).filter((t) =>
-    search === "" || t.tag.toLowerCase().includes(search.toLowerCase()),
-  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function ExplorePage() {
+  const [query, setQuery]         = useState("");
+  const [searchTab, setSearchTab] = useState<SearchTab>("all");
+  const [showAI, setShowAI]       = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedQ = useDebounce(query, 280);
+  const hasQuery = debouncedQ.trim().length >= 1;
+
+  // Reset to "all" when query changes
+  useEffect(() => { setSearchTab("all"); }, [debouncedQ]);
+
+  const clearSearch = useCallback(() => {
+    setQuery("");
+    setShowAI(false);
+    inputRef.current?.focus();
+  }, []);
 
   return (
     <main className="page-grid min-h-screen pb-28">
-      <div className="container-shell px-4 pb-6 pt-8 md:py-10">
+      <div className="container-shell px-4 pt-6 pb-6">
         <div className="mx-auto max-w-2xl">
 
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Fire size={22} weight="fill" className="text-red-500" />
-              <h1 className="text-[24px] font-black tracking-tight text-[var(--text-primary)]">
-                Trending
-              </h1>
-            </div>
-            <p className="text-[13px] text-[var(--text-tertiary)]">
-              Ranked by interactions, saves, snippets, tickets, and your location.
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="mb-5 md:hidden">
-            <MobileUnifiedSearch
-              emptyLabel="Search trending…"
-              onSearch={setSearch}
-              subtitle="Events, organizers, topics"
-              value={search}
+          {/* ── Search bar ─────────────────────────────────────────────────── */}
+          <div
+            className={`flex items-center gap-3 rounded-2xl border bg-[var(--bg-card)] px-4 py-3.5 shadow-sm transition-all ${
+              query
+                ? "border-[var(--brand)]/50 shadow-[0_0_0_3px_rgba(74,159,99,0.08)]"
+                : "border-[var(--border-subtle)]"
+            }`}
+          >
+            <MagnifyingGlass
+              size={18}
+              weight={query ? "bold" : "regular"}
+              className={`shrink-0 transition-colors ${query ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"}`}
             />
-          </div>
-          <div className="mb-5 hidden items-center gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2.5 md:flex">
-            <MagnifyingGlass size={15} weight="bold" className="shrink-0 text-[var(--text-tertiary)]" />
             <input
-              className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search trending…"
-              value={search}
+              ref={inputRef}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              className="flex-1 bg-transparent text-[15px] font-medium text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Events, people, vibes…"
+              type="search"
+              value={query}
             />
-          </div>
-
-          {/* Underline tabs — no white pill background */}
-          <div className="mb-6 flex gap-6 border-b border-[var(--border-subtle)]">
-            {TABS.map(({ id, label, icon: Icon }) => (
+            {query && (
               <button
-                key={id}
                 type="button"
-                onClick={() => setTab(id)}
-                className={`flex items-center gap-1.5 pb-3 text-[13px] font-semibold transition-colors ${
-                  tab === id
-                    ? "border-b-2 border-[var(--brand)] text-[var(--brand)] -mb-px"
-                    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-                }`}
+                onClick={clearSearch}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--bg-muted)] transition hover:bg-[var(--border-subtle)]"
               >
-                <Icon size={13} weight={tab === id ? "fill" : "regular"} />
-                {label}
+                <X size={12} weight="bold" className="text-[var(--text-secondary)]" />
               </button>
-            ))}
+            )}
           </div>
 
-          {/* Events */}
-          {tab === "events" && (
-            <div className="space-y-3">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-              ) : isError ? (
-                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">Could not load — please try again.</p>
-              ) : filteredEvents.length === 0 ? (
-                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">No trending events in the last 48h yet.</p>
-              ) : (
-                <>
-                  {/* Hero — #1 event */}
-                  <Link
-                    href={`/events/${filteredEvents[0].slug}`}
-                    className="relative block overflow-hidden rounded-2xl"
-                  >
-                    {filteredEvents[0].banner_url ? (
-                      <img
-                        alt={filteredEvents[0].title}
-                        className="h-44 w-full object-cover"
-                        src={withBannerTransform(filteredEvents[0].banner_url) ?? filteredEvents[0].banner_url}
-                      />
-                    ) : (
-                      <div className="h-44 w-full bg-gradient-to-br from-[#0e2212] to-[#152a1a]" />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                          <Fire size={9} weight="fill" /> #1 Trending
-                        </span>
-                        <RankArrow change={filteredEvents[0].rank_change} />
-                      </div>
-                      <h2 className="text-[17px] font-black leading-tight text-white">
-                        {filteredEvents[0].title}
-                      </h2>
-                      <p className="mt-1 line-clamp-1 text-[11px] text-white/70">
-                        {reasonSummary(filteredEvents[0].reasons)}
-                      </p>
-                      <div className="mt-2 flex items-center justify-between text-[12px] font-semibold text-white/80">
-                        <span className="flex items-center gap-1">
-                          <Ticket size={10} weight="fill" />
-                          {filteredEvents[0].price_label ?? "Free"}
-                        </span>
-                        <span>{Math.round(filteredEvents[0].trending_score)} trend pts</span>
-                      </div>
-                    </div>
-                  </Link>
+          {/* ── AI toggle ──────────────────────────────────────────────────── */}
+          <div className="mt-2 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setShowAI((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+                showAI
+                  ? "bg-[var(--brand-dim)] text-[var(--brand)]"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--brand)]"
+              }`}
+            >
+              <Sparkle size={11} weight={showAI ? "fill" : "regular"} />
+              AI Search
+            </button>
+          </div>
 
-                  {filteredEvents.slice(1).map((event, i) => (
-                    <TrendingEventCard key={event.id} event={event} index={i + 1} />
-                  ))}
-                </>
-              )}
+          {/* ── AI chat ────────────────────────────────────────────────────── */}
+          {showAI && (
+            <div className="mt-2 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+              <AIChatPanel initialQuery="" />
             </div>
           )}
 
-          {/* Organizers */}
-          {tab === "organizers" && (
-            <div className="space-y-3">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-              ) : isError ? (
-                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">Could not load — please try again.</p>
-              ) : filteredOrgs.length === 0 ? (
-                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">No trending organizers yet.</p>
-              ) : (
-                filteredOrgs.map((org, i) => (
-                  <Link
-                    key={org.id}
-                    href={org.username ? `/${org.username}` : `/dashboard/user/${org.id}`}
-                    className="flex w-full gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 transition hover:border-[var(--border-default)]"
-                  >
-                    <div className="relative shrink-0">
-                      <div className="h-16 w-16 overflow-hidden rounded-xl bg-[var(--bg-muted)]">
-                        {org.logo_url && (
-                          <img alt={org.name} className="h-full w-full object-cover" src={`${org.logo_url}?width=128&format=webp`} />
-                        )}
-                      </div>
-                      <div className="absolute -left-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[11px] font-black text-[var(--text-tertiary)]">
-                        {i + 1}
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-bold text-[var(--text-primary)]">{org.name}</p>
-                      {org.reasons.length > 0 && (
-                        <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-tertiary)]">{reasonSummary(org.reasons)}</p>
-                      )}
-                      <div className="mt-2 flex items-center justify-between text-[12px] text-[var(--text-secondary)]">
-                        <span>{compactNumber(org.follower_count)} followers · {org.event_count} events</span>
-                        <HeatBadge score={org.trending_score} />
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Topics */}
-          {tab === "topics" && (
-            <div className="space-y-2">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-14 animate-pulse rounded-2xl bg-[var(--bg-muted)]" />
-                ))
-              ) : isError ? (
-                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">Could not load — please try again.</p>
-              ) : filteredTopics.length === 0 ? (
-                <p className="py-16 text-center text-[14px] text-[var(--text-tertiary)]">No trending topics yet — post some snippets!</p>
-              ) : (
-                filteredTopics.map((topic, i) => (
-                  <Link
-                    key={topic.tag}
-                    href={`/dashboard/trending/topics/${encodeURIComponent(topic.tag)}`}
-                    className="flex items-center justify-between rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3.5 transition hover:border-[var(--border-default)]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="w-5 text-center text-[13px] font-bold text-[var(--text-tertiary)]">{i + 1}</span>
-                      <div>
-                        <p className="text-[14px] font-bold text-[var(--text-primary)]">#{topic.tag}</p>
-                        <p className="text-[12px] text-[var(--text-tertiary)]">
-                          {topic.count} {topic.count === 1 ? "snippet" : "snippets"} · {topic.event_count} events
-                        </p>
-                      </div>
-                    </div>
-                    <HeatBadge score={topic.trending_score} />
-                  </Link>
-                ))
-              )}
-            </div>
+          {/* ── Results or trending ─────────────────────────────────────────── */}
+          {hasQuery ? (
+            <SearchResults q={debouncedQ} tab={searchTab} onTabChange={setSearchTab} />
+          ) : (
+            <TrendingPane />
           )}
 
         </div>
