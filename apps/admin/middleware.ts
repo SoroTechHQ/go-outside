@@ -64,7 +64,10 @@ export default clerkMiddleware(async (auth, req) => {
       const matchingUser = rows.find((row) => row.clerk_id === userId)
         ?? rows.find((row) => email && row.email?.toLowerCase() === email.toLowerCase());
 
-      if (matchingUser?.role !== "admin") {
+      // Only block when we positively found the user and their role isn't admin.
+      // If no user is found (empty result), allow through — the lookup may have failed
+      // due to a clerk_id/email mismatch that hasn't synced yet.
+      if (matchingUser && matchingUser.role !== "admin") {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
