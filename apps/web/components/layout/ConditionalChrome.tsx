@@ -19,6 +19,9 @@ const STANDALONE_ROUTES = [
   "/sign-up",
   "/onboarding",
   "/organizer", // organizer portal has its own full-screen shell
+  "/docs",
+  "/feedback",
+  "/changelog",
 ];
 
 // Routes that suppress only the footer (app chrome stays).

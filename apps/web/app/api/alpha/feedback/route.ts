@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
   const body: AlphaFeedbackPayload = await req.json();
 
   const { type, rating, message, screenshotDataUrl, pageUrl, browserInfo } = body;
+  const linkUrl: string | undefined = (body as AlphaFeedbackPayload & { linkUrl?: string }).linkUrl;
   const consoleLogs: CapturedLog[] = (body as AlphaFeedbackPayload & { consoleLogs?: CapturedLog[] }).consoleLogs ?? [];
   if (!type || !message?.trim()) {
     return NextResponse.json({ error: "type and message required" }, { status: 400 });
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
     message:        message.trim(),
     screenshot_url: screenshotUrl,
     page_url:       pageUrl,
+    link_url:       linkUrl?.trim() || null,
     browser_info:   browserInfo,
   });
 
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
               <p style="margin:0 0 4px;font-size:11px;color:#a9a9a9;text-transform:uppercase;letter-spacing:0.5px;">Page</p>
               <p style="margin:0;font-size:13px;color:#0f110f;">${pageUrl}</p>
             </td></tr>
+            ${linkUrl ? `<tr><td style="padding:12px 0 0;"><p style="margin:0 0 4px;font-size:11px;color:#a9a9a9;text-transform:uppercase;letter-spacing:0.5px;">Link / Recording</p><a href="${linkUrl}" style="margin:0;font-size:13px;color:#2f8f45;">${linkUrl}</a></td></tr>` : ""}
             <tr><td style="padding:12px 0 0;">
               <p style="margin:0 0 4px;font-size:11px;color:#a9a9a9;text-transform:uppercase;letter-spacing:0.5px;">Browser</p>
               <p style="margin:0;font-size:12px;color:#6f6f6f;">${browserInfo?.userAgent ?? "Unknown"}</p>

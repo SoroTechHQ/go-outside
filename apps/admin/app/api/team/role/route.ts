@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '../../../../lib/supabase';
 
 type Role = 'admin' | 'organizer' | 'attendee';
 const VALID_ROLES: Role[] = ['admin', 'organizer', 'attendee'];
 
 export async function PATCH(req: NextRequest) {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // Verify caller is admin
-  const { data: caller } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('clerk_id', userId)
-    .maybeSingle();
-
-  if (caller?.role !== 'admin') {
+  // Verify caller is admin via JWT claim — no Supabase call needed
+  if (sessionClaims?.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -27,18 +21,23 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
-  // Prevent self-demotion
   if (targetClerkId === userId && role !== 'admin') {
     return NextResponse.json({ error: 'Cannot remove your own admin role' }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .update({ role, updated_at: new Date().toISOString() })
-    .eq('clerk_id', targetClerkId)
-    .select('id, email, role, first_name, last_name')
-    .single();
+  // Update Supabase and Clerk publicMetadata in parallel
+  const client = await clerkClient();
+  const [supabaseResult] = await Promise.all([
+    supabaseAdmin
+      .from('users')
+      .update({ role, updated_at: new Date().toISOString() })
+      .eq('clerk_id', targetClerkId)
+      .select('id, email, role, first_name, last_name')
+      .single(),
+    client.users.updateUserMetadata(targetClerkId, { publicMetadata: { role } }),
+  ]);
 
+  const { data, error } = supabaseResult;
   if (error || !data) {
     return NextResponse.json({ error: 'User not found or update failed' }, { status: 404 });
   }
@@ -47,16 +46,11 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: caller } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('clerk_id', userId)
-    .maybeSingle();
-
-  if (caller?.role !== 'admin') {
+  // Verify caller is admin via JWT claim — no Supabase call needed
+  if (sessionClaims?.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

@@ -6,6 +6,7 @@ import { isAlphaMode, setAlphaMode, startConsoleCapture } from "../../lib/alpha"
 import { AlphaFeedbackWidget } from "./AlphaFeedbackWidget";
 import { AlphaPeriodicPrompt } from "./AlphaPeriodicPrompt";
 import { AlphaWelcomeModal } from "./AlphaWelcomeModal";
+import { FeedbackSideTab } from "./FeedbackSideTab";
 
 interface AlphaContextValue {
   isAlpha: boolean;
@@ -53,6 +54,7 @@ export function AlphaProvider({ children }: { children: ReactNode }) {
           <AlphaWelcomeModal />
           <AlphaFeedbackWidget />
           <AlphaPeriodicPrompt />
+          <FeedbackSideTab />
         </>
       )}
     </AlphaContext.Provider>
