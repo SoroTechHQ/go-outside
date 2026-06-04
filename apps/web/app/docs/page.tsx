@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,7 +9,7 @@ import {
   ArrowRight, ArrowUpRight, CaretRight, CaretDown,
   RocketLaunch, Bug, Compass, Ticket, Lightning,
   UsersThree, Buildings, Question, ChatCircleDots,
-  CheckCircle, Warning, Info, SealCheck,
+  CheckCircle, Warning, Info, SealCheck, Link as LinkIcon, Check,
 } from "@phosphor-icons/react";
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -513,7 +514,10 @@ function SideNavSection({ section, activeId, onSelect, dark }: {
    PAGE
 ───────────────────────────────────────────────────────────────────────── */
 
-export default function DocsPage() {
+function DocsPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [dark,          setDark]          = useState(false);
   const [view,          setView]          = useState<View>("home");
   const [sectionId,     setSectionId]     = useState<string | null>(null);
@@ -521,12 +525,30 @@ export default function DocsPage() {
   const [sidebarOpen,   setSidebarOpen]   = useState(false);
   const [search,        setSearch]        = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [copied,        setCopied]        = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("go_docs_dark");
     if (saved === "1") setDark(true);
   }, []);
+
+  // On mount, read URL params and open the right article
+  useEffect(() => {
+    const s = searchParams.get("s");
+    const a = searchParams.get("a");
+    if (s && a) {
+      const section = SECTIONS.find(sec => sec.id === s);
+      const article = section?.articles.find(art => art.id === a);
+      if (section && article) {
+        setSectionId(s);
+        setArticleId(a);
+        setView("article");
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleDark = () => setDark(v => { const n = !v; localStorage.setItem("go_docs_dark", n ? "1" : "0"); return n; });
 
   const activeSection = SECTIONS.find(s => s.id === sectionId);
@@ -537,9 +559,24 @@ export default function DocsPage() {
     setArticleId(aid);
     setView("article");
     setSidebarOpen(false);
+    setCopied(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    router.replace(`/docs?s=${sid}&a=${aid}`, { scroll: false });
   };
-  const goHome = () => { setView("home"); setSectionId(null); setArticleId(null); };
+
+  const copyLink = () => {
+    const url = `${window.location.origin}/docs?s=${sectionId}&a=${articleId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  const goHome = () => {
+    setView("home");
+    setSectionId(null);
+    setArticleId(null);
+    router.replace("/docs", { scroll: false });
+  };
 
   // Search filter
   const searchResults = search.trim().length > 1
@@ -782,7 +819,22 @@ export default function DocsPage() {
                       )}
                     </div>
                   </div>
-                  <h1 className="text-[32px] font-bold leading-tight md:text-[36px]" style={{ color: textPrim }}>{activeArticle.title}</h1>
+                  <div className="flex items-start justify-between gap-4">
+                    <h1 className="text-[32px] font-bold leading-tight md:text-[36px]" style={{ color: textPrim }}>{activeArticle.title}</h1>
+                    <button
+                      onClick={copyLink}
+                      title="Copy link to this page"
+                      className="mt-2 flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition"
+                      style={{
+                        background: copied ? (dark ? "rgba(47,143,69,0.15)" : "#f0f9f2") : (dark ? "rgba(255,255,255,0.06)" : "#f3f4f6"),
+                        color: copied ? "#2f8f45" : textMid,
+                        border: `1px solid ${copied ? (dark ? "rgba(47,143,69,0.3)" : "#c8e8ce") : border}`,
+                      }}
+                    >
+                      {copied ? <Check size={12} weight="bold" /> : <LinkIcon size={12} weight="bold" />}
+                      {copied ? "Copied!" : "Copy link"}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="prose-sm max-w-none">
@@ -880,5 +932,13 @@ export default function DocsPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function DocsPage() {
+  return (
+    <Suspense>
+      <DocsPageInner />
+    </Suspense>
   );
 }
