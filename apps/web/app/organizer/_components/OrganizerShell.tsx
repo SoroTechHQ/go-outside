@@ -84,7 +84,7 @@ function NavItem({ item, iconOnly }: { item: ShellItem; iconOnly: boolean }) {
 
   const Icon = item.icon;
 
-  const baseClass = `relative flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-all duration-150 ${
+  const baseClass = `relative flex w-full items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 ${
     isSoon
       ? "cursor-not-allowed opacity-40"
       : active
@@ -151,7 +151,7 @@ function ThemeToggle({ iconOnly }: { iconOnly: boolean }) {
 
   return (
     <button
-      className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+      className="flex w-full items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-[12px] font-medium text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
       onClick={toggle}
       type="button"
       title={iconOnly ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
@@ -173,12 +173,12 @@ function OrganizerSidebarProfile({
 
   if (iconOnly) {
     return (
-      <div className="mt-5 flex justify-center">
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--border-subtle)] bg-[var(--bg-card)]" title={organizer.name}>
+      <div className="mt-4 flex justify-center">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)]" title={organizer.name}>
           {organizer.logoUrl ? (
             <Image src={organizer.logoUrl} alt={organizer.name} fill className="object-cover" />
           ) : (
-            <span className="text-[14px] font-black text-[var(--brand)]">
+            <span className="text-[13px] font-black text-[var(--brand)]">
               {organizer.name.slice(0, 2).toUpperCase()}
             </span>
           )}
@@ -188,67 +188,45 @@ function OrganizerSidebarProfile({
   }
 
   return (
-    <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--border-subtle)] bg-[var(--bg-card)]">
+    <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)]">
             {organizer.logoUrl ? (
               <Image src={organizer.logoUrl} alt={organizer.name} fill className="object-cover" />
             ) : (
-              <span className="text-[14px] font-black text-[var(--brand)]">
+              <span className="text-[13px] font-black text-[var(--brand)]">
                 {organizer.name.slice(0, 2).toUpperCase()}
               </span>
             )}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+            <p className="truncate text-[13px] font-semibold leading-snug text-[var(--text-primary)]">
               {organizer.name}
             </p>
             <p className="text-[11px] text-[var(--text-tertiary)]">
-              {organizer.city} · {organizer.totalEvents} event{organizer.totalEvents !== 1 ? "s" : ""}
+              {organizer.city}{organizer.city && " · "}{organizer.totalEvents} event{organizer.totalEvents !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
         <Link
           href="/dashboard/profile"
-          className="shrink-0 rounded-full border border-[var(--border-subtle)] p-1.5 text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
+          className="shrink-0 rounded-lg border border-[var(--border-subtle)] p-1 text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
           title="Edit profile"
         >
-          <PencilSimple size={11} />
+          <PencilSimple size={10} />
         </Link>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-2 flex items-center gap-2">
         {organizer.verified ? (
           <OrganizerBadge compact />
         ) : (
-          <span className="inline-flex items-center rounded-full bg-[var(--bg-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-            Pending approval
+          <span className="inline-flex items-center rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+            Pending
           </span>
         )}
       </div>
-
-      {organizer.bio && (
-        <p className="mt-3 line-clamp-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          {organizer.bio}
-        </p>
-      )}
-
-      {organizer.socialLinks.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {organizer.socialLinks.slice(0, 3).map((link) => (
-            <a
-              key={link.label}
-              href={link.href.startsWith("http") ? link.href : `https://${link.href}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border border-[var(--border-subtle)] px-2.5 py-0.5 text-[10px] font-medium text-[var(--brand)] hover:underline"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -292,26 +270,26 @@ export function OrganizerShell({
             className="hidden h-full flex-col overflow-y-auto overflow-x-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-card)] md:flex"
             style={{ width: sidebarWidth, position: "relative", flexShrink: 0 }}
           >
-            <div className={`flex h-full flex-col ${iconOnly ? "px-2 py-5" : "p-5"}`}>
+            <div className={`flex h-full flex-col ${iconOnly ? "px-2 py-4" : "px-3 py-4"}`}>
               {/* Back to feed */}
               <Link
-                className={`mb-4 flex items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-medium text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)] ${iconOnly ? "justify-center" : ""}`}
+                className={`mb-3 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)] ${iconOnly ? "justify-center" : ""}`}
                 href="/home"
                 title={iconOnly ? "Back to feed" : undefined}
               >
-                <ArrowLeft size={14} weight="bold" />
+                <ArrowLeft size={13} weight="bold" />
                 {!iconOnly && "Back to feed"}
               </Link>
 
               {/* Brand header */}
-              <div className={`flex items-center gap-2.5 ${iconOnly ? "justify-center" : ""}`}>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)]/15">
-                  <span className="text-sm font-bold text-[var(--brand)]">G</span>
+              <div className={`flex items-center gap-2 ${iconOnly ? "justify-center" : "px-1"}`}>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--brand)]/15">
+                  <span className="text-[11px] font-bold text-[var(--brand)]">G</span>
                 </div>
                 {!iconOnly && (
-                  <div>
-                    <p className="text-[13px] font-bold text-[var(--text-primary)]">GoOutside</p>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)]">
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold leading-none text-[var(--text-primary)]">GoOutside</p>
+                    <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
                       Organizer Studio
                     </p>
                   </div>
@@ -319,19 +297,19 @@ export function OrganizerShell({
               </div>
 
               {/* Organizer identity card */}
-              <div className="mt-5">
+              <div className="mt-3">
                 {organizer ? (
                   <OrganizerSidebarProfile organizer={organizer} iconOnly={iconOnly} />
                 ) : (
                   !iconOnly && (
-                    <div className="rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4">
-                      <p className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{organizerName}</p>
-                      <div className="mt-2">
+                    <div className="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3">
+                      <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{organizerName}</p>
+                      <div className="mt-1.5">
                         {verified ? (
                           <OrganizerBadge compact />
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-[var(--bg-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                            Pending approval
+                          <span className="inline-flex items-center rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
+                            Pending
                           </span>
                         )}
                       </div>
@@ -342,46 +320,46 @@ export function OrganizerShell({
 
               {/* Next event or create CTA */}
               {!iconOnly && ownEvents.length > 0 && (
-                <div className="mt-4">
-                  <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                <div className="mt-3">
+                  <p className="px-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
                     Next up
                   </p>
                   <Link
                     href={`/organizer/events/${ownEvents[0]!.id}`}
-                    className="mt-2 flex items-center gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2.5 transition hover:border-[var(--brand)]/30"
+                    className="mt-1.5 flex items-center gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-2 transition hover:border-[var(--brand)]/30"
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--brand)]/12 text-[var(--brand)]">
-                      <CalendarBlank size={14} weight="fill" />
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[var(--brand)]/12 text-[var(--brand)]">
+                      <CalendarBlank size={13} weight="fill" />
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{ownEvents[0]!.title}</p>
+                      <p className="truncate text-[12px] font-semibold leading-snug text-[var(--text-primary)]">{ownEvents[0]!.title}</p>
                       <p className="text-[10px] text-[var(--text-tertiary)]">{ownEvents[0]!.date ?? "No date set"}</p>
                     </div>
                   </Link>
                 </div>
               )}
               {!iconOnly && ownEvents.length === 0 && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <Link
                     href="/organizer/events/new"
-                    className="flex items-center gap-2 rounded-[14px] border border-dashed border-[var(--border-subtle)] px-3 py-2.5 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
+                    className="flex items-center gap-2 rounded-[12px] border border-dashed border-[var(--border-subtle)] px-2.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
                   >
-                    <Plus size={13} weight="bold" />
+                    <Plus size={12} weight="bold" />
                     Create your first event
                   </Link>
                 </div>
               )}
 
               {/* Nav groups */}
-              <div className="mt-6 space-y-5">
+              <div className="mt-4 space-y-3">
                 {NAV_GROUPS.map((group) => (
                   <div key={group.label}>
                     {!iconOnly && (
-                      <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                      <p className="px-2 pb-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
                         {group.label}
                       </p>
                     )}
-                    <div className="mt-2 space-y-0.5">
+                    <div className="space-y-0.5">
                       {group.items.map((item) => (
                         <NavItem key={item.label} item={item} iconOnly={iconOnly} />
                       ))}
@@ -391,8 +369,8 @@ export function OrganizerShell({
               </div>
 
               {/* Dark mode toggle */}
-              <div className="mt-auto pt-6">
-                <div className="border-t border-[var(--border-subtle)] pt-4">
+              <div className="mt-auto pt-4">
+                <div className="border-t border-[var(--border-subtle)] pt-3">
                   <ThemeToggle iconOnly={iconOnly} />
                 </div>
               </div>
