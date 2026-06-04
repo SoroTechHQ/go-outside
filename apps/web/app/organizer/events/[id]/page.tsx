@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowSquareOut, ChartBar, ChatCircle } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowSquareOut, BookmarkSimple, ChartBar, ChatCircle, Heart, Star, Ticket, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { CopyLinkButton } from "./CopyLinkButton";
@@ -173,21 +173,20 @@ export default async function OrganizerEventDetailPage({
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
-          { label: "Tickets sold", value: ev.tickets_sold?.toLocaleString() ?? "0" },
-          { label: "Capacity", value: ev.total_capacity ? ev.total_capacity.toLocaleString() : "Unlimited" },
-          { label: "Revenue", value: formatMoney(totalRevenue) },
-          { label: "Saves", value: ev.saves_count?.toLocaleString() ?? "0" },
+          { label: "Tickets sold", value: ev.tickets_sold?.toLocaleString() ?? "0",                            accent: "#2f8f45", icon: <Ticket     size={16} weight="fill" /> },
+          { label: "Capacity",     value: ev.total_capacity ? ev.total_capacity.toLocaleString() : "Unlimited", accent: "#3b82f6", icon: <UsersThree size={16} weight="fill" /> },
+          { label: "Revenue",      value: formatMoney(totalRevenue),                                            accent: "#f59e0b", icon: <ChartBar   size={16} weight="fill" /> },
+          { label: "Saves",        value: ev.saves_count?.toLocaleString() ?? "0",                              accent: "#8b5cf6", icon: <BookmarkSimple size={16} weight="fill" /> },
         ].map((kpi) => (
-          <div
-            key={kpi.label}
-            className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 shadow-[0_4px_24px_rgba(5,12,8,0.08)]"
-          >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-              {kpi.label}
-            </p>
-            <p className="mt-2 text-[1.4rem] font-bold tabular-nums leading-none text-[var(--text-primary)]">
-              {kpi.value}
-            </p>
+          <div key={kpi.label} className="relative overflow-hidden rounded-[22px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_2px_12px_rgba(5,12,8,0.05)]">
+            <div className="h-[3px]" style={{ background: kpi.accent }} />
+            <div className="p-4">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: `${kpi.accent}1a`, color: kpi.accent }}>
+                {kpi.icon}
+              </span>
+              <p className="mt-3 text-[1.7rem] font-bold tabular-nums leading-none tracking-tight text-[var(--text-primary)]">{kpi.value}</p>
+              <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">{kpi.label}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -254,8 +253,10 @@ export default async function OrganizerEventDetailPage({
                   <div key={s.id} className="rounded-[16px] bg-[var(--bg-elevated)] p-4">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[13px] font-semibold text-[var(--text-primary)]">{name}</p>
-                      <span className="text-[12px] font-semibold text-amber-500">
-                        {"★".repeat(s.rating ?? 5)}
+                      <span className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} size={11} weight={i < (s.rating ?? 5) ? "fill" : "regular"} style={{ color: i < (s.rating ?? 5) ? "#f59e0b" : "var(--text-tertiary)" }} />
+                        ))}
                       </span>
                     </div>
                     <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
@@ -300,7 +301,10 @@ export default async function OrganizerEventDetailPage({
                         <p className="text-[11px] text-[var(--text-tertiary)]">{formatRelative(post.created_at)}</p>
                       </div>
                     </div>
-                    <span className="shrink-0 text-[12px] text-[var(--text-tertiary)]">♡ {post.like_count ?? 0}</span>
+                    <span className="flex shrink-0 items-center gap-1 text-[12px] text-[var(--text-tertiary)]">
+                      <Heart size={12} weight={(post.like_count ?? 0) > 0 ? "fill" : "regular"} style={{ color: (post.like_count ?? 0) > 0 ? "#f43f5e" : undefined }} />
+                      {post.like_count ?? 0}
+                    </span>
                   </div>
                   <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">{post.body}</p>
                 </div>

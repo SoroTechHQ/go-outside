@@ -34,26 +34,39 @@ export default async function OrganizerLivePage() {
   const liveEvents = (events ?? []) as { id: string; title: string }[];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
-      <div className="mb-8">
-        <h1 className="text-[2rem] font-bold tracking-[-0.04em] text-[var(--text-primary)]">
-          Live Attendees
-        </h1>
-        <p className="mt-1 text-[var(--text-secondary)]">
-          Real-time GPS presence of attendees at your events. Updates every 15 seconds.
-        </p>
+    <div>
+      {/* ── Hero header ──────────────────────────────────── */}
+      <div className="relative overflow-hidden border-b border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 md:p-7">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-[0.07]"
+          style={{ background: "radial-gradient(circle, var(--brand), transparent 70%)" }} />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.02]"
+          style={{ backgroundImage: "radial-gradient(var(--text-primary) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+        <div className="relative flex items-center gap-3">
+          <div className="relative flex h-3 w-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand)] opacity-60" />
+            <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--brand)]" />
+          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)]">Live</p>
+        </div>
+        <h1 className="relative mt-1 text-[1.5rem] font-bold tracking-tight text-[var(--text-primary)]">Live Attendees</h1>
+        <p className="relative mt-1 text-[13px] text-[var(--text-secondary)]">Real-time GPS presence at your events. Updates every 15 seconds.</p>
       </div>
 
-      {liveEvents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--home-border)] py-20">
-          <p className="text-[1.1rem] font-semibold text-[var(--text-secondary)]">No active events right now</p>
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Live data appears 3 hours before your event starts and ends 5 hours after it finishes.
-          </p>
-        </div>
-      ) : (
-        <LiveAttendeesClient events={liveEvents} />
-      )}
+      <div className="p-5 md:p-7">
+        {liveEvents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[22px] border border-dashed border-[var(--border-subtle)] bg-[var(--bg-card)] py-20 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--bg-muted)]" style={{ color: "var(--text-tertiary)" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="10" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+            </span>
+            <p className="mt-4 text-[15px] font-semibold text-[var(--text-primary)]">No active events right now</p>
+            <p className="mt-2 max-w-xs text-[13px] text-[var(--text-secondary)]">
+              Live data appears 3 hours before your event starts and ends 5 hours after it finishes.
+            </p>
+          </div>
+        ) : (
+          <LiveAttendeesClient events={liveEvents} />
+        )}
+      </div>
     </div>
   );
 }
