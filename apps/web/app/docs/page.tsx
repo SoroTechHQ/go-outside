@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -603,9 +604,7 @@ function DocsPageInner() {
 
           {/* Logo */}
           <button onClick={goHome} className="flex shrink-0 items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: "#0f110f" }}>
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="3" fill="#2f8f45"/><circle cx="7" cy="7" r="6" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/></svg>
-            </span>
+            <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} style={{ objectFit: "contain", borderRadius: "6px" }} />
             <span className="text-[15px] font-bold tracking-tight" style={{ color: textPrim }}>GoOutside</span>
             <span className="rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide" style={{ background: dark ? "rgba(47,143,69,0.15)" : "#f0f9f2", color: "#2f8f45", border: `1px solid ${dark ? "rgba(47,143,69,0.3)" : "#c8e8ce"}` }}>Docs</span>
           </button>
@@ -918,9 +917,7 @@ function DocsPageInner() {
       <footer className="mt-8 border-t px-6 py-8" style={{ borderColor: border, background: bgSidebar }}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
           <button onClick={goHome} className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "#0f110f" }}>
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="3" fill="#2f8f45"/><circle cx="7" cy="7" r="6" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/></svg>
-            </span>
+            <Image src="/logo-mini.png" alt="GoOutside" width={24} height={24} style={{ objectFit: "contain", borderRadius: "5px" }} />
             <span className="text-[13px] font-semibold" style={{ color: textPrim }}>GoOutside Docs</span>
           </button>
           <div className="flex items-center gap-4 text-[12px]" style={{ color: textMid }}>

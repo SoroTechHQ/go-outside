@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, ShareNetwork, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import type { AttendeeTicket } from "@gooutside/demo-data";
@@ -122,7 +123,7 @@ export default async function WalletTicketPage({
 
             {/* ── Header: Brand + Verified ── */}
             <div className="relative flex items-start justify-between" data-atropos-offset="1">
-              <span className="text-sm font-bold tracking-tight text-white">GoOutside</span>
+              <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} style={{ objectFit: "contain", filter: "brightness(0) invert(1)", opacity: 0.9 }} />
               <span
                 className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${s.badge} ${s.badgeText}`}
               >

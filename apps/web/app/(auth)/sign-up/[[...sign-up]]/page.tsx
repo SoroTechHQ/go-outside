@@ -1,4 +1,5 @@
 import { SignUp } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 
 const clerkAppearance = {
@@ -47,14 +48,8 @@ export default function SignUpPage() {
   return (
     <>
       {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: "9px", justifyContent: "center", marginBottom: "20px" }}>
-        <span style={{ width: "32px", height: "32px", borderRadius: "9px", background: "#0f110f", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-            <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.5" />
-          </svg>
-        </span>
-        <span style={{ fontSize: "18px", fontWeight: 800, color: "#0f110f", letterSpacing: "-0.03em" }}>GoOutside</span>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+        <Image src="/logo-full.png" alt="GoOutside" width={140} height={40} style={{ objectFit: "contain" }} priority />
       </div>
 
       {/* ── Organizer CTA — prominent card at top ── */}

@@ -57,12 +57,10 @@ export function LocationAutocomplete({
   const [ready,    setReady]    = useState(false);
   const [focused,  setFocused]  = useState(false);
 
-  // Sync controlled value → display text
   useEffect(() => {
     setInputVal(value?.city_name ?? "");
   }, [value]);
 
-  // Load Google Places and attach Autocomplete
   useEffect(() => {
     let cancelled = false;
     ensureOptions();
@@ -178,18 +176,13 @@ export function LocationAutocomplete({
     );
   }
 
-  const baseCls =
-    "w-full rounded-[12px] border bg-[#131A13] px-4 py-3 text-[14px] text-[#F5FFF0] placeholder-[#3a5a3a] outline-none transition";
-  const borderCls = focused
-    ? "border-[rgba(95,191,42,0.4)] ring-1 ring-[rgba(95,191,42,0.1)]"
-    : "border-[rgba(95,191,42,0.12)]";
-
   return (
     <div className={`space-y-2.5 ${className}`}>
       <div className="relative">
         <MapPin
           size={15}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3a5a3a]"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2"
+          style={{ color: "var(--ob-text-faint)" }}
         />
         <input
           ref={inputRef}
@@ -199,14 +192,25 @@ export function LocationAutocomplete({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          className={`${baseCls} ${borderCls} pl-9 pr-8`}
           autoComplete="off"
+          className="w-full rounded-[12px] border px-4 py-3 pl-9 pr-8 text-[14px] outline-none transition"
+          style={{
+            background:  "var(--ob-input-bg)",
+            color:       "var(--ob-input-text)",
+            borderColor: focused ? "var(--ob-input-focus-border)" : "var(--ob-input-border)",
+            boxShadow:   focused ? "0 0 0 3px var(--ob-input-focus-ring)" : "none",
+          }}
         />
+        {/* placeholder colour via global rule — inline style not supported for ::placeholder */}
+        <style>{`
+          input[data-ob-loc]::placeholder { color: var(--ob-input-placeholder); }
+        `}</style>
         {inputVal && (
           <button
             type="button"
             onClick={clear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#3a5a3a] transition hover:text-[#6B8C6B]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 transition"
+            style={{ color: "var(--ob-text-faint)" }}
           >
             <X size={13} />
           </button>
@@ -220,7 +224,12 @@ export function LocationAutocomplete({
               key={city.name}
               type="button"
               onClick={() => void handleShortcut(city)}
-              className="rounded-full border border-[rgba(95,191,42,0.12)] bg-[rgba(255,255,255,0.03)] px-3 py-1 text-[11px] text-[#6B8C6B] transition hover:border-[rgba(95,191,42,0.3)] hover:text-[#5FBF2A]"
+              className="rounded-full border px-3 py-1 text-[11px] transition hover:opacity-80"
+              style={{
+                background:  "var(--ob-chip-bg)",
+                borderColor: "var(--ob-chip-border)",
+                color:       "var(--ob-chip-text)",
+              }}
             >
               {city.name}
             </button>
@@ -229,7 +238,9 @@ export function LocationAutocomplete({
       )}
 
       {value && (
-        <p className="text-[11px] text-[#4A6A4A]">{value.formatted_address}</p>
+        <p className="text-[11px]" style={{ color: "var(--ob-text-faint)" }}>
+          {value.formatted_address}
+        </p>
       )}
     </div>
   );

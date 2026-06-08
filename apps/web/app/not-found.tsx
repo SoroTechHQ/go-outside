@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -167,15 +168,8 @@ function Content() {
 
       {/* mini logo */}
       <div className="relative z-10 flex items-center justify-center pt-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: P.dark }}>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="7" r="3" fill={P.lime}/>
-              <circle cx="7" cy="7" r="6" stroke={P.cream} strokeWidth="1.5"/>
-            </svg>
-          </span>
-          <span style={{ fontFamily: ff, fontSize: 16, fontWeight: 600, color: P.dark }}>GoOutside</span>
+        <Link href="/">
+          <Image src="/logo-full.png" alt="GoOutside" width={120} height={34} style={{ objectFit: "contain" }} />
         </Link>
       </div>
 

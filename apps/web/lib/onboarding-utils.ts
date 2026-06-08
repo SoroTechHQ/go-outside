@@ -70,6 +70,7 @@ export const ONBOARDING_STEPS: Record<string, number> = {
   "/onboarding/history":   3,
   "/onboarding/interests": 4,
   "/onboarding/pulse":     5,
+  "/onboarding/org-setup": 5, // organizer-only post-step; treated as step 5 (100% progress)
 };
 
 export const STEP_ROUTES: Record<number, string> = {

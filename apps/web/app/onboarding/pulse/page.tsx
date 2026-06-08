@@ -101,8 +101,9 @@ export default function OnboardingPulsePage() {
       return;
     }
 
+    const body = await res.json() as { ok: boolean; redirectTo?: string };
     clearOnboardingDraft();
-    window.location.href = "/home";
+    window.location.href = body.redirectTo ?? "/home";
   }
 
   return (
@@ -240,11 +241,12 @@ export default function OnboardingPulsePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-2 flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.3)] transition disabled:opacity-50"
+              className="mt-2 flex h-[48px] w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-white transition disabled:opacity-50 active:scale-[0.98]"
+              style={{ background: "var(--brand)", boxShadow: "0 4px 16px rgba(47,143,69,0.22)" }}
             >
               {submitting ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#020702] border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Entering…
                 </>
               ) : (

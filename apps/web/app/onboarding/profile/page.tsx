@@ -147,7 +147,7 @@ export default function OnboardingProfilePage() {
   if (!isLoaded || recovering) {
     return (
       <div className="flex min-h-[30vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5FBF2A] border-t-transparent" />
+        <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--ob-progress-track)] border-t-[var(--brand)]" />
       </div>
     );
   }
@@ -155,24 +155,22 @@ export default function OnboardingProfilePage() {
   return (
     <div>
       <div className="mx-auto w-full max-w-lg">
-        {/* Avatar */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="relative">
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-full ring-2 ring-[rgba(95,191,42,0.3)]"
-              style={{ background: "var(--ob-stat-bg)" }}
-            >
-              <UserCircle size={52} weight="duotone" className="text-[#5FBF2A]" />
-            </div>
+        {/* Header */}
+        <div className="mb-8 flex flex-col items-center gap-4">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: "var(--ob-stat-bg)", border: "1px solid var(--ob-stat-border)" }}
+          >
+            <UserCircle size={36} weight="regular" style={{ color: "var(--ob-text-muted)" }} />
           </div>
           <div className="text-center">
             <h1
-              className="text-[28px] font-normal italic"
-              style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
+              className="text-[26px] font-semibold tracking-tight"
+              style={{ color: "var(--ob-heading)" }}
             >
               Is this you?
             </h1>
-            <p className="mt-1 text-[14px] font-light" style={{ color: "var(--ob-text-muted)" }}>
+            <p className="mt-1.5 text-[14px]" style={{ color: "var(--ob-text-muted)" }}>
               Confirm your details before we personalise your experience
             </p>
           </div>
@@ -256,11 +254,12 @@ export default function OnboardingProfilePage() {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#5FBF2A] text-[14px] font-bold text-[#020702] shadow-[0_0_18px_rgba(95,191,42,0.25)] transition disabled:opacity-50"
+            className="mt-2 flex h-[48px] w-full items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-white transition disabled:opacity-50 active:scale-[0.98]"
+            style={{ background: "var(--brand)", boxShadow: "0 4px 16px rgba(47,143,69,0.22)" }}
           >
             {submitting ? (
               <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#020702] border-t-transparent" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                 Saving…
               </span>
             ) : (
