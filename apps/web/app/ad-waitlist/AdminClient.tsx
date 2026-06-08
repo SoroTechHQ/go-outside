@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 type Signup = {
   id: string;
@@ -48,15 +49,7 @@ export function PasswordGate() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-[#0f110f] flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="4" fill="#2f8f45" />
-                <circle cx="9" cy="9" r="7.5" stroke="white" strokeWidth="1.5" />
-              </svg>
-            </span>
-            <span className="text-[17px] font-bold tracking-tight text-[#0f110f]">GoOutside</span>
-          </div>
+          <Image src="/logo-full.png" alt="GoOutside" width={130} height={38} style={{ objectFit: "contain" }} />
         </div>
 
         {/* Card */}
@@ -213,12 +206,7 @@ export function SignupsTable({ initialSignups }: { initialSignups: Signup[] }) {
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded bg-[#0f110f] flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-                  <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.2" />
-                </svg>
-              </span>
+              <Image src="/logo-mini.png" alt="GoOutside" width={24} height={24} style={{ objectFit: "contain" }} />
               <span className="text-[14px] font-semibold text-[#0f110f]">GoOutside</span>
             </div>
             <span className="text-[#d8d8d8]">/</span>

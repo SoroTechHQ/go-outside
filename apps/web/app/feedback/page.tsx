@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bug,
@@ -258,12 +259,7 @@ export default function FeedbackPage() {
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10" style={{ borderBottom: `1px solid ${border}` }}>
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: dark ? "#0f110f" : "#0f110f", border: `1px solid ${dark ? "rgba(95,191,42,0.3)" : "rgba(0,0,0,0.1)"}` }}>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-              <circle cx="7" cy="7" r="6" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-            </svg>
-          </span>
+          <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} style={{ objectFit: "contain", borderRadius: "6px" }} />
           <span className="text-[15px] font-bold tracking-tight" style={{ color: textPrim }}>GoOutside</span>
         </Link>
 

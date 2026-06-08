@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ArrowRight, Lightning, Ticket, Envelope } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -69,12 +70,7 @@ export default function AlphaPage() {
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-5 md:px-10">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0f110f]" style={{ border: "1px solid rgba(95,191,42,0.3)" }}>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="7" r="3" fill="#5FBF2A" />
-              <circle cx="7" cy="7" r="6" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-            </svg>
-          </span>
+          <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} style={{ objectFit: "contain", borderRadius: "6px", filter: "brightness(0) invert(1)" }} />
           <span className="text-[15px] font-bold tracking-tight text-white">GoOutside</span>
         </Link>
         <Link href="/sign-in" className="text-[13px] font-medium text-white/40 transition hover:text-white/70">

@@ -1,5 +1,7 @@
 import { SignIn } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
+import { Buildings, ArrowRight } from "@phosphor-icons/react";
 
 const clerkAppearance = {
   variables: {
@@ -47,14 +49,8 @@ export default function SignInPage() {
   return (
     <>
       {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: "9px", justifyContent: "center", marginBottom: "24px" }}>
-        <span style={{ width: "32px", height: "32px", borderRadius: "9px", background: "#0f110f", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-            <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.5" />
-          </svg>
-        </span>
-        <span style={{ fontSize: "18px", fontWeight: 800, color: "#0f110f", letterSpacing: "-0.03em" }}>GoOutside</span>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
+        <Image src="/logo-full.png" alt="GoOutside" width={140} height={40} style={{ objectFit: "contain" }} priority />
       </div>
 
       {/* ── Organizer CTA — prominent card at top ── */}
@@ -76,22 +72,21 @@ export default function SignInPage() {
         <div style={{ position: "absolute", top: "-20px", right: "-20px", width: "80px", height: "80px", borderRadius: "50%", background: "rgba(95,191,42,0.12)", filter: "blur(20px)", pointerEvents: "none" }} />
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 1 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px" }}>
-              <span style={{ fontSize: "16px" }}>🎪</span>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: "#5FBF2A", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                For Organizers
-              </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(95,191,42,0.15)", border: "1px solid rgba(95,191,42,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Buildings size={18} color="#5FBF2A" weight="regular" />
             </div>
-            <p style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>
-              Planning to host events?
-            </p>
-            <p style={{ margin: "3px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>
-              Create your organizer account — list events, sell tickets, grow your audience.
-            </p>
+            <div>
+              <p style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>
+                Planning to host events?
+              </p>
+              <p style={{ margin: "3px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>
+                Create your organizer account — list events, sell tickets, grow your audience.
+              </p>
+            </div>
           </div>
-          <div style={{ marginLeft: "12px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", borderRadius: "50%", background: "rgba(95,191,42,0.15)", border: "1px solid rgba(95,191,42,0.3)" }}>
-            <span style={{ fontSize: "14px", color: "#5FBF2A" }}>→</span>
+          <div style={{ marginLeft: "12px", flexShrink: 0 }}>
+            <ArrowRight size={16} color="rgba(95,191,42,0.7)" weight="bold" />
           </div>
         </div>
       </Link>

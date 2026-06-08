@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle, WarningCircle } from "@phosphor-icons/react";
 import type { AttendeeTicket, EventItem } from "@gooutside/demo-data";
@@ -53,7 +54,7 @@ function FullTicketCard({ ticket, event, cardIndex, totalCards }: {
       <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-black/[0.08]" />
 
       <div className="relative flex items-start justify-between">
-        <span className="text-sm font-bold tracking-tight text-white">GoOutside</span>
+        <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} style={{ objectFit: "contain", filter: "brightness(0) invert(1)", opacity: 0.9 }} />
         <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${s.badge} ${s.badgeText}`}>
           <CheckCircle size={10} weight="fill" /> Verified
         </span>

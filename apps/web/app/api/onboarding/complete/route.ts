@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
             onboardingStep:     5,
           },
         });
-        const res = NextResponse.json({ ok: true });
+        const adoptedRole = (clerk.unsafeMetadata as Record<string, unknown> | null)?.role;
+        const adoptedRedirect = adoptedRole === "organizer" ? "/onboarding/org-setup" : "/home";
+        const res = NextResponse.json({ ok: true, redirectTo: adoptedRedirect });
         res.cookies.set("go_done", "1", { ...COOKIE_OPTS, httpOnly: true });
         const prefs = {
           city:      (adopted.location_city as string) ?? "",
@@ -108,8 +110,12 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // If the user signed up as an organizer, send them to the org setup step
+  const intendedRole = (clerk.unsafeMetadata as Record<string, unknown> | null)?.role;
+  const redirectTo = intendedRole === "organizer" ? "/onboarding/org-setup" : "/home";
+
   // Build response and set cookies
-  const res = NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true, redirectTo });
 
   // go_done — HttpOnly, read by /home server component to skip Clerk round-trip
   res.cookies.set("go_done", "1", { ...COOKIE_OPTS, httpOnly: true });

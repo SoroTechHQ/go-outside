@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useId } from "react";
+import Image from "next/image";
 import {
   Compass,
   UsersThree,
@@ -166,13 +167,7 @@ export default function WaitlistPage() {
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#ececec]">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-md bg-[#0f110f] flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="3" fill="#2f8f45" />
-                <circle cx="7" cy="7" r="6" stroke="white" strokeWidth="1.5" />
-              </svg>
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight">GoOutside</span>
+            <Image src="/logo-full.png" alt="GoOutside" width={110} height={32} style={{ objectFit: "contain" }} />
           </div>
           <div className="hidden sm:flex items-center gap-6">
             <a href="#overview" className="text-[13px] text-[#6f6f6f] hover:text-[#0f110f] transition-colors">Overview</a>
@@ -503,13 +498,7 @@ export default function WaitlistPage() {
       <footer className="border-t border-[#ececec] py-8 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded bg-[#0f110f] flex items-center justify-center">
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                <circle cx="5.5" cy="5.5" r="2.2" fill="#2f8f45" />
-                <circle cx="5.5" cy="5.5" r="4.5" stroke="white" strokeWidth="1" />
-              </svg>
-            </span>
-            <span className="text-[13px] font-semibold">GoOutside</span>
+            <Image src="/logo-full.png" alt="GoOutside" width={90} height={26} style={{ objectFit: "contain" }} />
           </div>
           <div className="flex items-center gap-3">
             {[

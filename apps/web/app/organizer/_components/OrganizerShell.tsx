@@ -283,9 +283,7 @@ export function OrganizerShell({
 
               {/* Brand header */}
               <div className={`flex items-center gap-2 ${iconOnly ? "justify-center" : "px-1"}`}>
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--brand)]/15">
-                  <span className="text-[11px] font-bold text-[var(--brand)]">G</span>
-                </div>
+                <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} className="shrink-0" style={{ objectFit: "contain", borderRadius: "6px" }} />
                 {!iconOnly && (
                   <div className="min-w-0">
                     <p className="text-[12px] font-bold leading-none text-[var(--text-primary)]">GoOutside</p>

@@ -1,4 +1,5 @@
 import { SignUp } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 
 const clerkAppearance = {
@@ -66,12 +67,7 @@ export default function OrganizerSignUpPage() {
           {/* Logo + badge row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ width: "28px", height: "28px", borderRadius: "7px", background: "rgba(95,191,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(95,191,42,0.3)" }}>
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="3" fill="#5FBF2A" />
-                  <circle cx="7" cy="7" r="6" stroke="rgba(95,191,42,0.6)" strokeWidth="1.5" />
-                </svg>
-              </span>
+              <Image src="/logo-mini.png" alt="GoOutside" width={28} height={28} style={{ borderRadius: "7px", filter: "brightness(0) invert(1)" }} />
               <span style={{ fontSize: "15px", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>GoOutside</span>
             </div>
             <span style={{ fontSize: "10px", fontWeight: 700, color: "#5FBF2A", textTransform: "uppercase", letterSpacing: "0.12em", background: "rgba(95,191,42,0.12)", border: "1px solid rgba(95,191,42,0.25)", borderRadius: "100px", padding: "3px 10px" }}>
@@ -107,7 +103,7 @@ export default function OrganizerSignUpPage() {
 
       <SignUp
         appearance={clerkAppearance}
-        forceRedirectUrl="/organizer"
+        forceRedirectUrl="/onboarding/profile"
         initialValues={{ unsafeMetadata: { role: "organizer" } } as Record<string, unknown>}
       />
 
