@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
   const csrf = enforceSameOrigin(req);
   if (csrf) return csrf;
 
-  const body = await req.json() as Record<string, unknown>;
+  let body: Record<string, unknown> = {};
+  try { body = await req.json() as Record<string, unknown>; } catch { /* empty body */ }
   const orgName      = typeof body.organization_name === "string" ? body.organization_name.trim() : "";
   const orgBio       = typeof body.bio === "string" ? body.bio.trim() : "";
   const primaryScene = typeof body.primary_scene === "string" ? body.primary_scene.trim() : null;
