@@ -2,15 +2,25 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
+  ArrowUp,
   CalendarBlank,
-  Clock,
+  Copy,
+  MagnifyingGlass,
   PaperPlaneTilt,
   Sparkle,
+  TrendUp,
+  Users,
+  CurrencyCircleDollar,
+  Check,
+  ArrowClockwise,
 } from "@phosphor-icons/react";
+import { cn } from "../../lib/utils";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type AiEvent = {
   id?: string;
@@ -19,10 +29,8 @@ type AiEvent = {
   href?: string;
   banner_url?: string | null;
   start_datetime?: string | null;
-  venue?: string | null;
   venue_name?: string | null;
   city?: string | null;
-  category?: string | null;
   category_name?: string | null;
   price_label?: string | null;
   ticket_price_ghs?: number | null;
@@ -42,6 +50,7 @@ type ChatMessage = {
   content: string;
   picks?: AiPick[];
   followUps?: string[];
+  toolNamesUsed?: string[];
   pending?: boolean;
 };
 
@@ -51,6 +60,7 @@ type StoredMessage = {
   content: string | null;
   picks: AiPick[] | null;
   follow_ups: string[] | null;
+  tool_names_used?: string[] | null;
 };
 
 type AskResponse = {
@@ -58,13 +68,31 @@ type AskResponse = {
   message: string;
   picks: AiPick[];
   followUps: string[];
+  tool_names_used?: string[];
 };
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const STARTERS = [
-  "What should I do tonight in Accra?",
-  "Find events under GHS 100 this weekend",
-  "Show me chill places with music",
+  { label: "What's happening tonight in Accra?", icon: CalendarBlank },
+  { label: "Events under GHS 100 this weekend", icon: CurrencyCircleDollar },
+  { label: "Live music near Osu", icon: TrendUp },
+  { label: "What are my friends going to?", icon: Users },
+  { label: "Free events in Accra", icon: Sparkle },
+  { label: "What's trending right now", icon: MagnifyingGlass },
 ];
+
+const TOOL_LABELS: Record<string, string> = {
+  search_events: "Searched events",
+  get_budget_options: "Checked budget",
+  get_trending_events: "Got trending",
+  get_user_profile: "Loaded profile",
+  get_event_details: "Got event details",
+  get_friends_activity: "Checked friends",
+  get_organizer_events: "Found organizer",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso?: string | null) {
   if (!iso) return null;
@@ -81,129 +109,164 @@ function eventHref(event: AiEvent | null, fallbackId: string) {
   return `/events/${fallbackId}`;
 }
 
-function EventPickCard({ pick }: { pick: AiPick }) {
-  const event = pick.event;
-  const date = formatDate(event?.start_datetime);
-  const venue = event?.venue_name ?? event?.venue ?? event?.city ?? "GoOutside";
-  const price = event?.price_label ?? (event?.ticket_price_ghs ? `GHS ${event.ticket_price_ghs}` : "View details");
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function EventCard({ pick }: { pick: AiPick }) {
+  const ev = pick.event;
+  const date = formatDate(ev?.start_datetime);
+  const venue = ev?.venue_name ?? ev?.city ?? null;
+  const price = ev?.price_label ?? (ev?.ticket_price_ghs ? `GHS ${ev.ticket_price_ghs}` : null);
 
   return (
     <Link
-      className="group grid grid-cols-[64px_1fr_auto] gap-3 rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 text-left transition hover:border-[var(--brand)]/45 hover:bg-[var(--bg-card)]"
-      href={eventHref(event, pick.event_id)}
+      className="group flex items-start gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/40 hover:bg-[var(--bg-card)]"
+      href={eventHref(ev, pick.event_id)}
     >
-      <div className="relative h-16 w-16 overflow-hidden rounded-[14px] bg-[var(--bg-muted)]">
-        {event?.banner_url ? (
-          <Image
-            alt={event.title ?? pick.title}
-            className="object-cover"
-            fill
-            sizes="64px"
-            src={event.banner_url}
-          />
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-[var(--bg-muted)]">
+        {ev?.banner_url ? (
+          <Image alt={ev.title ?? pick.title} className="object-cover" fill sizes="48px" src={ev.banner_url} />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[var(--brand)]">
-            <Sparkle size={20} weight="fill" />
+          <div className="flex h-full w-full items-center justify-center">
+            <Sparkle size={16} weight="fill" className="text-[var(--brand)]" />
           </div>
         )}
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-[13px] font-bold text-[var(--text-primary)]">
-          {event?.title ?? pick.title}
-        </p>
-        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[var(--text-tertiary)]">
-          {date ? (
-            <span className="inline-flex items-center gap-1">
-              <CalendarBlank size={11} weight="fill" />
-              {date}
-            </span>
-          ) : null}
-          <span className="truncate">{venue}</span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{ev?.title ?? pick.title}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--text-tertiary)]">
+          {date && <span className="inline-flex items-center gap-1"><CalendarBlank size={10} weight="fill" />{date}</span>}
+          {venue && <span className="truncate">{venue}</span>}
+          {price && <span className="font-semibold text-[var(--brand)]">{price}</span>}
         </div>
-        <p className="mt-1 text-[12px] font-semibold text-[var(--brand)]">{price}</p>
-        <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-          {pick.reason}
-        </p>
+        {pick.reason && (
+          <p className="mt-1 line-clamp-1 text-[11px] text-[var(--text-secondary)]">{pick.reason}</p>
+        )}
       </div>
-      <ArrowRight
-        className="self-center text-[var(--text-tertiary)] transition group-hover:text-[var(--brand)]"
-        size={16}
-        weight="bold"
-      />
+      <ArrowRight size={14} weight="bold" className="mt-0.5 shrink-0 text-[var(--text-tertiary)] transition group-hover:text-[var(--brand)]" />
     </Link>
   );
 }
 
 function TypingDots() {
   return (
-    <span className="inline-flex items-center gap-1 py-1">
+    <span className="inline-flex items-center gap-1">
       {[0, 1, 2].map((i) => (
         <span
-          className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
           key={i}
-          style={{
-            animation: "ai-dot-bounce 1.05s ease-in-out infinite",
-            animationDelay: `${i * 0.16}s`,
-          }}
+          className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
+          style={{ animation: "ai-dot 1.05s ease-in-out infinite", animationDelay: `${i * 0.16}s` }}
         />
       ))}
     </span>
   );
 }
 
-function Bubble({ message, onFollowUp }: { message: ChatMessage; onFollowUp: (text: string) => void }) {
-  if (message.role === "user") {
-    return (
-      <div className="flex justify-end">
-        <div className="max-w-[82%] rounded-[20px] rounded-tr-md bg-[var(--brand)] px-4 py-3 text-white shadow-[0_10px_26px_rgba(var(--brand-rgb),0.22)]">
-          <p className="text-[13px] font-medium leading-6">{message.content}</p>
-        </div>
-      </div>
-    );
-  }
-
+function CopyBtn({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
   return (
-    <div className="flex gap-3">
-      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white">
-        <Sparkle size={15} weight="fill" />
+    <button
+      className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
+      onClick={async () => { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1400); }}
+      type="button"
+      title="Copy"
+    >
+      {done ? <Check size={11} weight="bold" className="text-[var(--brand)]" /> : <Copy size={11} weight="bold" />}
+    </button>
+  );
+}
+
+function UserBubble({ content }: { content: string }) {
+  return (
+    <div className="flex justify-end">
+      <div className="max-w-[80%] rounded-[18px] rounded-tr-[5px] bg-[var(--brand)] px-4 py-2.5 text-white">
+        <p className="text-[13px] leading-[1.65]">{content}</p>
       </div>
-      <div className="min-w-0 flex-1 space-y-3">
-        <div className="max-w-[92%] rounded-[20px] rounded-tl-md border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3">
+    </div>
+  );
+}
+
+function AssistantBubble({
+  message,
+  onFollowUp,
+  onRetry,
+}: {
+  message: ChatMessage;
+  onFollowUp: (text: string) => void;
+  onRetry?: () => void;
+}) {
+  return (
+    <div className="space-y-2.5">
+      {/* Tool badges */}
+      {message.toolNamesUsed?.length ? (
+        <div className="flex flex-wrap gap-1.5 pl-1">
+          {message.toolNamesUsed.map((t) => (
+            <span
+              key={t}
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-dim)] px-2 py-0.5 text-[10px] font-semibold text-[var(--brand)]"
+            >
+              <Sparkle size={8} weight="fill" />
+              {TOOL_LABELS[t] ?? t.replace(/_/g, " ")}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Message bubble */}
+      <div className="group relative">
+        <div className="rounded-[18px] rounded-tl-[5px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3">
           {message.pending ? (
             <TypingDots />
           ) : (
-            <p className="whitespace-pre-wrap text-[13px] leading-6 text-[var(--text-primary)]">
+            <p className="whitespace-pre-wrap text-[13px] leading-[1.75] text-[var(--text-primary)]">
               {message.content}
             </p>
           )}
         </div>
 
-        {message.picks?.length ? (
-          <div className="grid gap-2">
-            {message.picks.map((pick) => (
-              <EventPickCard key={pick.event_id} pick={pick} />
-            ))}
-          </div>
-        ) : null}
-
-        {message.followUps?.length ? (
-          <div className="flex flex-wrap gap-2">
-            {message.followUps.map((followUp) => (
+        {!message.pending && (
+          <div className="absolute -bottom-5 left-1 flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
+            <CopyBtn text={message.content} />
+            {onRetry && (
               <button
-                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/45 hover:text-[var(--text-primary)]"
-                key={followUp}
-                onClick={() => onFollowUp(followUp)}
+                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
+                onClick={onRetry}
                 type="button"
+                title="Retry"
               >
-                {followUp}
+                <ArrowClockwise size={11} weight="bold" />
               </button>
-            ))}
+            )}
           </div>
-        ) : null}
+        )}
       </div>
+
+      {/* Event picks */}
+      {message.picks?.length ? (
+        <div className="grid gap-2">
+          {message.picks.map((p) => <EventCard key={p.event_id} pick={p} />)}
+        </div>
+      ) : null}
+
+      {/* Follow-ups */}
+      {message.followUps?.length ? (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {message.followUps.map((f) => (
+            <button
+              key={f}
+              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[11px] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--text-primary)]"
+              onClick={() => onFollowUp(f)}
+              type="button"
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export function AICoreChat({
   activeChatId,
@@ -219,213 +282,220 @@ export function AICoreChat({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastUserMsg = useRef("");
+
+  useEffect(() => { setChatId(activeChatId ?? null); }, [activeChatId]);
 
   useEffect(() => {
-    setChatId(activeChatId ?? null);
-  }, [activeChatId]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadChat(id: string) {
-      const res = await fetch(`/api/ai/chats/${id}`);
-      if (!res.ok) return;
-      const data = (await res.json()) as { messages: StoredMessage[] };
-      if (cancelled) return;
-      setMessages(
-        data.messages
-          .filter((message) => message.role === "user" || message.role === "assistant")
-          .map((message) => ({
-            id: message.id,
-            role: message.role as "user" | "assistant",
-            content: message.content ?? "",
-            picks: message.picks ?? undefined,
-            followUps: message.follow_ups ?? undefined,
-          })),
-      );
-    }
-
+    let dead = false;
     if (activeChatId) {
-      loadChat(activeChatId).catch(() => undefined);
+      fetch(`/api/ai/chats/${activeChatId}`)
+        .then((r) => r.json())
+        .then((data: { messages: StoredMessage[] }) => {
+          if (dead) return;
+          setMessages(
+            data.messages
+              .filter((m) => m.role === "user" || m.role === "assistant")
+              .map((m) => ({
+                id: m.id,
+                role: m.role as "user" | "assistant",
+                content: m.content ?? "",
+                picks: m.picks ?? undefined,
+                followUps: m.follow_ups ?? undefined,
+                toolNamesUsed: m.tool_names_used ?? undefined,
+              })),
+          );
+        })
+        .catch(() => undefined);
     } else {
       setMessages([]);
     }
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { dead = true; };
   }, [activeChatId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
-  const hasMessages = messages.length > 0;
-  const shellClass = useMemo(
-    () =>
-      compact
-        ? "h-[540px] max-h-[calc(100svh-140px)]"
-        : "h-[calc(100svh-170px)] min-h-[560px]",
-    [compact],
-  );
+  // auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
-  const sendMessage = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || loading) return;
+  const sendMessage = useCallback(async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
 
-      const pendingId = `pending-${Date.now()}`;
-      setMessages((prev) => [
-        ...prev,
-        { id: `user-${Date.now()}`, role: "user", content: trimmed },
-        { id: pendingId, role: "assistant", content: "", pending: true },
-      ]);
-      setInput("");
-      setLoading(true);
+    lastUserMsg.current = trimmed;
+    const pendingId = `p-${Date.now()}`;
 
-      try {
-        const res = await fetch("/api/ai/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed, chat_id: chatId ?? undefined }),
-        });
-        const data = (await res.json()) as AskResponse;
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "user", content: trimmed },
+      { id: pendingId, role: "assistant", content: "", pending: true },
+    ]);
+    setInput("");
+    setLoading(true);
 
-        if (data.chat_id && data.chat_id !== chatId) {
-          setChatId(data.chat_id);
-          onChatIdChange?.(data.chat_id);
-        }
+    try {
+      const res = await fetch("/api/ai/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed, chat_id: chatId ?? undefined }),
+      });
+      const data = (await res.json()) as AskResponse;
 
-        setMessages((prev) =>
-          prev.map((message) =>
-            message.id === pendingId
-              ? {
-                  id: `assistant-${Date.now()}`,
-                  role: "assistant",
-                  content: data.message,
-                  picks: data.picks,
-                  followUps: data.followUps,
-                }
-              : message,
-          ),
-        );
-      } catch {
-        setMessages((prev) =>
-          prev.map((message) =>
-            message.id === pendingId
-              ? {
-                  id: `error-${Date.now()}`,
-                  role: "assistant",
-                  content: "I couldn't reach the AI right now. Check your Groq key and try again.",
-                }
-              : message,
-          ),
-        );
-      } finally {
-        setLoading(false);
+      if (data.chat_id && data.chat_id !== chatId) {
+        setChatId(data.chat_id);
+        onChatIdChange?.(data.chat_id);
       }
-    },
-    [chatId, loading, onChatIdChange],
-  );
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === pendingId
+            ? {
+                id: `a-${Date.now()}`,
+                role: "assistant" as const,
+                content: data.message,
+                picks: data.picks,
+                followUps: data.followUps,
+                toolNamesUsed: data.tool_names_used,
+              }
+            : m,
+        ),
+      );
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === pendingId
+            ? { id: `e-${Date.now()}`, role: "assistant" as const, content: "Something went wrong. Check your Groq API key and try again." }
+            : m,
+        ),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [chatId, loading, onChatIdChange]);
+
+  const retryLast = useCallback(() => {
+    if (!lastUserMsg.current) return;
+    setMessages((prev) => prev.slice(0, -2));
+    sendMessage(lastUserMsg.current);
+  }, [sendMessage]);
+
+  const hasMessages = messages.length > 0;
+  const shellHeight = compact ? "h-[520px] max-h-[calc(100svh-140px)]" : "h-[calc(100svh-160px)] min-h-[520px]";
 
   return (
-    <section className={`flex overflow-hidden rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_18px_60px_rgba(0,0,0,0.08)] ${shellClass}`}>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-4 py-3 md:px-5">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand)] text-white">
-                <Sparkle size={15} weight="fill" />
-              </span>
-              <div>
-                <p className="text-sm font-bold text-[var(--text-primary)]">GoOutside AI</p>
-                <p className="text-[11px] text-[var(--text-tertiary)]">Live event tools, budgets, and recommendations</p>
+    <section className={cn("flex flex-col overflow-hidden rounded-[22px] border border-[var(--border-subtle)] bg-[var(--bg-card)]", shellHeight)}>
+      {/* Messages */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <AnimatePresence initial={false}>
+          {!hasMessages ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex h-full flex-col items-center justify-center px-6 text-center"
+            >
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-[20px] bg-[var(--brand-dim)]">
+                <Sparkle size={24} weight="fill" className="text-[var(--brand)]" />
               </div>
-            </div>
-          </div>
-          <span className="hidden items-center gap-1.5 rounded-full bg-[var(--brand-dim)] px-3 py-1 text-[11px] font-bold text-[var(--brand)] sm:inline-flex">
-            <Clock size={12} weight="bold" />
-            AI Core
-          </span>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-5">
-          <AnimatePresence initial={false}>
-            {!hasMessages ? (
-              <motion.div
-                animate={{ opacity: 1, y: 0 }}
-                className="flex h-full flex-col items-center justify-center text-center"
-                initial={{ opacity: 0, y: 8 }}
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[var(--brand-dim)] text-[var(--brand)]">
-                  <Sparkle size={24} weight="fill" />
-                </div>
-                <h2 className="mt-5 font-display text-3xl italic text-[var(--text-primary)]">
-                  Plan your next move
-                </h2>
-                <p className="mt-3 max-w-[420px] text-sm leading-6 text-[var(--text-secondary)]">
-                  Ask for events by mood, budget, day, area, or who you are going with.
-                </p>
-                <div className="mt-6 flex max-w-[520px] flex-wrap justify-center gap-2">
-                  {STARTERS.map((starter) => (
+              <h2 className="font-display text-[1.65rem] italic leading-tight text-[var(--text-primary)]">
+                What are you planning?
+              </h2>
+              <p className="mt-2 max-w-[340px] text-[13px] leading-6 text-[var(--text-secondary)]">
+                Ask about events, budgets, friends&apos; plans, or trending spots across Ghana.
+              </p>
+              <div className="mt-7 grid max-w-[520px] grid-cols-2 gap-2 sm:grid-cols-3">
+                {STARTERS.map((s) => {
+                  const Icon = s.icon;
+                  return (
                     <button
-                      className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/45 hover:text-[var(--text-primary)]"
-                      key={starter}
-                      onClick={() => sendMessage(starter)}
+                      key={s.label}
+                      className="flex items-start gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5 text-left text-[12px] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--text-primary)]"
+                      onClick={() => sendMessage(s.label)}
                       type="button"
                     >
-                      {starter}
+                      <Icon size={13} className="mt-0.5 shrink-0 text-[var(--brand)]" />
+                      {s.label}
                     </button>
-                  ))}
-                </div>
-              </motion.div>
-            ) : (
-              <div className="space-y-5">
-                {messages.map((message) => (
-                  <motion.div
-                    animate={{ opacity: 1, y: 0 }}
-                    initial={{ opacity: 0, y: 8 }}
-                    key={message.id}
-                    transition={{ duration: 0.18 }}
-                  >
-                    <Bubble message={message} onFollowUp={sendMessage} />
-                  </motion.div>
-                ))}
+                  );
+                })}
               </div>
-            )}
-          </AnimatePresence>
-          <div ref={bottomRef} />
-        </div>
+            </motion.div>
+          ) : (
+            <div className="space-y-5 px-5 py-5 pb-8">
+              {messages.map((msg, i) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.14 }}
+                >
+                  {msg.role === "user" ? (
+                    <UserBubble content={msg.content} />
+                  ) : (
+                    <AssistantBubble
+                      message={msg}
+                      onFollowUp={sendMessage}
+                      onRetry={i === messages.length - 1 && !loading ? retryLast : undefined}
+                    />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+        <div ref={bottomRef} />
+      </div>
 
-        <form
-          className="flex items-center gap-2 border-t border-[var(--border-subtle)] px-3 py-3 md:px-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            sendMessage(input);
-          }}
-        >
-          <input
-            className="min-w-0 flex-1 rounded-[16px] bg-[var(--bg-muted)] px-4 py-3 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] disabled:opacity-60"
+      {/* Input */}
+      <div className="border-t border-[var(--border-subtle)] p-3">
+        <div className="flex items-end gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-1 py-1">
+          <textarea
+            ref={textareaRef}
+            className="min-h-[38px] flex-1 resize-none bg-transparent px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] disabled:opacity-50"
             disabled={loading}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask for a plan, budget, vibe, or event..."
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                sendMessage(input);
+              }
+            }}
+            placeholder="Ask for events, a budget, or a vibe..."
+            rows={1}
             value={input}
           />
           <button
-            aria-label="Send message"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[var(--brand)] text-white transition hover:bg-[var(--brand-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Send"
+            className={cn(
+              "mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition",
+              input.trim()
+                ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"
+                : "bg-[var(--bg-surface)] text-[var(--text-tertiary)]",
+            )}
             disabled={loading || !input.trim()}
-            type="submit"
+            onClick={() => sendMessage(input)}
+            type="button"
           >
-            <PaperPlaneTilt size={17} weight="fill" />
+            {loading ? (
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent" style={{ animation: "ai-spin 0.65s linear infinite" }} />
+            ) : (
+              <ArrowUp size={15} weight="bold" />
+            )}
           </button>
-        </form>
+        </div>
       </div>
+
       <style>{`
-        @keyframes ai-dot-bounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.38; }
-          40% { transform: translateY(-4px); opacity: 1; }
-        }
+        @keyframes ai-dot { 0%,80%,100%{transform:translateY(0);opacity:.35} 40%{transform:translateY(-4px);opacity:1} }
+        @keyframes ai-spin { to{transform:rotate(360deg)} }
       `}</style>
     </section>
   );

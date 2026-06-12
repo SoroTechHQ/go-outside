@@ -15,6 +15,30 @@ type StreamWebhookEvent = {
   members?: { user_id: string }[];
 };
 
+async function getRecipientIds(params: {
+  channelId: string;
+  senderId: string;
+  stream: ReturnType<typeof getStreamServerClient>;
+  webhookMembers?: { user_id: string }[];
+}) {
+  const fromWebhook = (params.webhookMembers ?? [])
+    .map((member) => member.user_id)
+    .filter((id) => id && id !== params.senderId);
+
+  if (fromWebhook.length > 0) return [...new Set(fromWebhook)];
+
+  const channels = await params.stream.queryChannels(
+    { id: params.channelId, type: "messaging" } as Record<string, unknown>,
+    {},
+    { limit: 1, state: true },
+  );
+
+  const members = channels[0]?.state.members ?? {};
+  return Object.values(members)
+    .map((member) => member.user?.id ?? member.user_id)
+    .filter((id): id is string => Boolean(id) && id !== params.senderId);
+}
+
 async function triggerNovuNotification(payload: {
   subscriberId: string;
   senderName: string;
@@ -76,66 +100,87 @@ export async function POST(req: NextRequest) {
   const channelId = event.channel_id;
   if (!senderId || !channelId) return NextResponse.json({ ok: true });
 
-  const recipientIds = (event.members ?? [])
-    .map((m) => m.user_id)
-    .filter((id) => id !== senderId);
+  const recipientIds = await getRecipientIds({
+    channelId,
+    senderId,
+    stream,
+    webhookMembers: event.members,
+  });
 
   if (recipientIds.length === 0) return NextResponse.json({ ok: true });
 
   const messagePreview =
     (event.message?.text ?? (event.message?.attachments?.length ? "Sent an image" : "")).slice(0, 80);
+  const senderName = event.message?.user?.name ?? "Someone";
+  const senderAvatar = event.message?.user?.image ?? null;
+  const conversationUrl = "/dashboard/messages";
 
   for (const clerkId of recipientIds) {
-    // Check Stream presence — skip if user is already active
-    const { users } = await stream.queryUsers({ id: { $eq: clerkId } });
-    if (users[0]?.online) continue;
-
-    const { data: user } = await supabaseAdmin
+    const { data: recipient } = await supabaseAdmin
       .from("users")
-      .select("notification_prefs")
+      .select("id, notification_prefs, push_subscriptions, unread_nudge_pending_at")
       .eq("clerk_id", clerkId)
       .single();
 
-    const prefs = (user?.notification_prefs ?? {}) as Record<string, unknown>;
-    const messagesEmail = prefs.messages_email !== false;
+    if (!recipient) continue;
+
+    const prefs = (recipient.notification_prefs ?? {}) as Record<string, unknown>;
+    const messagesInApp = prefs.messages_in_app !== false && prefs.in_app !== false;
+    const messagesPush = prefs.messages_push !== false && prefs.push !== false;
+    const messagesEmail = prefs.messages_email !== false && prefs.email !== false;
     const emailDelayMins = typeof prefs.messages_email_delay_mins === "number"
       ? prefs.messages_email_delay_mins
       : 60;
 
-    if (!messagesEmail && prefs.messages_in_app === false) continue;
+    if (messagesInApp) {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: recipient.id,
+        type: "new_message",
+        title: `${senderName} sent you a message`,
+        body: messagePreview || "New message",
+        data: {
+          action_href: conversationUrl,
+          actor_avatar_url: senderAvatar,
+          actor_name: senderName,
+          channel_id: channelId,
+        },
+        is_read: false,
+      });
+    }
 
-    await triggerNovuNotification({
-      subscriberId:  clerkId,
-      senderName:    event.message?.user?.name ?? "Someone",
-      senderAvatar:  event.message?.user?.image ?? null,
-      messagePreview,
-      channelId,
-      emailDelayMins,
-    });
+    if (!messagesEmail && !messagesPush) continue;
+
+    // Check Stream presence — skip if user is already active
+    const { users } = await stream.queryUsers({ id: { $eq: clerkId } });
+    if (users[0]?.online) continue;
+
+    if (messagesEmail) {
+      await triggerNovuNotification({
+        subscriberId:  clerkId,
+        senderName,
+        senderAvatar,
+        messagePreview,
+        channelId,
+        emailDelayMins,
+      });
+    }
 
     // Send Web Push to all stored subscriptions for this user
-    const { data: pushUser } = await supabaseAdmin
-      .from("users")
-      .select("push_subscriptions, unread_nudge_pending_at")
-      .eq("clerk_id", clerkId)
-      .single();
-
-    const pushSubs = pushUser?.push_subscriptions as Record<string, webpush.PushSubscription> | null;
-    if (pushSubs) {
-      const senderName = event.message?.user?.name ?? "Someone";
+    const pushSubs = recipient.push_subscriptions as Record<string, webpush.PushSubscription> | null;
+    if (messagesPush && pushSubs) {
       await Promise.all(
         Object.values(pushSubs).map((sub) =>
           sendWebPush(sub, {
             title: `${senderName} · GoOutside`,
             body: messagePreview || "New message",
-            url: "/dashboard/messages",
+            url: conversationUrl,
           }).catch(() => {})
         )
       );
     }
 
     // Mark nudge as pending if not already set — cron will fire a re-engagement push after delay
-    if (!pushUser?.unread_nudge_pending_at) {
+    if ((messagesEmail || messagesPush) && !recipient.unread_nudge_pending_at) {
       await supabaseAdmin
         .from("users")
         .update({ unread_nudge_pending_at: new Date().toISOString() })

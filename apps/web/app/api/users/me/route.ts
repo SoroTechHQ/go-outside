@@ -82,6 +82,7 @@ export async function PATCH(req: NextRequest) {
   // Whitelist updatable scalar fields
   const allowed = [
     "first_name", "last_name", "username", "bio", "phone",
+    "date_of_birth",
     "location_city", "location_city_name", "location_region",
     "location_country", "location_formatted", "location_place_id",
     "location_source",

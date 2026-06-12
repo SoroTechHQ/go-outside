@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useWizard } from "../WizardContext";
 import { CategoryIcon } from "../../../../../lib/category-icons";
+import { Lock } from "@phosphor-icons/react";
 
 type Category = { id: string; name: string; slug: string };
 
@@ -144,6 +145,41 @@ export function Step1Basics() {
           />
         </div>
         <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Press Enter or comma to add</p>
+      </div>
+
+      {/* Age restriction */}
+      <div>
+        <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+          Age restriction
+        </label>
+        <button
+          type="button"
+          className={`mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
+            state.isAgeRestricted
+              ? "border-amber-500/40 bg-amber-500/8"
+              : "border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--border-default)]"
+          }`}
+          onClick={() => setField("isAgeRestricted", !state.isAgeRestricted)}
+        >
+          <div className="flex items-center gap-3">
+            <Lock
+              size={18}
+              weight={state.isAgeRestricted ? "fill" : "regular"}
+              className={state.isAgeRestricted ? "text-amber-500" : "text-[var(--text-tertiary)]"}
+            />
+            <div>
+              <p className={`text-[13px] font-semibold ${state.isAgeRestricted ? "text-amber-500" : "text-[var(--text-primary)]"}`}>
+                18+ event
+              </p>
+              <p className="text-[11px] text-[var(--text-tertiary)]">
+                Attendees must be 18 or older to purchase tickets
+              </p>
+            </div>
+          </div>
+          <div className={`h-5 w-9 rounded-full transition-colors ${state.isAgeRestricted ? "bg-amber-500" : "bg-[var(--border-default)]"}`}>
+            <div className={`mt-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${state.isAgeRestricted ? "translate-x-4.5" : "translate-x-0.5"}`} />
+          </div>
+        </button>
       </div>
     </div>
   );

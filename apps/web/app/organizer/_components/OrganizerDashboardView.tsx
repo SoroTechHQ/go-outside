@@ -376,7 +376,7 @@ function ActivityIcon({ tone }: { tone: OrganizerDashboardData["activity"][numbe
 ───────────────────────────────────────────────────────────────────────── */
 
 function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
-  const { overview, salesSeries, recentEvents, hashtags, activity, posts } = dashboard;
+  const { overview, salesSeries, recentEvents, hashtags, activity, userPosts } = dashboard;
 
   return (
     <div className="space-y-5">
@@ -517,9 +517,9 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
 
         <Card>
           <CardHeader title="Recent posts" icon={<Star size={15} weight="fill" />} />
-          {posts.length > 0 ? (
+          {userPosts.length > 0 ? (
             <div className="mt-4 space-y-3">
-              {posts.map((s, i) => (
+              {userPosts.map((s, i) => (
                 <motion.div
                   key={s.id}
                   initial={{ opacity: 0, x: 8 }}

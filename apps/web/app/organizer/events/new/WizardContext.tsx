@@ -32,6 +32,7 @@ export type WizardState = {
   onlineLink: string | null;
   ghanaPostCode: string | null;
   ticketTypes: TicketTypeInput[];
+  isAgeRestricted: boolean;
   bannerUrl: string | null;
   galleryUrls: string[];
   videoUrl: string | null;
@@ -101,6 +102,7 @@ const baseInitialState: WizardState = {
   onlineLink: null,
   ghanaPostCode: null,
   ticketTypes: [],
+  isAgeRestricted: false,
   bannerUrl: null,
   galleryUrls: [],
   videoUrl: null,

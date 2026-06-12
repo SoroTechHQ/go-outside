@@ -55,8 +55,8 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Push notifications must be enabled
-    if (prefs.messages_push === false) {
+    // Push notifications must be enabled. Keep legacy global `push` as a fallback.
+    if (prefs.messages_push === false || prefs.push === false) {
       await supabaseAdmin
         .from("users")
         .update({ unread_nudge_pending_at: null })

@@ -4,7 +4,7 @@ import { supabaseAdmin } from "../../../../lib/supabase";
 
 const DEFAULTS = {
   messages_in_app:           true,
-  messages_push:             false,
+  messages_push:             true,
   messages_email:            true,
   messages_email_delay_mins: 60,
   events_reminders:          true,

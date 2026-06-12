@@ -61,6 +61,7 @@ export function Step6Publish() {
         onlinePlatform: state.onlinePlatform,
         onlineLink: state.onlineLink,
         ticketTypes: state.ticketTypes,
+        isAgeRestricted: state.isAgeRestricted,
         bannerUrl: state.bannerUrl,
         galleryUrls: state.galleryUrls,
         videoUrl: state.videoUrl,

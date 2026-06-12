@@ -73,8 +73,6 @@ export async function POST(req: NextRequest) {
           city:      (adopted.location_city as string) ?? "",
           interests: (adopted.interests as string[]) ?? [],
           vibe:      (adopted.vibe as Record<string, unknown> | null) ?? null,
-          score:     pulse_score,
-          tier:      pulse_tier,
         };
         res.cookies.set("go_prefs", JSON.stringify(prefs), { ...COOKIE_OPTS, httpOnly: false });
         return res;
@@ -125,8 +123,6 @@ export async function POST(req: NextRequest) {
     city:      (sbUser as Record<string, unknown>).location_city as string ?? "",
     interests: ((sbUser as Record<string, unknown>).interests as string[]) ?? [],
     vibe:      ((sbUser as Record<string, unknown>).vibe as Record<string, unknown> | null) ?? null,
-    score:     pulse_score,
-    tier:      pulse_tier,
   };
   res.cookies.set("go_prefs", JSON.stringify(prefs), { ...COOKIE_OPTS, httpOnly: false });
 

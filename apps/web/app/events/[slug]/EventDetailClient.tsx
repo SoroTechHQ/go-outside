@@ -385,10 +385,17 @@ export function EventDetailClient({
           <div className="min-w-0">
             {/* Title + category */}
             <div className="border-b border-[var(--home-border)] pb-8">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
-                <CategoryIcon slug={event.categorySlug} size={12} weight="bold" />
-                {event.eyebrow}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
+                  <CategoryIcon slug={event.categorySlug} size={12} weight="bold" />
+                  {event.eyebrow}
+                </span>
+                {event.isAgeRestricted && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    18+
+                  </span>
+                )}
+              </div>
               <h1 className="mt-4 text-[2.4rem] font-semibold leading-tight tracking-[-0.04em] text-[var(--text-primary)] sm:text-[3rem]">
                 {event.title}
               </h1>

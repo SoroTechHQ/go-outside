@@ -103,7 +103,11 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
       }
     }
 
-    const updated = { ...prefs, [key]: !prefs[key] };
+    const nextValue = !prefs[key];
+    const updated = { ...prefs, [key]: nextValue };
+    if (key === "email") updated.messages_email = nextValue;
+    if (key === "push") updated.messages_push = nextValue;
+    if (key === "in_app") updated.messages_in_app = nextValue;
     setPrefs(updated);
     setSavingNotif(true);
     try {
