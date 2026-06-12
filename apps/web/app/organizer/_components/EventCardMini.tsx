@@ -9,7 +9,7 @@ type EventCardMiniProps = {
   capacity: number | null;
   soldRatio: number;
   revenue: number;
-  snippets: number;
+  posts: number;
 };
 
 const STATUS_CLASSNAME: Record<EventCardMiniProps["statusTone"], string> = {
@@ -37,7 +37,7 @@ export function EventCardMini({
   capacity,
   soldRatio,
   revenue,
-  snippets,
+  posts,
 }: EventCardMiniProps) {
   return (
     <article className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-4 shadow-[0_12px_36px_rgba(5,12,8,0.08)]">
@@ -70,8 +70,8 @@ export function EventCardMini({
           <p className="mt-1 font-semibold text-[var(--text-primary)]">{formatMoney(revenue)}</p>
         </div>
         <div>
-          <p className="text-[var(--text-tertiary)]">Snippets</p>
-          <p className="mt-1 font-semibold text-[var(--text-primary)]">{snippets}</p>
+          <p className="text-[var(--text-tertiary)]">Posts</p>
+          <p className="mt-1 font-semibold text-[var(--text-primary)]">{posts}</p>
         </div>
       </div>
 

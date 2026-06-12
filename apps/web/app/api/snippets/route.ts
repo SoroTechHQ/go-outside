@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  const { data: snippet, error } = await supabaseAdmin
+  const { data: newPost, error } = await supabaseAdmin
     .from("snippets")
     .insert({
       user_id:   (user as { id: string }).id,
@@ -42,19 +42,18 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("[POST /api/snippets]", error);
-    return NextResponse.json({ error: "Failed to create comment" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
   }
 
-  // Award Pulse Points for posting a comment
-  if (snippet) {
+  if (newPost) {
     void supabaseAdmin.rpc("award_pulse_points", {
       p_user_id: (user as { id: string }).id,
       p_delta: 3,
       p_type: "snippet_posted",
-      p_description: "Posted a comment on an event",
+      p_description: "Posted on an event",
       p_event_id: event_id ?? null,
     });
   }
 
-  return NextResponse.json(snippet, { status: 201 });
+  return NextResponse.json(newPost, { status: 201 });
 }

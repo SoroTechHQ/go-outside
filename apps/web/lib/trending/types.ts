@@ -16,7 +16,7 @@ export type TrendingEvent = {
   views_count: number;
   saves_count: number;
   tickets_sold: number;
-  snippet_count: number;
+  post_count: number;
   rank_change: "up" | "same" | "down";
   organizer: {
     id: string;
@@ -33,7 +33,7 @@ export type TrendingOrganizer = {
   logo_url: string | null;
   follower_count: number;
   event_count: number;
-  snippet_count: number;
+  post_count: number;
   trending_score: number;
   reasons: TrendReason[];
 };
@@ -47,7 +47,7 @@ export type TrendingTopic = {
   reasons: TrendReason[];
 };
 
-export type TrendingSnippet = {
+export type TrendingPost = {
   id: string;
   body: string | null;
   rating: number;
@@ -80,18 +80,18 @@ export type TrendingResponse = {
 export type TrendingEventDetail = {
   event: TrendingEvent;
   related_topics: string[];
-  snippets: TrendingSnippet[];
+  posts: TrendingPost[];
 };
 
 export type TrendingOrganizerDetail = {
   organizer: TrendingOrganizer;
   top_events: TrendingEvent[];
-  snippets: TrendingSnippet[];
+  posts: TrendingPost[];
 };
 
 export type TrendingTopicDetail = {
   topic: TrendingTopic;
   events: TrendingEvent[];
-  snippets: TrendingSnippet[];
+  posts: TrendingPost[];
   related_organizers: TrendingOrganizer[];
 };

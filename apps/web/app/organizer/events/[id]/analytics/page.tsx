@@ -31,8 +31,7 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
     { data: event },
     { data: edges },
     { data: ticketTypes },
-    { data: snippets },
-    { data: posts },
+    { data: communityPosts },
     { data: dailyEdges },
   ] = await Promise.all([
     supabaseAdmin
@@ -53,11 +52,6 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
       .select("id, name, price, price_type, quantity_total, quantity_sold")
       .eq("event_id", eventId)
       .order("price", { ascending: true }),
-
-    supabaseAdmin
-      .from("snippets")
-      .select("id, rating, created_at")
-      .eq("event_id", eventId),
 
     supabaseAdmin
       .from("posts")
@@ -93,11 +87,7 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
     0
   );
 
-  // Avg rating
-  const rated = (snippets ?? []).filter((s) => s.rating);
-  const avgRating = rated.length
-    ? +(rated.reduce((s, r) => s + r.rating, 0) / rated.length).toFixed(1)
-    : null;
+  const avgRating: number | null = null;
 
   // Daily activity for last 30 days chart
   const dayMap: Record<string, number> = {};
@@ -128,10 +118,9 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
     },
     revenue,
     ticketTypes: ticketTypes ?? [],
-    snippetCount: (snippets ?? []).length,
+    postCount: (communityPosts ?? []).length,
     avgRating,
-    postCount: (posts ?? []).length,
-    totalPostLikes: (posts ?? []).reduce((s, p) => s + (p.like_count ?? 0), 0),
+    totalPostLikes: (communityPosts ?? []).reduce((s, p) => s + (p.like_count ?? 0), 0),
     last14,
   };
 }
@@ -220,7 +209,7 @@ export default async function EventAnalyticsPage({
   const data = await getEventAnalytics(id, user.id);
   if (!data) return notFound();
 
-  const { event, metrics, revenue, ticketTypes, snippetCount, avgRating, postCount, totalPostLikes, last14 } = data;
+  const { event, metrics, revenue, ticketTypes, postCount, avgRating, postCount, totalPostLikes, last14 } = data;
 
   const topOfFunnel = Math.max(metrics.peekOpens, metrics.cardClicks, 1);
 
@@ -349,7 +338,7 @@ export default async function EventAnalyticsPage({
           <p className="text-[14px] font-semibold text-[var(--text-primary)]">Community activity</p>
           <div className="mt-4 space-y-2">
             {[
-              { icon: <Star size={14} className="text-amber-500" weight="fill" />, label: "Snippets / reviews", value: snippetCount, sub: avgRating ? `Avg ${avgRating}★` : null },
+              { icon: <Star size={14} className="text-amber-500" weight="fill" />, label: "Posts / reviews", value: postCount, sub: avgRating ? `Avg ${avgRating}★` : null },
               { icon: <ChatCircle size={14} className="text-[var(--brand)]" weight="fill" />, label: "Posts tagged", value: postCount, sub: null },
               { icon: <Heart size={14} className="text-rose-400" weight="fill" />, label: "Post likes", value: totalPostLikes, sub: null },
             ].map((row) => (
@@ -366,7 +355,7 @@ export default async function EventAnalyticsPage({
             ))}
           </div>
           <Link href={`/organizer/events/${event.id}`} className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--brand)] hover:underline">
-            View all snippets & posts →
+            View all posts & posts →
           </Link>
         </div>
 

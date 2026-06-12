@@ -66,7 +66,7 @@ function buildNavGroups(openPostModal: () => void): Array<{ label: string; items
       items: [
         { href: "/dashboard/messages", label: "Messages", icon: ChatsCircle },
         { href: "/organizer/community/comments", label: "Comments", icon: ChatCircle },
-        { href: "/organizer/community/snippets", label: "Snippets", icon: Star },
+        { href: "/organizer/community/posts", label: "Posts", icon: Star },
       ],
     },
   ];

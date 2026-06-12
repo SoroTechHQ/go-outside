@@ -32,7 +32,7 @@ export default async function OrganizerEventDetailPage({
   const user = await getOrCreateSupabaseUser();
   if (!user) return notFound();
 
-  const [{ data: event }, { data: ticketTypes }, { data: snippets }, { data: posts }] = await Promise.all([
+  const [{ data: event }, { data: ticketTypes }, { data: communityPosts }] = await Promise.all([
     supabaseAdmin
       .from("events")
       .select(`
@@ -50,12 +50,6 @@ export default async function OrganizerEventDetailPage({
       .select("id, name, price, price_type, quantity_total, quantity_sold")
       .eq("event_id", id)
       .order("price", { ascending: true }),
-    supabaseAdmin
-      .from("snippets")
-      .select("id, body, rating, created_at, users (first_name, last_name)")
-      .eq("event_id", id)
-      .order("created_at", { ascending: false })
-      .limit(6),
     supabaseAdmin
       .from("posts")
       .select("id, body, like_count, created_at, users (first_name, last_name)")
@@ -239,26 +233,19 @@ export default async function OrganizerEventDetailPage({
           )}
         </div>
 
-        {/* Snippets */}
+        {/* Posts */}
         <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-            Attendee snippets
+            Attendee posts
           </p>
-          {snippets && snippets.length > 0 ? (
+          {communityPosts && communityPosts.length > 0 ? (
             <div className="mt-4 space-y-3">
-              {snippets.map((s) => {
+              {communityPosts.slice(0, 6).map((s) => {
                 const su = s.users as unknown as { first_name: string; last_name: string } | null;
                 const name = su ? `${su.first_name} ${su.last_name[0] ?? ""}.` : "Attendee";
                 return (
                   <div key={s.id} className="rounded-[16px] bg-[var(--bg-elevated)] p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[13px] font-semibold text-[var(--text-primary)]">{name}</p>
-                      <span className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} size={11} weight={i < (s.rating ?? 5) ? "fill" : "regular"} style={{ color: i < (s.rating ?? 5) ? "#f59e0b" : "var(--text-tertiary)" }} />
-                        ))}
-                      </span>
-                    </div>
+                    <p className="text-[13px] font-semibold text-[var(--text-primary)]">{name}</p>
                     <p className="mt-2 text-[12px] leading-relaxed text-[var(--text-secondary)]">
                       {s.body}
                     </p>
@@ -268,7 +255,7 @@ export default async function OrganizerEventDetailPage({
             </div>
           ) : (
             <p className="mt-4 text-[13px] text-[var(--text-secondary)]">
-              No snippets yet — they appear after attendees check in.
+              No posts yet — they appear after attendees check in.
             </p>
           )}
         </div>

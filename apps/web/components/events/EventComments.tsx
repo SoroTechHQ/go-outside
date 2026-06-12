@@ -172,7 +172,7 @@ function CommentComposer({ eventSlug, eventId, onPosted }: { eventSlug: string; 
 
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
-      fetch("/api/snippets", {
+      fetch("/api/posts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

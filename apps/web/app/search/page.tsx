@@ -18,11 +18,11 @@ import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransfor
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
-type SearchTab = "all" | "events" | "users" | "snippets";
+type SearchTab = "all" | "events" | "users" | "posts";
 type SearchEvent   = { id: string; title: string; slug: string; banner_url: string | null; start_datetime: string | null; price_label: string | null; trending_score: number | null };
 type SearchUser    = { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null; avatar_url: string | null; pulse_tier: string | null; pulse_score: number | null };
-type SearchSnippet = { id: string; body: string; vibe_tags: string[]; created_at: string };
-type SearchResult  = { events: SearchEvent[]; users: SearchUser[]; snippets: SearchSnippet[]; nextCursor: string | null };
+type SearchPost = { id: string; body: string; vibe_tags: string[]; created_at: string };
+type SearchResult  = { events: SearchEvent[]; users: SearchUser[]; posts: SearchPost[]; nextCursor: string | null };
 
 async function fetchSearch(q: string, type: SearchTab, categories: string, when: string, cursor?: string): Promise<SearchResult> {
   const params = new URLSearchParams({ type, limit: "20" });
@@ -109,13 +109,13 @@ function UserResult({ user }: { user: SearchUser }) {
   );
 }
 
-// ── Snippet card ───────────────────────────────────────────────────────────────
-function SnippetResult({ snippet }: { snippet: SearchSnippet }) {
+// ── Post card ───────────────────────────────────────────────────────────────
+function PostResult({ post }: { post: SearchPost }) {
   return (
     <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5">
-      <p className="text-[13px] leading-relaxed text-[var(--text-secondary)] line-clamp-3">{snippet.body}</p>
+      <p className="text-[13px] leading-relaxed text-[var(--text-secondary)] line-clamp-3">{post.body}</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {snippet.vibe_tags?.slice(0, 4).map((tag) => (
+        {post.vibe_tags?.slice(0, 4).map((tag) => (
           <span key={tag} className="rounded-full border border-[#4a9f63]/25 bg-[#4a9f63]/8 px-2 py-0.5 text-[9px] text-[#4a9f63]">
             #{tag}
           </span>
@@ -147,7 +147,7 @@ const TABS: { id: SearchTab; label: string }[] = [
   { id: "all",      label: "All" },
   { id: "events",   label: "Events" },
   { id: "users",    label: "People" },
-  { id: "snippets", label: "Snippets" },
+  { id: "posts", label: "Posts" },
 ];
 
 // ── Inner search component ────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ function SearchInner() {
   const allPages = data?.pages ?? [];
   const events   = allPages.flatMap((p) => p.events);
   const users    = allPages.flatMap((p) => p.users);
-  const snippets = allPages.flatMap((p) => p.snippets);
+  const posts = allPages.flatMap((p) => p.posts);
 
   // ── Surprise Me mode: show only AI panel ──────────────────────────────────
   if (isSurprise) {
@@ -338,18 +338,18 @@ function SearchInner() {
                     </section>
                   )}
 
-                  {(tab === "all" || tab === "snippets") && snippets.length > 0 && (
+                  {(tab === "all" || tab === "posts") && posts.length > 0 && (
                     <section>
                       {tab === "all" && (
-                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Snippets</h2>
+                        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">Posts</h2>
                       )}
                       <div className="space-y-2.5">
-                        {snippets.map((s) => <SnippetResult key={s.id} snippet={s} />)}
+                        {posts.map((s) => <PostResult key={s.id} post={s} />)}
                       </div>
                     </section>
                   )}
 
-                  {events.length === 0 && users.length === 0 && snippets.length === 0 && (
+                  {events.length === 0 && users.length === 0 && posts.length === 0 && (
                     <div className="flex flex-col items-center gap-3 py-16 text-center">
                       <p className="text-[14px] font-semibold text-[var(--text-primary)]">No results found</p>
                       <p className="text-[13px] text-[var(--text-tertiary)]">Try different keywords or pick another category.</p>

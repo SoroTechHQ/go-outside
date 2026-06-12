@@ -87,7 +87,7 @@ export type OrganizerDashboardData = {
     capacity: number | null;
     soldRatio: number;
     revenue: number;
-    snippets: number;
+    userPostCount: number;
   }>;
   hashtags: string[];
   activity: Array<{
@@ -97,7 +97,7 @@ export type OrganizerDashboardData = {
     body: string;
     timeLabel: string;
   }>;
-  snippets: Array<{
+  userPosts: Array<{
     id: string;
     user: string;
     rating: number;
@@ -213,7 +213,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: profile }, { data: events }, { count: followerCount }, { data: rawPosts }, { data: rawNotifications }, { data: rawSnippets }, { count: followersThisWeek }, { count: followersLastWeek }] = await Promise.all([
+  const [{ data: profile }, { data: events }, { count: followerCount }, { data: rawPosts }, { data: rawNotifications }, { data: rawUserReviews }, { count: followersThisWeek }, { count: followersLastWeek }] = await Promise.all([
     supabaseAdmin
       .from("organizer_profiles")
       .select(`
@@ -342,7 +342,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       capacity,
       soldRatio,
       revenue: Math.round((event.tickets_sold * Math.max(80, revenue / Math.max(ticketSales, 1))) / 10) * 10,
-      snippets: Math.max(0, Math.round(event.saves_count / 2)),
+      userPostCount: Math.max(0, Math.round(event.saves_count / 2)),
     };
   });
 
@@ -404,7 +404,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
         timeLabel: formatTimeAgo(n.created_at as string),
       };
     }),
-    snippets: (rawSnippets ?? []).map((s: Record<string, unknown>) => {
+    userPosts: (rawUserReviews ?? []).map((s: Record<string, unknown>) => {
       const user = s.users as { first_name: string; last_name: string } | null;
       const event = s.events as { title: string } | null;
       const firstName = user?.first_name ?? "Someone";
@@ -516,7 +516,7 @@ export type OrganizerEventListItem = {
   capacity: number | null;
   soldRatio: number;
   revenue: number;
-  snippets: number;
+  userPostCount: number;
 };
 
 export async function getOrganizerAllEvents(userId: string, revenue: number, totalSold: number): Promise<OrganizerEventListItem[]> {
@@ -550,7 +550,7 @@ export async function getOrganizerAllEvents(userId: string, revenue: number, tot
       capacity,
       soldRatio,
       revenue: Math.round((ev.tickets_sold * Math.max(80, revenue / Math.max(totalSold, 1))) / 10) * 10,
-      snippets: Math.max(0, Math.round(ev.saves_count / 2)),
+      userPostCount: Math.max(0, Math.round(ev.saves_count / 2)),
     };
   });
 }

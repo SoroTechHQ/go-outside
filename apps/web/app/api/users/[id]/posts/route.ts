@@ -13,9 +13,9 @@ export async function GET(
     .eq("clerk_id", clerkId)
     .maybeSingle();
 
-  if (!user) return NextResponse.json({ snippets: [] });
+  if (!user) return NextResponse.json({ posts: [] });
 
-  const { data: snippets, error } = await supabaseAdmin
+  const { data: posts, error } = await supabaseAdmin
     .from("snippets")
     .select("id, body, vibe_tags, created_at, user_id")
     .eq("user_id", user.id)
@@ -23,9 +23,9 @@ export async function GET(
     .limit(50);
 
   if (error) {
-    console.error("[snippets route]", error.message);
-    return NextResponse.json({ snippets: [] });
+    console.error("[posts route]", error.message);
+    return NextResponse.json({ posts: [] });
   }
 
-  return NextResponse.json({ snippets: snippets ?? [] });
+  return NextResponse.json({ posts: posts ?? [] });
 }

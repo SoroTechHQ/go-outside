@@ -102,10 +102,16 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           {/* Company */}
           <div className="space-y-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Company</p>
-            {["About", "Blog", "Careers", "Privacy Policy", "Terms of Service"].map((link) => (
-              <div key={link}>
-                <Link href="#" className="text-[14px] text-[#6f6f6f] transition hover:text-[#0f110f]">
-                  {link}
+            {[
+              { label: "About", href: "#" },
+              { label: "Blog", href: "#" },
+              { label: "Careers", href: "#" },
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Terms of Service", href: "/terms" },
+            ].map(({ label, href }) => (
+              <div key={label}>
+                <Link href={href} className="text-[14px] text-[#6f6f6f] transition hover:text-[#0f110f]">
+                  {label}
                 </Link>
               </div>
             ))}

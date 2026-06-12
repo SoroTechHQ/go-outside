@@ -10,7 +10,7 @@ type Props = {
   eventsAttended: number;
   friendCount: number;
   followingCount: number;
-  snippetCount: number;
+  postCount: number;
   onStatClick: (tabId: string) => void;
 };
 
@@ -18,14 +18,14 @@ export function StatsRow({
   eventsAttended,
   friendCount,
   followingCount,
-  snippetCount,
+  postCount,
   onStatClick,
 }: Props) {
   const stats: Stat[] = [
     { label: "events",    value: eventsAttended, tabId: "been-there" },
     { label: "friends",   value: friendCount,    tabId: "friends" },
     { label: "following", value: followingCount,  tabId: "following" },
-    { label: "snippets",  value: snippetCount,    tabId: "snippets" },
+    { label: "posts",  value: postCount,    tabId: "posts" },
   ];
 
   return (

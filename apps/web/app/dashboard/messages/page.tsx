@@ -32,7 +32,6 @@ import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { GoMessageInput } from "../../../components/chat/GoMessageInput";
 import { GoChannelHeader } from "../../../components/chat/GoChannelHeader";
 import { GoRequestBanner } from "../../../components/chat/GoRequestBanner";
-import { requestPushPermission, subscribeToPush } from "../../../lib/notifications/push";
 
 type GoConversationType =
   | "friend_dm"
@@ -201,14 +200,14 @@ function MessagesPageSkeleton() {
         <div className="go-stream-chat">
           <aside className="go-stream-chat__sidebar">
             <div className="go-stream-sidebar__header">
-              <div className="h-7 w-28 animate-pulse rounded-lg bg-white/8" />
+              <div className="h-7 w-28 animate-pulse rounded-lg bg-[var(--bg-surface)]" />
             </div>
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3">
-                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-white/8" />
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-[var(--bg-surface)]" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 w-28 animate-pulse rounded bg-white/8" />
-                  <div className="h-3 w-40 animate-pulse rounded bg-white/6" />
+                  <div className="h-3 w-28 animate-pulse rounded bg-[var(--bg-surface)]" />
+                  <div className="h-3 w-40 animate-pulse rounded bg-[var(--border-subtle)]" />
                 </div>
               </div>
             ))}
@@ -639,15 +638,33 @@ function MessagesShell({
   // Broadcast unread count to BottomNav via CustomEvent
   useEffect(() => {
     if (!client) return;
-    const broadcast = () => {
-      const total = Object.values(client.activeChannels ?? {}).reduce(
-        (sum, ch) => sum + (ch.countUnread?.() ?? 0), 0
-      );
-      window.dispatchEvent(new CustomEvent("stream:unread", { detail: total }));
+
+    const dispatchTotal = (n: number) =>
+      window.dispatchEvent(new CustomEvent("stream:unread", { detail: n }));
+
+    // Seed badge immediately from Stream's server-side total_unread_count
+    const initial =
+      (client.user as { total_unread_count?: number } | null | undefined)?.total_unread_count ?? 0;
+    dispatchTotal(initial);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onUpdate = (event: any) => {
+      // Stream includes total_unread_count on notification events; fall back to local sum
+      const total =
+        typeof event.total_unread_count === "number"
+          ? event.total_unread_count
+          : Object.values(client.activeChannels ?? {}).reduce(
+              (sum: number, ch: { countUnread?: () => number }) =>
+                sum + (ch.countUnread?.() ?? 0),
+              0,
+            );
+      dispatchTotal(total);
     };
-    const unsub = client.on("notification.message_new", broadcast);
-    const unsub2 = client.on("message.read", broadcast);
-    return () => { unsub.unsubscribe(); unsub2.unsubscribe(); };
+
+    const unsub1 = client.on("notification.message_new", onUpdate);
+    const unsub2 = client.on("notification.mark_read",   onUpdate);
+    const unsub3 = client.on("message.read",             onUpdate);
+    return () => { unsub1.unsubscribe(); unsub2.unsubscribe(); unsub3.unsubscribe(); };
   }, [client]);
 
   // In-tab browser notification for messages arriving while user is on another tab/page
@@ -976,22 +993,12 @@ function StreamMessagesView({
     userData: identity,
   });
 
-  // Register service worker and subscribe to push once the Stream client is ready
+  // Service worker registration (push subscription requires explicit user opt-in elsewhere)
   useEffect(() => {
     if (!client) return;
     if (!("serviceWorker" in navigator)) return;
-
-    const setup = async () => {
-      await navigator.serviceWorker.register("/sw.js").catch(() => {});
-      const granted = await requestPushPermission();
-      if (!granted) return;
-      const clerkToken = await getClerkToken();
-      if (!clerkToken) return;
-      await subscribeToPush(clerkToken).catch(() => {});
-    };
-
-    void setup();
-  }, [client, getClerkToken]);
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, [client]);
 
   if (bootError) return <MessagesConfigError detail={bootError} />;
   if (!client) return <MessagesPageSkeleton />;

@@ -46,7 +46,7 @@ export type UserPost = {
   };
 };
 
-export type UserSnippet = {
+export type UserReview = {
   id: string;
   userId: string;
   eventSlug: string;
@@ -237,8 +237,8 @@ const MOCK_USER_POSTS: UserPost[] = [
   },
 ];
 
-const MOCK_USER_SNIPPETS: UserSnippet[] = [
-  // Ama Koomson snippets
+const MOCK_USER_REVIEWS: UserReview[] = [
+  // Ama Koomson reviews
   {
     id: "us-ama-1",
     userId: "ama-k",
@@ -260,7 +260,7 @@ const MOCK_USER_SNIPPETS: UserSnippet[] = [
     body: "Production value was high but the atmosphere stayed warm. Two sets from resident ensembles, a guest feature, and an open-floor closing hour that went longer than expected (nobody complained).",
     vibeTags: ["Jazz", "Live Music", "Intimate"],
   },
-  // Yaw Darko snippets
+  // Yaw Darko posts
   {
     id: "us-yaw-1",
     userId: "yaw-darko",
@@ -282,7 +282,7 @@ const MOCK_USER_SNIPPETS: UserSnippet[] = [
     body: "Drove up from Accra for this one. Worth every minute of the ride. The Creative Club format — intimate rounds, no big stage — makes it actually possible to learn something.",
     vibeTags: ["Arts", "Creative", "Workshop"],
   },
-  // Esi Mensah snippets
+  // Esi Mensah posts
   {
     id: "us-esi-1",
     userId: "esi-m",
@@ -361,8 +361,8 @@ export function getUserPosts(userId: string): UserPost[] {
   return MOCK_USER_POSTS.filter((p) => p.userId === userId);
 }
 
-export function getUserSnippets(userId: string): UserSnippet[] {
-  return MOCK_USER_SNIPPETS.filter((s) => s.userId === userId);
+export function getUserReviews(userId: string): UserReview[] {
+  return MOCK_USER_REVIEWS.filter((s) => s.userId === userId);
 }
 
 export function getUserFollowers(userId: string): MiniUser[] {

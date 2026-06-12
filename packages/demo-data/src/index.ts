@@ -99,7 +99,7 @@ export type SeedUser = {
 };
 export type SeedEvent = { id: string; slug: string; title: string; [key: string]: unknown };
 export type SeedEdge  = { from_id: string; to_id: string; edge_type: string; [key: string]: unknown };
-export type SeedSnippet = { id: string; body: string; rating: number; [key: string]: unknown };
+export type SeedPost = { id: string; body: string; rating: number; [key: string]: unknown };
 export type ScarcityState = "available" | "selling_fast" | "last_few" | "sold_out";
 
 // ── Pure utility constants (no JSON import) ───────────────────────────────────

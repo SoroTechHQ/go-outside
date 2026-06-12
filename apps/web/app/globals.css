@@ -332,6 +332,11 @@ a {
   overflow: hidden;
 }
 
+/* Suppress the decorative dot grid on the full-screen chat page */
+.go-stream-page::before {
+  display: none;
+}
+
 .go-stream-frame {
   height: 100%;
   overflow: hidden;
@@ -771,7 +776,7 @@ a {
 }
 
 .go-stream-chat__thread .str-chat__list {
-  background: #f8f8f8;
+  background: var(--bg-base);
   flex: 1;
   overflow-y: auto;
   padding: 1.1rem 0.4rem 1.2rem;

@@ -36,11 +36,11 @@ import {
   getCommunityProfileById,
   getUserFollowers,
   getUserPosts,
-  getUserSnippets,
+  getUserPosts,
   type CommunityProfile,
   type MiniUser,
   type UserPost,
-  type UserSnippet,
+  type UserPost,
 } from "../../../../lib/mock-community";
 
 type RealProfile = {
@@ -364,17 +364,17 @@ function PostCard({ post, user }: { post: UserPost; user: CommunityProfile }) {
   );
 }
 
-/* ── Snippet card ─────────────────────────────────────────────────────────── */
+/* ── Post card ─────────────────────────────────────────────────────────── */
 
-function SnippetCard({ snippet }: { snippet: UserSnippet }) {
+function PostCard({ post }: { post: UserPost }) {
   return (
     <div className="overflow-hidden rounded-[18px] border border-white/5 bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10] p-4 transition hover:border-[#4a9f63]/20">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-display text-[13px] font-bold italic text-white">{snippet.eventName}</p>
-          <p className="mt-0.5 text-[10px] text-white/30">{snippet.eventDate}</p>
+          <p className="font-display text-[13px] font-bold italic text-white">{post.eventName}</p>
+          <p className="mt-0.5 text-[10px] text-white/30">{post.eventDate}</p>
         </div>
-        {snippet.hasGoldBadge && (
+        {post.hasGoldBadge && (
           <span className="shrink-0 rounded-full border border-[rgba(218,165,32,0.28)] bg-[rgba(218,165,32,0.12)] px-2 py-0.5 text-[9px] font-bold text-[#DAA520]">
             ✦ Gold
           </span>
@@ -382,12 +382,12 @@ function SnippetCard({ snippet }: { snippet: UserSnippet }) {
       </div>
       <div className="mt-2.5 flex gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} size={11} weight={i < snippet.rating ? "fill" : "regular"} className={i < snippet.rating ? "text-[#DAA520]" : "text-white/20"} />
+          <Star key={i} size={11} weight={i < post.rating ? "fill" : "regular"} className={i < post.rating ? "text-[#DAA520]" : "text-white/20"} />
         ))}
       </div>
-      <p className="mt-2 line-clamp-3 text-[12px] leading-relaxed text-white/50">{snippet.body}</p>
+      <p className="mt-2 line-clamp-3 text-[12px] leading-relaxed text-white/50">{post.body}</p>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {snippet.vibeTags.map((tag) => (
+        {post.vibeTags.map((tag) => (
           <span key={tag} className="rounded-full border border-[#4a9f63]/25 bg-[#4a9f63]/8 px-2 py-0.5 text-[9px] text-[#4a9f63]">
             {tag}
           </span>
@@ -399,12 +399,12 @@ function SnippetCard({ snippet }: { snippet: UserSnippet }) {
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
 
-type Tab = "posts" | "been-there" | "snippets" | "following";
+type Tab = "posts" | "been-there" | "posts" | "following";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "posts", label: "Posts" },
   { id: "been-there", label: "Been There" },
-  { id: "snippets", label: "Snippets" },
+  { id: "posts", label: "Posts" },
   { id: "following", label: "Following" },
 ];
 
@@ -513,9 +513,9 @@ export default function UserProfilePage() {
     enabled: !!userId,
   });
 
-  const { data: snippets = [] } = useQuery({
-    queryKey: ["user-snippets", userId],
-    queryFn: () => getUserSnippets(userId),
+  const { data: posts = [] } = useQuery({
+    queryKey: ["user-posts", userId],
+    queryFn: () => getUserPosts(userId),
     staleTime: Infinity,
     enabled: !!userId,
   });
@@ -616,7 +616,7 @@ export default function UserProfilePage() {
     { icon: Ticket,    value: ticketsCount,   label: "Events",    onClick: () => setTab("been-there") },
     { icon: Users,     value: followerCount,  label: "Followers", onClick: () => setFollowersOpen(true) },
     { icon: UserCheck, value: followingCount, label: "Following", onClick: () => setFollowingOpen(true) },
-    { icon: Lightning, value: displayPulse,   label: "Pulse",     onClick: () => setTab("snippets") },
+    { icon: Lightning, value: displayPulse,   label: "Pulse",     onClick: () => setTab("posts") },
   ];
 
   return (
@@ -823,14 +823,14 @@ export default function UserProfilePage() {
               )
             )}
 
-            {tab === "snippets" && (
+            {tab === "posts" && (
               <div className="space-y-3">
-                {snippets.length > 0 ? (
-                  snippets.map((s) => <SnippetCard key={s.id} snippet={s} />)
+                {posts.length > 0 ? (
+                  posts.map((s) => <PostCard key={s.id} post={s} />)
                 ) : (
                   <div className="flex flex-col items-center py-16 text-center">
                     <Star size={28} className="text-[var(--text-tertiary)]" />
-                    <p className="mt-3 text-[13px] text-[var(--text-secondary)]">No snippets yet</p>
+                    <p className="mt-3 text-[13px] text-[var(--text-secondary)]">No posts yet</p>
                   </div>
                 )}
               </div>
