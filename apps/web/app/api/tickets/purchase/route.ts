@@ -33,6 +33,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No items" }, { status: 400 });
   }
 
+  // Age-gate: check if any event is 18+ and the user is under 18
+  const uniqueEventIds = [...new Set(items.map((i) => i.eventId))];
+  const { data: restrictedEvents } = await supabaseAdmin
+    .from("events")
+    .select("id, title")
+    .in("id", uniqueEventIds)
+    .eq("is_age_restricted", true);
+
+  if (restrictedEvents && restrictedEvents.length > 0) {
+    const { data: userRecord } = await supabaseAdmin
+      .from("users")
+      .select("date_of_birth")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const dob = (userRecord as { date_of_birth: string | null } | null)?.date_of_birth;
+    if (!dob) {
+      return NextResponse.json(
+        { error: "This event is 18+. Please add your date of birth in your profile to continue." },
+        { status: 403 }
+      );
+    }
+    const age = Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age < 18) {
+      const eventTitles = (restrictedEvents as { id: string; title: string }[]).map((e) => e.title).join(", ");
+      return NextResponse.json(
+        { error: `You must be 18 or older to purchase tickets for: ${eventTitles}` },
+        { status: 403 }
+      );
+    }
+  }
+
   const rows = items.flatMap((item) =>
     Array.from({ length: item.quantity }, () => ({
       event_id:          item.eventId,
@@ -62,7 +94,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Write graph edge for each unique event purchased — strong signal for recommendations
-  const uniqueEventIds = [...new Set(items.map((i) => i.eventId))];
   const [, eventRows] = await Promise.all([
     Promise.all(
       uniqueEventIds.map((eventId) =>

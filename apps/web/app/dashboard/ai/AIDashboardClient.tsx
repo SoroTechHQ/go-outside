@@ -13,11 +13,15 @@ type AiChatPreview = {
   last_assistant_message?: string | null;
 };
 
-function formatUpdatedAt(value: string) {
-  return new Date(value).toLocaleDateString("en-GH", {
-    month: "short",
-    day: "numeric",
-  });
+function timeAgo(value: string) {
+  const diff = Date.now() - new Date(value).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${Math.max(1, mins)}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(value).toLocaleDateString("en-GH", { month: "short", day: "numeric" });
 }
 
 export default function AIDashboardClient() {
@@ -31,9 +35,7 @@ export default function AIDashboardClient() {
     setChats(data.chats);
   };
 
-  useEffect(() => {
-    loadChats().catch(() => undefined);
-  }, []);
+  useEffect(() => { loadChats().catch(() => undefined); }, []);
 
   const deleteChat = async (id: string) => {
     await fetch(`/api/ai/chats/${id}`, { method: "DELETE" });
@@ -42,91 +44,84 @@ export default function AIDashboardClient() {
   };
 
   return (
-    <main className="page-grid min-h-screen pb-28 md:pb-12">
-      <div className="container-shell px-4 py-7 md:py-9">
-        <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-dim)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
-              <Sparkle size={13} weight="fill" />
-              AI Core
-            </p>
-            <h1 className="mt-4 font-display text-[2.2rem] italic leading-tight text-[var(--text-primary)] md:text-[3rem]">
-              Event assistant
-            </h1>
-            <p className="mt-2 max-w-[620px] text-sm leading-6 text-[var(--text-secondary)]">
-              Ask for event plans, budget options, trending nights, or personalized picks from live GoOutside data.
-            </p>
-          </div>
-          <button
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--brand-hover)]"
-            onClick={() => setActiveChatId(null)}
-            type="button"
-          >
-            <Plus size={16} weight="bold" />
-            New chat
-          </button>
-        </div>
+    <main className="page-grid min-h-screen pb-24 md:pb-6">
+      <div className="container-shell px-4 py-5 md:py-6">
+        <div className="grid h-[calc(100svh-100px)] min-h-[520px] gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
 
-        <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="hidden min-h-[560px] rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3 lg:block">
-            <div className="mb-3 flex items-center justify-between px-2 py-1">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                Chat history
-              </p>
-              <ChatCircleText size={16} className="text-[var(--text-tertiary)]" />
-            </div>
+          {/* Sidebar */}
+          <aside className="hidden flex-col gap-2 lg:flex">
+            <button
+              className="flex items-center justify-center gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-card)] py-3 text-[13px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--brand)]"
+              onClick={() => setActiveChatId(null)}
+              type="button"
+            >
+              <Plus size={14} weight="bold" />
+              New chat
+            </button>
 
-            <div className="space-y-2">
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+              <div className="sticky top-0 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">History</p>
+                <ChatCircleText size={13} className="text-[var(--text-tertiary)]" />
+              </div>
+
               <AnimatePresence initial={false}>
                 {chats.length === 0 ? (
-                  <p className="px-2 py-6 text-sm leading-6 text-[var(--text-tertiary)]">
-                    Your saved AI conversations will show up here after the database migration is applied.
-                  </p>
+                  <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
+                    <Sparkle size={22} className="mb-3 text-[var(--text-tertiary)]" weight="thin" />
+                    <p className="text-[11px] leading-5 text-[var(--text-tertiary)]">
+                      Conversations appear here once the database migration is applied.
+                    </p>
+                  </div>
                 ) : (
-                  chats.map((chat) => {
-                    const active = chat.id === activeChatId;
-                    return (
-                      <motion.div
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`group flex items-start gap-2 rounded-[18px] border p-3 transition ${
-                          active
-                            ? "border-[var(--brand)]/40 bg-[var(--brand-dim)]"
-                            : "border-transparent bg-[var(--bg-surface)] hover:border-[var(--border-subtle)]"
-                        }`}
-                        initial={{ opacity: 0, y: 8 }}
-                        key={chat.id}
-                      >
-                        <button
-                          className="min-w-0 flex-1 text-left"
+                  <div className="space-y-px p-1.5">
+                    {chats.map((chat) => {
+                      const active = chat.id === activeChatId;
+                      return (
+                        <motion.div
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`group flex cursor-pointer items-start gap-2 rounded-[12px] px-3 py-2.5 transition ${
+                            active
+                              ? "bg-[var(--brand-dim)] text-[var(--brand)]"
+                              : "text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                          }`}
+                          initial={{ opacity: 0, y: 4 }}
+                          key={chat.id}
                           onClick={() => setActiveChatId(chat.id)}
-                          type="button"
                         >
-                          <p className="truncate text-[13px] font-bold text-[var(--text-primary)]">
-                            {chat.title || "New chat"}
-                          </p>
-                          <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-                            {chat.last_assistant_message || `${chat.message_count ?? 0} messages`}
-                          </p>
-                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                            {formatUpdatedAt(chat.updated_at)}
-                          </p>
-                        </button>
-                        <button
-                          aria-label="Delete chat"
-                          className="mt-0.5 hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition hover:bg-red-500/10 hover:text-red-400 group-hover:flex"
-                          onClick={() => deleteChat(chat.id)}
-                          type="button"
-                        >
-                          <Trash size={14} weight="bold" />
-                        </button>
-                      </motion.div>
-                    );
-                  })
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="truncate text-[12px] font-semibold">
+                                {chat.title || "New chat"}
+                              </p>
+                              <span className="shrink-0 text-[9px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+                                {timeAgo(chat.updated_at)}
+                              </span>
+                            </div>
+                            {chat.last_assistant_message && (
+                              <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--text-secondary)]">
+                                {chat.last_assistant_message}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            aria-label="Delete"
+                            className="hidden h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--text-tertiary)] transition hover:text-red-400 group-hover:flex"
+                            onClick={(e) => { e.stopPropagation(); void deleteChat(chat.id); }}
+                            type="button"
+                          >
+                            <Trash size={11} weight="bold" />
+                          </button>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 )}
               </AnimatePresence>
             </div>
           </aside>
 
+          {/* Chat */}
           <AICoreChat
             activeChatId={activeChatId}
             onChatIdChange={async (id) => {

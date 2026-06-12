@@ -37,6 +37,7 @@ const EXACT_VISUALS: Record<string, { accentTone: NotificationAccentTone; iconKe
   event_update:     { iconKey: "megaphone",       accentTone: "blue" },
   new_event:        { iconKey: "calendar-plus",   accentTone: "blue" },
   friend_going:     { iconKey: "users",           accentTone: "brand" },
+  new_message:       { iconKey: "chat",            accentTone: "brand" },
   new_follower:     { iconKey: "user-plus",       accentTone: "blue" },
   post_like:        { iconKey: "heart",           accentTone: "red" },
   review_posted:    { iconKey: "sparkle",         accentTone: "purple" },
@@ -52,6 +53,8 @@ export function getNotificationVisuals(type: string) {
 
   if (exact) return exact;
   if (normalized.includes("follow"))    return { iconKey: "user-plus",       accentTone: "blue" }    as const;
+  if (normalized.includes("message") || normalized.includes("chat"))
+                                         return { iconKey: "chat",            accentTone: "brand" }   as const;
   if (normalized.includes("mention"))   return { iconKey: "megaphone",       accentTone: "purple" }  as const;
   if (normalized.includes("reply") || normalized.includes("comment"))
                                          return { iconKey: "megaphone",       accentTone: "purple" }  as const;

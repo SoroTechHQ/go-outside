@@ -87,7 +87,7 @@ export type OrganizerDashboardData = {
     capacity: number | null;
     soldRatio: number;
     revenue: number;
-    userPostCount: number;
+    posts: number;
   }>;
   hashtags: string[];
   activity: Array<{
@@ -342,7 +342,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       capacity,
       soldRatio,
       revenue: Math.round((event.tickets_sold * Math.max(80, revenue / Math.max(ticketSales, 1))) / 10) * 10,
-      userPostCount: Math.max(0, Math.round(event.saves_count / 2)),
+      posts: Math.max(0, Math.round(event.saves_count / 2)),
     };
   });
 
@@ -516,7 +516,7 @@ export type OrganizerEventListItem = {
   capacity: number | null;
   soldRatio: number;
   revenue: number;
-  userPostCount: number;
+  posts: number;
 };
 
 export async function getOrganizerAllEvents(userId: string, revenue: number, totalSold: number): Promise<OrganizerEventListItem[]> {
@@ -550,7 +550,7 @@ export async function getOrganizerAllEvents(userId: string, revenue: number, tot
       capacity,
       soldRatio,
       revenue: Math.round((ev.tickets_sold * Math.max(80, revenue / Math.max(totalSold, 1))) / 10) * 10,
-      userPostCount: Math.max(0, Math.round(ev.saves_count / 2)),
+      posts: Math.max(0, Math.round(ev.saves_count / 2)),
     };
   });
 }

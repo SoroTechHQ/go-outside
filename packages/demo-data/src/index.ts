@@ -63,6 +63,7 @@ export type EventItem = {
   venueLng: number | null;
   startDatetime: string | null;
   endDatetime: string | null;
+  isAgeRestricted?: boolean;
 };
 
 export type Review = {

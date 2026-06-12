@@ -11,11 +11,26 @@ import { z } from "zod";
 import { UserCircle } from "@phosphor-icons/react";
 import { LocationAutocomplete, type PlaceResult } from "../../../components/ui/LocationAutocomplete";
 
+const MIN_DOB = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 120);
+  return d.toISOString().split("T")[0]!;
+})();
+const MAX_DOB = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 13);
+  return d.toISOString().split("T")[0]!;
+})();
+
 const schema = z.object({
-  first_name: z.string().min(1, "Required"),
-  last_name:  z.string().min(1, "Required"),
-  username:   z.string().min(2, "Min 2 characters").max(30).regex(/^[a-z0-9._]+$/, "Lowercase letters, numbers, . and _ only").optional().or(z.literal("")),
-  phone:      z.string().optional().or(z.literal("")),
+  first_name:    z.string().min(1, "Required"),
+  last_name:     z.string().min(1, "Required"),
+  username:      z.string().min(2, "Min 2 characters").max(30).regex(/^[a-z0-9._]+$/, "Lowercase letters, numbers, . and _ only").optional().or(z.literal("")),
+  phone:         z.string().optional().or(z.literal("")),
+  date_of_birth: z.string().min(1, "Date of birth is required").refine((v) => {
+    const d = v;
+    return d >= MIN_DOB && d <= MAX_DOB;
+  }, "You must be at least 13 years old to use GoOutside"),
   location:   z.object({
     place_id:          z.string(),
     city_name:         z.string().min(1, "Required"),
@@ -47,11 +62,12 @@ export default function OnboardingProfilePage() {
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      first_name: "",
-      last_name:  "",
-      username:   "",
-      phone:      "",
-      location:   null,
+      first_name:    "",
+      last_name:     "",
+      username:      "",
+      phone:         "",
+      date_of_birth: "",
+      location:      null,
     },
   });
 
@@ -76,11 +92,12 @@ export default function OnboardingProfilePage() {
     if (!isLoaded || !user) return;
     const draft = getOnboardingDraft();
     reset({
-      first_name: draft.profile?.first_name ?? user.firstName ?? "",
-      last_name:  draft.profile?.last_name  ?? user.lastName  ?? "",
-      username:   draft.profile?.username   ?? (user.username ?? "").toLowerCase(),
-      phone:      draft.profile?.phone      ?? user.phoneNumbers?.[0]?.phoneNumber ?? "",
-      location:   draft.profile?.location ?? null,
+      first_name:    draft.profile?.first_name    ?? user.firstName ?? "",
+      last_name:     draft.profile?.last_name     ?? user.lastName  ?? "",
+      username:      draft.profile?.username      ?? (user.username ?? "").toLowerCase(),
+      phone:         draft.profile?.phone         ?? user.phoneNumbers?.[0]?.phoneNumber ?? "",
+      date_of_birth: draft.profile?.date_of_birth ?? "",
+      location:      draft.profile?.location ?? null,
     });
   }, [isLoaded, user, reset]);
 
@@ -94,6 +111,7 @@ export default function OnboardingProfilePage() {
         last_name:           values.last_name,
         username:            values.username,
         phone:               values.phone,
+        date_of_birth:       values.date_of_birth,
         location_city:       loc.city_name,
         location_city_name:  loc.city_name,
         location_region:     loc.region,
@@ -119,12 +137,13 @@ export default function OnboardingProfilePage() {
 
       saveOnboardingDraft({
         profile: {
-          first_name: values.first_name,
-          last_name:  values.last_name,
-          username:   values.username,
-          phone:      values.phone,
-          city:       values.location?.city_name,
-          location:   values.location,
+          first_name:    values.first_name,
+          last_name:     values.last_name,
+          username:      values.username,
+          phone:         values.phone,
+          date_of_birth: values.date_of_birth,
+          city:          values.location?.city_name,
+          location:      values.location,
         },
       });
 
@@ -222,6 +241,23 @@ export default function OnboardingProfilePage() {
               </span>
             </label>
             <input {...register("phone")} type="tel" className={inputCls} placeholder="+233 XX XXX XXXX" />
+          </div>
+
+          <div>
+            <label className={labelCls}>Date of birth</label>
+            <input
+              {...register("date_of_birth")}
+              type="date"
+              className={inputCls}
+              min={MIN_DOB}
+              max={MAX_DOB}
+            />
+            {errors.date_of_birth && (
+              <p className="mt-1 text-[11px] text-red-400">{errors.date_of_birth.message}</p>
+            )}
+            <p className="mt-1 text-[11px]" style={{ color: "var(--ob-text-faint)" }}>
+              Used to verify your age for 18+ events. Not shown publicly.
+            </p>
           </div>
 
           <div>

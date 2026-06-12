@@ -163,6 +163,7 @@ export type DbEventRow = {
   organizer_id:      string;
   is_online:         boolean;
   custom_location:   string | null;
+  is_age_restricted: boolean;
   categories:        DbCategory;
   venues:            DbVenueRow | null;
   ticket_types:      DbTicketTypeRow[];
@@ -235,6 +236,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
     tags:    row.tags ?? [],
     venueLat:      venue?.latitude  ?? null,
     venueLng:      venue?.longitude ?? null,
+    isAgeRestricted: row.is_age_restricted ?? false,
     startDatetime: row.start_datetime,
     endDatetime:   row.end_datetime,
     policies:      row.policies ?? null,

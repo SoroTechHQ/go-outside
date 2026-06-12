@@ -271,9 +271,9 @@ export default async function OrganizerEventDetailPage({
           Posts your community tagged to this event.
         </p>
 
-        {posts && posts.length > 0 ? (
+        {communityPosts && communityPosts.length > 0 ? (
           <div className="mt-4 space-y-3">
-            {posts.map((post) => {
+            {communityPosts.map((post) => {
               const pu = post.users as unknown as { first_name: string; last_name: string } | null;
               const name = pu ? `${pu.first_name} ${pu.last_name[0] ?? ""}.` : "User";
               return (

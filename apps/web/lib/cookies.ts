@@ -4,8 +4,9 @@
  * go_done   — HttpOnly, Secure. Set by /api/onboarding/complete.
  *             Read by /home server component to skip Clerk metadata round-trip.
  *
- * go_prefs  — Client-readable. Stores location, interests, score, tier after
- *             onboarding completes. Used for instant feed personalization.
+ * go_prefs  — Client-readable. Stores city, interests, and vibe for fast feed
+ *             personalization. Deliberately excludes pulse score/tier — those
+ *             are fetched on-demand to avoid exposing them to arbitrary JS.
  *
  * go_draft  — Client-readable, 1-day TTL. Persists onboarding form state
  *             across refreshes and back-navigation.
@@ -19,17 +20,16 @@ export interface UserPrefs {
   city:      string;
   interests: string[];
   vibe:      Record<string, unknown> | null;
-  score:     number;
-  tier:      string;
 }
 
 export interface OnboardingDraft {
   profile?: {
-    first_name?: string;
-    last_name?:  string;
-    username?:   string;
-    phone?:      string;
-    city?:       string;
+    first_name?:    string;
+    last_name?:     string;
+    username?:      string;
+    phone?:         string;
+    date_of_birth?: string;
+    city?:          string;
     location?: {
       place_id: string;
       city_name: string;
@@ -67,7 +67,7 @@ function clientDelete(name: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// go_prefs  — user preferences (client-readable)
+// go_prefs  — user preferences (client-readable, non-sensitive fields only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function saveUserPrefs(prefs: UserPrefs) {

@@ -38,6 +38,13 @@ export default async function SettingsPage() {
     email:  rawPrefs.email  !== false,
     push:   rawPrefs.push   !== false,
     in_app: rawPrefs.in_app !== false,
+    messages_email: rawPrefs.messages_email !== false && rawPrefs.email !== false,
+    messages_push: rawPrefs.messages_push !== false && rawPrefs.push !== false,
+    messages_in_app: rawPrefs.messages_in_app !== false && rawPrefs.in_app !== false,
+    messages_email_delay_mins:
+      typeof rawPrefs.messages_email_delay_mins === "number"
+        ? rawPrefs.messages_email_delay_mins
+        : 60,
   };
 
   const maskedEmail = (() => {

@@ -36,11 +36,11 @@ import {
   getCommunityProfileById,
   getUserFollowers,
   getUserPosts,
-  getUserPosts,
+  getUserReviews,
   type CommunityProfile,
   type MiniUser,
   type UserPost,
-  type UserPost,
+  type UserReview,
 } from "../../../../lib/mock-community";
 
 type RealProfile = {
@@ -362,9 +362,9 @@ function PostCard({ post, user }: { post: UserPost; user: CommunityProfile }) {
   );
 }
 
-/* ── Post card ─────────────────────────────────────────────────────────── */
+/* ── Review card ───────────────────────────────────────────────────────── */
 
-function PostCard({ post }: { post: UserPost }) {
+function ReviewCard({ post }: { post: UserReview }) {
   return (
     <div className="overflow-hidden rounded-[18px] border border-white/5 bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10] p-4 transition hover:border-[#4a9f63]/20">
       <div className="flex items-start justify-between gap-2">
@@ -397,12 +397,12 @@ function PostCard({ post }: { post: UserPost }) {
 
 /* ── Main page ────────────────────────────────────────────────────────────── */
 
-type Tab = "posts" | "been-there" | "posts" | "following";
+type Tab = "posts" | "been-there" | "reviews" | "following";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "posts", label: "Posts" },
   { id: "been-there", label: "Been There" },
-  { id: "posts", label: "Posts" },
+  { id: "reviews", label: "Reviews" },
   { id: "following", label: "Following" },
 ];
 
@@ -511,9 +511,9 @@ export default function UserProfilePage() {
     enabled: !!userId,
   });
 
-  const { data: posts = [] } = useQuery({
-    queryKey: ["user-posts", userId],
-    queryFn: () => getUserPosts(userId),
+  const { data: reviews = [] } = useQuery({
+    queryKey: ["user-reviews", userId],
+    queryFn: () => getUserReviews(userId),
     staleTime: Infinity,
     enabled: !!userId,
   });
@@ -821,14 +821,14 @@ export default function UserProfilePage() {
               )
             )}
 
-            {tab === "posts" && (
+            {tab === "reviews" && (
               <div className="space-y-3">
-                {posts.length > 0 ? (
-                  posts.map((s) => <PostCard key={s.id} post={s} />)
+                {reviews.length > 0 ? (
+                  reviews.map((s) => <ReviewCard key={s.id} post={s} />)
                 ) : (
                   <div className="flex flex-col items-center py-16 text-center">
                     <Star size={28} className="text-[var(--text-tertiary)]" />
-                    <p className="mt-3 text-[13px] text-[var(--text-secondary)]">No posts yet</p>
+                    <p className="mt-3 text-[13px] text-[var(--text-secondary)]">No reviews yet</p>
                   </div>
                 )}
               </div>

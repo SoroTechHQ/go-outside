@@ -120,7 +120,7 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
             </div>
           </header>
         ) : (
-          /* Non-home app pages: compact 72px bar with search pill + icons */
+          /* Non-home app pages: compact 72px bar — search bar only on desktop */
           <header
             className="sticky top-0 z-40 hidden md:flex items-center border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] backdrop-blur-xl"
             style={{
@@ -138,21 +138,19 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
               ) : (
                 <div className="flex-1" />
               )}
-              <div className="flex shrink-0 items-center gap-2">
-                <NotificationBell />
+              {totalCount > 0 && (
                 <button
-                    className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] ${totalCount === 0 ? "hidden" : ""}`}
-                    onClick={openCart}
-                    type="button"
-                    suppressHydrationWarning
-                  >
-                    <ShoppingCart size={17} weight="bold" />
-                    <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
-                      {totalCount}
-                    </span>
-                  </button>
-                <ThemeToggle />
-              </div>
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)]"
+                  onClick={openCart}
+                  type="button"
+                  suppressHydrationWarning
+                >
+                  <ShoppingCart size={17} weight="bold" />
+                  <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
+                    {totalCount}
+                  </span>
+                </button>
+              )}
             </div>
           </header>
         )}

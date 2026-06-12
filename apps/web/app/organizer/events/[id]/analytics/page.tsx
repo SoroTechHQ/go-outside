@@ -209,7 +209,7 @@ export default async function EventAnalyticsPage({
   const data = await getEventAnalytics(id, user.id);
   if (!data) return notFound();
 
-  const { event, metrics, revenue, ticketTypes, postCount, avgRating, postCount, totalPostLikes, last14 } = data;
+  const { event, metrics, revenue, ticketTypes, postCount, avgRating, totalPostLikes, last14 } = data;
 
   const topOfFunnel = Math.max(metrics.peekOpens, metrics.cardClicks, 1);
 
