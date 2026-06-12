@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import {
   ArrowRight,
   CalendarBlank,
@@ -14,9 +13,8 @@ import {
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
 import { AIChatPanel } from "../../components/search/AIChatPanel";
+import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
 import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform } from "../../lib/image-url";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 type SearchTab = "all" | "events" | "users" | "posts";
 type SearchEvent   = { id: string; title: string; slug: string; banner_url: string | null; start_datetime: string | null; price_label: string | null; trending_score: number | null };
@@ -93,7 +91,7 @@ function UserResult({ user }: { user: SearchUser }) {
         {user.avatar_url ? (
           <Image src={withAvatarTransform(user.avatar_url) ?? user.avatar_url} alt={name} width={44} height={44} className="h-full w-full object-cover" />
         ) : (
-          <Avatar size={44} name={name} variant="beam" colors={AVATAR_COLORS} />
+          <NaviiAvatar seed={user.username ?? user.clerk_id ?? name} title={name} size={44} className="h-full w-full object-cover" />
         )}
       </div>
       <div className="flex-1 min-w-0">

@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -31,14 +30,13 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../lib/image-url";
+import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
 import { getPulseProgress, getNextTier, type PulseTier } from "../dashboard/profile/types";
 import { PostFeed } from "../../components/posts/PostFeed";
 import { UserPostComposer } from "../../components/posts/UserPostComposer";
 import { useFollowMutation, useFollowStatus } from "../../hooks/useFollow";
 import { EditProfileSheet } from "../dashboard/profile/components/EditProfileSheet";
 import type { UserProfile } from "../dashboard/profile/types";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 const TIER_COLOR: Record<string, string> = {
   Newcomer:      "#888888",
@@ -296,12 +294,7 @@ function PeopleSheet({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <Avatar
-                        size={40}
-                        name={displayName}
-                        variant="beam"
-                        colors={AVATAR_COLORS}
-                      />
+                      <NaviiAvatar seed={u.username ?? u.clerk_id ?? displayName} title={displayName} size={40} className="h-full w-full object-cover" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -865,7 +858,7 @@ export default function GoProfileClient({
                 priority
               />
             ) : (
-              <Avatar size={88} name={name} variant="beam" colors={AVATAR_COLORS} />
+              <NaviiAvatar seed={username ?? clerkId ?? name} title={name} size={88} className="h-full w-full object-cover" />
             )}
           </div>
 

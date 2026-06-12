@@ -9,17 +9,10 @@ import {
 } from "../../../../lib/user-graph-context";
 import type { AssistantPick, AssistantEvent } from "../../../../lib/ai-assistant";
 
-// Key pool — tries each key in order on rate-limit, falls back to GROQ_API_KEY
-const KEY_POOL = [
-  process.env.GROQ_API_KEY_1,
-  process.env.GROQ_API_KEY_2,
-  process.env.GROQ_API_KEY_3,
-  process.env.GROQ_API_KEY_4,
-  process.env.GROQ_API_KEY_PROD_1,
-  process.env.GROQ_API_KEY,
-].filter((k): k is string => typeof k === "string" && k.length > 0)
- .filter((k, i, arr) => arr.indexOf(k) === i);
-const groq = KEY_POOL.length > 0 ? new Groq({ apiKey: KEY_POOL[0] }) : null;
+// Single active key for now. GROQ_API_KEY_1..4 stay inactive placeholders for
+// future rotation, but this route only uses the current configured key.
+const activeGroqApiKey = process.env.GROQ_API_KEY ?? process.env.GROQ_API_KEY_PROD_1 ?? "";
+const groq = activeGroqApiKey ? new Groq({ apiKey: activeGroqApiKey }) : null;
 
 export type ChatMessage = {
   role: "user" | "assistant";

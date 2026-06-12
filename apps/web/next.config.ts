@@ -5,6 +5,7 @@ const DASHBOARD_REWRITES = [
   "messages",
   "trending",
   "notifications",
+  "ai",
   "saved",
   "profile",
   "cart",

@@ -18,7 +18,7 @@ export function createTestContext(overrides?: { services?: Partial<AppServices> 
   const admin = store.createOrUpdateUser(
     {
       clerkId: 'admin_clerk',
-      email: 'admin@gooutside.test',
+      email: 'admin@gooutside.club',
       firstName: 'Admin',
       lastName: 'User',
       role: 'admin'
@@ -28,7 +28,7 @@ export function createTestContext(overrides?: { services?: Partial<AppServices> 
   const organizer = store.createOrUpdateUser(
     {
       clerkId: 'organizer_clerk',
-      email: 'organizer@gooutside.test',
+      email: 'organizer@gooutside.club',
       firstName: 'Olivia',
       lastName: 'Organizer',
       role: 'organizer'
@@ -38,7 +38,7 @@ export function createTestContext(overrides?: { services?: Partial<AppServices> 
   const attendee = store.createOrUpdateUser(
     {
       clerkId: 'attendee_clerk',
-      email: 'attendee@gooutside.test',
+      email: 'attendee@gooutside.club',
       firstName: 'Amina',
       lastName: 'Attendee',
       role: 'attendee'

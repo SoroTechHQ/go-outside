@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import {
   Image as ImageIcon,
   VideoCamera,
@@ -12,10 +11,10 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { avatarUrl as withAvatarTransform } from "../../lib/image-url";
 import type { Post } from "./PostCard";
 
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 const MAX_CHARS = 500;
 
 type EventResult = { id: string; title: string; slug: string; banner_url: string | null };
@@ -151,7 +150,7 @@ export function PostComposer({ clerkId, name, avatarUrl, onPosted }: PostCompose
           {resolved ? (
             <Image src={resolved} alt={name} width={38} height={38} className="h-full w-full object-cover" />
           ) : (
-            <Avatar size={38} name={name} variant="beam" colors={AVATAR_COLORS} />
+            <NaviiAvatar seed={clerkId || name} title={name} size={38} className="h-full w-full object-cover" />
           )}
         </div>
 

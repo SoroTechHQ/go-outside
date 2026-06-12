@@ -1,10 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Avatar from "boring-avatars";
+import { NaviiAvatar } from "../../../../components/profile/NaviiAvatar";
 import { avatarUrl as withCdn } from "../../../../lib/image-url";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 type Props = {
   name: string;
@@ -29,14 +27,14 @@ export function UserAvatar({ name, avatarUrl, size, ringClass = "", className = 
 
   return (
     <div className={base} style={{ width: size, height: size }}>
-      <Avatar size={size} name={name} variant="beam" colors={AVATAR_COLORS} />
+      <NaviiAvatar seed={name} title={name} size={size} className="h-full w-full object-cover" />
     </div>
   );
 }
 
 /**
  * ProfileAvatar — renders at 80px on mobile, 96px on desktop.
- * Uses two instances hidden/shown via Tailwind so boring-avatars gets the correct numeric size.
+ * Uses two instances hidden/shown via Tailwind so Navii gets the correct numeric size.
  */
 export function ProfileAvatar({
   name,

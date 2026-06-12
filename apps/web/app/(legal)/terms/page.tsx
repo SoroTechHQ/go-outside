@@ -140,7 +140,7 @@ export default function TermsOfServicePage() {
         </Section>
 
         <Section id="account" title="3. Account Registration">
-          <p>You may sign up using Google OAuth or with an email and password. You agree to: provide accurate and complete information, keep your account information current, maintain the confidentiality of your password, not share your account with others, and notify us immediately if you suspect unauthorised access at <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a>.</p>
+          <p>You may sign up using Google OAuth or with an email and password. You agree to: provide accurate and complete information, keep your account information current, maintain the confidentiality of your password, not share your account with others, and notify us immediately if you suspect unauthorised access at <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>.</p>
           <p><strong>One account per person.</strong> Operating multiple accounts may result in the additional accounts being merged or terminated.</p>
           <p><strong>Account security.</strong> You are responsible for all activity that occurs under your account. GoOutside is not liable for losses caused by unauthorised use of your account resulting from your failure to secure your credentials.</p>
         </Section>
@@ -172,7 +172,7 @@ export default function TermsOfServicePage() {
               ["How it works", "Select ticket type and quantity → Pay via Paystack (card, mobile money, bank) → QR-coded ticket generated at Dashboard → Tickets → Present QR at the event"],
               ["Platform fee", "5% on all paid ticket sales — included in the displayed price, no hidden fees. Free events: no fee."],
               ["Payment processing", "Paystack (PCI-DSS compliant). We do not store your card details."],
-              ["Ticket delivery", "Digital, within the app. If delivery fails after successful payment, contact support@gooutside.app for manual issue within 24 hours."],
+              ["Ticket delivery", "Digital, within the app. If delivery fails after successful payment, contact support@gooutside.club for manual issue within 24 hours."],
               ["GoOutside platform fee", "Non-refundable"],
               ["Event refunds", "At organiser's discretion — check the event page. GoOutside facilitates refunds if the organiser approves."],
               ["Event cancellation by organiser", "Full refund of ticket price (excluding Paystack fees) within 10 business days"],
@@ -190,7 +190,7 @@ export default function TermsOfServicePage() {
 
           <p><strong>Attendee data:</strong> You receive attendees' names, emails, and ticket details. You must use this data only for legitimate event management purposes, not sell or share it with third parties, comply with Ghana's Data Protection Act 2012, and maintain your own attendee privacy notice.</p>
 
-          <p><strong>Cancellations:</strong> If you cancel an event, notify GoOutside immediately at <a href="mailto:support@gooutside.app" className="text-[#2f8f45] underline">support@gooutside.app</a>, communicate to all ticket purchasers, and cooperate to process refunds within 10 business days. Repeated cancellations or refund failures may result in account suspension.</p>
+          <p><strong>Cancellations:</strong> If you cancel an event, notify GoOutside immediately at <a href="mailto:support@gooutside.club" className="text-[#2f8f45] underline">support@gooutside.club</a>, communicate to all ticket purchasers, and cooperate to process refunds within 10 business days. Repeated cancellations or refund failures may result in account suspension.</p>
 
           <Warning>
             <strong>Prohibited events:</strong> You may not list events that are illegal under Ghanaian law, promote violence or illegal substances, constitute fraud, or are not real events intended to collect payments.
@@ -221,7 +221,7 @@ export default function TermsOfServicePage() {
         <Section id="ip" title="10. Intellectual Property">
           <p><strong>GoOutside's IP:</strong> The GoOutside brand, logo, platform software, UI design, and all proprietary technology (Pulse Score algorithm, recommendation engine, all associated software) are owned by Soro Technologies or its licensors. You may not copy, reproduce, or create derivative works from GoOutside's technology or brand assets without written permission.</p>
           <p><strong>Your IP:</strong> You retain ownership of all original content you create. See Section 5 for the limited license you grant us.</p>
-          <p><strong>Copyright claims:</strong> Email <a href="mailto:legal@gooutside.app" className="text-[#2f8f45] underline">legal@gooutside.app</a> with: description of the copyrighted work, URL of the alleged infringing content, your contact information, and a good-faith statement.</p>
+          <p><strong>Copyright claims:</strong> Email <a href="mailto:legal@gooutside.club" className="text-[#2f8f45] underline">legal@gooutside.club</a> with: description of the copyrighted work, URL of the alleged infringing content, your contact information, and a good-faith statement.</p>
         </Section>
 
         <Section id="third-party" title="11. Third-Party Services and Links">
@@ -249,7 +249,7 @@ export default function TermsOfServicePage() {
 
         <Section id="governing-law" title="15. Governing Law and Dispute Resolution">
           <p>These Terms are governed by the laws of the <strong>Republic of Ghana</strong>.</p>
-          <p><strong>Informal resolution:</strong> Before filing any formal legal claim, contact GoOutside at <a href="mailto:legal@gooutside.app" className="text-[#2f8f45] underline">legal@gooutside.app</a> and attempt to resolve the dispute informally for 30 days.</p>
+          <p><strong>Informal resolution:</strong> Before filing any formal legal claim, contact GoOutside at <a href="mailto:legal@gooutside.club" className="text-[#2f8f45] underline">legal@gooutside.club</a> and attempt to resolve the dispute informally for 30 days.</p>
           <p><strong>Formal disputes:</strong> Subject to the exclusive jurisdiction of the courts of Ghana.</p>
           <p className="text-[14px] text-[#6b7280]">Nothing in these Terms affects your statutory rights as a consumer under Ghanaian consumer protection law.</p>
         </Section>
@@ -268,10 +268,10 @@ export default function TermsOfServicePage() {
           <Table
             headers={["Type", "Contact"]}
             rows={[
-              ["General legal queries", <a href="mailto:legal@gooutside.app" className="text-[#2f8f45] underline">legal@gooutside.app</a>],
-              ["Payment and ticket support", <a href="mailto:support@gooutside.app" className="text-[#2f8f45] underline">support@gooutside.app</a>],
-              ["Privacy and data", <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a>],
-              ["Copyright claims", <a href="mailto:legal@gooutside.app" className="text-[#2f8f45] underline">legal@gooutside.app</a>],
+              ["General legal queries", <a href="mailto:legal@gooutside.club" className="text-[#2f8f45] underline">legal@gooutside.club</a>],
+              ["Payment and ticket support", <a href="mailto:support@gooutside.club" className="text-[#2f8f45] underline">support@gooutside.club</a>],
+              ["Privacy and data", <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>],
+              ["Copyright claims", <a href="mailto:legal@gooutside.club" className="text-[#2f8f45] underline">legal@gooutside.club</a>],
               ["Mailing address", "Soro Technologies, Accra, Ghana"],
             ]}
           />

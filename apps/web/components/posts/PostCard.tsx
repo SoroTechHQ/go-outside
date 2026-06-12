@@ -3,13 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Avatar from "boring-avatars";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, Share, Trash, CalendarBlank, LinkSimple } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform, getImageUrl } from "../../lib/image-url";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 export type PostAuthor = {
   id: string;
@@ -117,7 +115,7 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
             {resolved ? (
               <Image src={resolved} alt={authorName} width={36} height={36} className="h-full w-full object-cover" />
             ) : (
-              <Avatar size={36} name={authorName} variant="beam" colors={AVATAR_COLORS} />
+              <NaviiAvatar seed={author.username ?? author.clerk_id ?? authorName} title={authorName} size={36} className="h-full w-full object-cover" />
             )}
           </div>
           <div className="min-w-0">

@@ -471,17 +471,43 @@ export async function executeTool(
   args: Record<string, unknown>,
   clerkId: string,
 ): Promise<unknown> {
+  const normalizedArgs = normalizeToolArgs(args);
   switch (name) {
-    case "search_events":         return searchEvents(args as Parameters<typeof searchEvents>[0]);
-    case "get_budget_options":    return getBudgetOptions(args as Parameters<typeof getBudgetOptions>[0]);
-    case "get_trending_events":   return getTrendingEvents(args as Parameters<typeof getTrendingEvents>[0]);
+    case "search_events":         return searchEvents(normalizedArgs as Parameters<typeof searchEvents>[0]);
+    case "get_budget_options":    return getBudgetOptions(normalizedArgs as Parameters<typeof getBudgetOptions>[0]);
+    case "get_trending_events":   return getTrendingEvents(normalizedArgs as Parameters<typeof getTrendingEvents>[0]);
     case "get_user_profile":      return getUserProfile(clerkId);
-    case "get_event_details":     return getEventDetails(args as Parameters<typeof getEventDetails>[0]);
-    case "get_friends_activity":  return getFriendsActivity(clerkId, args as { upcoming_only?: boolean });
-    case "get_organizer_events":  return getOrganizerEvents(args as Parameters<typeof getOrganizerEvents>[0]);
+    case "get_event_details":     return getEventDetails(normalizedArgs as Parameters<typeof getEventDetails>[0]);
+    case "get_friends_activity":  return getFriendsActivity(clerkId, normalizedArgs as { upcoming_only?: boolean });
+    case "get_organizer_events":  return getOrganizerEvents(normalizedArgs as Parameters<typeof getOrganizerEvents>[0]);
     default:
       return { error: `Unknown tool: ${name}` };
   }
+}
+
+function normalizeToolArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(args)) {
+    if (value === "" || value === null || typeof value === "undefined") continue;
+
+    if (["limit", "budget_ghs"].includes(key) && typeof value === "string") {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) normalized[key] = numeric;
+      continue;
+    }
+
+    if (["is_free", "upcoming_only"].includes(key) && typeof value === "string") {
+      const lower = value.toLowerCase();
+      if (lower === "true") normalized[key] = true;
+      if (lower === "false") normalized[key] = false;
+      continue;
+    }
+
+    normalized[key] = value;
+  }
+
+  return normalized;
 }
 
 // ── Groq tool definitions (sent to LLM) ──────────────────────────────────────

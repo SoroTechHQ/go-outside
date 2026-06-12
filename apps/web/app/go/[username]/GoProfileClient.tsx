@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
@@ -22,11 +21,10 @@ import {
   UsersFour,
 } from "@phosphor-icons/react";
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../../lib/image-url";
+import { NaviiAvatar } from "../../../components/profile/NaviiAvatar";
 import { getPulseProgress, getNextTier, getTierInfo, type PulseTier } from "../../dashboard/profile/types";
 import { PostFeed } from "../../../components/posts/PostFeed";
 import { useFollowMutation, useFollowStatus } from "../../../hooks/useFollow";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 const TIER_COLOR: Record<string, string> = {
   Newcomer:    "#888888",
@@ -352,7 +350,7 @@ export default function GoProfileClient({
             {resolvedAvatar ? (
               <Image src={resolvedAvatar} alt={name} width={88} height={88} className="h-full w-full object-cover" priority />
             ) : (
-              <Avatar size={88} name={name} variant="beam" colors={AVATAR_COLORS} />
+              <NaviiAvatar seed={username ?? clerkId ?? name} title={name} size={88} className="h-full w-full object-cover" />
             )}
           </div>
 

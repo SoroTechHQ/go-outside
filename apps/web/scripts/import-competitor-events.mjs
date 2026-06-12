@@ -479,7 +479,7 @@ async function ensureOrganizer(record, categorySlug) {
   const organizerName = normalizeText(record.organizer_name || "Imported Organizer");
   const organizerSlug = slugify(organizerName) || "imported-organizer";
   const syntheticClerkId = `import:${SOURCE_PLATFORM}:organizer:${organizerSlug}`;
-  const syntheticEmail = `import+${SOURCE_PLATFORM}-${organizerSlug}@gooutside.local`;
+  const syntheticEmail = `import+${SOURCE_PLATFORM}-${organizerSlug}@gooutside.club`;
   const { firstName, lastName } = splitName(organizerName);
 
   if (DRY_RUN) {

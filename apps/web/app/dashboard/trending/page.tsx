@@ -21,7 +21,7 @@ import {
 } from "@phosphor-icons/react";
 import { thumbnailUrl as withThumbnailTransform } from "../../../lib/image-url";
 import { AIChatPanel } from "../../../components/search/AIChatPanel";
-import Avatar from "boring-avatars";
+import { NaviiAvatar } from "../../../components/profile/NaviiAvatar";
 import type {
   TrendReason,
   TrendingEvent,
@@ -37,8 +37,6 @@ type SearchEvent  = { id: string; title: string; slug: string; banner_url: strin
 type SearchUser   = { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null; avatar_url: string | null; pulse_tier: string | null; pulse_score: number | null };
 type SearchSnip   = { id: string; body: string; vibe_tags: string[]; created_at: string };
 type SearchResult = { events: SearchEvent[]; users: SearchUser[]; posts: SearchSnip[]; nextCursor: string | null };
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 function useDebounce<T>(val: T, ms: number): T {
@@ -158,7 +156,9 @@ function UserCard({ u }: { u: SearchUser }) {
       {u.avatar_url ? (
         <img alt={name} src={u.avatar_url} className="h-11 w-11 shrink-0 rounded-full object-cover" />
       ) : (
-        <Avatar size={44} name={name} variant="beam" colors={AVATAR_COLORS} />
+        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
+          <NaviiAvatar seed={u.username ?? u.clerk_id ?? name} title={name} size={44} className="h-full w-full object-cover" />
+        </div>
       )}
       <div className="min-w-0">
         <p className="truncate text-[13px] font-bold text-[var(--text-primary)]">{name}</p>

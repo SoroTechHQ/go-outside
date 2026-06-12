@@ -189,7 +189,7 @@ export default function CookiePolicyPage() {
 
         <Section id="contact" title="9. Contact">
           <p>For questions about our use of cookies or tracking technologies:</p>
-          <p>Email: <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a></p>
+          <p>Email: <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a></p>
         </Section>
 
       </div>

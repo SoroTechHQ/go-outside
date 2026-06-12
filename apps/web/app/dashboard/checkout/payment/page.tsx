@@ -105,7 +105,7 @@ export default function PaymentPage() {
       // @ts-expect-error paystack global
       const handler = window.PaystackPop?.setup({
         key:       process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "",
-        email:     attendee.email || "customer@gooutside.app",
+        email:     attendee.email || "customer@gooutside.club",
         amount:    totalPrice * 100,
         currency:  "GHS",
         reference,

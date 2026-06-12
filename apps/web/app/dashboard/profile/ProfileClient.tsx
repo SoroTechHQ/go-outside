@@ -4,7 +4,6 @@ import { Fragment, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Avatar from "boring-avatars";
 import {
   MapPin,
   PencilSimple,
@@ -34,8 +33,7 @@ import { BecomeOrganizerCard } from "./components/BecomeOrganizerCard";
 import { FollowingTab } from "./components/FollowingTab";
 import { FriendsTab } from "./components/FriendsTab";
 import { EditProfileSheet } from "./components/EditProfileSheet";
-
-/* ── Types ────────────────────────────────────────────────────────────────── */
+import { NaviiAvatar } from "../../../components/profile/NaviiAvatar";
 
 type TabId = "been-there" | "posts" | "tweets" | "following" | "friends";
 
@@ -52,10 +50,6 @@ type Props = {
   pastTickets: AttendeeTicket[];
   pastEvents: EventItem[];
 };
-
-/* ── Avatar colors for boring-avatars ────────────────────────────────────── */
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 /* ── Slim stats row (IG/TikTok style) ────────────────────────────────────── */
 
@@ -215,7 +209,7 @@ function FollowersSheet({
                 {p.avatar_url ? (
                   <img src={p.avatar_url} alt={name} className="h-full w-full object-cover" />
                 ) : (
-                  <Avatar size={40} name={name} variant="beam" colors={AVATAR_COLORS} />
+                  <NaviiAvatar seed={p.username ?? p.clerk_id ?? name} title={name} size={40} className="h-full w-full object-cover" />
                 )}
               </div>
               <div className="min-w-0 flex-1 text-left">

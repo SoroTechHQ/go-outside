@@ -67,14 +67,14 @@ export async function POST(
 
       const followerName = `${me.first_name} ${me.last_name ?? ""}`.trim();
       await resend.emails.send({
-        from: "GoOutside <noreply@gooutside.app>",
+        from: "GoOutside <noreply@mail.gooutside.club>",
         to:   email,
         subject: `${followerName} is now following you on GoOutside`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
             <h2 style="color:#0e2212">You have a new follower!</h2>
             <p><strong>${followerName}</strong> started following you on GoOutside.</p>
-            <a href="https://gooutside.app/home" style="display:inline-block;background:#4a9f63;color:#fff;padding:12px 24px;border-radius:12px;text-decoration:none;font-weight:600;margin-top:16px">Open GoOutside</a>
+            <a href="https://gooutside.club/home" style="display:inline-block;background:#4a9f63;color:#fff;padding:12px 24px;border-radius:12px;text-decoration:none;font-weight:600;margin-top:16px">Open GoOutside</a>
           </div>
         `,
       });
