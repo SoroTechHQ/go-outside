@@ -1,7 +1,7 @@
 import { SignIn } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
-import { Buildings, ArrowRight } from "@phosphor-icons/react";
+import { Buildings, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 
 const clerkAppearance = {
   variables: {

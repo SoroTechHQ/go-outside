@@ -5,13 +5,13 @@ import type {
   TrendingEventDetail,
   TrendingOrganizer,
   TrendingOrganizerDetail,
-  TrendingSnippet,
+  TrendingPost,
   TrendingTopic,
   TrendingTopicDetail,
 } from "./types";
 
 const WINDOW_HOURS = 48;
-const SNIPPET_WINDOW_HOURS = 168;
+const POST_WINDOW_HOURS = 168;
 const BODY_HASHTAG_REGEX = /#([a-z0-9][a-z0-9_-]{1,31})/gi;
 const TOPIC_BLOCKLIST = new Set([
   "accra",
@@ -56,7 +56,7 @@ const EDGE_WEIGHTS: Record<string, number> = {
   checkin: 9,
   organizer_follows: 4,
   follows: 2.5,
-  snippet_post: 5,
+  post_post: 5,
 };
 
 type EventRow = {
@@ -95,7 +95,7 @@ type OrganizerProfileRow = {
   users: UserRow | UserRow[] | null;
 };
 
-type SnippetRow = {
+type PostRow = {
   id: string;
   body: string | null;
   rating: number | null;
@@ -118,8 +118,8 @@ type EventContext = {
   events: TrendingEvent[];
   eventMap: Map<string, TrendingEvent>;
   rawEventMap: Map<string, EventRow>;
-  snippetCounts: Map<string, number>;
-  snippetEventIdsByTag: Map<string, Set<string>>;
+  postCounts: Map<string, number>;
+  postEventIdsByTag: Map<string, Set<string>>;
   topicUsageByEventId: Map<string, Set<string>>;
   organizerUserIds: Set<string>;
 };
@@ -178,7 +178,7 @@ function unique<T>(items: T[]) {
 
 function buildEventReasons(input: {
   interactions: number;
-  snippets: number;
+  posts: number;
   views: number;
   saves: number;
   tickets: number;
@@ -188,7 +188,7 @@ function buildEventReasons(input: {
   const reasons: TrendReason[] = [];
 
   if (input.interactions > 0) reasons.push({ label: "Momentum", value: `${Math.round(input.interactions)} recent actions` });
-  if (input.snippets > 0) reasons.push({ label: "Talked about", value: `${input.snippets} snippet${input.snippets === 1 ? "" : "s"}` });
+  if (input.posts > 0) reasons.push({ label: "Talked about", value: `${input.posts} post${input.posts === 1 ? "" : "s"}` });
   if (input.saves > 0) reasons.push({ label: "Saved", value: `${input.saves.toLocaleString()} saves` });
   if (input.tickets > 0) reasons.push({ label: "Tickets", value: `${input.tickets.toLocaleString()} sold` });
   if (input.views > 0) reasons.push({ label: "Views", value: `${input.views.toLocaleString()} views` });
@@ -200,7 +200,7 @@ function buildEventReasons(input: {
 function buildOrganizerReasons(input: {
   followers: number;
   eventCount: number;
-  snippets: number;
+  posts: number;
   velocity: number;
 }) {
   const reasons: TrendReason[] = [];
@@ -208,19 +208,19 @@ function buildOrganizerReasons(input: {
   if (input.velocity > 0) reasons.push({ label: "Momentum", value: `${Math.round(input.velocity)} recent follow + event actions` });
   if (input.followers > 0) reasons.push({ label: "Followers", value: `${input.followers.toLocaleString()} following` });
   if (input.eventCount > 0) reasons.push({ label: "Live events", value: `${input.eventCount} published` });
-  if (input.snippets > 0) reasons.push({ label: "Community buzz", value: `${input.snippets} snippets on their events` });
+  if (input.posts > 0) reasons.push({ label: "Community buzz", value: `${input.posts} posts on their events` });
 
   return reasons.slice(0, 4);
 }
 
 function buildTopicReasons(input: {
-  snippets: number;
+  posts: number;
   events: number;
   score: number;
 }) {
   const reasons: TrendReason[] = [];
 
-  if (input.snippets > 0) reasons.push({ label: "Snippet volume", value: `${input.snippets} people mentioned it` });
+  if (input.posts > 0) reasons.push({ label: "Post volume", value: `${input.posts} people mentioned it` });
   if (input.events > 0) reasons.push({ label: "Event coverage", value: `${input.events} related event${input.events === 1 ? "" : "s"}` });
   reasons.push({ label: "Heat", value: `${Math.round(input.score)} trend score` });
 
@@ -268,24 +268,24 @@ async function getRecentEventEdges(): Promise<EdgeRow[]> {
   return (data ?? []) as EdgeRow[];
 }
 
-async function getRecentSnippets(): Promise<SnippetRow[]> {
+async function getRecentPosts(): Promise<PostRow[]> {
   const { data, error } = await supabaseAdmin
-    .from("snippets")
+    .from("posts")
     .select("id, body, rating, vibe_tags, created_at, photo_url, media_urls, user_id, event_id")
     .eq("is_public", true)
-    .gte("created_at", hoursAgo(SNIPPET_WINDOW_HOURS))
+    .gte("created_at", hoursAgo(POST_WINDOW_HOURS))
     .order("created_at", { ascending: false })
     .limit(300);
 
   if (error) {
-    console.error("[trending] snippets query failed", error.message);
+    console.error("[trending] posts query failed", error.message);
     return [];
   }
 
-  return (data ?? []) as SnippetRow[];
+  return (data ?? []) as PostRow[];
 }
 
-async function hydrateSnippets(rows: SnippetRow[]): Promise<TrendingSnippet[]> {
+async function hydratePosts(rows: PostRow[]): Promise<TrendingPost[]> {
   if (!rows.length) return [];
 
   const userIds = unique(rows.map((row) => row.user_id));
@@ -344,10 +344,10 @@ async function hydrateSnippets(rows: SnippetRow[]): Promise<TrendingSnippet[]> {
 }
 
 async function buildEventContext(limit?: number, persistScores = false, userCity?: string | null): Promise<EventContext> {
-  const [eventRows, edges, snippets] = await Promise.all([
+  const [eventRows, edges, posts] = await Promise.all([
     getEventRows(),
     getRecentEventEdges(),
-    getRecentSnippets(),
+    getRecentPosts(),
   ]);
 
   const organizerIds = unique(eventRows.map((event) => event.organizer_id));
@@ -362,8 +362,8 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
   const userMap = new Map<string, UserRow>(userRows.map((user) => [user.id, user]));
   const rawEventMap = new Map<string, EventRow>(eventRows.map((event) => [event.id, event]));
   const interactionScores = new Map<string, number>();
-  const snippetCounts = new Map<string, number>();
-  const snippetEventIdsByTag = new Map<string, Set<string>>();
+  const postCounts = new Map<string, number>();
+  const postEventIdsByTag = new Map<string, Set<string>>();
   const topicUsageByEventId = new Map<string, Set<string>>();
 
   for (const edge of edges) {
@@ -372,23 +372,23 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
     interactionScores.set(edge.to_id, current + weight * getDecayFactor(edge.created_at));
   }
 
-  for (const snippet of snippets) {
-    if (!rawEventMap.has(snippet.event_id)) continue;
+  for (const post of posts) {
+    if (!rawEventMap.has(post.event_id)) continue;
 
-    snippetCounts.set(snippet.event_id, (snippetCounts.get(snippet.event_id) ?? 0) + 1);
+    postCounts.set(post.event_id, (postCounts.get(post.event_id) ?? 0) + 1);
 
     const normalizedTags = unique(
       [
-        ...(snippet.vibe_tags ?? []).map(normalizeTag),
-        ...extractBodyHashtags(snippet.body),
+        ...(post.vibe_tags ?? []).map(normalizeTag),
+        ...extractBodyHashtags(post.body),
       ].filter(isAllowedTopicTag),
     );
-    topicUsageByEventId.set(snippet.event_id, new Set([...(topicUsageByEventId.get(snippet.event_id) ?? new Set<string>()), ...normalizedTags]));
+    topicUsageByEventId.set(post.event_id, new Set([...(topicUsageByEventId.get(post.event_id) ?? new Set<string>()), ...normalizedTags]));
 
     for (const tag of normalizedTags) {
-      const existing = snippetEventIdsByTag.get(tag) ?? new Set<string>();
-      existing.add(snippet.event_id);
-      snippetEventIdsByTag.set(tag, existing);
+      const existing = postEventIdsByTag.get(tag) ?? new Set<string>();
+      existing.add(post.event_id);
+      postEventIdsByTag.set(tag, existing);
     }
   }
 
@@ -396,7 +396,7 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
   const events: TrendingEvent[] = eventRows
     .map((event) => {
       const interactions = interactionScores.get(event.id) ?? 0;
-      const snippetsForEvent = snippetCounts.get(event.id) ?? 0;
+      const postsForEvent = postCounts.get(event.id) ?? 0;
       const views = Number(event.views_count ?? 0);
       const saves = Number(event.saves_count ?? 0);
       const tickets = Number(event.tickets_sold ?? 0);
@@ -406,7 +406,7 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
       const daysUntil = startMs != null ? (startMs - nowMs) / 86_400_000 : null;
 
       let score = interactions;
-      score += snippetsForEvent * 4.5;
+      score += postsForEvent * 4.5;
       score += saves * 1.25;
       score += views * 0.04;
       score += tickets * 0.07;
@@ -448,7 +448,7 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
         views_count: views,
         saves_count: saves,
         tickets_sold: tickets,
-        snippet_count: snippetsForEvent,
+        post_count: postsForEvent,
         organizer: organizerUser
           ? {
               id: organizerUser.id,
@@ -458,7 +458,7 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
           : null,
         reasons: buildEventReasons({
           interactions,
-          snippets: snippetsForEvent,
+          posts: postsForEvent,
           views,
           saves,
           tickets,
@@ -486,8 +486,8 @@ async function buildEventContext(limit?: number, persistScores = false, userCity
     events: slicedEvents,
     eventMap: new Map(events.map((event) => [event.id, event])),
     rawEventMap,
-    snippetCounts,
-    snippetEventIdsByTag,
+    postCounts,
+    postEventIdsByTag,
     topicUsageByEventId,
     organizerUserIds: new Set(organizerIds),
   };
@@ -526,7 +526,7 @@ export async function getTrendingOrganizers(limit = 20): Promise<TrendingOrganiz
   const followRows = (followRes.data ?? []) as Array<{ following_id: string }>;
   const followCounts = new Map<string, number>();
   const momentum = new Map<string, number>();
-  const snippetCounts = new Map<string, number>();
+  const postCounts = new Map<string, number>();
   const eventCounts = new Map<string, number>();
   const eventScoreTotals = new Map<string, number>();
 
@@ -543,7 +543,7 @@ export async function getTrendingOrganizers(limit = 20): Promise<TrendingOrganiz
     const organizerId = eventContext.rawEventMap.get(event.id)?.organizer_id;
     if (!organizerId) continue;
     eventCounts.set(organizerId, (eventCounts.get(organizerId) ?? 0) + 1);
-    snippetCounts.set(organizerId, (snippetCounts.get(organizerId) ?? 0) + event.snippet_count);
+    postCounts.set(organizerId, (postCounts.get(organizerId) ?? 0) + event.post_count);
     eventScoreTotals.set(organizerId, (eventScoreTotals.get(organizerId) ?? 0) + event.trending_score);
   }
 
@@ -551,14 +551,14 @@ export async function getTrendingOrganizers(limit = 20): Promise<TrendingOrganiz
     .map((profile) => {
       const joinedUser = Array.isArray(profile.users) ? profile.users[0] ?? null : profile.users;
       const followers = followCounts.get(profile.user_id) ?? 0;
-      const snippetCount = snippetCounts.get(profile.user_id) ?? 0;
+      const postCount = postCounts.get(profile.user_id) ?? 0;
       const liveEvents = eventCounts.get(profile.user_id) ?? Number(profile.total_events ?? 0);
       const velocity = momentum.get(profile.user_id) ?? 0;
       const score =
         velocity +
         (eventScoreTotals.get(profile.user_id) ?? 0) * 0.28 +
         followers * 0.08 +
-        snippetCount * 2.4 +
+        postCount * 2.4 +
         liveEvents * 0.75;
 
       return {
@@ -568,12 +568,12 @@ export async function getTrendingOrganizers(limit = 20): Promise<TrendingOrganiz
         logo_url: profile.logo_url ?? joinedUser?.avatar_url ?? null,
         follower_count: followers,
         event_count: liveEvents,
-        snippet_count: snippetCount,
+        post_count: postCount,
         trending_score: Number(score.toFixed(1)),
         reasons: buildOrganizerReasons({
           followers,
           eventCount: liveEvents,
-          snippets: snippetCount,
+          posts: postCount,
           velocity,
         }),
       };
@@ -585,7 +585,7 @@ export async function getTrendingOrganizers(limit = 20): Promise<TrendingOrganiz
 export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
   const eventContext = await buildEventContext();
   const tagScores = new Map<string, number>();
-  const tagSnippetCounts = new Map<string, number>();
+  const tagPostCounts = new Map<string, number>();
   const tagEventIds = new Map<string, Set<string>>();
   const eventsById = new Map(eventContext.events.map((event) => [event.id, event]));
 
@@ -600,7 +600,7 @@ export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
     }
   }
 
-  for (const [tag, eventIds] of eventContext.snippetEventIdsByTag.entries()) {
+  for (const [tag, eventIds] of eventContext.postEventIdsByTag.entries()) {
     const currentEventIds = tagEventIds.get(tag) ?? new Set<string>();
     for (const eventId of eventIds) currentEventIds.add(eventId);
     tagEventIds.set(tag, currentEventIds);
@@ -610,7 +610,7 @@ export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
     const event = eventsById.get(eventId);
     if (!event) continue;
     for (const tag of tags) {
-      tagSnippetCounts.set(tag, (tagSnippetCounts.get(tag) ?? 0) + 1);
+      tagPostCounts.set(tag, (tagPostCounts.get(tag) ?? 0) + 1);
       tagScores.set(tag, (tagScores.get(tag) ?? 0) + 4 + event.trending_score * 0.18);
     }
   }
@@ -623,7 +623,7 @@ export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
         .filter((event): event is TrendingEvent => Boolean(event))
         .sort((a, b) => b.trending_score - a.trending_score)[0];
 
-      const count = tagSnippetCounts.get(tag) ?? 0;
+      const count = tagPostCounts.get(tag) ?? 0;
       return {
         tag,
         count,
@@ -631,7 +631,7 @@ export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
         trending_score: Number(score.toFixed(1)),
         lead_event_slug: leadEvent?.slug ?? null,
         reasons: buildTopicReasons({
-          snippets: count,
+          posts: count,
           events: eventIds.size,
           score,
         }),
@@ -642,35 +642,35 @@ export async function getTrendingTopics(limit = 20): Promise<TrendingTopic[]> {
 }
 
 export async function getTrendingEventDetail(slug: string): Promise<TrendingEventDetail | null> {
-  const [events, snippets] = await Promise.all([
+  const [events, posts] = await Promise.all([
     getTrendingEvents(120),
-    getRecentSnippets(),
+    getRecentPosts(),
   ]);
 
   const event = events.find((entry) => entry.slug === slug);
   if (!event) return null;
 
-  const eventSnippets = snippets.filter((snippet) => snippet.event_id === event.id).slice(0, 12);
-  const hydratedSnippets = await hydrateSnippets(eventSnippets);
+  const eventPosts = posts.filter((post) => post.event_id === event.id).slice(0, 12);
+  const hydratedPosts = await hydratePosts(eventPosts);
   const related_topics = unique(
-    eventSnippets.flatMap((snippet) => [
-      ...(snippet.vibe_tags ?? []).map(normalizeTag),
-      ...extractBodyHashtags(snippet.body),
+    eventPosts.flatMap((post) => [
+      ...(post.vibe_tags ?? []).map(normalizeTag),
+      ...extractBodyHashtags(post.body),
     ]).filter(isAllowedTopicTag),
   ).slice(0, 8);
 
   return {
     event,
     related_topics,
-    snippets: hydratedSnippets,
+    posts: hydratedPosts,
   };
 }
 
 export async function getTrendingOrganizerDetail(identifier: string): Promise<TrendingOrganizerDetail | null> {
-  const [organizers, allEvents, snippets] = await Promise.all([
+  const [organizers, allEvents, posts] = await Promise.all([
     getTrendingOrganizers(80),
     getTrendingEvents(120),
-    getRecentSnippets(),
+    getRecentPosts(),
   ]);
 
   const organizer = organizers.find((entry) => entry.username === identifier || entry.id === identifier);
@@ -681,21 +681,21 @@ export async function getTrendingOrganizerDetail(identifier: string): Promise<Tr
     .slice(0, 8);
 
   const eventIds = new Set(top_events.map((event) => event.id));
-  const organizerSnippets = snippets.filter((snippet) => eventIds.has(snippet.event_id)).slice(0, 16);
+  const organizerPosts = posts.filter((post) => eventIds.has(post.event_id)).slice(0, 16);
 
   return {
     organizer,
     top_events,
-    snippets: await hydrateSnippets(organizerSnippets),
+    posts: await hydratePosts(organizerPosts),
   };
 }
 
 export async function getTrendingTopicDetail(tag: string): Promise<TrendingTopicDetail | null> {
   const normalizedTag = normalizeTag(decodeURIComponent(tag));
-  const [topics, eventContext, snippets, organizers] = await Promise.all([
+  const [topics, eventContext, posts, organizers] = await Promise.all([
     getTrendingTopics(120),
     buildEventContext(),
-    getRecentSnippets(),
+    getRecentPosts(),
     getTrendingOrganizers(80),
   ]);
 
@@ -705,24 +705,24 @@ export async function getTrendingTopicDetail(tag: string): Promise<TrendingTopic
   const matchingEvents = eventContext.events.filter((event) => {
     const raw = eventContext.rawEventMap.get(event.id);
     const tags = (raw?.tags ?? []).map(normalizeTag);
-    const snippetTags = Array.from(eventContext.topicUsageByEventId.get(event.id) ?? []);
-    return tags.includes(normalizedTag) || snippetTags.includes(normalizedTag);
+    const postTags = Array.from(eventContext.topicUsageByEventId.get(event.id) ?? []);
+    return tags.includes(normalizedTag) || postTags.includes(normalizedTag);
   });
 
-  const matchedSnippets = snippets
-    .filter((snippet) => {
+  const matchedPosts = posts
+    .filter((post) => {
       const tags = unique(
         [
-          ...(snippet.vibe_tags ?? []).map(normalizeTag),
-          ...extractBodyHashtags(snippet.body),
+          ...(post.vibe_tags ?? []).map(normalizeTag),
+          ...extractBodyHashtags(post.body),
         ].filter(isAllowedTopicTag),
       );
       return tags.includes(normalizedTag);
     })
     .slice(0, 24);
 
-  const hydratedSnippets = await hydrateSnippets(matchedSnippets);
-  const relatedEventIds = new Set(hydratedSnippets.map((snippet) => snippet.event?.id).filter(Boolean) as string[]);
+  const hydratedPosts = await hydratePosts(matchedPosts);
+  const relatedEventIds = new Set(hydratedPosts.map((post) => post.event?.id).filter(Boolean) as string[]);
   const extraEvents = eventContext.events.filter((event) => relatedEventIds.has(event.id));
   const eventMap = new Map<string, TrendingEvent>();
   for (const event of matchingEvents) eventMap.set(event.id, event);
@@ -737,7 +737,7 @@ export async function getTrendingTopicDetail(tag: string): Promise<TrendingTopic
   return {
     topic,
     events: Array.from(eventMap.values()).sort((a, b) => b.trending_score - a.trending_score).slice(0, 10),
-    snippets: hydratedSnippets,
+    posts: hydratedPosts,
     related_organizers: organizers.filter((organizer) => organizerIds.includes(organizer.id)).slice(0, 6),
   };
 }

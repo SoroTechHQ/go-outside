@@ -921,7 +921,7 @@ const HOW_IT_WORKS_SECTIONS = [
     Icon: ShoppingBag,
     color: "#F59E0B",
     title: "Pulse Points",
-    body: "Spendable currency you earn for every action: buying tickets (+50 pts), checking in (+50 pts), saving events (+2 pts), posting snippets (+10 pts), and more. Redeem them in the shop for discounts and perks.",
+    body: "Spendable currency you earn for every action: buying tickets (+50 pts), checking in (+50 pts), saving events (+2 pts), posting posts (+10 pts), and more. Redeem them in the shop for discounts and perks.",
   },
   {
     Icon: TrendUp,

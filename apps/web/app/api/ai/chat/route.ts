@@ -9,8 +9,17 @@ import {
 } from "../../../../lib/user-graph-context";
 import type { AssistantPick, AssistantEvent } from "../../../../lib/ai-assistant";
 
-const groqApiKey = process.env.GROQ_API_KEY_PROD_1 ?? process.env.GROQ_API_KEY ?? "";
-const groq = groqApiKey ? new Groq({ apiKey: groqApiKey }) : null;
+// Key pool — tries each key in order on rate-limit, falls back to GROQ_API_KEY
+const KEY_POOL = [
+  process.env.GROQ_API_KEY_1,
+  process.env.GROQ_API_KEY_2,
+  process.env.GROQ_API_KEY_3,
+  process.env.GROQ_API_KEY_4,
+  process.env.GROQ_API_KEY_PROD_1,
+  process.env.GROQ_API_KEY,
+].filter((k): k is string => typeof k === "string" && k.length > 0)
+ .filter((k, i, arr) => arr.indexOf(k) === i);
+const groq = KEY_POOL.length > 0 ? new Groq({ apiKey: KEY_POOL[0] }) : null;
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -276,7 +285,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const completion = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "llama-3.3-70b-versatile",
       messages: groqMessages,
       temperature: 0.55,
       max_tokens: 600,

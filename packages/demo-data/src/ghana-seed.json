@@ -359,7 +359,7 @@
     { "requesterId": "u002", "addresseeId": "u033", "status": "pending" },
     { "requesterId": "u006", "addresseeId": "u100", "status": "pending" }
   ],
-  "snippets": [
+  "posts": [
     { "userId": "u012", "eventId": "e001", "body": "The rooftop vibes were unmatched. Kofi D absolutely went off around midnight. Will be there every month.", "rating": 5, "vibeTags": ["euphoric", "electric", "intimate"], "isVerifiedAttendee": true, "badgeTier": "gold" },
     { "userId": "u021", "eventId": "e001", "body": "Best night out in Accra this year. The cocktails were strong and the music was even stronger.", "rating": 5, "vibeTags": ["electric", "social"], "isVerifiedAttendee": true, "badgeTier": "silver" },
     { "userId": "u038", "eventId": "e001", "body": "Came with 3 friends, left with 10. The energy on that rooftop is something special.", "rating": 5, "vibeTags": ["social", "euphoric"], "isVerifiedAttendee": true, "badgeTier": "silver" },

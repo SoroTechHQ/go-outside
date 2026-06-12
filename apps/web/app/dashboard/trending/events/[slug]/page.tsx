@@ -4,7 +4,7 @@ import {
   EventMetricStrip,
   FeaturedTrendEvent,
   ReasonList,
-  SnippetList,
+  PostList,
   TrendPageShell,
 } from "../../../../../components/trending/TrendDetailPrimitives";
 import { getTrendingEventDetail } from "../../../../../lib/trending/server";
@@ -19,13 +19,13 @@ export default async function TrendingEventDetailPage({ params }: Props) {
 
   if (!detail) notFound();
 
-  const { event, related_topics, snippets } = detail;
+  const { event, related_topics, posts } = detail;
 
   return (
     <TrendPageShell
       eyebrow="Event trend"
       title={event.title}
-      subtitle="This breakdown pulls from recent saves, views, ticket demand, and snippet activity to show why this event is climbing right now."
+      subtitle="This breakdown pulls from recent saves, views, ticket demand, and post activity to show why this event is climbing right now."
     >
       <FeaturedTrendEvent event={event} />
 
@@ -80,11 +80,11 @@ export default async function TrendingEventDetailPage({ params }: Props) {
       <section className="space-y-4">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-            Snippets behind the trend
+            Posts behind the trend
           </p>
           <h2 className="mt-1 text-[20px] font-bold text-[var(--text-primary)]">What people are saying</h2>
         </div>
-        <SnippetList snippets={snippets} emptyLabel="No public snippets yet for this event." />
+        <PostList posts={posts} emptyLabel="No public posts yet for this event." />
       </section>
     </TrendPageShell>
   );

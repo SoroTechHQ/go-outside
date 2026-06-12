@@ -28,7 +28,7 @@ import { ProfileAvatar, SmallAvatar } from "./components/UserAvatar";
 import { PulseScoreBanner, PulseBreakdown } from "./components/PulseScoreBanner";
 import { ScenePersonalityCard } from "./components/ScenePersonalityCard";
 import { BeenThereTab } from "./components/BeenThereTab";
-import { SnippetsTab } from "./components/SnippetsTab";
+import { PostsTab } from "./components/PostsTab";
 import { PostFeed } from "../../../components/posts/PostFeed";
 import { BecomeOrganizerCard } from "./components/BecomeOrganizerCard";
 import { FollowingTab } from "./components/FollowingTab";
@@ -37,11 +37,11 @@ import { EditProfileSheet } from "./components/EditProfileSheet";
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
-type TabId = "been-there" | "snippets" | "tweets" | "following" | "friends";
+type TabId = "been-there" | "posts" | "tweets" | "following" | "friends";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "been-there", label: "Been There" },
-  { id: "snippets",   label: "Snippets" },
+  { id: "posts",   label: "Reviews" },
   { id: "tweets",     label: "Posts" },
   { id: "following",  label: "Following" },
   { id: "friends",    label: "Friends" },
@@ -562,7 +562,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
           {/* ── Tab content ─────────────────────────────────────────────────── */}
           <div className="pb-12 pt-4">
             {activeTab === "been-there" && <BeenThereTab tickets={pastTickets} events={pastEvents} />}
-            {activeTab === "snippets"   && <SnippetsTab />}
+            {activeTab === "posts"   && <PostsTab clerkId={currentProfile.clerkId} />}
             {activeTab === "tweets"     && (
               <PostFeed
                 profileClerkId={currentProfile.clerkId}

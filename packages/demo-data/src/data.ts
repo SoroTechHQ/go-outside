@@ -55,7 +55,7 @@ export const seedUsers        = rawSeed.users;
 export const seedEvents       = rawSeed.events;
 export const seedEdges        = rawSeed.graph_edges;
 export const seedFriendships  = rawSeed.friendships;
-export const seedSnippets     = rawSeed.snippets;
+export const seedPosts     = rawSeed.posts;
 export const seedFeedSections = rawSeed.feed_sections;
 export const seedScarcity     = rawSeed.scarcity_states;
 

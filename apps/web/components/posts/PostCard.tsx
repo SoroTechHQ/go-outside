@@ -130,8 +130,23 @@ export function PostCard({ post, currentClerkId, onDeleted }: PostCardProps) {
         <span className="shrink-0 text-[11px] text-[var(--text-tertiary)]">{timeAgo}</span>
       </div>
 
-      {/* Body */}
-      <p className="mt-3 text-[14px] leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">{post.body}</p>
+      {/* Body with @mention links */}
+      <p className="mt-3 text-[14px] leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap">
+        {post.body.split(/(@\w+)/g).map((part, i) =>
+          /^@\w+$/.test(part) ? (
+            <Link
+              key={i}
+              href={`/go/${part.slice(1)}`}
+              className="font-semibold text-[#4a9f63] hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part}
+            </Link>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </p>
 
       {/* Optional image or video */}
       {post.image_url && (

@@ -356,7 +356,11 @@ export default function PaymentPage() {
           </button>
 
           <p className="mt-4 text-center text-[12px] text-[var(--text-tertiary)]">
-            By paying you agree to our Terms of Service. Powered by Paystack.
+            By paying you agree to our{" "}
+            <a href="/terms" className="underline hover:opacity-80 transition">Terms of Service</a>
+            {" "}and{" "}
+            <a href="/privacy" className="underline hover:opacity-80 transition">Privacy Policy</a>.
+            {" "}Powered by Paystack.
           </p>
         </div>
       </div>

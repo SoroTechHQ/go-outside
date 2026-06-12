@@ -37,6 +37,7 @@ import {
 } from "../../hooks/useEventsQuery";
 import { CategoryIcon } from "../../lib/category-icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
 import type { FeedEventItem } from "../../lib/app-contracts";
 import { pickSectionHeaders } from "../../lib/feed-sections";
 
@@ -536,6 +537,86 @@ function FeedSkeleton() {
   );
 }
 
+// ── Following posts strip ────────────────────────────────────────────────────
+
+type FollowingPost = {
+  id: string;
+  body: string;
+  created_at: string;
+  users: { first_name: string; last_name: string | null; username: string | null; avatar_url: string | null; clerk_id: string };
+  events: { title: string; slug: string } | null;
+};
+
+const AVATAR_COLORS_FP = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
+
+function FollowingPostsStrip() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["following-posts"],
+    queryFn: async () => {
+      const res = await fetch("/api/posts/following");
+      if (!res.ok) return { posts: [] };
+      return res.json() as Promise<{ posts: FollowingPost[] }>;
+    },
+    staleTime: 2 * 60_000,
+  });
+
+  const posts = data?.posts ?? [];
+  if (isLoading || posts.length === 0) return null;
+
+  return (
+    <section className="mt-4">
+      <div className="mb-3 flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2">
+          <UsersThree size={13} weight="fill" className="text-[var(--brand)]" />
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+            From your network
+          </p>
+        </div>
+      </div>
+      <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+        {posts.map((post) => {
+          const author = post.users;
+          const name = `${author.first_name} ${author.last_name ?? ""}`.trim();
+          const href = author.username ? `/go/${author.username}` : `/go/${author.clerk_id}`;
+          return (
+            <Link
+              key={post.id}
+              href={href}
+              className="group shrink-0 w-[200px] overflow-hidden rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 transition hover:border-[var(--brand)]/30 active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 28, height: 28 }}>
+                  {author.avatar_url ? (
+                    <Image src={author.avatar_url} alt={name} width={28} height={28} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#4a9f63]/20 text-[10px] font-bold text-[#4a9f63]">
+                      {name[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{name}</p>
+                  {author.username && (
+                    <p className="truncate text-[10px] text-[var(--text-tertiary)]">@{author.username}</p>
+                  )}
+                </div>
+              </div>
+              <p className="line-clamp-3 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+                {post.body}
+              </p>
+              {post.events && (
+                <p className="mt-2 truncate text-[10px] font-semibold text-[var(--brand)]">
+                  @ {post.events.title}
+                </p>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ── This Weekend / This Week — Instagram-style stories row ─────
 
 function getSmartDateLabel(iso: string | null): string {
@@ -824,6 +905,9 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                   }}
                 />
               )}
+
+              {/* Posts from people you follow */}
+              <FollowingPostsStrip />
 
               {/* Category filter chips + layout toggle */}
               <section className="mt-4">

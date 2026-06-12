@@ -27,11 +27,13 @@ import {
   Heart,
   TwitterLogo,
   Quotes,
+  MagnifyingGlass,
+  X,
 } from "@phosphor-icons/react";
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../lib/image-url";
 import { getPulseProgress, getNextTier, type PulseTier } from "../dashboard/profile/types";
 import { PostFeed } from "../../components/posts/PostFeed";
-import { SnippetComposer } from "../../components/posts/SnippetComposer";
+import { UserPostComposer } from "../../components/posts/UserPostComposer";
 import { useFollowMutation, useFollowStatus } from "../../hooks/useFollow";
 import { EditProfileSheet } from "../dashboard/profile/components/EditProfileSheet";
 import type { UserProfile } from "../dashboard/profile/types";
@@ -47,7 +49,7 @@ const TIER_COLOR: Record<string, string> = {
   Legend:        "#DAA520",
 };
 
-type Tab = "posts" | "snippets" | "been-there" | "media" | "about";
+type Tab = "posts" | "reviews" | "been-there" | "media" | "about";
 
 type MediaItem = {
   id: string;
@@ -61,7 +63,7 @@ type MediaItem = {
   events: { id: string; title: string; slug: string } | null;
 };
 
-type Snippet = {
+type Post = {
   id: string;
   body: string;
   vibe_tags: string[] | null;
@@ -177,6 +179,8 @@ function PeopleSheet({
   clerkId: string;
   type: "followers" | "following";
 }) {
+  const [search, setSearch] = useState("");
+
   const { data, isLoading } = useQuery({
     queryKey: ["profile-people", clerkId, type],
     queryFn: async () => {
@@ -198,7 +202,15 @@ function PeopleSheet({
     staleTime: 60_000,
   });
 
-  const users = data?.users ?? [];
+  const allUsers = data?.users ?? [];
+  const q = search.toLowerCase().trim();
+  const users = q
+    ? allUsers.filter((u) => {
+        const name = `${u.first_name ?? ""} ${u.last_name ?? ""}`.toLowerCase();
+        const handle = (u.username ?? "").toLowerCase();
+        return name.includes(q) || handle.includes(q);
+      })
+    : allUsers;
 
   return (
     <>
@@ -214,10 +226,30 @@ function PeopleSheet({
         }`}
       >
         <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/15 md:hidden" />
-        <div className="shrink-0 border-b border-[var(--border-subtle)] px-5 py-4">
-          <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)] capitalize">
-            {type}
-          </p>
+        <div className="shrink-0 space-y-3 border-b border-[var(--border-subtle)] px-5 pb-3 pt-4">
+          <div className="flex items-center justify-between">
+            <p className="font-display text-[17px] font-bold italic text-[var(--text-primary)] capitalize">
+              {type} · {allUsers.length}
+            </p>
+            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--bg-muted)]">
+              <X size={16} className="text-[var(--text-secondary)]" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-2">
+            <MagnifyingGlass size={14} className="shrink-0 text-[var(--text-tertiary)]" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
+              autoFocus={false}
+            />
+            {search && (
+              <button onClick={() => setSearch("")}>
+                <X size={12} className="text-[var(--text-tertiary)]" />
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto py-2">
           {isLoading && (
@@ -235,7 +267,7 @@ function PeopleSheet({
           )}
           {!isLoading && users.length === 0 && (
             <p className="py-12 text-center text-[12px] text-[var(--text-tertiary)]">
-              No {type} yet.
+              {q ? `No results for "${q}"` : `No ${type} yet.`}
             </p>
           )}
           {!isLoading &&
@@ -303,14 +335,37 @@ function PeopleSheet({
   );
 }
 
-// ── Single snippet card ────────────────────────────────────────────────────────
-function SnippetCard({ snippet }: { snippet: Snippet }) {
+// ── Render post body with @mention links ────────────────────────────────────
+function PostBody({ text }: { text: string }) {
+  const parts = text.split(/(@\w+)/g);
+  return (
+    <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">
+      {parts.map((part, i) =>
+        /^@\w+$/.test(part) ? (
+          <Link
+            key={i}
+            href={`/go/${part.slice(1)}`}
+            className="font-semibold text-[#4a9f63] hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </Link>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </p>
+  );
+}
+
+// ── Single post card ────────────────────────────────────────────────────────
+function PostCard({ post }: { post: Post }) {
   return (
     <div className="rounded-[18px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
-      <p className="text-[13px] leading-relaxed text-[var(--text-primary)]">{snippet.body}</p>
-      {snippet.vibe_tags && snippet.vibe_tags.length > 0 && (
+      <PostBody text={post.body} />
+      {post.vibe_tags && post.vibe_tags.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {snippet.vibe_tags.map((tag) => (
+          {post.vibe_tags.map((tag) => (
             <span
               key={tag}
               className="rounded-full bg-[#4a9f63]/10 px-2.5 py-0.5 text-[10px] font-medium text-[#4a9f63]"
@@ -321,7 +376,7 @@ function SnippetCard({ snippet }: { snippet: Snippet }) {
         </div>
       )}
       <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">
-        {new Date(snippet.created_at).toLocaleDateString("en-GH", {
+        {new Date(post.created_at).toLocaleDateString("en-GH", {
           month: "short",
           day: "numeric",
           year: "numeric",
@@ -331,8 +386,8 @@ function SnippetCard({ snippet }: { snippet: Snippet }) {
   );
 }
 
-// ── Snippets tab ───────────────────────────────────────────────────────────────
-function SnippetsTab({
+// ── Posts tab ───────────────────────────────────────────────────────────────
+function PostsTab({
   clerkId,
   isOwnProfile,
   name,
@@ -344,32 +399,32 @@ function SnippetsTab({
   avatarUrl: string | null;
 }) {
   const { user: currentUser } = useUser();
-  const [localSnippets, setLocalSnippets] = useState<Snippet[]>([]);
+  const [localPosts, setLocalPosts] = useState<Post[]>([]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["profile-snippets", clerkId],
+    queryKey: ["profile-posts", clerkId],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${clerkId}/snippets`);
-      if (!res.ok) return { snippets: [] };
-      return res.json() as Promise<{ snippets: Snippet[] }>;
+      const res = await fetch(`/api/users/${clerkId}/posts`);
+      if (!res.ok) return { posts: [] };
+      return res.json() as Promise<{ posts: Post[] }>;
     },
     staleTime: 3 * 60_000,
   });
 
-  const remoteSnippets = data?.snippets ?? [];
-  const allSnippets = [
-    ...localSnippets,
-    ...remoteSnippets.filter((s) => !localSnippets.some((l) => l.id === s.id)),
+  const remotePosts = data?.posts ?? [];
+  const allPosts = [
+    ...localPosts,
+    ...remotePosts.filter((s) => !localPosts.some((l) => l.id === s.id)),
   ];
 
   return (
     <div className="space-y-3">
       {isOwnProfile && currentUser && (
-        <SnippetComposer
+        <UserPostComposer
           clerkId={clerkId}
           name={name}
           avatarUrl={avatarUrl}
-          onPosted={(s) => setLocalSnippets((prev) => [s, ...prev])}
+          onPosted={(s) => setLocalPosts((prev) => [s, ...prev])}
         />
       )}
 
@@ -381,17 +436,17 @@ function SnippetsTab({
         </div>
       )}
 
-      {!isLoading && allSnippets.length === 0 && (
+      {!isLoading && allPosts.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-14 text-center">
           <Quotes size={28} className="text-[var(--text-tertiary)]" weight="light" />
-          <p className="text-[14px] font-semibold text-[var(--text-primary)]">No snippets yet</p>
+          <p className="text-[14px] font-semibold text-[var(--text-primary)]">No posts yet</p>
           <p className="text-[12px] text-[var(--text-tertiary)]">
             {isOwnProfile ? "Drop a quick take on an event." : "Vibes, takes, and moments will appear here."}
           </p>
         </div>
       )}
 
-      {!isLoading && allSnippets.map((s) => <SnippetCard key={s.id} snippet={s} />)}
+      {!isLoading && allPosts.map((s) => <PostCard key={s.id} post={s} />)}
     </div>
   );
 }
@@ -734,7 +789,7 @@ export default function GoProfileClient({
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "posts",      label: "Posts" },
-    { id: "snippets",   label: "Snippets" },
+    { id: "reviews",    label: "Reviews" },
     { id: "been-there", label: "Been There" },
     { id: "media",      label: "Media" },
     { id: "about",      label: "About" },
@@ -924,8 +979,8 @@ export default function GoProfileClient({
               isOwnProfile={isOwnProfile}
             />
           )}
-          {activeTab === "snippets" && (
-            <SnippetsTab
+          {activeTab === "reviews" && (
+            <PostsTab
               clerkId={clerkId}
               isOwnProfile={isOwnProfile}
               name={name}
@@ -980,7 +1035,7 @@ export default function GoProfileClient({
                 eventsAttended:    0,
                 friendCount:       0,
                 followingCount:    0,
-                snippetCount:      0,
+                postCount:      0,
                 topCategories:     [],
                 importedTweetIds:  [],
                 clerkId:           clerkId,

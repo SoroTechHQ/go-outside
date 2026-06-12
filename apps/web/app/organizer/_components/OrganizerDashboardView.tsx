@@ -376,7 +376,7 @@ function ActivityIcon({ tone }: { tone: OrganizerDashboardData["activity"][numbe
 ───────────────────────────────────────────────────────────────────────── */
 
 function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
-  const { overview, salesSeries, recentEvents, hashtags, activity, snippets } = dashboard;
+  const { overview, salesSeries, recentEvents, hashtags, activity, posts } = dashboard;
 
   return (
     <div className="space-y-5">
@@ -483,7 +483,7 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
         )}
       </Card>
 
-      {/* ── Activity + Snippets ────────────────────────────── */}
+      {/* ── Activity + Posts ────────────────────────────── */}
       <section className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader title="Live activity" icon={<Lightning size={15} weight="fill" />} />
@@ -516,10 +516,10 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
         </Card>
 
         <Card>
-          <CardHeader title="Recent snippets" icon={<Star size={15} weight="fill" />} />
-          {snippets.length > 0 ? (
+          <CardHeader title="Recent posts" icon={<Star size={15} weight="fill" />} />
+          {posts.length > 0 ? (
             <div className="mt-4 space-y-3">
-              {snippets.map((s, i) => (
+              {posts.map((s, i) => (
                 <motion.div
                   key={s.id}
                   initial={{ opacity: 0, x: 8 }}
@@ -548,8 +548,8 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
           ) : (
             <EmptySlate
               icon={<Star size={20} weight="thin" />}
-              title="No snippets yet"
-              body="Snippets appear after attendees post about your events."
+              title="No posts yet"
+              body="Posts appear after attendees post about your events."
             />
           )}
         </Card>
@@ -922,7 +922,7 @@ export function OrganizerUpgradeGate({ firstName }: { firstName: string }) {
           {[
             { icon: ChartBar,   accent: "#2f8f45", title: "Professional dashboard",  body: "Track ticket sales, reach, conversion, and event momentum in one place."          },
             { icon: SealCheck,  accent: "#3b82f6", title: "Organizer-first profile", body: "Verified status, hosted events, and social links front and center."                },
-            { icon: UsersThree, accent: "#8b5cf6", title: "Content & moderation",    body: "Schedule posts, tag events, and manage comments and snippets." },
+            { icon: UsersThree, accent: "#8b5cf6", title: "Content & moderation",    body: "Schedule posts, tag events, and manage comments and posts." },
           ].map((item) => (
             <article key={item.title} className="relative overflow-hidden rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-5">
               <div className="absolute left-0 top-0 h-[2px] w-full" style={{ background: item.accent }} />

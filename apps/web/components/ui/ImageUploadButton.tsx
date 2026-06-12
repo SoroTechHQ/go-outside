@@ -4,13 +4,13 @@ import { useRef, useState } from "react";
 import { Camera } from "@phosphor-icons/react";
 import { compressForUpload } from "../../lib/compress-image";
 
-type ImageType = "avatar" | "banner" | "logo" | "snippet";
+type ImageType = "avatar" | "banner" | "logo" | "post";
 
 const UPLOAD_ENDPOINTS: Record<ImageType, string> = {
   avatar:  "/api/upload/avatar",
   banner:  "/api/upload/banner",
   logo:    "/api/upload/logo",
-  snippet: "/api/upload/banner",
+  post: "/api/upload/banner",
 };
 
 type Props = {

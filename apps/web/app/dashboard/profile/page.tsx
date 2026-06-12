@@ -93,7 +93,7 @@ export default async function ProfilePage() {
     eventsAttended:   pastTickets.length,
     friendCount:      followerRes.count ?? 0,
     followingCount:   followingRes.count ?? 0,
-    snippetCount:     0,
+    postCount:     0,
     topCategories:    (user.interests ?? [])
                         .slice(0, 3)
                         .map((s) => s.charAt(0).toUpperCase() + s.slice(1)),

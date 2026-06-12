@@ -3,7 +3,7 @@ import {
   EventMiniList,
   OrganizerMiniList,
   ReasonList,
-  SnippetList,
+  PostList,
   TopicHeroCard,
   TopicMediaGrid,
   TopicMetricStrip,
@@ -21,7 +21,7 @@ export default async function TrendingTopicDetailPage({ params }: Props) {
 
   if (!detail) notFound();
 
-  const { topic, events, snippets, related_organizers } = detail;
+  const { topic, events, posts, related_organizers } = detail;
 
   return (
     <TrendPageShell
@@ -50,7 +50,7 @@ export default async function TrendingTopicDetailPage({ params }: Props) {
           </p>
           <h2 className="mt-1 text-[20px] font-bold text-[var(--text-primary)]">Visual posts tied to this topic</h2>
         </div>
-        <TopicMediaGrid snippets={snippets} />
+        <TopicMediaGrid posts={posts} />
       </section>
 
       <section id="mentions" className="space-y-4">
@@ -60,7 +60,7 @@ export default async function TrendingTopicDetailPage({ params }: Props) {
           </p>
           <h2 className="mt-1 text-[20px] font-bold text-[var(--text-primary)]">How people are talking about it</h2>
         </div>
-        <SnippetList snippets={snippets} emptyLabel="No public snippets yet for this topic." />
+        <PostList posts={posts} emptyLabel="No public posts yet for this topic." />
       </section>
 
       <section id="events" className="space-y-4">

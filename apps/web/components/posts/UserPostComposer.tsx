@@ -15,7 +15,7 @@ const PRESET_TAGS = [
   "good-vibes", "energy", "banger", "intimate", "lit",
 ];
 
-type Snippet = {
+type UserPost = {
   id: string;
   body: string;
   vibe_tags: string[] | null;
@@ -27,10 +27,10 @@ type Props = {
   clerkId:   string;
   name:      string;
   avatarUrl: string | null;
-  onPosted?: (snippet: Snippet) => void;
+  onPosted?: (post: UserPost) => void;
 };
 
-export function SnippetComposer({ clerkId, name, avatarUrl, onPosted }: Props) {
+export function UserPostComposer({ clerkId, name, avatarUrl, onPosted }: Props) {
   const queryClient = useQueryClient();
   const [body, setBody]           = useState("");
   const [selectedTags, setTags]   = useState<Set<string>>(new Set());
@@ -59,14 +59,14 @@ export function SnippetComposer({ clerkId, name, avatarUrl, onPosted }: Props) {
           vibe_tags: selectedTags.size > 0 ? [...selectedTags] : [],
         }),
       });
-      if (!res.ok) throw new Error("Failed to create snippet");
-      return res.json() as Promise<Snippet>;
+      if (!res.ok) throw new Error("Failed to create post");
+      return res.json() as Promise<UserPost>;
     },
-    onSuccess: (snippet) => {
+    onSuccess: (post) => {
       setBody("");
       setTags(new Set());
-      void queryClient.invalidateQueries({ queryKey: ["profile-snippets", clerkId] });
-      onPosted?.(snippet);
+      void queryClient.invalidateQueries({ queryKey: ["profile-posts", clerkId] });
+      onPosted?.(post);
     },
   });
 
@@ -128,7 +128,7 @@ export function SnippetComposer({ clerkId, name, avatarUrl, onPosted }: Props) {
               type="button"
             >
               <Sparkle size={13} weight="fill" />
-              {create.isPending ? "Posting…" : "Snippet"}
+              {create.isPending ? "Posting…" : "Post"}
             </button>
           </div>
         </div>

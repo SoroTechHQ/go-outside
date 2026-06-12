@@ -4,7 +4,7 @@ import { supabaseAdmin } from "../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-type SearchType = "all" | "events" | "users" | "snippets";
+type SearchType = "all" | "events" | "users" | "posts";
 
 const LIMIT_MAX = 20;
 
@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
   const dateRange = resolveWhen(when);
 
   if (!q && categories.length === 0 && !dateRange) {
-    return NextResponse.json({ events: [], users: [], snippets: [], nextCursor: null });
+    return NextResponse.json({ events: [], users: [], posts: [], nextCursor: null });
   }
 
   // Load user interests for personalized ranking (non-blocking)
@@ -146,19 +146,19 @@ export async function GET(req: NextRequest) {
     // Non-fatal — proceed without personalization
   }
 
-  const [events, users, snippets] = await Promise.all([
+  const [events, users, userPosts] = await Promise.all([
     type === "all" || type === "events"
       ? fetchEvents(q, categories, dateRange, limit, cursor, userInterests)
       : Promise.resolve([]),
     type === "all" || type === "users"
       ? fetchUsers(q, limit, cursor)
       : Promise.resolve([]),
-    type === "all" || type === "snippets"
-      ? fetchSnippets(q, limit, cursor)
+    type === "all" || type === "posts"
+      ? fetchUserPosts(q, limit, cursor)
       : Promise.resolve([]),
   ]);
 
-  const nextCursor = [events, users, snippets].some((r) => r.length === limit)
+  const nextCursor = [events, users, userPosts].some((r) => r.length === limit)
     ? btoa(
         JSON.stringify({
           q,
@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
       )
     : null;
 
-  return NextResponse.json({ events, users, snippets, nextCursor });
+  return NextResponse.json({ events, users, posts: userPosts, nextCursor });
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────
@@ -263,7 +263,7 @@ async function fetchEvents(
   return rankByInterests((fallbackData ?? []) as EventRow[], userInterests);
 }
 
-// websearch_to_tsquery wrapper — used by fetchUsers and fetchSnippets
+// websearch_to_tsquery wrapper — used by fetchUsers and fetchUserPosts
 function buildWebsearchQuery(q: string): string {
   return q.trim();
 }
@@ -304,9 +304,9 @@ async function fetchUsers(q: string, limit: number, _cursor: string | null) {
   return data ?? [];
 }
 
-// ── Snippets ──────────────────────────────────────────────────────────────────
+// ── Posts ─────────────────────────────────────────────────────────────────────
 
-async function fetchSnippets(q: string, limit: number, _cursor: string | null) {
+async function fetchUserPosts(q: string, limit: number, _cursor: string | null) {
   if (!q) return [];
 
   const { data, error } = await supabaseAdmin

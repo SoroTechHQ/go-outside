@@ -296,8 +296,8 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
       {
         id: "search", title: "Searching for events", audience: "everyone",
         body: ({ dark }) => (<>
-          <P dark={dark}>The search page at <strong>/search</strong> queries events, users, and snippets in one place.</P>
-          <OL dark={dark} items={["Tap the search bar — you'll see trending searches to get you started.", "Type any keyword: event name, organiser, venue, area, or vibe.", "Switch tabs to filter: <strong>Events</strong>, <strong>People</strong>, or <strong>Snippets</strong>.", "Use the <strong>AI Chat</strong> panel (✨ icon) to describe what you want in plain language."]} />
+          <P dark={dark}>The search page at <strong>/search</strong> queries events, users, and posts in one place.</P>
+          <OL dark={dark} items={["Tap the search bar — you'll see trending searches to get you started.", "Type any keyword: event name, organiser, venue, area, or vibe.", "Switch tabs to filter: <strong>Events</strong>, <strong>People</strong>, or <strong>Posts</strong>.", "Use the <strong>AI Chat</strong> panel (✨ icon) to describe what you want in plain language."]} />
           <Callout dark={dark} type="tip">Try natural language in the AI chat: <em>"something chill this weekend in Osu under GHS 80"</em> — it understands context and returns relevant events.</Callout>
         </>),
       },
@@ -343,7 +343,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
           <Table dark={dark} headers={["Action", "Points"]} rows={[
             ["Buy a ticket", "+25 PP"],
             ["Check in at an event", "+50 PP"],
-            ["Post a snippet", "+10 PP"],
+            ["Post a post", "+10 PP"],
             ["Save an event", "+5 PP"],
             ["Refer a friend", "+100 PP"],
             ["Attend your 5th event", "+150 PP (milestone)"],

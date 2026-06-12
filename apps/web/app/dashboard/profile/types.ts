@@ -24,7 +24,7 @@ export type UserProfile = {
   eventsAttended: number;
   friendCount: number;
   followingCount: number;
-  snippetCount: number;
+  postCount: number;
   topCategories: string[];
   importedTweetIds: string[];
   isOwnProfile: boolean;

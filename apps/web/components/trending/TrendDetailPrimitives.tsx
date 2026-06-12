@@ -18,7 +18,7 @@ import type {
   TrendReason,
   TrendingEvent,
   TrendingOrganizer,
-  TrendingSnippet,
+  TrendingPost,
   TrendingTopic,
 } from "../../lib/trending/types";
 
@@ -188,7 +188,7 @@ export function EventMetricStrip({ event }: { event: TrendingEvent }) {
         { label: "Views",    value: event.views_count.toLocaleString(),   icon: <Eye size={14} /> },
         { label: "Saves",    value: event.saves_count.toLocaleString(),   icon: <Heart size={14} /> },
         { label: "Tickets",  value: event.tickets_sold.toLocaleString(),  icon: <Ticket size={14} /> },
-        { label: "Snippets", value: event.snippet_count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
+        { label: "Posts", value: event.post_count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
       ]}
     />
   );
@@ -204,7 +204,7 @@ export function TopicMetricStrip({
   return (
     <MetricStrip
       items={[
-        { label: "Snippets", value: topic.count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
+        { label: "Posts", value: topic.count.toLocaleString(), icon: <ChatCircleDots size={14} /> },
         { label: "Events", value: topic.event_count.toLocaleString(), icon: <Ticket size={14} /> },
         { label: "Organizers", value: organizerCount.toLocaleString(), icon: <Users size={14} /> },
         { label: "Trend score", value: Math.round(topic.trending_score).toLocaleString(), icon: <Fire size={14} /> },
@@ -293,7 +293,7 @@ export function EventMiniList({ events }: { events: TrendingEvent[] }) {
               {event.title}
             </p>
             <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-              {event.snippet_count} snippets · {compactNumber(event.saves_count)} saves
+              {event.post_count} posts · {compactNumber(event.saves_count)} saves
             </p>
             <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--brand)]">
               Open event
@@ -325,7 +325,7 @@ export function OrganizerMiniList({ organizers }: { organizers: TrendingOrganize
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] font-bold text-[var(--text-primary)]">{organizer.name}</p>
             <p className="text-[11px] text-[var(--text-tertiary)]">
-              {compactNumber(organizer.follower_count)} followers · {organizer.snippet_count} snippets
+              {compactNumber(organizer.follower_count)} followers · {organizer.post_count} posts
             </p>
           </div>
           <ArrowRight size={13} className="text-[var(--text-tertiary)]" />
@@ -335,14 +335,14 @@ export function OrganizerMiniList({ organizers }: { organizers: TrendingOrganize
   );
 }
 
-export function SnippetList({
-  snippets,
+export function PostList({
+  posts,
   emptyLabel,
 }: {
-  snippets: TrendingSnippet[];
+  posts: TrendingPost[];
   emptyLabel: string;
 }) {
-  if (!snippets.length) {
+  if (!posts.length) {
     return (
       <div className="rounded-2xl border border-dashed border-[var(--border-subtle)] px-4 py-10 text-center text-[13px] text-[var(--text-tertiary)]">
         {emptyLabel}
@@ -352,59 +352,59 @@ export function SnippetList({
 
   return (
     <div className="space-y-3">
-      {snippets.map((snippet) => (
-        <article key={snippet.id} className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+      {posts.map((post) => (
+        <article key={post.id} className="overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)]">
           <div className="p-4">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[var(--bg-muted)]">
-                {snippet.user?.avatar_url ? (
-                  <img alt={snippet.user.name} className="h-full w-full object-cover" src={snippet.user.avatar_url} />
+                {post.user?.avatar_url ? (
+                  <img alt={post.user.name} className="h-full w-full object-cover" src={post.user.avatar_url} />
                 ) : null}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {snippet.user?.username ? (
-                    <Link href={`/${snippet.user.username}`} className="text-[13px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand)]">
-                      {snippet.user.name}
+                  {post.user?.username ? (
+                    <Link href={`/${post.user.username}`} className="text-[13px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand)]">
+                      {post.user.name}
                     </Link>
                   ) : (
-                    <p className="text-[13px] font-semibold text-[var(--text-primary)]">{snippet.user?.name ?? "Community member"}</p>
+                    <p className="text-[13px] font-semibold text-[var(--text-primary)]">{post.user?.name ?? "Community member"}</p>
                   )}
-                  <span className="text-[11px] text-[var(--text-tertiary)]">{timeAgo(snippet.created_at)}</span>
+                  <span className="text-[11px] text-[var(--text-tertiary)]">{timeAgo(post.created_at)}</span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">
                     <Heart size={10} weight="fill" />
-                    {snippet.rating.toFixed(1)}
+                    {post.rating.toFixed(1)}
                   </span>
                 </div>
-                {snippet.event && (
-                  <Link href={`/events/${snippet.event.slug}`} className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--brand)] hover:underline">
+                {post.event && (
+                  <Link href={`/events/${post.event.slug}`} className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--brand)] hover:underline">
                     <Ticket size={11} weight="fill" />
-                    {snippet.event.title}
+                    {post.event.title}
                   </Link>
                 )}
               </div>
             </div>
           </div>
-          {([snippet.photo_url, ...snippet.media_urls].filter(Boolean) as string[]).slice(0, 3).length > 0 && (
+          {([post.photo_url, ...post.media_urls].filter(Boolean) as string[]).slice(0, 3).length > 0 && (
             <div className="grid grid-cols-1 gap-px bg-[var(--border-subtle)] sm:grid-cols-2">
-              {([snippet.photo_url, ...snippet.media_urls].filter(Boolean) as string[]).slice(0, 3).map((mediaUrl) => (
-                <div key={`${snippet.id}-${mediaUrl}`} className="relative h-48 bg-[var(--bg-muted)] sm:h-40">
+              {([post.photo_url, ...post.media_urls].filter(Boolean) as string[]).slice(0, 3).map((mediaUrl) => (
+                <div key={`${post.id}-${mediaUrl}`} className="relative h-48 bg-[var(--bg-muted)] sm:h-40">
                   <img alt="" className="h-full w-full object-cover" src={mediaUrl} />
                 </div>
               ))}
             </div>
           )}
           <div className="p-4">
-            {snippet.body && (
+            {post.body && (
               <p className="mt-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                {snippet.body}
+                {post.body}
               </p>
             )}
-            {!!snippet.vibe_tags.length && (
+            {!!post.vibe_tags.length && (
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {snippet.vibe_tags.slice(0, 6).map((tag) => (
+                {post.vibe_tags.slice(0, 6).map((tag) => (
                   <Link
-                    key={`${snippet.id}-${tag}`}
+                    key={`${post.id}-${tag}`}
                     href={`/dashboard/trending/topics/${encodeURIComponent(tag.toLowerCase())}`}
                     className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)] hover:text-[var(--brand)]"
                   >
@@ -420,15 +420,15 @@ export function SnippetList({
   );
 }
 
-export function TopicMediaGrid({ snippets }: { snippets: TrendingSnippet[] }) {
-  const items = snippets
-    .flatMap((snippet) =>
-      ([snippet.photo_url, ...snippet.media_urls].filter(Boolean) as string[]).map((mediaUrl) => ({
-        snippetId: snippet.id,
+export function TopicMediaGrid({ posts }: { posts: TrendingPost[] }) {
+  const items = posts
+    .flatMap((post) =>
+      ([post.photo_url, ...post.media_urls].filter(Boolean) as string[]).map((mediaUrl) => ({
+        postId: post.id,
         mediaUrl,
-        userName: snippet.user?.name ?? "Community member",
-        eventSlug: snippet.event?.slug ?? null,
-        eventTitle: snippet.event?.title ?? null,
+        userName: post.user?.name ?? "Community member",
+        eventSlug: post.event?.slug ?? null,
+        eventTitle: post.event?.title ?? null,
       })),
     )
     .slice(0, 8);
@@ -457,13 +457,13 @@ export function TopicMediaGrid({ snippets }: { snippets: TrendingSnippet[] }) {
 
         if (item.eventSlug) {
           return (
-            <Link key={`${item.snippetId}-${item.mediaUrl}`} href={`/events/${item.eventSlug}`}>
+            <Link key={`${item.postId}-${item.mediaUrl}`} href={`/events/${item.eventSlug}`}>
               {content}
             </Link>
           );
         }
 
-        return <div key={`${item.snippetId}-${item.mediaUrl}`}>{content}</div>;
+        return <div key={`${item.postId}-${item.mediaUrl}`}>{content}</div>;
       })}
     </div>
   );

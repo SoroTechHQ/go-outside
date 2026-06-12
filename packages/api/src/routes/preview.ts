@@ -49,7 +49,7 @@ export function createPreviewRouter(store: MemoryStore, services: AppServices) {
         bannerUrl:     e.bannerUrl ?? null,
       }));
 
-    // Organizer snippet
+    // Organizer post
     const organizer = [...store.users.values()].find((u) => u.id === event.organizerId);
     const orgProfile = [...store.organizerProfiles.values()].find(
       (op) => op.userId === event.organizerId
@@ -156,7 +156,7 @@ export function createPreviewRouter(store: MemoryStore, services: AppServices) {
 
       related_events: related,
 
-      organizer_snippet: organizer && orgProfile ? {
+      organizer_post: organizer && orgProfile ? {
         user_id:      organizer.id,
         display_name: orgProfile.organizationName,
         avatar_url:   organizer.avatarUrl ?? null,

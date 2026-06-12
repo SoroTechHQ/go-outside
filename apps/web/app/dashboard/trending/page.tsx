@@ -31,12 +31,12 @@ import type {
 } from "../../../lib/trending/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type SearchTab    = "all" | "events" | "users" | "snippets";
+type SearchTab    = "all" | "events" | "users" | "posts";
 type TrendingTab  = "events" | "organizers" | "topics";
 type SearchEvent  = { id: string; title: string; slug: string; banner_url: string | null; start_datetime: string | null; price_label: string | null; trending_score: number | null };
 type SearchUser   = { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null; avatar_url: string | null; pulse_tier: string | null; pulse_score: number | null };
 type SearchSnip   = { id: string; body: string; vibe_tags: string[]; created_at: string };
-type SearchResult = { events: SearchEvent[]; users: SearchUser[]; snippets: SearchSnip[]; nextCursor: string | null };
+type SearchResult = { events: SearchEvent[]; users: SearchUser[]; posts: SearchSnip[]; nextCursor: string | null };
 
 const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
@@ -171,7 +171,7 @@ function UserCard({ u }: { u: SearchUser }) {
   );
 }
 
-function SnippetCard({ s }: { s: SearchSnip }) {
+function PostCard({ s }: { s: SearchSnip }) {
   return (
     <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5">
       <p className="line-clamp-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">{s.body}</p>
@@ -209,15 +209,15 @@ function SearchResults({
     { id: "all",      label: "All" },
     { id: "events",   label: "Events" },
     { id: "users",    label: "People" },
-    { id: "snippets", label: "Vibes" },
+    { id: "posts", label: "Vibes" },
   ];
 
   if (!q.trim()) return null;
 
   const events   = data?.events   ?? [];
   const users    = data?.users    ?? [];
-  const snippets = data?.snippets ?? [];
-  const isEmpty  = !isLoading && !isError && events.length === 0 && users.length === 0 && snippets.length === 0;
+  const posts = data?.posts ?? [];
+  const isEmpty  = !isLoading && !isError && events.length === 0 && users.length === 0 && posts.length === 0;
 
   return (
     <div className="mt-3">
@@ -295,20 +295,20 @@ function SearchResults({
             </section>
           )}
 
-          {(tab === "all" || tab === "snippets") && snippets.length > 0 && (
+          {(tab === "all" || tab === "posts") && posts.length > 0 && (
             <section>
               {tab === "all" && (
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">Vibes</p>
               )}
               <div className="space-y-2.5">
-                {snippets.slice(0, tab === "all" ? 3 : 20).map((s) => <SnippetCard key={s.id} s={s} />)}
+                {posts.slice(0, tab === "all" ? 3 : 20).map((s) => <PostCard key={s.id} s={s} />)}
               </div>
-              {tab === "all" && snippets.length > 3 && (
+              {tab === "all" && posts.length > 3 && (
                 <button
-                  onClick={() => onTabChange("snippets")}
+                  onClick={() => onTabChange("posts")}
                   className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:text-[var(--brand)]"
                 >
-                  See all {snippets.length} vibes →
+                  See all {posts.length} vibes →
                 </button>
               )}
             </section>
@@ -449,7 +449,7 @@ function TrendingPane() {
                 <div>
                   <p className="text-[13px] font-bold text-[var(--text-primary)]">#{topic.tag}</p>
                   <p className="text-[11px] text-[var(--text-tertiary)]">
-                    {topic.count} snippets · {topic.event_count} events
+                    {topic.count} posts · {topic.event_count} events
                   </p>
                 </div>
               </div>

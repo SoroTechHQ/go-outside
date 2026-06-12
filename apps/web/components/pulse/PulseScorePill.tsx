@@ -186,7 +186,7 @@ function PulseHistorySheet({
   const REASON_LABELS: Record<string, string> = {
     ticket_purchase: "Bought a ticket",
     checkin:        "Event check-in",
-    snippet:        "Left a snippet",
+    post:        "Left a post",
     follow:         "Followed someone",
     mutual_follow:  "Mutual follow",
     review:         "Posted a review",

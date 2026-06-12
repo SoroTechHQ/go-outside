@@ -57,4 +57,4 @@ export const bannerUrl  = (url: string | null | undefined) => getImageUrl(url, {
 export const thumbnailUrl = (url: string | null | undefined) => getImageUrl(url, { width: 360, quality: 58, format: "webp" });
 export const coverUrl   = (url: string | null | undefined) => getImageUrl(url, { width: 1440, quality: 70, format: "webp" });
 export const logoUrl    = (url: string | null | undefined) => getImageUrl(url, { width: 240, quality: 60, format: "webp" });
-export const snippetUrl = (url: string | null | undefined) => getImageUrl(url, { width: 960, quality: 66, format: "webp" });
+export const postUrl = (url: string | null | undefined) => getImageUrl(url, { width: 960, quality: 66, format: "webp" });
