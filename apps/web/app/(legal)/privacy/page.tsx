@@ -75,18 +75,23 @@ const TOC = [
   { id: "why-we-collect", label: "4. Why We Collect It" },
   { id: "legal-basis", label: "5. Legal Basis for Processing" },
   { id: "how-we-share", label: "6. How We Share Your Data" },
-  { id: "international-transfers", label: "7. International Data Transfers" },
-  { id: "pulse-profiling", label: "8. Pulse Score & Automated Profiling" },
-  { id: "cookies", label: "9. Cookies & Tracking" },
-  { id: "retention", label: "10. Data Retention" },
-  { id: "security", label: "11. Data Security" },
-  { id: "your-rights", label: "12. Your Rights" },
-  { id: "children", label: "13. Children's Privacy" },
-  { id: "organizers", label: "14. For Event Organizers" },
-  { id: "ghana-dpa", label: "15. Ghana Data Protection Act" },
-  { id: "eea", label: "16. For EEA Users" },
-  { id: "changes", label: "17. Changes to This Policy" },
-  { id: "contact", label: "18. Contact Us" },
+  { id: "visibility", label: "7. What Others Can See" },
+  { id: "partners", label: "8. Partners and Vendors" },
+  { id: "international-transfers", label: "9. International Data Transfers" },
+  { id: "pulse-profiling", label: "10. Pulse Score & Automated Profiling" },
+  { id: "notifications", label: "11. Messages and Notifications" },
+  { id: "cookies", label: "12. Cookies & Tracking" },
+  { id: "retention", label: "13. Data Retention" },
+  { id: "security", label: "14. Data Security" },
+  { id: "your-rights", label: "15. Your Rights" },
+  { id: "manage-delete", label: "16. Manage or Delete Data" },
+  { id: "legal-requests", label: "17. Legal Requests" },
+  { id: "children", label: "18. Children's Privacy" },
+  { id: "organizers", label: "19. For Event Organizers" },
+  { id: "ghana-dpa", label: "20. Ghana Data Protection Act" },
+  { id: "eea", label: "21. For EEA Users" },
+  { id: "changes", label: "22. Changes to This Policy" },
+  { id: "contact", label: "23. Contact Us" },
 ];
 
 export default function PrivacyPolicyPage() {
@@ -305,7 +310,7 @@ export default function PrivacyPolicyPage() {
           </SubSection>
 
           <SubSection title="3.10 Communications Data">
-            <p><strong>Direct messages</strong> are powered by <strong>Stream Chat</strong> (GetStream.io). Message content is stored on Stream Chat's servers — not on GoOutside's servers. We store only: which users have a conversation, the last message timestamp, and an 80-character message preview.</p>
+            <p><strong>Direct messages</strong> are powered by <strong>Stream Chat</strong> (GetStream.io). Message content is stored on Stream Chat servers — not on GoOutside servers. We store only: which users have a conversation, the last message timestamp, and an 80-character message preview.</p>
             <p><strong>In-app notifications</strong> are stored in our database and visible only to you.</p>
             <p><strong>Transactional emails</strong> are sent via <strong>Resend</strong>, which receives your email and name for delivery.</p>
           </SubSection>
@@ -320,6 +325,36 @@ export default function PrivacyPolicyPage() {
             <Highlight>
               Groq does not use your data to train AI models. Do not share sensitive personal information (health details, home address, financial details) in AI queries.
             </Highlight>
+          </SubSection>
+
+          <SubSection title="3.12 Information We Infer">
+            <p>Some information is not typed directly by you, but is inferred from your use of GoOutside. We use these inferences to make discovery feel less random and to protect the platform.</p>
+            <Table
+              headers={["Inference", "Examples", "Use"]}
+              rows={[
+                ["Event taste", "Music-heavy, food-focused, tech-curious, nightlife-oriented, family-friendly", "Ranking your home feed and search results"],
+                ["Budget sensitivity", "Free-event preference, low-ticket preference, premium-event interest", "Showing more relevant tickets and rewards"],
+                ["Timing preference", "Weeknight, weekend, afternoon, late-night", "Weekend Assistant and feed ordering"],
+                ["Social discovery style", "Often follows friends, often saves solo, often buys after social proof", "Social signals and recommendations"],
+                ["Abuse or fraud risk", "Suspicious device fingerprint, unusual payment behavior, spam-like activity", "Security review and account protection"],
+              ]}
+            />
+            <p>These inferences are internal. We do not sell them, and we do not give organizers your individual behavioral profile.</p>
+          </SubSection>
+
+          <SubSection title="3.13 Information Others Provide About You">
+            <p>Other users may create information involving you. For example, someone may follow you, invite you to a conversation, mention you in a post, send you a direct message, report your content, or scan your ticket at an event entrance.</p>
+            <p>We process that information to operate the relevant feature, protect the service, and maintain accurate event and ticket records. If the information is public content, it may remain visible until deleted by the person who posted it or removed by GoOutside.</p>
+          </SubSection>
+
+          <SubSection title="3.14 Avatar and Profile Photo Data">
+            <p>GoOutside supports two profile image types: uploaded profile photos and generated Navii avatars. Uploaded photos are stored in Supabase Storage. Generated avatars are deterministic images created from a seed such as your user ID or email-derived identifier.</p>
+            <p>If you upload a photo, you are responsible for having the right to use it. Your profile photo or generated avatar may be visible anywhere your public profile appears, including posts, comments, followers lists, organizer pages, and messages.</p>
+          </SubSection>
+
+          <SubSection title="3.15 Sensitive Information">
+            <p>GoOutside is not designed for processing sensitive personal information such as health details, religious beliefs, political opinions, national identification numbers, precise home addresses, or financial account details. Please do not put this information in your profile, posts, direct messages, support requests, or AI prompts unless it is strictly necessary.</p>
+            <p>If you choose to post or send sensitive information, we process it only to provide the feature you used, enforce our policies, respond to support requests, comply with law, or protect users and the platform.</p>
           </SubSection>
         </Section>
 
@@ -373,7 +408,7 @@ export default function PrivacyPolicyPage() {
               <strong>When you purchase a ticket</strong>, the event organiser receives your <strong>name</strong>, <strong>email address</strong>, <strong>ticket type</strong>, and <strong>order reference</strong>. This is necessary for event entry management.
             </Warning>
             <p>The organiser does <strong>not</strong> receive: your payment card details, phone number, Pulse Score, behavioral data, private messages, or precise GPS location.</p>
-            <p>Organizers are independent data controllers for the attendee data they receive. We recommend reviewing the organiser's own privacy notice before purchasing.</p>
+            <p>Organizers are independent data controllers for the attendee data they receive. We recommend reviewing the organiser privacy notice before purchasing.</p>
           </SubSection>
 
           <SubSection title="6.2 Third-Party Service Providers">
@@ -409,7 +444,47 @@ export default function PrivacyPolicyPage() {
         </Section>
 
         {/* 7 */}
-        <Section id="international-transfers" title="7. International Data Transfers">
+        <Section id="visibility" title="7. What Others Can See">
+          <p>GoOutside has social features, so some information is designed to be visible to other people. The visibility depends on the feature you use and the choices you make.</p>
+          <Table
+            headers={["Information", "Typical Visibility", "Notes"]}
+            rows={[
+              ["Name, username, avatar, bio, city, Pulse tier", "Public profile", "Visible to signed-in users and may appear in previews, search, posts, comments, followers lists, and messages"],
+              ["Posts, post images, snippets, reviews, ratings", "Public by default", "Other users may screenshot, quote, or share public content outside GoOutside"],
+              ["Followers and following", "Visible on profile", "Used for social proof such as friends attending or saving events"],
+              ["Event saves and RSVPs", "May be shown as social signals", "For example, users may see that people they follow are interested in an event"],
+              ["Ticket purchases", "Private except as needed for event entry", "Organizers receive attendee details needed to manage admission"],
+              ["Direct messages", "Visible to conversation participants", "DMs are not public, but they are not end-to-end encrypted"],
+              ["Moderation reports and blocked users", "Private", "Visible only to GoOutside moderation or support staff as needed"],
+              ["Precise GPS location", "Private unless using a live location feature", "Never shared with organizers for ordinary ticket purchases"],
+            ]}
+          />
+          <Warning>
+            Public content can be copied or reshared by other people. Even if you delete public content later, GoOutside cannot control copies that others already made outside the app.
+          </Warning>
+        </Section>
+
+        {/* 8 */}
+        <Section id="partners" title="8. Partners, Vendors, and Integrated Services">
+          <p>GoOutside relies on specialist vendors to provide authentication, storage, payments, messaging, email, hosting, maps, and AI features. These vendors process data for the specific service they provide to GoOutside, subject to their own security and privacy commitments.</p>
+          <Table
+            headers={["Category", "Vendor", "Role", "Data Usually Processed"]}
+            rows={[
+              ["Authentication", "Clerk", "Creates sessions, handles passwords and OAuth", "Email, name, avatar, user ID, session metadata"],
+              ["Database and storage", "Supabase", "Stores app data and uploaded media", "Profiles, events, posts, ticket records, images, notification rows"],
+              ["Messaging", "Stream Chat", "Real-time direct messages", "User IDs, names, avatars, message content, channel metadata"],
+              ["Payments", "Paystack", "Processes card, mobile money, and bank payments", "Email, amount, payment method metadata, transaction reference"],
+              ["Email", "Resend", "Sends transactional and notification emails", "Recipient email, name, message template, delivery metadata"],
+              ["AI", "Groq", "Processes AI assistant prompts", "Prompt text, limited profile context, event context"],
+              ["Maps", "Google Maps Platform", "Location search and reverse geocoding", "Coordinates or place search text"],
+              ["Hosting", "Vercel", "Serves the web app and API routes", "Request metadata, IP address, logs"],
+            ]}
+          />
+          <p>We may add, replace, or remove vendors as GoOutside grows. When a new vendor materially changes how your personal data is processed, we will update this policy.</p>
+        </Section>
+
+        {/* 9 */}
+        <Section id="international-transfers" title="9. International Data Transfers">
           <p>GoOutside is a Ghanaian company, but several key service providers operate primarily in the United States. Your personal data is therefore transferred outside Ghana.</p>
           <Table
             headers={["Service", "Data Transferred", "Location"]}
@@ -427,8 +502,8 @@ export default function PrivacyPolicyPage() {
           <p>By creating a GoOutside account and accepting this Privacy Policy, you consent to your personal data being transferred to and processed in the United States by the service providers listed above. If you object, contact us at <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a> or delete your account.</p>
         </Section>
 
-        {/* 8 */}
-        <Section id="pulse-profiling" title="8. Pulse Score & Automated Profiling">
+        {/* 10 */}
+        <Section id="pulse-profiling" title="10. Pulse Score & Automated Profiling">
           <p>Your <strong>Pulse Score</strong> is calculated algorithmically from your behavior on GoOutside. This constitutes <strong>automated profiling</strong> under Act 843 and GDPR.</p>
           <Table
             headers={["Activity", "Points"]}
@@ -447,8 +522,24 @@ export default function PrivacyPolicyPage() {
           <p><strong>Your rights regarding profiling:</strong> View your full ledger at Dashboard → Rewards → Activity. Request a human review of any calculation you believe is inaccurate by emailing privacy@gooutside.club. You may object to profiling, though this may limit your access to rewards.</p>
         </Section>
 
-        {/* 9 */}
-        <Section id="cookies" title="9. Cookies & Tracking Technologies">
+        {/* 11 */}
+        <Section id="notifications" title="11. Messages and Notifications">
+          <p>GoOutside may notify you about account security, ticket purchases, event changes, direct messages, follows, friend activity, organizer updates, rewards, and product announcements.</p>
+          <Table
+            headers={["Channel", "What We Send", "How to Control It"]}
+            rows={[
+              ["In-app notifications", "Ticket updates, follows, comments, rewards, message alerts", "Dashboard notification settings"],
+              ["Browser push notifications", "Time-sensitive alerts such as new direct messages", "Browser permission settings and GoOutside notification settings"],
+              ["Email", "Receipts, ticket confirmations, security notices, optional digests and marketing", "Unsubscribe links and account settings"],
+              ["Direct messages", "Messages from other GoOutside users", "Block users, decline requests, or adjust message notification settings"],
+            ]}
+          />
+          <p>Some communications are transactional and cannot be fully disabled while your account is active, such as security alerts, payment receipts, critical ticket updates, and legal notices.</p>
+          <p>Direct messages are stored and delivered by Stream Chat. They are private to conversation participants, but they are not end-to-end encrypted. GoOutside or Stream may access message content where required for abuse prevention, support, legal compliance, or security.</p>
+        </Section>
+
+        {/* 12 */}
+        <Section id="cookies" title="12. Cookies & Tracking Technologies">
           <Table
             headers={["Cookie", "Type", "Duration", "Purpose"]}
             rows={[
@@ -464,8 +555,8 @@ export default function PrivacyPolicyPage() {
           <p>See our <Link href="/cookies" className="text-[#2f8f45] underline">Cookie Policy</Link> for full details on managing cookies.</p>
         </Section>
 
-        {/* 10 */}
-        <Section id="retention" title="10. Data Retention">
+        {/* 13 */}
+        <Section id="retention" title="13. Data Retention">
           <Table
             headers={["Data Category", "Retention Period"]}
             rows={[
@@ -485,8 +576,8 @@ export default function PrivacyPolicyPage() {
           />
         </Section>
 
-        {/* 11 */}
-        <Section id="security" title="11. Data Security">
+        {/* 14 */}
+        <Section id="security" title="14. Data Security">
           <ul className="list-disc space-y-2 pl-5">
             <li>All data in transit is encrypted via HTTPS/TLS</li>
             <li>Database access is protected by Supabase Row Level Security (RLS)</li>
@@ -498,8 +589,8 @@ export default function PrivacyPolicyPage() {
           <p><strong>Breach notification:</strong> In the event of a breach posing risk to your rights, we will notify the Data Protection Commission of Ghana within 72 hours and notify affected users as soon as practicable.</p>
         </Section>
 
-        {/* 12 */}
-        <Section id="your-rights" title="12. Your Rights">
+        {/* 15 */}
+        <Section id="your-rights" title="15. Your Rights">
           <Table
             headers={["Right", "How to Exercise"]}
             rows={[
@@ -517,21 +608,51 @@ export default function PrivacyPolicyPage() {
           <p className="text-[14px] text-[#6b7280]">We acknowledge all requests within 5 business days and respond fully within 30 days.</p>
         </Section>
 
-        {/* 13 */}
-        <Section id="children" title="13. Children's Privacy">
+        {/* 16 */}
+        <Section id="manage-delete" title="16. How to Manage or Delete Your Information">
+          <p>You can manage much of your information directly inside GoOutside. Some changes may take effect immediately in the app but remain in backups for a limited period.</p>
+          <Table
+            headers={["Action", "Where", "What Happens"]}
+            rows={[
+              ["Edit profile", "Dashboard -> Profile", "Updates your name, username, avatar, bio, city, and public profile details"],
+              ["Change notification preferences", "Dashboard -> Settings", "Controls message, social, event, reward, organizer, and marketing notifications"],
+              ["Delete posts or reviews", "Relevant post, profile, or event page", "Removes the content from public display; backup copies expire later"],
+              ["Block a user", "User profile or message thread", "Limits that user ability to interact with you"],
+              ["Export data", "Email privacy@gooutside.club", "We provide a machine-readable copy where technically feasible"],
+              ["Delete account", "Dashboard -> Profile -> Settings or email us", "Profile and non-required data are deleted or anonymised; legal records may be retained"],
+            ]}
+          />
+          <p>Deleting your account does not automatically delete records we must keep for legal, tax, fraud prevention, dispute resolution, payment reconciliation, or security reasons.</p>
+        </Section>
+
+        {/* 17 */}
+        <Section id="legal-requests" title="17. Legal Requests, Safety, and Harm Prevention">
+          <p>We may access, preserve, use, or disclose information if we believe in good faith that doing so is reasonably necessary to:</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>Comply with Ghanaian law, court orders, subpoenas, production orders, or valid requests from government authorities</li>
+            <li>Enforce our Terms of Service, event rules, payment rules, or organizer obligations</li>
+            <li>Detect, prevent, or investigate fraud, spam, account takeover, bot activity, platform abuse, or security incidents</li>
+            <li>Protect the rights, property, safety, and integrity of GoOutside, Soro Technologies, users, event attendees, organizers, vendors, or the public</li>
+            <li>Respond to emergency situations involving risk of death, serious injury, or imminent harm</li>
+          </ul>
+          <p>Where legally permitted and appropriate, we try to limit disclosures to the minimum information necessary for the request or safety purpose.</p>
+        </Section>
+
+        {/* 18 */}
+        <Section id="children" title="18. Children's Privacy">
           <p>GoOutside is intended for users aged <strong>18 and over</strong>. We do not knowingly collect personal data from anyone under 18. If you believe a person under 18 has created an account, contact <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a> and we will delete it promptly.</p>
           <p className="text-[14px] text-[#6b7280]">Note: Ghana's Data Protection Bill 2025 (pending enactment) is expected to introduce parental consent requirements. We will update this policy when it comes into force.</p>
         </Section>
 
-        {/* 14 */}
-        <Section id="organizers" title="14. For Event Organizers">
-          <p>When you collect attendee data through GoOutside's ticket flow, you become an <strong>independent data controller</strong> for that data. You are responsible for having your own privacy notice, using attendee data only for event management, and complying with Ghana's Data Protection Act 2012.</p>
+        {/* 19 */}
+        <Section id="organizers" title="19. For Event Organizers">
+          <p>When you collect attendee data through the GoOutside ticket flow, you become an <strong>independent data controller</strong> for that data. You are responsible for having your own privacy notice, using attendee data only for event management, and complying with Ghana&apos;s Data Protection Act 2012.</p>
           <p><strong>What GoOutside provides to organizers:</strong> Attendee name, email, ticket type, and order reference. Aggregate analytics (total sales, revenue, check-in rates). <strong>Not provided:</strong> payment card details, Pulse Scores, private messages, or precise GPS location.</p>
           <p>A Data Processing Agreement (DPA) is available on request at <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>.</p>
         </Section>
 
-        {/* 15 */}
-        <Section id="ghana-dpa" title="15. Ghana Data Protection Act 2012 (Act 843)">
+        {/* 20 */}
+        <Section id="ghana-dpa" title="20. Ghana Data Protection Act 2012 (Act 843)">
           <p>GoOutside (operated by Soro Technologies) is registered with or registering with the Data Protection Commission of Ghana. Our DPC Registration Number will be published here upon receipt.</p>
           <Table
             headers={["Principle", "How GoOutside Complies"]}
@@ -549,19 +670,19 @@ export default function PrivacyPolicyPage() {
           <p><strong>Complaints:</strong> Data Protection Commission of Ghana — <a href="https://dataprotection.org.gh" target="_blank" rel="noopener noreferrer" className="text-[#2f8f45] underline">dataprotection.org.gh</a> · P.O. Box CT 1719, Cantonments, Accra</p>
         </Section>
 
-        {/* 16 */}
-        <Section id="eea" title="16. For Users in the European Economic Area">
+        {/* 21 */}
+        <Section id="eea" title="21. For Users in the European Economic Area">
           <p>If you are in the EEA, Switzerland, or the United Kingdom, you have additional rights under the GDPR: right to restriction of processing, right to object to automated decision-making (see Section 8), and the right to lodge a complaint with the supervisory authority in your country of residence.</p>
           <p>For transfers of EEA user data to the United States, we rely on <strong>Standard Contractual Clauses (SCCs)</strong> as approved by the European Commission.</p>
         </Section>
 
-        {/* 17 */}
-        <Section id="changes" title="17. Changes to This Policy">
+        {/* 22 */}
+        <Section id="changes" title="22. Changes to This Policy">
           <p>When we make material changes, we will: (1) post the updated policy at gooutside.club/privacy, (2) update the "Last updated" date, and (3) send email notification at least <strong>14 days before</strong> changes take effect. Previous versions are available on request.</p>
         </Section>
 
-        {/* 18 */}
-        <Section id="contact" title="18. Contact Us">
+        {/* 23 */}
+        <Section id="contact" title="23. Contact Us">
           <Table
             headers={["Type", "Contact"]}
             rows={[

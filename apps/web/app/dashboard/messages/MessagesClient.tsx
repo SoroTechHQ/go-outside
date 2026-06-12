@@ -32,6 +32,7 @@ import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { GoMessageInput } from "../../../components/chat/GoMessageInput";
 import { GoChannelHeader } from "../../../components/chat/GoChannelHeader";
 import { GoRequestBanner } from "../../../components/chat/GoRequestBanner";
+import { MessagesPreviewShell } from "../../../components/messages/MessagesPreviewShell";
 
 type GoConversationType =
   | "friend_dm"
@@ -1008,7 +1009,7 @@ function StreamMessagesView({
   }, [client]);
 
   if (bootError) return <MessagesConfigError detail={bootError} />;
-  if (!client) return <MessagesPageSkeleton />;
+  if (!client) return <MessagesPreviewShell label="Connecting to chat..." />;
 
   // Don't auto-select the welcome channel when navigating from a profile (?dm=) — the DM effect handles it
   const effectiveStarterCid = dmUserId ? undefined : starterChannelCid;
