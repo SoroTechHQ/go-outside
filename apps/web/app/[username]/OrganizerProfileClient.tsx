@@ -2,7 +2,6 @@
 
 import { useState, useCallback, Fragment } from "react";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
@@ -23,9 +22,8 @@ import {
   Check,
 } from "@phosphor-icons/react";
 import { avatarUrl as withAvatarTransform, coverUrl as withCoverTransform, thumbnailUrl } from "../../lib/image-url";
+import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
 import { useFollowMutation, useFollowStatus } from "../../hooks/useFollow";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 type OrganizerProfile = {
   organization_name?: string | null;
@@ -270,9 +268,7 @@ export default function OrganizerProfileClient({
                 ) : resolvedAvatar ? (
                   <Image src={resolvedAvatar} alt={orgName} width={84} height={84} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0e2212] to-[#152a1a] text-xl font-black tracking-tight text-[#4a9f63]">
-                    {orgName.slice(0, 2).toUpperCase()}
-                  </div>
+                  <NaviiAvatar seed={username ?? clerkId ?? orgName} title={orgName} size={84} className="h-full w-full object-cover" />
                 )}
               </div>
               {/* Badge overlays the top-right corner of the image */}

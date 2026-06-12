@@ -24,6 +24,7 @@ HOW YOU RESPOND:
 - Keep responses to 3–5 sentences max for the intro. Let the event cards do the heavy lifting.
 - Prices are in GHS. Format as "GHS 150" not "150 GHS".
 - When you recommend events, your response JSON must include them in the picks array.
+- If the tools return zero events, say that clearly and do not claim you found options.
 
 RESPONSE FORMAT (always valid JSON):
 {
@@ -64,13 +65,21 @@ export async function runAICore(
     { role: "user", content: userMessage },
   ];
 
-  const turn1 = await groqChat({
-    model:       AI_MODELS.SMART,
-    messages:    turn1Messages,
-    tools:       GOOUTSIDE_TOOLS,
-    temperature: 0.4,
-    max_tokens:  1200,
-  });
+  let turn1: Awaited<ReturnType<typeof groqChat>>;
+  try {
+    turn1 = await groqChat({
+      model:       AI_MODELS.SMART,
+      messages:    turn1Messages,
+      tools:       GOOUTSIDE_TOOLS,
+      temperature: 0.4,
+      max_tokens:  1200,
+    });
+  } catch (err) {
+    if (isGroqToolUseFailure(err)) {
+      return runFallbackToolPlan(userMessage, history, clerkId);
+    }
+    throw err;
+  }
 
   const turn1Choice = turn1.choices[0];
   const finishReason = turn1Choice?.finish_reason;
@@ -147,6 +156,160 @@ export async function runAICore(
     ...parseFinalResponse(raw, toolNamesUsed),
     raw_tool_results: rawToolResults,
   };
+}
+
+function isGroqToolUseFailure(err: unknown) {
+  if (!err || typeof err !== "object") return false;
+  const record = err as Record<string, unknown>;
+  const message = String(record.message ?? "").toLowerCase();
+  return message.includes("tool_use_failed") || message.includes("failed to call a function");
+}
+
+async function runFallbackToolPlan(
+  userMessage: string,
+  history: GroqMessage[],
+  clerkId: string,
+): Promise<ExecutorResult> {
+  const inferredCalls = inferToolCalls(userMessage, clerkId);
+  const toolNamesUsed: string[] = [];
+  const rawToolResults: Record<string, unknown> = {};
+
+  await Promise.all(
+    inferredCalls.map(async ({ name, args }) => {
+      toolNamesUsed.push(name);
+      try {
+        rawToolResults[name] = await executeTool(name, args, clerkId);
+      } catch (err) {
+        rawToolResults[name] = { error: String(err) };
+      }
+    }),
+  );
+
+  const context = JSON.stringify(rawToolResults);
+  const finalMessages: GroqMessage[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...history.slice(-10),
+    {
+      role: "user",
+      content: `${userMessage}\n\nTool results from GoOutside:\n${context}\n\nReturn the required JSON response using only these tool results.`,
+    },
+  ];
+
+  try {
+    const final = await groqChat({
+      model:           AI_MODELS.SMART,
+      messages:        finalMessages,
+      temperature:     0.5,
+      max_tokens:      900,
+      response_format: { type: "json_object" },
+    });
+    const raw = final.choices[0]?.message?.content ?? "{}";
+    return {
+      ...parseFinalResponse(raw, toolNamesUsed),
+      raw_tool_results: rawToolResults,
+    };
+  } catch {
+    return {
+      ...synthesizeFallbackResponse(rawToolResults, toolNamesUsed),
+      raw_tool_results: rawToolResults,
+    };
+  }
+}
+
+function inferToolCalls(userMessage: string, clerkId: string): Array<{ name: ToolName; args: Record<string, unknown> }> {
+  const norm = userMessage.toLowerCase();
+  const calls: Array<{ name: ToolName; args: Record<string, unknown> }> = [];
+
+  if (clerkId) {
+    calls.push({ name: "get_user_profile", args: {} });
+  }
+
+  const budgetMatch = norm.match(/(?:ghs|₵|cedis?)\s*(\d+)|(\d+)\s*(?:ghs|₵|cedis?)/i);
+  const date = inferDate(norm);
+  const city = inferCity(norm);
+
+  if (budgetMatch) {
+    calls.push({
+      name: "get_budget_options",
+      args: {
+        budget_ghs: Number(budgetMatch[1] ?? budgetMatch[2]),
+        date,
+        city,
+      },
+    });
+    return calls;
+  }
+
+  if (/\b(trending|popular|hot|buzzing|viral)\b/.test(norm)) {
+    calls.push({ name: "get_trending_events", args: { city, limit: 8 } });
+    return calls;
+  }
+
+  if (/\b(friend|friends|people i follow|network)\b/.test(norm)) {
+    calls.push({ name: "get_friends_activity", args: { upcoming_only: true } });
+    return calls;
+  }
+
+  calls.push({
+    name: "search_events",
+    args: {
+      query: userMessage,
+      date,
+      city,
+      is_free: /\bfree\b/.test(norm) ? true : undefined,
+      limit: 8,
+    },
+  });
+
+  return calls;
+}
+
+function inferDate(norm: string) {
+  if (/\b(tonight|today)\b/.test(norm)) return "tonight";
+  if (/\btomorrow\b/.test(norm)) return "tomorrow";
+  if (/\bweekend\b/.test(norm)) return "weekend";
+  if (/\bthis week\b/.test(norm)) return "this week";
+  return undefined;
+}
+
+function inferCity(norm: string) {
+  if (norm.includes("kumasi")) return "Kumasi";
+  if (norm.includes("takoradi")) return "Takoradi";
+  return "Accra";
+}
+
+function synthesizeFallbackResponse(
+  rawToolResults: Record<string, unknown>,
+  toolNamesUsed: string[],
+): ExecutorResult {
+  const events = collectEvents(rawToolResults).slice(0, 4);
+  return {
+    message: events.length
+      ? `I found ${events.length} options from live GoOutside data. Here are the strongest matches.`
+      : "I checked live GoOutside data, but I couldn't find a strong match yet. Try a different vibe, day, or budget.",
+    picks: events.map((event) => ({
+      event_id: String(event.id),
+      title: String(event.title ?? "Event"),
+      reason: "This matches the timing and vibe from your request.",
+    })),
+    followUps: ["Show me free events", "What's trending this weekend?", "Find something near Osu"],
+    tool_names_used: toolNamesUsed,
+  };
+}
+
+function collectEvents(rawToolResults: Record<string, unknown>) {
+  const events: Record<string, unknown>[] = [];
+  for (const result of Object.values(rawToolResults)) {
+    if (!result || typeof result !== "object") continue;
+    const maybeEvents = (result as { events?: unknown[] }).events;
+    if (!Array.isArray(maybeEvents)) continue;
+    for (const event of maybeEvents) {
+      if (event && typeof event === "object" && "id" in event) {
+        events.push(event as Record<string, unknown>);
+      }
+    }
+  }
+  return events;
 }
 
 // ── Parse the LLM's JSON response and resolve event objects ─────────────────

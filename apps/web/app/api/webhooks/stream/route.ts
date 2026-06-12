@@ -40,7 +40,7 @@ async function triggerNovuNotification(payload: {
         sender_avatar:         payload.senderAvatar,
         message_preview:       payload.messagePreview,
         channel_id:            payload.channelId,
-        conversation_url:      `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.com"}/dashboard/messages`,
+        conversation_url:      `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club"}/dashboard/messages`,
         email_delay_minutes:   payload.emailDelayMins,
       },
     }),

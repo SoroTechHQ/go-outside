@@ -10,64 +10,22 @@ export const AI_MODELS = {
 
 export type AIModel = (typeof AI_MODELS)[keyof typeof AI_MODELS];
 
-// ── Key pool ──────────────────────────────────────────────────────────────────
-// Keys are tried in order. On rate-limit (429) or quota error, the next key
-// is tried automatically. All 4 slots are optional — use however many you have.
-const KEY_POOL: string[] = [
-  process.env.GROQ_API_KEY_1,
-  process.env.GROQ_API_KEY_2,
-  process.env.GROQ_API_KEY_3,
-  process.env.GROQ_API_KEY_4,
-  // Legacy key as final fallback
-  process.env.GROQ_API_KEY_PROD_1,
-  process.env.GROQ_API_KEY,
-]
-  .filter((k): k is string => typeof k === "string" && k.length > 0)
-  .filter((k, i, arr) => arr.indexOf(k) === i); // dedupe
+// ── Active key ────────────────────────────────────────────────────────────────
+// For now we use one active Groq key only. The GROQ_API_KEY_1..4 slots are
+// intentionally inactive placeholders so rotation can be re-enabled later.
+const ACTIVE_GROQ_API_KEY =
+  process.env.GROQ_API_KEY ?? process.env.GROQ_API_KEY_PROD_1 ?? "";
 
-function isQuotaError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const e = err as Record<string, unknown>;
-  const status = e.status as number | undefined;
-  const message = String(e.message ?? "").toLowerCase();
-  return (
-    status === 429 ||
-    status === 413 ||
-    message.includes("rate limit") ||
-    message.includes("quota") ||
-    message.includes("tokens per") ||
-    message.includes("requests per")
-  );
-}
-
-// ── Core executor with automatic key rotation ─────────────────────────────────
+// ── Core executor ────────────────────────────────────────────────────────────
 export async function callGroq<T>(
   fn: (client: Groq) => Promise<T>,
 ): Promise<T> {
-  if (KEY_POOL.length === 0) {
-    throw new Error("No Groq API keys configured. Set GROQ_API_KEY_1 (or GROQ_API_KEY) in env.");
+  if (!ACTIVE_GROQ_API_KEY) {
+    throw new Error("No Groq API key configured. Set GROQ_API_KEY in env.");
   }
 
-  let lastErr: unknown;
-
-  for (const key of KEY_POOL) {
-    const client = new Groq({ apiKey: key });
-    try {
-      return await fn(client);
-    } catch (err) {
-      lastErr = err;
-      if (isQuotaError(err)) {
-        // Rate limited on this key — try next
-        continue;
-      }
-      // Non-quota error (bad request, model not found, etc.) — don't rotate
-      throw err;
-    }
-  }
-
-  // All keys exhausted
-  console.error("[groq-client] All API keys exhausted or rate-limited", lastErr);
-  throw lastErr;
+  const client = new Groq({ apiKey: ACTIVE_GROQ_API_KEY });
+  return fn(client);
 }
 
 // ── Chat completions helper ───────────────────────────────────────────────────

@@ -33,7 +33,7 @@ export function MessagesFAB() {
             ? "0 0 24px rgba(95,191,42,0.25)"
             : "0 4px 20px rgba(0,0,0,0.3)",
         }}
-        className={`fixed bottom-8 right-8 z-[60] hidden h-[52px] w-[52px] items-center justify-center rounded-full border backdrop-blur-xl transition-colors duration-200 md:flex ${
+        className={`fixed bottom-8 right-24 z-[60] hidden h-[52px] w-[52px] items-center justify-center rounded-full border backdrop-blur-xl transition-colors duration-200 md:flex ${
           isOpen
             ? "border-[var(--brand)]/30 bg-[var(--brand)]/20"
             : "border-white/8 bg-white/6 hover:border-[var(--brand)]/25 hover:bg-[var(--brand)]/15"
@@ -84,7 +84,7 @@ export function MessagesFAB() {
         {isOpen ? (
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="glass-card fixed bottom-24 right-6 z-[60] hidden w-[320px] flex-col overflow-hidden md:flex"
+            className="glass-card fixed bottom-24 right-24 z-[60] hidden w-[320px] flex-col overflow-hidden md:flex"
             exit={{ opacity: 0, scale: 0.96, y: 20 }}
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             transition={{ duration: 0.25, ease: "easeOut" }}

@@ -58,14 +58,14 @@ async function fulfillTickets(reference: string): Promise<void> {
 
   if (userRow?.email && eventRow) {
     await resend.emails.send({
-      from: "GoOutside <noreply@gooutside.app>",
+      from: "GoOutside <noreply@mail.gooutside.club>",
       to: userRow.email,
       subject: `Your ticket for ${eventRow.title} is confirmed!`,
       html: `
         <p>Hi ${userRow.first_name},</p>
         <p>Your ticket for <strong>${eventRow.title}</strong> has been confirmed.</p>
         <p>You earned <strong>${pp} Pulse Points</strong> for this purchase.</p>
-        <p>View your ticket at <a href="https://gooutside.app/dashboard/tickets">dashboard/tickets</a>.</p>
+        <p>View your ticket at <a href="https://gooutside.club/dashboard/tickets">dashboard/tickets</a>.</p>
       `,
     });
   }

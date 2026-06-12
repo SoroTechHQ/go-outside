@@ -10,11 +10,11 @@ export function createMediaRouter(store: MemoryStore, services: AppServices) {
   router.use('*', authMiddleware(store, services));
 
   router.post('/upload/banner', requireRole('organizer', 'admin'), (c) => {
-    return c.json({ data: { key: `media/banner/${crypto.randomUUID()}.jpg`, url: 'https://cdn.gooutside.local/banner.jpg' } }, 201);
+    return c.json({ data: { key: `media/banner/${crypto.randomUUID()}.jpg`, url: 'https://cdn.gooutside.club/banner.jpg' } }, 201);
   });
 
   router.post('/upload/gallery', requireRole('organizer', 'admin'), (c) => {
-    return c.json({ data: { key: `media/gallery/${crypto.randomUUID()}.jpg`, url: 'https://cdn.gooutside.local/gallery.jpg' } }, 201);
+    return c.json({ data: { key: `media/gallery/${crypto.randomUUID()}.jpg`, url: 'https://cdn.gooutside.club/gallery.jpg' } }, 201);
   });
 
   router.delete('/:key', requireRole('organizer', 'admin'), (c) => {

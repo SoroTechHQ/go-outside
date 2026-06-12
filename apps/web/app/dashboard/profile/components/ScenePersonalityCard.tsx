@@ -38,7 +38,7 @@ export function ScenePersonalityCard() {
   const personality = getPersonality();
 
   function handleShare() {
-    const text = `My GoOutside scene personality: ${personality.title}\n\n${personality.description}\n\nfind yours at gooutside.gh`;
+    const text = `My GoOutside scene personality: ${personality.title}\n\n${personality.description}\n\nfind yours at gooutside.club`;
     if (navigator.share) {
       navigator.share({ text }).catch(() => {});
     } else {

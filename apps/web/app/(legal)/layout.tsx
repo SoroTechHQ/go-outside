@@ -32,7 +32,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
           <Link href="/privacy" className="transition hover:text-[#6f6f6f]">Privacy Policy</Link>
           <Link href="/terms" className="transition hover:text-[#6f6f6f]">Terms of Service</Link>
           <Link href="/cookies" className="transition hover:text-[#6f6f6f]">Cookie Policy</Link>
-          <a href="mailto:privacy@gooutside.app" className="transition hover:text-[#6f6f6f]">Contact</a>
+          <a href="mailto:privacy@gooutside.club" className="transition hover:text-[#6f6f6f]">Contact</a>
         </div>
       </footer>
     </div>

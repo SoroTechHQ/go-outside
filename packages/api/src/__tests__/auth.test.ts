@@ -12,7 +12,7 @@ describe('auth routes', () => {
         type: 'user.created',
         data: {
           id: 'new_clerk',
-          email_addresses: [{ email_address: 'new@gooutside.test' }],
+          email_addresses: [{ email_address: 'new@gooutside.club' }],
           first_name: 'New',
           last_name: 'User',
           image_url: 'https://example.com/avatar.jpg',
@@ -29,7 +29,7 @@ describe('auth routes', () => {
     const body = await meResponse.json() as { data: { email: string; firstName: string } };
 
     expect(meResponse.status).toBe(200);
-    expect(body.data.email).toBe('new@gooutside.test');
+    expect(body.data.email).toBe('new@gooutside.club');
     expect(body.data.firstName).toBe('New');
   });
 

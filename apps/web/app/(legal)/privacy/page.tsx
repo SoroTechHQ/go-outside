@@ -145,7 +145,7 @@ export default function PrivacyPolicyPage() {
             rows={[
               ["Company", "Soro Technologies"],
               ["Location", "Accra, Ghana"],
-              ["Privacy email", <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a>],
+              ["Privacy email", <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>],
               ["DPC Registration", "Pending — will be published upon receipt"],
               ["Data Protection Supervisor", "To be inserted upon DPC registration"],
             ]}
@@ -253,7 +253,7 @@ export default function PrivacyPolicyPage() {
               ]}
             />
             <p><strong>Why:</strong> To detect fraud, bot traffic, and account takeover attempts. Also links pre-sign-in browsing to your account after sign-up to seed your first personalised feed.</p>
-            <p>You can request deletion of fingerprint data at <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a>. Privacy extensions like Canvas Blocker or Privacy Badger will limit the effectiveness of this tracking.</p>
+            <p>You can request deletion of fingerprint data at <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>. Privacy extensions like Canvas Blocker or Privacy Badger will limit the effectiveness of this tracking.</p>
           </SubSection>
 
           <SubSection title="3.7 Payment & Transaction Data">
@@ -424,7 +424,7 @@ export default function PrivacyPolicyPage() {
               ["Vercel", "HTTP request metadata", "United States / global CDN"],
             ]}
           />
-          <p>By creating a GoOutside account and accepting this Privacy Policy, you consent to your personal data being transferred to and processed in the United States by the service providers listed above. If you object, contact us at <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a> or delete your account.</p>
+          <p>By creating a GoOutside account and accepting this Privacy Policy, you consent to your personal data being transferred to and processed in the United States by the service providers listed above. If you object, contact us at <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a> or delete your account.</p>
         </Section>
 
         {/* 8 */}
@@ -444,7 +444,7 @@ export default function PrivacyPolicyPage() {
             ]}
           />
           <p>Your <strong>lifetime Pulse Points</strong> determine your tier (Newcomer → Regular → Plugged In → Scene King → Legend), visible on your public profile and determining reward eligibility.</p>
-          <p><strong>Your rights regarding profiling:</strong> View your full ledger at Dashboard → Rewards → Activity. Request a human review of any calculation you believe is inaccurate by emailing privacy@gooutside.app. You may object to profiling, though this may limit your access to rewards.</p>
+          <p><strong>Your rights regarding profiling:</strong> View your full ledger at Dashboard → Rewards → Activity. Request a human review of any calculation you believe is inaccurate by emailing privacy@gooutside.club. You may object to profiling, though this may limit your access to rewards.</p>
         </Section>
 
         {/* 9 */}
@@ -504,13 +504,13 @@ export default function PrivacyPolicyPage() {
             headers={["Right", "How to Exercise"]}
             rows={[
               ["Right to Be Informed", "This Privacy Policy is our primary disclosure"],
-              ["Right of Access — request a copy of your data", "Email privacy@gooutside.app — subject: 'Data Access Request'. Response within 30 days."],
+              ["Right of Access — request a copy of your data", "Email privacy@gooutside.club — subject: 'Data Access Request'. Response within 30 days."],
               ["Right to Correction — fix inaccurate data", "Dashboard → Profile → Edit, or email us"],
               ["Right to Deletion — delete your account and data", "Dashboard → Profile → Settings → Delete Account. Profile data deleted within 30 days."],
               ["Right to Object to direct marketing", "Use the unsubscribe link in any email, or email us. We stop immediately."],
-              ["Right to Object to legitimate-interest processing", "Email privacy@gooutside.app — we will cease unless we demonstrate compelling grounds"],
+              ["Right to Object to legitimate-interest processing", "Email privacy@gooutside.club — we will cease unless we demonstrate compelling grounds"],
               ["Right to Withdraw Consent (GPS, marketing)", "Revoke in device settings or email us. Withdrawal does not affect prior processing."],
-              ["Right to Data Portability — export your data as JSON", "Email privacy@gooutside.app — subject: 'Data Export Request'"],
+              ["Right to Data Portability — export your data as JSON", "Email privacy@gooutside.club — subject: 'Data Export Request'"],
               ["Right to Lodge a Complaint", "Data Protection Commission Ghana — dataprotection.org.gh"],
             ]}
           />
@@ -519,7 +519,7 @@ export default function PrivacyPolicyPage() {
 
         {/* 13 */}
         <Section id="children" title="13. Children's Privacy">
-          <p>GoOutside is intended for users aged <strong>18 and over</strong>. We do not knowingly collect personal data from anyone under 18. If you believe a person under 18 has created an account, contact <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a> and we will delete it promptly.</p>
+          <p>GoOutside is intended for users aged <strong>18 and over</strong>. We do not knowingly collect personal data from anyone under 18. If you believe a person under 18 has created an account, contact <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a> and we will delete it promptly.</p>
           <p className="text-[14px] text-[#6b7280]">Note: Ghana's Data Protection Bill 2025 (pending enactment) is expected to introduce parental consent requirements. We will update this policy when it comes into force.</p>
         </Section>
 
@@ -527,7 +527,7 @@ export default function PrivacyPolicyPage() {
         <Section id="organizers" title="14. For Event Organizers">
           <p>When you collect attendee data through GoOutside's ticket flow, you become an <strong>independent data controller</strong> for that data. You are responsible for having your own privacy notice, using attendee data only for event management, and complying with Ghana's Data Protection Act 2012.</p>
           <p><strong>What GoOutside provides to organizers:</strong> Attendee name, email, ticket type, and order reference. Aggregate analytics (total sales, revenue, check-in rates). <strong>Not provided:</strong> payment card details, Pulse Scores, private messages, or precise GPS location.</p>
-          <p>A Data Processing Agreement (DPA) is available on request at <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a>.</p>
+          <p>A Data Processing Agreement (DPA) is available on request at <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>.</p>
         </Section>
 
         {/* 15 */}
@@ -565,8 +565,8 @@ export default function PrivacyPolicyPage() {
           <Table
             headers={["Type", "Contact"]}
             rows={[
-              ["General privacy enquiries", <a href="mailto:privacy@gooutside.app" className="text-[#2f8f45] underline">privacy@gooutside.app</a>],
-              ["Data access / deletion / export requests", <span>Email privacy@gooutside.app — subject: "Data Access Request" / "Data Deletion Request" / "Data Export Request". Response within 30 days.</span>],
+              ["General privacy enquiries", <a href="mailto:privacy@gooutside.club" className="text-[#2f8f45] underline">privacy@gooutside.club</a>],
+              ["Data access / deletion / export requests", <span>Email privacy@gooutside.club — subject: "Data Access Request" / "Data Deletion Request" / "Data Export Request". Response within 30 days.</span>],
               ["Mailing address", "Soro Technologies, Accra, Ghana"],
               ["DPC complaints", <a href="https://dataprotection.org.gh" target="_blank" rel="noopener noreferrer" className="text-[#2f8f45] underline">dataprotection.org.gh</a>],
             ]}

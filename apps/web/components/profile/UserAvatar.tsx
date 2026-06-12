@@ -1,9 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import Avatar from "boring-avatars";
 import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
+import { NaviiAvatar } from "./NaviiAvatar";
 
 type Props = {
   username: string | null;
@@ -40,7 +38,7 @@ export function UserAvatar({
           className="h-full w-full object-cover"
         />
       ) : (
-        <Avatar size={size} name={name} variant="beam" colors={AVATAR_COLORS} />
+        <NaviiAvatar seed={username ?? name} title={name} size={size} className="h-full w-full object-cover" />
       )}
       {showVerified && isVerified && (
         <CheckCircle

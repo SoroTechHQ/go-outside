@@ -421,7 +421,7 @@ function PaneFooter({
   onGetTickets: () => void;
 }) {
   const whatsappText = encodeURIComponent(
-    `🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.app/events/${event.slug}\n\n_Let's go outside_ 🟢`
+    `🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.club/events/${event.slug}\n\n_Let's go outside_ 🟢`
   );
 
   return (

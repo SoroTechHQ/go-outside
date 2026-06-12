@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import Header from "./Header";
 import NavSwitch from "./NavSwitch";
+import AIFAB from "../ai/AIFAB";
 import { useAppBootstrap } from "../../hooks/useAppBootstrap";
 
 export function AppChrome() {
@@ -26,6 +27,7 @@ export function AppChrome() {
       <Suspense fallback={null}>
         <Header appShell userName={shellUser.userName} />
       </Suspense>
+      <AIFAB />
     </>
   );
 }

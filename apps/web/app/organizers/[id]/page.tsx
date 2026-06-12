@@ -4,7 +4,6 @@ import { Fragment, useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useOrganizerFollowMutation, useOrganizerFollowStatus } from "../../../hooks/useOrganizerFollow";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -30,6 +29,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { getEventImage } from "@gooutside/demo-data";
+import { NaviiAvatar } from "../../../components/profile/NaviiAvatar";
 
 type OrgEvent = {
   id: string;
@@ -44,8 +44,6 @@ type OrgEvent = {
 };
 
 /* ── Constants ────────────────────────────────────────────────────────────── */
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 /* ── Organizer metadata ───────────────────────────────────────────────────── */
 
@@ -186,7 +184,7 @@ function FollowersSheet({
             className="flex w-full items-center gap-3 px-5 py-3 transition hover:bg-[var(--bg-card)]"
           >
             <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 40, height: 40 }}>
-              <Avatar size={40} name={f.name} variant="beam" colors={AVATAR_COLORS} />
+              <NaviiAvatar seed={f.handle || f.id || f.name} title={f.name} size={40} className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 flex-1 text-left">
               <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{f.name}</p>
@@ -268,7 +266,7 @@ function ReviewCard({ review }: { review: OrgMeta["reviews"][number] }) {
     <div className="overflow-hidden rounded-[18px] border border-[var(--border-card)] bg-[var(--bg-card)] p-4 shadow-[var(--card-shadow)]">
       <div className="flex items-start gap-3">
         <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 36, height: 36 }}>
-          <Avatar size={36} name={review.reviewer} variant="beam" colors={AVATAR_COLORS} />
+          <NaviiAvatar seed={review.handle || review.reviewer} title={review.reviewer} size={36} className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">

@@ -3,7 +3,6 @@
 import { Fragment, useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import Avatar from "boring-avatars";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -31,6 +30,7 @@ import {
 } from "@phosphor-icons/react";
 import { getEventImage } from "@gooutside/demo-data";
 import { avatarUrl as withAvatarTransform } from "../../../../lib/image-url";
+import { NaviiAvatar } from "../../../../components/profile/NaviiAvatar";
 import {
   getCommunityPastEvents,
   getCommunityProfileById,
@@ -64,8 +64,6 @@ type RealProfile = {
 };
 
 /* ── Constants ────────────────────────────────────────────────────────────── */
-
-const AVATAR_COLORS = ["#0e2212", "#4a9f63", "#B0E454", "#152a1a", "#EAFFD0"];
 
 const TIER_COLOR: Record<string, string> = {
   Newcomer: "#888888",
@@ -147,7 +145,7 @@ function PeopleSheet({
                 {person.avatarUrl ? (
                   <Image src={withAvatarTransform(person.avatarUrl) ?? person.avatarUrl} alt={person.name} width={40} height={40} className="h-full w-full object-cover" />
                 ) : (
-                  <Avatar size={40} name={person.name} variant="beam" colors={AVATAR_COLORS} />
+                  <NaviiAvatar seed={person.handle ?? person.id ?? person.name} title={person.name} size={40} className="h-full w-full object-cover" />
                 )}
               </div>
               {person.isOnline && (
@@ -313,7 +311,7 @@ function PostCard({ post, user }: { post: UserPost; user: CommunityProfile }) {
           {user.avatarUrl ? (
             <Image src={withAvatarTransform(user.avatarUrl) ?? user.avatarUrl} alt={user.name} width={36} height={36} className="h-full w-full object-cover" />
           ) : (
-            <Avatar size={36} name={user.name} variant="beam" colors={AVATAR_COLORS} />
+            <NaviiAvatar seed={user.handle ?? user.id ?? user.name} title={user.name} size={36} className="h-full w-full object-cover" />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -670,7 +668,7 @@ export default function UserProfilePage() {
                 {displayAvatar ? (
                   <Image src={withAvatarTransform(displayAvatar) ?? displayAvatar} alt={displayName} width={84} height={84} className="h-full w-full object-cover" />
                 ) : (
-                  <Avatar size={84} name={displayName} variant="beam" colors={AVATAR_COLORS} />
+                  <NaviiAvatar seed={realProfile?.clerkId ?? mockProfile?.id ?? displayName} title={displayName} size={84} className="h-full w-full object-cover" />
                 )}
               </div>
               <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-[var(--bg-base)] bg-[#555]" />
@@ -849,7 +847,7 @@ export default function UserProfilePage() {
                     className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--border-card)] bg-[var(--bg-card)] px-3.5 py-3 shadow-[var(--card-shadow)] transition hover:border-[#4a9f63]/30 active:scale-[0.99]"
                   >
                     <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 36, height: 36 }}>
-                      <Avatar size={36} name={person.name} variant="beam" colors={AVATAR_COLORS} />
+                      <NaviiAvatar seed={person.id ?? person.name} title={person.name} size={36} className="h-full w-full object-cover" />
                     </div>
                     <div className="min-w-0 flex-1 text-left">
                       <div className="flex items-center gap-1.5">
@@ -896,7 +894,7 @@ export default function UserProfilePage() {
                         {f.avatarUrl ? (
                           <Image src={withAvatarTransform(f.avatarUrl) ?? f.avatarUrl} alt={f.name} width={32} height={32} className="h-full w-full object-cover" />
                         ) : (
-                          <Avatar size={32} name={f.name} variant="beam" colors={AVATAR_COLORS} />
+                          <NaviiAvatar seed={f.handle ?? f.id ?? f.name} title={f.name} size={32} className="h-full w-full object-cover" />
                         )}
                       </div>
                       {f.isOnline && <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-card)] bg-[#4a9f63]" />}

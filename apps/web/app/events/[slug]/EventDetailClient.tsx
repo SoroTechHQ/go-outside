@@ -279,7 +279,7 @@ export function EventDetailClient({
 
             <div className="flex items-center gap-2">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.app/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.club/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={trackShare}
@@ -633,7 +633,7 @@ export function EventDetailClient({
                     {isSaved ? "Saved" : "Save"}
                   </button>
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.app/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.club/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
