@@ -44,84 +44,87 @@ export default function AIDashboardClient() {
   };
 
   return (
-    <main className="page-grid min-h-screen pb-24 md:pb-6">
-      <div className="container-shell px-4 py-5 md:py-6">
-        <div className="grid h-[calc(100svh-100px)] min-h-[520px] gap-3 lg:grid-cols-[260px_minmax(0,1fr)]">
+    /* Full-viewport minus the sticky header (72px) and mobile bottom nav */
+    <div className="page-grid flex" style={{ height: "calc(100svh - 72px)" }}>
+      <div className="flex w-full" style={{ paddingRight: "var(--peek-panel-width, 0px)" }}>
 
-          {/* Sidebar */}
-          <aside className="hidden flex-col gap-2 lg:flex">
+        {/* Sidebar — desktop only */}
+        <aside className="hidden w-[260px] shrink-0 flex-col gap-0 border-r border-[var(--border-subtle)] lg:flex">
+          <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-3 py-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand)] text-white">
+              <Sparkle size={13} weight="fill" />
+            </div>
+            <span className="text-[13px] font-semibold text-[var(--text-primary)]">AI</span>
             <button
-              className="flex items-center justify-center gap-2 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-card)] py-3 text-[13px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--brand)]"
+              className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--brand)]"
               onClick={() => setActiveChatId(null)}
+              title="New chat"
               type="button"
             >
-              <Plus size={14} weight="bold" />
-              New chat
+              <Plus size={13} weight="bold" />
             </button>
+          </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)]">
-              <div className="sticky top-0 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">History</p>
-                <ChatCircleText size={13} className="text-[var(--text-tertiary)]" />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {chats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+                <ChatCircleText size={20} className="mb-2 text-[var(--text-tertiary)]" weight="thin" />
+                <p className="text-[11px] leading-5 text-[var(--text-tertiary)]">
+                  Conversations will appear here once the DB migration is applied.
+                </p>
               </div>
-
+            ) : (
               <AnimatePresence initial={false}>
-                {chats.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-                    <Sparkle size={22} className="mb-3 text-[var(--text-tertiary)]" weight="thin" />
-                    <p className="text-[11px] leading-5 text-[var(--text-tertiary)]">
-                      Conversations appear here once the database migration is applied.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-px p-1.5">
-                    {chats.map((chat) => {
-                      const active = chat.id === activeChatId;
-                      return (
-                        <motion.div
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`group flex cursor-pointer items-start gap-2 rounded-[12px] px-3 py-2.5 transition ${
-                            active
-                              ? "bg-[var(--brand-dim)] text-[var(--brand)]"
-                              : "text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
-                          }`}
-                          initial={{ opacity: 0, y: 4 }}
-                          key={chat.id}
-                          onClick={() => setActiveChatId(chat.id)}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className="truncate text-[12px] font-semibold">
-                                {chat.title || "New chat"}
-                              </p>
-                              <span className="shrink-0 text-[9px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
-                                {timeAgo(chat.updated_at)}
-                              </span>
-                            </div>
-                            {chat.last_assistant_message && (
-                              <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--text-secondary)]">
-                                {chat.last_assistant_message}
-                              </p>
-                            )}
+                <div className="space-y-px p-2">
+                  {chats.map((chat) => {
+                    const active = chat.id === activeChatId;
+                    return (
+                      <motion.button
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`group flex w-full cursor-pointer items-start gap-2 rounded-[10px] px-2.5 py-2 text-left transition ${
+                          active
+                            ? "bg-[var(--brand-dim)] text-[var(--brand)]"
+                            : "text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                        }`}
+                        initial={{ opacity: 0, y: 3 }}
+                        key={chat.id}
+                        onClick={() => setActiveChatId(chat.id)}
+                        type="button"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="truncate text-[12px] font-medium leading-tight">
+                              {chat.title || "Untitled"}
+                            </p>
+                            <span className="shrink-0 text-[9px] font-medium text-[var(--text-tertiary)]">
+                              {timeAgo(chat.updated_at)}
+                            </span>
                           </div>
-                          <button
-                            aria-label="Delete"
-                            className="hidden h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--text-tertiary)] transition hover:text-red-400 group-hover:flex"
-                            onClick={(e) => { e.stopPropagation(); void deleteChat(chat.id); }}
-                            type="button"
-                          >
-                            <Trash size={11} weight="bold" />
-                          </button>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                )}
+                          {chat.last_assistant_message && (
+                            <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--text-secondary)]">
+                              {chat.last_assistant_message}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          aria-label="Delete"
+                          className="hidden h-4 w-4 shrink-0 items-center justify-center text-[var(--text-tertiary)] transition hover:text-red-400 group-hover:flex"
+                          onClick={(e) => { e.stopPropagation(); void deleteChat(chat.id); }}
+                          type="button"
+                        >
+                          <Trash size={11} weight="bold" />
+                        </button>
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </AnimatePresence>
-            </div>
-          </aside>
+            )}
+          </div>
+        </aside>
 
-          {/* Chat */}
+        {/* Chat — takes all remaining space, flush */}
+        <div className="min-w-0 flex-1">
           <AICoreChat
             activeChatId={activeChatId}
             onChatIdChange={async (id) => {
@@ -131,6 +134,6 @@ export default function AIDashboardClient() {
           />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

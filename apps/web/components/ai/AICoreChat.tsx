@@ -10,13 +10,13 @@ import {
   CalendarBlank,
   Copy,
   MagnifyingGlass,
-  PaperPlaneTilt,
   Sparkle,
   TrendUp,
   Users,
   CurrencyCircleDollar,
   Check,
   ArrowClockwise,
+  MapPin,
 } from "@phosphor-icons/react";
 import { cn } from "../../lib/utils";
 
@@ -71,10 +71,10 @@ type AskResponse = {
   tool_names_used?: string[];
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Starters ────────────────────────────────────────────────────────────────
 
 const STARTERS = [
-  { label: "What's happening tonight in Accra?", icon: CalendarBlank },
+  { label: "What's on tonight in Accra?", icon: CalendarBlank },
   { label: "Events under GHS 100 this weekend", icon: CurrencyCircleDollar },
   { label: "Live music near Osu", icon: TrendUp },
   { label: "What are my friends going to?", icon: Users },
@@ -86,7 +86,7 @@ const TOOL_LABELS: Record<string, string> = {
   search_events: "Searched events",
   get_budget_options: "Checked budget",
   get_trending_events: "Got trending",
-  get_user_profile: "Loaded profile",
+  get_user_profile: "Loaded your profile",
   get_event_details: "Got event details",
   get_friends_activity: "Checked friends",
   get_organizer_events: "Found organizer",
@@ -94,37 +94,33 @@ const TOOL_LABELS: Record<string, string> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(iso?: string | null) {
+function fmtDate(iso?: string | null) {
   if (!iso) return null;
-  return new Date(iso).toLocaleDateString("en-GH", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(iso).toLocaleDateString("en-GH", { weekday: "short", month: "short", day: "numeric" });
 }
 
-function eventHref(event: AiEvent | null, fallbackId: string) {
-  if (event?.href) return event.href;
-  if (event?.slug) return `/events/${event.slug}`;
-  return `/events/${fallbackId}`;
+function eventHref(ev: AiEvent | null, fallback: string) {
+  if (ev?.href) return ev.href;
+  if (ev?.slug) return `/events/${ev.slug}`;
+  return `/events/${fallback}`;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Event Pick Card ──────────────────────────────────────────────────────────
 
 function EventCard({ pick }: { pick: AiPick }) {
   const ev = pick.event;
-  const date = formatDate(ev?.start_datetime);
+  const date = fmtDate(ev?.start_datetime);
   const venue = ev?.venue_name ?? ev?.city ?? null;
   const price = ev?.price_label ?? (ev?.ticket_price_ghs ? `GHS ${ev.ticket_price_ghs}` : null);
 
   return (
     <Link
-      className="group flex items-start gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3 transition hover:border-[var(--brand)]/40 hover:bg-[var(--bg-card)]"
+      className="group flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 transition hover:border-[var(--brand)]/35 hover:bg-[var(--bg-card)]"
       href={eventHref(ev, pick.event_id)}
     >
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-[var(--bg-muted)]">
+      <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-muted)]">
         {ev?.banner_url ? (
-          <Image alt={ev.title ?? pick.title} className="object-cover" fill sizes="48px" src={ev.banner_url} />
+          <Image alt={ev.title ?? pick.title} className="object-cover" fill sizes="52px" src={ev.banner_url} />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Sparkle size={16} weight="fill" className="text-[var(--brand)]" />
@@ -132,54 +128,87 @@ function EventCard({ pick }: { pick: AiPick }) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{ev?.title ?? pick.title}</p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--text-tertiary)]">
-          {date && <span className="inline-flex items-center gap-1"><CalendarBlank size={10} weight="fill" />{date}</span>}
-          {venue && <span className="truncate">{venue}</span>}
+        <p className="truncate text-[13px] font-semibold leading-tight text-[var(--text-primary)]">
+          {ev?.title ?? pick.title}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-[var(--text-secondary)]">
+          {date && (
+            <span className="inline-flex items-center gap-1">
+              <CalendarBlank size={10} weight="fill" />
+              {date}
+            </span>
+          )}
+          {venue && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={10} weight="fill" />
+              {venue}
+            </span>
+          )}
           {price && <span className="font-semibold text-[var(--brand)]">{price}</span>}
         </div>
         {pick.reason && (
-          <p className="mt-1 line-clamp-1 text-[11px] text-[var(--text-secondary)]">{pick.reason}</p>
+          <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[var(--text-tertiary)]">{pick.reason}</p>
         )}
       </div>
-      <ArrowRight size={14} weight="bold" className="mt-0.5 shrink-0 text-[var(--text-tertiary)] transition group-hover:text-[var(--brand)]" />
+      <ArrowRight
+        size={14}
+        weight="bold"
+        className="mt-1 shrink-0 text-[var(--text-tertiary)] transition group-hover:translate-x-0.5 group-hover:text-[var(--brand)]"
+      />
     </Link>
   );
 }
 
-function TypingDots() {
+// ─── Typing loader ────────────────────────────────────────────────────────────
+
+function TypingLoader() {
   return (
-    <span className="inline-flex items-center gap-1">
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
-          style={{ animation: "ai-dot 1.05s ease-in-out infinite", animationDelay: `${i * 0.16}s` }}
-        />
-      ))}
-    </span>
+    <div className="flex items-center gap-3 py-1">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]">
+        <Sparkle size={12} weight="fill" className="text-white" />
+      </div>
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
+            style={{ animation: "ai-pulse 1.1s ease-in-out infinite", animationDelay: `${i * 0.18}s` }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
+
+// ─── Copy button ──────────────────────────────────────────────────────────────
 
 function CopyBtn({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   return (
     <button
-      className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
-      onClick={async () => { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1400); }}
+      className="flex h-6 w-6 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
+      onClick={async () => {
+        await navigator.clipboard.writeText(text);
+        setDone(true);
+        setTimeout(() => setDone(false), 1400);
+      }}
       type="button"
       title="Copy"
     >
-      {done ? <Check size={11} weight="bold" className="text-[var(--brand)]" /> : <Copy size={11} weight="bold" />}
+      {done
+        ? <Check size={11} weight="bold" className="text-[var(--brand)]" />
+        : <Copy size={11} weight="bold" />}
     </button>
   );
 }
 
+// ─── Message bubbles ──────────────────────────────────────────────────────────
+
 function UserBubble({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[80%] rounded-[18px] rounded-tr-[5px] bg-[var(--brand)] px-4 py-2.5 text-white">
-        <p className="text-[13px] leading-[1.65]">{content}</p>
+      <div className="max-w-[78%] rounded-2xl rounded-tr-[6px] bg-[var(--brand)] px-4 py-3 text-white shadow-[0_4px_16px_rgba(var(--brand-rgb),0.18)]">
+        <p className="text-sm leading-relaxed">{content}</p>
       </div>
     </div>
   );
@@ -191,18 +220,20 @@ function AssistantBubble({
   onRetry,
 }: {
   message: ChatMessage;
-  onFollowUp: (text: string) => void;
+  onFollowUp: (t: string) => void;
   onRetry?: () => void;
 }) {
+  if (message.pending) return <TypingLoader />;
+
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {/* Tool badges */}
       {message.toolNamesUsed?.length ? (
-        <div className="flex flex-wrap gap-1.5 pl-1">
+        <div className="flex flex-wrap gap-1.5">
           {message.toolNamesUsed.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-dim)] px-2 py-0.5 text-[10px] font-semibold text-[var(--brand)]"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--brand)]/20 bg-[var(--brand-dim)] px-2 py-0.5 text-[10px] font-medium text-[var(--brand)]"
             >
               <Sparkle size={8} weight="fill" />
               {TOOL_LABELS[t] ?? t.replace(/_/g, " ")}
@@ -211,49 +242,38 @@ function AssistantBubble({
         </div>
       ) : null}
 
-      {/* Message bubble */}
+      {/* Text */}
       <div className="group relative">
-        <div className="rounded-[18px] rounded-tl-[5px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3">
-          {message.pending ? (
-            <TypingDots />
-          ) : (
-            <p className="whitespace-pre-wrap text-[13px] leading-[1.75] text-[var(--text-primary)]">
-              {message.content}
-            </p>
+        <p className="text-sm leading-relaxed text-[var(--text-primary)]">{message.content}</p>
+        <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <CopyBtn text={message.content} />
+          {onRetry && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
+              onClick={onRetry}
+              type="button"
+              title="Retry"
+            >
+              <ArrowClockwise size={11} weight="bold" />
+            </button>
           )}
         </div>
-
-        {!message.pending && (
-          <div className="absolute -bottom-5 left-1 flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
-            <CopyBtn text={message.content} />
-            {onRetry && (
-              <button
-                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
-                onClick={onRetry}
-                type="button"
-                title="Retry"
-              >
-                <ArrowClockwise size={11} weight="bold" />
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Event picks */}
+      {/* Event cards */}
       {message.picks?.length ? (
-        <div className="grid gap-2">
+        <div className="grid gap-2.5">
           {message.picks.map((p) => <EventCard key={p.event_id} pick={p} />)}
         </div>
       ) : null}
 
-      {/* Follow-ups */}
+      {/* Follow-up action chips */}
       {message.followUps?.length ? (
-        <div className="flex flex-wrap gap-1.5 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1">
           {message.followUps.map((f) => (
             <button
               key={f}
-              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[11px] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--text-primary)]"
+              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
               onClick={() => onFollowUp(f)}
               type="button"
             >
@@ -266,7 +286,7 @@ function AssistantBubble({
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main chat component ──────────────────────────────────────────────────────
 
 export function AICoreChat({
   activeChatId,
@@ -275,7 +295,7 @@ export function AICoreChat({
 }: {
   activeChatId?: string | null;
   compact?: boolean;
-  onChatIdChange?: (chatId: string | null) => void;
+  onChatIdChange?: (id: string | null) => void;
 }) {
   const [chatId, setChatId] = useState<string | null>(activeChatId ?? null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -323,7 +343,7 @@ export function AICoreChat({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
   }, [input]);
 
   const sendMessage = useCallback(async (text: string) => {
@@ -372,7 +392,7 @@ export function AICoreChat({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === pendingId
-            ? { id: `e-${Date.now()}`, role: "assistant" as const, content: "Something went wrong. Check your Groq API key and try again." }
+            ? { id: `e-${Date.now()}`, role: "assistant" as const, content: "Something went wrong. Please try again." }
             : m,
         ),
       );
@@ -388,36 +408,40 @@ export function AICoreChat({
   }, [sendMessage]);
 
   const hasMessages = messages.length > 0;
-  const shellHeight = compact ? "h-[520px] max-h-[calc(100svh-140px)]" : "h-[calc(100svh-160px)] min-h-[520px]";
+
+  const shellClass = compact
+    ? "h-[520px] max-h-[calc(100svh-140px)] rounded-[22px] border border-[var(--border-subtle)]"
+    : "h-full";
 
   return (
-    <section className={cn("flex flex-col overflow-hidden rounded-[22px] border border-[var(--border-subtle)] bg-[var(--bg-card)]", shellHeight)}>
-      {/* Messages */}
+    <div className={cn("flex flex-col bg-[var(--bg-page)]", shellClass)}>
+      {/* Messages area */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <AnimatePresence initial={false}>
           {!hasMessages ? (
             <motion.div
               key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex h-full flex-col items-center justify-center px-6 text-center"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex h-full min-h-[400px] flex-col items-center justify-center px-6 text-center"
             >
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-[20px] bg-[var(--brand-dim)]">
-                <Sparkle size={24} weight="fill" className="text-[var(--brand)]" />
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-[18px] bg-[var(--brand)]">
+                <Sparkle size={22} weight="fill" className="text-white" />
               </div>
-              <h2 className="font-display text-[1.65rem] italic leading-tight text-[var(--text-primary)]">
+              <h2 className="font-display text-[1.55rem] italic leading-snug text-[var(--text-primary)]">
                 What are you planning?
               </h2>
-              <p className="mt-2 max-w-[340px] text-[13px] leading-6 text-[var(--text-secondary)]">
-                Ask about events, budgets, friends&apos; plans, or trending spots across Ghana.
+              <p className="mt-2 max-w-[320px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
+                Ask about events, budgets, or what&apos;s trending. I pull live data from GoOutside and your profile.
               </p>
-              <div className="mt-7 grid max-w-[520px] grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="mt-6 grid max-w-[480px] grid-cols-2 gap-2">
                 {STARTERS.map((s) => {
                   const Icon = s.icon;
                   return (
                     <button
                       key={s.label}
-                      className="flex items-start gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5 text-left text-[12px] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--text-primary)]"
+                      className="flex items-start gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-3 text-left text-[12px] leading-snug text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
                       onClick={() => sendMessage(s.label)}
                       type="button"
                     >
@@ -429,13 +453,13 @@ export function AICoreChat({
               </div>
             </motion.div>
           ) : (
-            <div className="space-y-5 px-5 py-5 pb-8">
+            <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 pb-10 md:px-6">
               {messages.map((msg, i) => (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.14 }}
+                  transition={{ duration: 0.15 }}
                 >
                   {msg.role === "user" ? (
                     <UserBubble content={msg.content} />
@@ -454,50 +478,60 @@ export function AICoreChat({
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-[var(--border-subtle)] p-3">
-        <div className="flex items-end gap-2 rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-1 py-1">
-          <textarea
-            ref={textareaRef}
-            className="min-h-[38px] flex-1 resize-none bg-transparent px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] disabled:opacity-50"
-            disabled={loading}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                sendMessage(input);
-              }
-            }}
-            placeholder="Ask for events, a budget, or a vibe..."
-            rows={1}
-            value={input}
-          />
-          <button
-            aria-label="Send"
-            className={cn(
-              "mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition",
-              input.trim()
-                ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"
-                : "bg-[var(--bg-surface)] text-[var(--text-tertiary)]",
-            )}
-            disabled={loading || !input.trim()}
-            onClick={() => sendMessage(input)}
-            type="button"
-          >
-            {loading ? (
-              <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent" style={{ animation: "ai-spin 0.65s linear infinite" }} />
-            ) : (
-              <ArrowUp size={15} weight="bold" />
-            )}
-          </button>
+      {/* Input — pinned to bottom, centered like Claude/ChatGPT */}
+      <div className={cn("shrink-0 border-t border-[var(--border-subtle)] bg-[var(--bg-page)] px-4 pb-4 pt-3 md:px-6", compact && "pb-3 pt-2")}>
+        <div className="mx-auto max-w-2xl">
+          <div className="flex items-end gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-1 py-1 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-shadow focus-within:border-[var(--brand)]/40 focus-within:shadow-[0_4px_20px_rgba(var(--brand-rgb),0.08)]">
+            <textarea
+              ref={textareaRef}
+              className="min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] disabled:opacity-50"
+              disabled={loading}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  sendMessage(input);
+                }
+              }}
+              placeholder="Ask about events, budget, or what's happening..."
+              rows={1}
+              value={input}
+            />
+            <button
+              aria-label="Send"
+              className={cn(
+                "mb-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all",
+                input.trim()
+                  ? "bg-[var(--brand)] text-white shadow-[0_2px_8px_rgba(var(--brand-rgb),0.3)] hover:bg-[var(--brand-hover)]"
+                  : "bg-[var(--bg-muted)] text-[var(--text-tertiary)]",
+              )}
+              disabled={loading || !input.trim()}
+              onClick={() => sendMessage(input)}
+              type="button"
+            >
+              {loading ? (
+                <span
+                  className="h-3.5 w-3.5 rounded-full border-[1.5px] border-current border-t-transparent"
+                  style={{ animation: "ai-spin 0.6s linear infinite" }}
+                />
+              ) : (
+                <ArrowUp size={14} weight="bold" />
+              )}
+            </button>
+          </div>
+          {!compact && (
+            <p className="mt-1.5 text-center text-[10px] text-[var(--text-tertiary)]">
+              Cmd+Enter to send · Go Assistant is AI. By using it, you agree to our Terms & Privacy Policy. Chats may be reviewed and used to improve our AI models. Learn more. AI can make mistakes, so please verify important information independently.
+            </p>
+          )}
         </div>
       </div>
 
       <style>{`
-        @keyframes ai-dot { 0%,80%,100%{transform:translateY(0);opacity:.35} 40%{transform:translateY(-4px);opacity:1} }
+        @keyframes ai-pulse { 0%,80%,100%{transform:translateY(0);opacity:.3} 40%{transform:translateY(-3.5px);opacity:1} }
         @keyframes ai-spin { to{transform:rotate(360deg)} }
       `}</style>
-    </section>
+    </div>
   );
 }
 
