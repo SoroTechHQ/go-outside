@@ -74,6 +74,8 @@ export async function searchEvents(args: {
 }) {
   const now = new Date().toISOString();
   const limit = Math.min(args.limit ?? 8, 20);
+  // Fetch extra rows so JS-side is_free filtering has enough candidates
+  const fetchLimit = args.is_free === true ? Math.min(limit * 6, 60) : limit;
 
   let q = supabaseAdmin
     .from("events")
@@ -87,7 +89,7 @@ export async function searchEvents(args: {
     .eq("status", "published")
     .gte("start_datetime", now)
     .order("start_datetime", { ascending: true })
-    .limit(limit);
+    .limit(fetchLimit);
 
   if (args.query) {
     q = q.textSearch("search_vector", args.query, { type: "websearch" });
@@ -132,7 +134,12 @@ export async function searchEvents(args: {
     };
   });
 
-  return { events, count: events.length };
+  // Apply is_free filter in JS (ticket_types is a nested relation)
+  const filtered = args.is_free === true
+    ? events.filter(e => e.ticket_price_ghs === 0)
+    : events;
+
+  return { events: filtered.slice(0, limit), count: filtered.length };
 }
 
 // ── Tool: get_budget_options ──────────────────────────────────────────────────

@@ -317,7 +317,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
         id: "buying-tickets", title: "Buying tickets", audience: "everyone",
         body: ({ dark }) => (<>
           <P dark={dark}>On any event detail page, tap <strong>Get Tickets</strong> to start the purchase flow.</P>
-          <OL dark={dark} items={["Choose your ticket type and quantity.", "Review your cart — you can add multiple ticket types.", "Proceed to checkout and pay via <strong>Paystack</strong>.", "Your QR code is generated and saved to <strong>Dashboard → Tickets</strong>."]} />
+          <OL dark={dark} items={["Choose your ticket type and quantity.", "Review your cart — you can add multiple ticket types.", "Proceed to checkout and pay via <strong>Paystack</strong>.", "Your QR code is generated and saved to <strong>Dashboard → Wallets</strong>."]} />
           <H3 dark={dark}>Payment methods</H3>
           <UL dark={dark} items={["Card (Visa, Mastercard)", "Mobile Money (MTN, Vodafone, AirtelTigo)", "Bank transfer"]} />
           <Callout dark={dark} type="warning"><strong>Alpha note:</strong> Ticket QR generation after payment is still being completed. If you test checkout during alpha, use Paystack test cards only — don't use a real card.</Callout>
@@ -326,7 +326,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
       {
         id: "your-tickets", title: "Managing your tickets", audience: "everyone",
         body: ({ dark }) => (<>
-          <P dark={dark}>All your tickets live in <strong>Dashboard → Tickets</strong>. Tap any ticket to see the full QR code.</P>
+          <P dark={dark}>All your tickets live in <strong>Dashboard → Wallets</strong>. Tap any ticket to see the full QR code.</P>
           <UL dark={dark} items={["The QR code is scanned at the door — no printing needed.", "Once scanned, the ticket is marked as used automatically.", "Checking in at a live event earns you <strong>+50 Pulse Points</strong>."]} />
         </>),
       },

@@ -217,7 +217,7 @@ export default function TermsOfServicePage() {
           <Table
             headers={["Topic", "Detail"]}
             rows={[
-              ["How it works", "Select ticket type and quantity → Pay via Paystack (card, mobile money, bank) → QR-coded ticket generated at Dashboard → Tickets → Present QR at the event"],
+              ["How it works", "Select ticket type and quantity → Pay via Paystack (card, mobile money, bank) → QR-coded ticket generated at Dashboard → Wallets → Present QR at the event"],
               ["Platform fee", "5% on all paid ticket sales — included in the displayed price, no hidden fees. Free events: no fee."],
               ["Payment processing", "Paystack (PCI-DSS compliant). We do not store your card details."],
               ["Ticket delivery", "Digital, within the app. If delivery fails after successful payment, contact support@gooutside.club for manual issue within 24 hours."],

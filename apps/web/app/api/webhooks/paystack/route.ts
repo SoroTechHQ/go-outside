@@ -9,6 +9,7 @@ const SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function verifySignature(payload: string, signature: string): boolean {
+  if (!SECRET || !signature) return false;
   const hash = createHmac("sha512", SECRET).update(payload).digest("hex");
   return hash === signature;
 }
@@ -20,7 +21,7 @@ async function fulfillTickets(reference: string): Promise<void> {
     .update({ status: "active" })
     .eq("payment_reference", reference)
     .eq("status", "pending")
-    .select("id, user_id, event_id, quantity");
+    .select("id, user_id, event_id");
 
   if (error) {
     throw new Error(`DB update failed: ${error.message}`);
@@ -28,15 +29,15 @@ async function fulfillTickets(reference: string): Promise<void> {
 
   if (!tickets || tickets.length === 0) return;
 
-  const ticket = tickets[0] as { id: string; user_id: string; event_id: string; quantity: number };
+  const ticket = tickets[0] as { id: string; user_id: string; event_id: string };
 
   // Award Pulse Points for ticket purchase (50 PP per ticket)
-  const pp = ticket.quantity * 50;
+  const pp = tickets.length * 50;
   await supabaseAdmin.rpc("award_pulse_points", {
     p_user_id: ticket.user_id,
     p_delta: pp,
     p_type: "ticket_purchase",
-    p_description: `Ticket purchase (×${ticket.quantity})`,
+    p_description: `Ticket purchase (x${tickets.length})`,
     p_event_id: ticket.event_id,
   });
 
@@ -50,10 +51,10 @@ async function fulfillTickets(reference: string): Promise<void> {
       .then((r) => r.data as { first_name: string; email: string } | null),
     supabaseAdmin
       .from("events")
-      .select("title, start_date")
+      .select("title, start_datetime")
       .eq("id", ticket.event_id)
       .maybeSingle()
-      .then((r) => r.data as { title: string; start_date: string } | null),
+      .then((r) => r.data as { title: string; start_datetime: string } | null),
   ]);
 
   if (userRow?.email && eventRow) {
@@ -65,7 +66,7 @@ async function fulfillTickets(reference: string): Promise<void> {
         <p>Hi ${userRow.first_name},</p>
         <p>Your ticket for <strong>${eventRow.title}</strong> has been confirmed.</p>
         <p>You earned <strong>${pp} Pulse Points</strong> for this purchase.</p>
-        <p>View your ticket at <a href="https://gooutside.club/dashboard/tickets">dashboard/tickets</a>.</p>
+        <p>View your ticket at <a href="https://gooutside.club/dashboard/wallets">dashboard/wallets</a>.</p>
       `,
     });
   }

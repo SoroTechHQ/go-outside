@@ -77,6 +77,7 @@ type RawEvent = {
   slug:             string;
   banner_url:       string | null;
   start_datetime:   string;
+  end_datetime:     string | null;
   total_capacity:   number | null;
   tickets_sold:     number;
   short_description: string | null;
@@ -90,7 +91,7 @@ async function fetchLandingEvents(visitorCity: string | null): Promise<{ events:
   const { data, error } = await supabaseAdmin
     .from("events")
     .select(`
-      id, title, slug, banner_url, start_datetime, total_capacity, tickets_sold, short_description, custom_location,
+      id, title, slug, banner_url, start_datetime, end_datetime, total_capacity, tickets_sold, short_description, custom_location,
       categories(name, color),
       venues(name, city, address),
       ticket_types(price, price_type, is_active)
@@ -103,7 +104,16 @@ async function fetchLandingEvents(visitorCity: string | null): Promise<{ events:
     return { events: LANDING_EVENTS, tickerItems: TICKER_EVENTS };
   }
 
-  const raw = data as unknown as RawEvent[];
+  const now = Date.now();
+  const raw = (data as unknown as RawEvent[]).filter((event) => {
+    const endsAt = event.end_datetime ? new Date(event.end_datetime).getTime() : null;
+    const startsAt = new Date(event.start_datetime).getTime();
+    return endsAt != null ? endsAt > now : startsAt > now;
+  });
+
+  if (raw.length < 3) {
+    return { events: LANDING_EVENTS, tickerItems: TICKER_EVENTS };
+  }
 
   // Geo-boost: put visitor's city events first, rest follows in DB order.
   // Shuffle happens client-side (once per page load, stable within the session).

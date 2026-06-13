@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChatCircleText, Plus, Sparkle, Trash } from "@phosphor-icons/react";
 import AICoreChat from "../../../components/ai/AICoreChat";
@@ -24,9 +25,10 @@ function timeAgo(value: string) {
   return new Date(value).toLocaleDateString("en-GH", { month: "short", day: "numeric" });
 }
 
-export default function AIDashboardClient() {
+export default function AIDashboardClient({ initialChatId }: { initialChatId?: string }) {
+  const router = useRouter();
   const [chats, setChats] = useState<AiChatPreview[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId ?? null);
 
   const loadChats = async () => {
     const res = await fetch("/api/ai/chats");
@@ -37,14 +39,24 @@ export default function AIDashboardClient() {
 
   useEffect(() => { loadChats().catch(() => undefined); }, []);
 
+  const selectChat = (id: string | null) => {
+    setActiveChatId(id);
+    router.push(id ? `/ai/${id}` : "/ai");
+  };
+
   const deleteChat = async (id: string) => {
     await fetch(`/api/ai/chats/${id}`, { method: "DELETE" });
-    if (activeChatId === id) setActiveChatId(null);
+    if (activeChatId === id) selectChat(null);
+    await loadChats();
+  };
+
+  const handleChatIdChange = async (id: string | null) => {
+    setActiveChatId(id);
+    if (id) router.push(`/ai/${id}`);
     await loadChats();
   };
 
   return (
-    /* Full-viewport minus the sticky header (72px) and mobile bottom nav */
     <div className="page-grid flex" style={{ height: "calc(100svh - 72px)" }}>
       <div className="flex w-full" style={{ paddingRight: "var(--peek-panel-width, 0px)" }}>
 
@@ -54,10 +66,10 @@ export default function AIDashboardClient() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand)] text-white">
               <Sparkle size={13} weight="fill" />
             </div>
-            <span className="text-[13px] font-semibold text-[var(--text-primary)]">AI</span>
+            <span className="text-[13px] font-semibold text-[var(--text-primary)]"></span>
             <button
               className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--brand)]"
-              onClick={() => setActiveChatId(null)}
+              onClick={() => selectChat(null)}
               title="New chat"
               type="button"
             >
@@ -70,7 +82,7 @@ export default function AIDashboardClient() {
               <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
                 <ChatCircleText size={20} className="mb-2 text-[var(--text-tertiary)]" weight="thin" />
                 <p className="text-[11px] leading-5 text-[var(--text-tertiary)]">
-                  Conversations will appear here once the DB migration is applied.
+                  Start a conversation to see your history here.
                 </p>
               </div>
             ) : (
@@ -88,13 +100,13 @@ export default function AIDashboardClient() {
                         }`}
                         initial={{ opacity: 0, y: 3 }}
                         key={chat.id}
-                        onClick={() => setActiveChatId(chat.id)}
+                        onClick={() => selectChat(chat.id)}
                         type="button"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
                             <p className="truncate text-[12px] font-medium leading-tight">
-                              {chat.title || "Untitled"}
+                              {chat.title || "Chat"}
                             </p>
                             <span className="shrink-0 text-[9px] font-medium text-[var(--text-tertiary)]">
                               {timeAgo(chat.updated_at)}
@@ -127,10 +139,7 @@ export default function AIDashboardClient() {
         <div className="min-w-0 flex-1">
           <AICoreChat
             activeChatId={activeChatId}
-            onChatIdChange={async (id) => {
-              setActiveChatId(id);
-              await loadChats();
-            }}
+            onChatIdChange={handleChatIdChange}
           />
         </div>
       </div>

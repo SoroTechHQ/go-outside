@@ -31,10 +31,11 @@ type AiEvent = {
   start_datetime?: string | null;
   venue_name?: string | null;
   city?: string | null;
-  category_name?: string | null;
   price_label?: string | null;
   ticket_price_ghs?: number | null;
   short_description?: string | null;
+  venues?: { name?: string; city?: string } | Array<{ name?: string; city?: string }> | null;
+  ticket_types?: Array<{ price?: number; is_active?: boolean }> | null;
 };
 
 type AiPick = {
@@ -51,7 +52,7 @@ type ChatMessage = {
   picks?: AiPick[];
   followUps?: string[];
   toolNamesUsed?: string[];
-  pending?: boolean;
+  streaming?: boolean;
 };
 
 type StoredMessage = {
@@ -61,14 +62,6 @@ type StoredMessage = {
   picks: AiPick[] | null;
   follow_ups: string[] | null;
   tool_names_used?: string[] | null;
-};
-
-type AskResponse = {
-  chat_id: string | null;
-  message: string;
-  picks: AiPick[];
-  followUps: string[];
-  tool_names_used?: string[];
 };
 
 // ─── Starters ────────────────────────────────────────────────────────────────
@@ -83,11 +76,11 @@ const STARTERS = [
 ];
 
 const TOOL_LABELS: Record<string, string> = {
-  search_events: "Searched events",
-  get_budget_options: "Checked budget",
-  get_trending_events: "Got trending",
-  get_user_profile: "Loaded your profile",
-  get_event_details: "Got event details",
+  search_events:        "Searched events",
+  get_budget_options:   "Checked budget",
+  get_trending_events:  "Got trending",
+  get_user_profile:     "Loaded your profile",
+  get_event_details:    "Got event details",
   get_friends_activity: "Checked friends",
   get_organizer_events: "Found organizer",
 };
@@ -97,6 +90,30 @@ const TOOL_LABELS: Record<string, string> = {
 function fmtDate(iso?: string | null) {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString("en-GH", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function getVenue(ev: AiEvent | null): string | null {
+  if (!ev) return null;
+  if (ev.venue_name) return ev.venue_name;
+  const v = Array.isArray(ev.venues) ? ev.venues[0] : ev.venues;
+  return v?.name ?? ev.city ?? null;
+}
+
+function getPrice(ev: AiEvent | null): string | null {
+  if (!ev) return null;
+  if (ev.price_label) return ev.price_label;
+  if (ev.ticket_price_ghs !== undefined && ev.ticket_price_ghs !== null) {
+    return ev.ticket_price_ghs === 0 ? "Free" : `GHS ${ev.ticket_price_ghs}`;
+  }
+  const tickets = ev.ticket_types;
+  if (tickets?.length) {
+    const active = tickets.filter(t => t.is_active !== false).map(t => t.price ?? 0);
+    if (active.length) {
+      const min = Math.min(...active);
+      return min === 0 ? "Free" : `GHS ${min}`;
+    }
+  }
+  return null;
 }
 
 function eventHref(ev: AiEvent | null, fallback: string) {
@@ -110,8 +127,8 @@ function eventHref(ev: AiEvent | null, fallback: string) {
 function EventCard({ pick }: { pick: AiPick }) {
   const ev = pick.event;
   const date = fmtDate(ev?.start_datetime);
-  const venue = ev?.venue_name ?? ev?.city ?? null;
-  const price = ev?.price_label ?? (ev?.ticket_price_ghs ? `GHS ${ev.ticket_price_ghs}` : null);
+  const venue = getVenue(ev);
+  const price = getPrice(ev);
 
   return (
     <Link
@@ -144,7 +161,11 @@ function EventCard({ pick }: { pick: AiPick }) {
               {venue}
             </span>
           )}
-          {price && <span className="font-semibold text-[var(--brand)]">{price}</span>}
+          {price && (
+            <span className={cn("font-semibold", price === "Free" ? "text-emerald-500" : "text-[var(--brand)]")}>
+              {price}
+            </span>
+          )}
         </div>
         {pick.reason && (
           <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[var(--text-tertiary)]">{pick.reason}</p>
@@ -159,22 +180,39 @@ function EventCard({ pick }: { pick: AiPick }) {
   );
 }
 
-// ─── Typing loader ────────────────────────────────────────────────────────────
+// ─── Loaders ─────────────────────────────────────────────────────────────────
 
-function TypingLoader() {
+function ToolsLoader({ names }: { names: string[] }) {
   return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]">
-        <Sparkle size={12} weight="fill" className="text-white" />
-      </div>
-      <div className="flex items-center gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
-            style={{ animation: "ai-pulse 1.1s ease-in-out infinite", animationDelay: `${i * 0.18}s` }}
-          />
-        ))}
+    <div className="space-y-2">
+      {names.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {names.map((t) => (
+            <motion.span
+              key={t}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--brand)]/20 bg-[var(--brand-dim)] px-2 py-0.5 text-[10px] font-medium text-[var(--brand)]"
+            >
+              <Sparkle size={8} weight="fill" />
+              {TOOL_LABELS[t] ?? t.replace(/_/g, " ")}
+            </motion.span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-3 py-1">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]">
+          <Sparkle size={12} weight="fill" className="text-white" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
+              style={{ animation: "ai-pulse 1.1s ease-in-out infinite", animationDelay: `${i * 0.18}s` }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -223,11 +261,8 @@ function AssistantBubble({
   onFollowUp: (t: string) => void;
   onRetry?: () => void;
 }) {
-  if (message.pending) return <TypingLoader />;
-
   return (
     <div className="space-y-3">
-      {/* Tool badges */}
       {message.toolNamesUsed?.length ? (
         <div className="flex flex-wrap gap-1.5">
           {message.toolNamesUsed.map((t) => (
@@ -242,33 +277,37 @@ function AssistantBubble({
         </div>
       ) : null}
 
-      {/* Text */}
       <div className="group relative">
-        <p className="text-sm leading-relaxed text-[var(--text-primary)]">{message.content}</p>
-        <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <CopyBtn text={message.content} />
-          {onRetry && (
-            <button
-              className="flex h-6 w-6 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
-              onClick={onRetry}
-              type="button"
-              title="Retry"
-            >
-              <ArrowClockwise size={11} weight="bold" />
-            </button>
+        <p className="text-sm leading-relaxed text-[var(--text-primary)]">
+          {message.content}
+          {message.streaming && (
+            <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse rounded-full bg-[var(--brand)]" />
           )}
-        </div>
+        </p>
+        {!message.streaming && message.content && (
+          <div className="mt-1.5 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <CopyBtn text={message.content} />
+            {onRetry && (
+              <button
+                className="flex h-6 w-6 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--text-secondary)]"
+                onClick={onRetry}
+                type="button"
+                title="Retry"
+              >
+                <ArrowClockwise size={11} weight="bold" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Event cards */}
-      {message.picks?.length ? (
+      {!message.streaming && message.picks?.length ? (
         <div className="grid gap-2.5">
           {message.picks.map((p) => <EventCard key={p.event_id} pick={p} />)}
         </div>
       ) : null}
 
-      {/* Follow-up action chips */}
-      {message.followUps?.length ? (
+      {!message.streaming && message.followUps?.length ? (
         <div className="flex flex-wrap gap-2 pt-1">
           {message.followUps.map((f) => (
             <button
@@ -286,7 +325,7 @@ function AssistantBubble({
   );
 }
 
-// ─── Main chat component ──────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export function AICoreChat({
   activeChatId,
@@ -301,9 +340,11 @@ export function AICoreChat({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeTools, setActiveTools] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastUserMsg = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { setChatId(activeChatId ?? null); }, [activeChatId]);
 
@@ -336,9 +377,8 @@ export function AICoreChat({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, loading]);
+  }, [messages, loading, activeTools]);
 
-  // auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -351,52 +391,78 @@ export function AICoreChat({
     if (!trimmed || loading) return;
 
     lastUserMsg.current = trimmed;
-    const pendingId = `p-${Date.now()}`;
+    const userMsgId = `u-${Date.now()}`;
+    const assistantMsgId = `a-${Date.now()}`;
 
     setMessages((prev) => [
       ...prev,
-      { id: `u-${Date.now()}`, role: "user", content: trimmed },
-      { id: pendingId, role: "assistant", content: "", pending: true },
+      { id: userMsgId, role: "user", content: trimmed },
+      { id: assistantMsgId, role: "assistant", content: "", streaming: true },
     ]);
     setInput("");
     setLoading(true);
+    setActiveTools([]);
+
+    abortRef.current?.abort();
+    const abort = new AbortController();
+    abortRef.current = abort;
 
     try {
       const res = await fetch("/api/ai/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed, chat_id: chatId ?? undefined }),
+        signal: abort.signal,
       });
-      const data = (await res.json()) as AskResponse;
 
-      if (data.chat_id && data.chat_id !== chatId) {
-        setChatId(data.chat_id);
-        onChatIdChange?.(data.chat_id);
+      if (!res.body) throw new Error("No stream body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+
+      const handleEvent = (raw: string) => {
+        if (!raw.startsWith("data: ")) return;
+        let ev: Record<string, unknown>;
+        try { ev = JSON.parse(raw.slice(6)) as Record<string, unknown>; } catch { return; }
+        const t = ev.type as string;
+
+        if (t === "chat_id") {
+          const id = ev.chat_id as string | null;
+          if (id && id !== chatId) { setChatId(id); onChatIdChange?.(id); }
+        } else if (t === "tools") {
+          const names = (ev.names as string[]) ?? [];
+          setActiveTools(names);
+          setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, toolNamesUsed: names } : m));
+        } else if (t === "token") {
+          setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, content: m.content + (ev.text as string) } : m));
+        } else if (t === "done") {
+          const picks = (ev.picks ?? []) as AiPick[];
+          const followUps = (ev.followUps ?? []) as string[];
+          const cid = ev.chat_id as string | null;
+          if (cid && cid !== chatId) { setChatId(cid); onChatIdChange?.(cid); }
+          setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, streaming: false, picks, followUps } : m));
+          setActiveTools([]);
+          setLoading(false);
+        } else if (t === "error") {
+          setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, content: (ev.message as string) || "Something went wrong.", streaming: false } : m));
+          setActiveTools([]);
+          setLoading(false);
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) if (line.startsWith("data: ")) handleEvent(line);
       }
-
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === pendingId
-            ? {
-                id: `a-${Date.now()}`,
-                role: "assistant" as const,
-                content: data.message,
-                picks: data.picks,
-                followUps: data.followUps,
-                toolNamesUsed: data.tool_names_used,
-              }
-            : m,
-        ),
-      );
-    } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === pendingId
-            ? { id: `e-${Date.now()}`, role: "assistant" as const, content: "Something went wrong. Please try again." }
-            : m,
-        ),
-      );
-    } finally {
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, content: "Couldn't reach the server. Try again.", streaming: false } : m));
+      setActiveTools([]);
       setLoading(false);
     }
   }, [chatId, loading, onChatIdChange]);
@@ -408,14 +474,12 @@ export function AICoreChat({
   }, [sendMessage]);
 
   const hasMessages = messages.length > 0;
-
   const shellClass = compact
     ? "h-[520px] max-h-[calc(100svh-140px)] rounded-[22px] border border-[var(--border-subtle)]"
     : "h-full";
 
   return (
     <div className={cn("flex flex-col bg-[var(--bg-page)]", shellClass)}>
-      {/* Messages area */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <AnimatePresence initial={false}>
           {!hasMessages ? (
@@ -433,7 +497,7 @@ export function AICoreChat({
                 What are you planning?
               </h2>
               <p className="mt-2 max-w-[320px] text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                Ask about events, budgets, or what&apos;s trending. I pull live data from GoOutside and your profile.
+                Ask about events, budget, or what&apos;s happening. Pulls live data from GoOutside.
               </p>
               <div className="mt-6 grid max-w-[480px] grid-cols-2 gap-2">
                 {STARTERS.map((s) => {
@@ -463,6 +527,8 @@ export function AICoreChat({
                 >
                   {msg.role === "user" ? (
                     <UserBubble content={msg.content} />
+                  ) : msg.streaming && !msg.content ? (
+                    <ToolsLoader names={activeTools} />
                   ) : (
                     <AssistantBubble
                       message={msg}
@@ -478,8 +544,10 @@ export function AICoreChat({
         <div ref={bottomRef} />
       </div>
 
-      {/* Input — pinned to bottom, centered like Claude/ChatGPT */}
-      <div className={cn("shrink-0 border-t border-[var(--border-subtle)] bg-[var(--bg-page)] px-4 pb-4 pt-3 md:px-6", compact && "pb-3 pt-2")}>
+      <div className={cn(
+        "shrink-0 border-t border-[var(--border-subtle)] bg-[var(--bg-page)] px-4 pb-4 pt-3 md:px-6",
+        compact && "pb-3 pt-2",
+      )}>
         <div className="mx-auto max-w-2xl">
           <div className="flex items-end gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-1 py-1 shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-shadow focus-within:border-[var(--brand)]/40 focus-within:shadow-[0_4px_20px_rgba(var(--brand-rgb),0.08)]">
             <textarea
@@ -488,7 +556,7 @@ export function AICoreChat({
               disabled={loading}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   sendMessage(input);
                 }
@@ -519,11 +587,9 @@ export function AICoreChat({
               )}
             </button>
           </div>
-          {!compact && (
-            <p className="mt-1.5 text-center text-[10px] text-[var(--text-tertiary)]">
-              Cmd+Enter to send · Go Assistant is AI. By using it, you agree to our Terms & Privacy Policy. Chats may be reviewed and used to improve our AI models. Learn more. AI can make mistakes, so please verify important information independently.
-            </p>
-          )}
+          <p className="mt-1.5 text-center text-[10px] text-[var(--text-tertiary)]">
+            Shift+Enter for new line
+          </p>
         </div>
       </div>
 

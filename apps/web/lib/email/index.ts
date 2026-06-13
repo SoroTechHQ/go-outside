@@ -260,7 +260,7 @@ function buildTicketEmail(opts: {
           </a>
         </td>
         <td style="width:50%;padding-left:6px;">
-          <a href="${BASE}/dashboard/tickets" style="display:block;background-color:${BRAND};color:#ffffff;font-size:12px;font-weight:800;text-decoration:none;padding:11px 14px;border-radius:10px;text-align:center;">
+          <a href="${BASE}/dashboard/wallets" style="display:block;background-color:${BRAND};color:#ffffff;font-size:12px;font-weight:800;text-decoration:none;padding:11px 14px;border-radius:10px;text-align:center;">
             ${ico("ticket", 13)} &nbsp;View in App
           </a>
         </td>

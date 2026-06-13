@@ -55,10 +55,21 @@ function formatEventDate(dt: string): string {
   return `${day}, ${date} ${mon}`;
 }
 
-function formatEventTime(start: string, end: string): string {
+function formatEventTime(start: string, end: string | null): string {
   const fmt = (s: string) =>
     new Date(s).toLocaleTimeString("en-GH", { hour: "numeric", minute: "2-digit" });
+  if (!end) return fmt(start);
   return `${fmt(start)} – ${fmt(end)}`;
+}
+
+function eventDisplayStatus(row: Pick<DbEventRow, "status" | "start_datetime" | "end_datetime">): string {
+  if (row.status !== "published") return row.status;
+
+  const now = Date.now();
+  const startsAt = new Date(row.start_datetime).getTime();
+  const endsAt = row.end_datetime ? new Date(row.end_datetime).getTime() : startsAt;
+
+  return startsAt <= now && endsAt >= now ? "live" : "published";
 }
 
 function formatTimeAgo(dt: string): string {
@@ -151,7 +162,7 @@ export type DbEventRow = {
   banner_url:        string | null;
   gallery_urls:      string[];
   start_datetime:    string;
-  end_datetime:      string;
+  end_datetime:      string | null;
   total_capacity:    number | null;
   tickets_sold:      number;
   status:            string;
@@ -215,7 +226,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
     description:      row.description,
     categorySlug:     cat.slug,
     organizerId:      row.organizer_id,
-    status:           row.status === "published" ? "live" : row.status,
+    status:           eventDisplayStatus(row),
     featured:         row.is_featured,
     trending:         row.saves_count > 10,
     saved:            false, // overridden per-user in authenticated contexts
