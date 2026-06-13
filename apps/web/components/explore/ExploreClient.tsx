@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -44,11 +45,13 @@ function ReelSlide({
   isActive,
   onSave,
   isSaved,
+  onGetTickets,
 }: {
   entry: ExploreEntry;
   isActive: boolean;
   onSave: () => void;
   isSaved: boolean;
+  onGetTickets: () => void;
 }) {
   const { event, category } = entry;
 
@@ -126,6 +129,7 @@ function ReelSlide({
         <div className="mt-4 flex items-center gap-3">
           <button
             className="flex-1 rounded-full bg-[var(--brand)] py-3 text-sm font-semibold text-white shadow-[var(--brand-shadow)] transition hover:brightness-110"
+            onClick={onGetTickets}
             type="button"
           >
             Get Tickets
@@ -141,7 +145,7 @@ function ReelSlide({
 
 /* ─── Card Slide (mobile interstitial) ────────────────────────────────────── */
 
-function CardSlide({ entry }: { entry: ExploreEntry }) {
+function CardSlide({ entry, onGetTickets }: { entry: ExploreEntry; onGetTickets: () => void }) {
   const banner = getBanner(entry.event);
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
@@ -181,6 +185,7 @@ function CardSlide({ entry }: { entry: ExploreEntry }) {
         <div className="mt-4 flex items-center gap-2">
           <button
             className="flex-1 rounded-full bg-[var(--brand)] py-2.5 text-sm font-semibold text-white"
+            onClick={onGetTickets}
             type="button"
           >
             Get Tickets
@@ -197,6 +202,7 @@ function CardSlide({ entry }: { entry: ExploreEntry }) {
 /* ─── Desktop: Split-Pane ─────────────────────────────────────────────────── */
 
 function DesktopSplitPane({ entries }: { entries: ExploreEntry[] }) {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -298,6 +304,7 @@ function DesktopSplitPane({ entries }: { entries: ExploreEntry[] }) {
                 entry={displayEntry}
                 isActive={true}
                 isSaved={savedIds.includes(displayEntry.event.id)}
+                onGetTickets={() => router.push(`/events/${displayEntry.event.slug}`)}
                 onSave={() => toggleSave(displayEntry.event.id)}
               />
             </motion.div>
@@ -349,6 +356,7 @@ function DesktopSplitPane({ entries }: { entries: ExploreEntry[] }) {
 /* ─── Mobile: Full-screen vertical snap scroll ────────────────────────────── */
 
 function MobileReels({ entries }: { entries: ExploreEntry[] }) {
+  const router = useRouter();
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
   // Mix in a card slide every 3 reel slides
@@ -372,10 +380,11 @@ function MobileReels({ entries }: { entries: ExploreEntry[] }) {
               entry={slide.entry}
               isActive={true}
               isSaved={savedIds.includes(slide.entry.event.id)}
+              onGetTickets={() => router.push(`/events/${slide.entry.event.slug}`)}
               onSave={() => toggleSave(slide.entry.event.id)}
             />
           ) : (
-            <CardSlide entry={slide.entry} />
+            <CardSlide entry={slide.entry} onGetTickets={() => router.push(`/events/${slide.entry.event.slug}`)} />
           )}
         </div>
       ))}
@@ -405,7 +414,7 @@ export function ExploreClient({ entries }: ExploreClientProps) {
       <div className="mb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand)]">Explore</p>
         <h1 className="mt-1.5 font-display text-4xl italic text-[var(--text-primary)]">
-          What's happening right now
+          What's coming up in Accra
         </h1>
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
           Hover a card to preview · Scroll up and down to discover

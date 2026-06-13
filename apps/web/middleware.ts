@@ -8,6 +8,7 @@ const isProtected = createRouteMatcher([
   "/home(.*)",
   "/settings",
   "/host(.*)",
+  "/ai(.*)",
 ]);
 
 const isMarketingRoot = createRouteMatcher(["/"]);

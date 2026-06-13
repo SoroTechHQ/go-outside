@@ -6,7 +6,15 @@ import { createHmac } from "crypto";
 
 const CART_COOKIE = "go_cart";
 const CART_MAX_AGE = 60 * 60 * 24 * 7;
-const CART_SECRET = process.env.CART_COOKIE_SECRET ?? "go-outside-cart-secret-change-in-prod";
+
+function getCartSecret() {
+  const secret = process.env.CART_COOKIE_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("CART_COOKIE_SECRET is required in production");
+  }
+  return "go-outside-dev-cart-secret";
+}
 
 export type CartCookieItem = {
   eventId: string;
@@ -21,7 +29,7 @@ type CartCookiePayload = {
 };
 
 function sign(data: string): string {
-  return createHmac("sha256", CART_SECRET).update(data).digest("hex").slice(0, 16);
+  return createHmac("sha256", getCartSecret()).update(data).digest("hex").slice(0, 16);
 }
 
 function encode(payload: CartCookiePayload): string {

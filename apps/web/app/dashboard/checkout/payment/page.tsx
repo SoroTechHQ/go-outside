@@ -34,8 +34,6 @@ async function purchaseTickets(
   const body = items.map((item) => ({
     eventId:       item.eventId,
     tierId:        item.tier.id,
-    tierName:      item.tier.name,
-    price:         item.tier.price,
     quantity:      item.quantity,
     attendeeName:  attendee.name,
     attendeeEmail: attendee.email,
@@ -49,7 +47,10 @@ async function purchaseTickets(
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify(body),
   });
-  if (!res.ok) console.error("[purchaseTickets]", await res.json());
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null) as { error?: string } | null;
+    throw new Error(payload?.error ?? "Could not confirm tickets");
+  }
 }
 
 export default function PaymentPage() {
@@ -61,6 +62,7 @@ export default function PaymentPage() {
   const [momoNumber, setMomoNumber] = useState("");
   const [momoNetwork, setMomoNetwork] = useState<MomoNetwork>("mtn");
   const [momoError, setMomoError] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [attendee, setAttendee] = useState({ name: "", email: "" });
 
   useEffect(() => {
@@ -85,18 +87,25 @@ export default function PaymentPage() {
     return true;
   }
 
+  async function completePurchase(reference: string, selectedMethod: PaymentMethod, selectedNetwork?: MomoNetwork) {
+    await purchaseTickets(items, attendee, reference, selectedMethod, selectedNetwork);
+    sessionStorage.removeItem("checkout-attendee");
+    setLoading(false);
+    setSuccess(true);
+    clearCart();
+  }
+
   function handlePay() {
     if (method === "mobile_money" && !validateMomo()) return;
 
     setLoading(true);
+    setPaymentError(null);
     const reference = `GO-${nanoidShort()}`;
 
     if (totalPrice === 0) {
-      purchaseTickets(items, attendee, reference, method).then(() => {
-        sessionStorage.removeItem("checkout-attendee");
+      completePurchase(reference, method).catch((error: unknown) => {
+        setPaymentError(error instanceof Error ? error.message : "Could not confirm tickets");
         setLoading(false);
-        setSuccess(true);
-        clearCart();
       });
       return;
     }
@@ -115,11 +124,9 @@ export default function PaymentPage() {
           network: momoNetwork,
         },
         callback: () => {
-          purchaseTickets(items, attendee, reference, method, momoNetwork).then(() => {
-            sessionStorage.removeItem("checkout-attendee");
+          completePurchase(reference, method, momoNetwork).catch((error: unknown) => {
+            setPaymentError(error instanceof Error ? error.message : "Could not confirm tickets");
             setLoading(false);
-            setSuccess(true);
-            clearCart();
           });
         },
         onClose: () => setLoading(false),
@@ -159,7 +166,7 @@ export default function PaymentPage() {
           <div className="flex gap-3 flex-wrap justify-center">
             <button
               className="rounded-2xl bg-[var(--brand)] px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-[var(--brand-hover)]"
-              onClick={() => router.push("/dashboard/tickets")}
+              onClick={() => router.push("/dashboard/wallets")}
               type="button"
             >
               View My Tickets
@@ -354,6 +361,12 @@ export default function PaymentPage() {
               </>
             )}
           </button>
+
+          {paymentError && (
+            <p className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-[12px] font-medium text-red-500">
+              {paymentError}
+            </p>
+          )}
 
           <p className="mt-4 text-center text-[12px] text-[var(--text-tertiary)]">
             By paying you agree to our{" "}

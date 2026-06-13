@@ -14,6 +14,17 @@ const EVENT_SELECT = `
   ticket_types (id, name, price, price_type, quantity_total, quantity_sold, is_active)
 `;
 
+function isCurrentOrFutureEvent(row: DbEventRow) {
+  const now = Date.now();
+  const endsAt = row.end_datetime ? new Date(row.end_datetime).getTime() : null;
+  const startsAt = new Date(row.start_datetime).getTime();
+  return endsAt != null ? endsAt > now : startsAt > now;
+}
+
+function adaptCurrentOrFutureEvents(data: DbEventRow[] | null) {
+  return (data ?? []).filter(isCurrentOrFutureEvent).map(adaptEvent);
+}
+
 // All published events
 export async function getPublishedEvents(): Promise<EventItem[]> {
   const { data, error } = await supabaseAdmin
@@ -23,7 +34,7 @@ export async function getPublishedEvents(): Promise<EventItem[]> {
     .order("start_datetime", { ascending: true });
 
   if (error) { console.error("[getPublishedEvents]", error); return []; }
-  return (data as unknown as DbEventRow[]).map(adaptEvent);
+  return adaptCurrentOrFutureEvents(data as unknown as DbEventRow[]);
 }
 
 // Single event by slug
@@ -49,9 +60,10 @@ export async function getEventsByCategory(categorySlug: string): Promise<EventIt
     .order("start_datetime", { ascending: true });
 
   if (error) { console.error("[getEventsByCategory]", error); return []; }
-  return (data as unknown as DbEventRow[])
+  return adaptCurrentOrFutureEvents(
+    (data as unknown as DbEventRow[])
     .filter((row) => row.categories?.slug === categorySlug)
-    .map(adaptEvent);
+  );
 }
 
 // Featured events (home / dashboard)
@@ -65,7 +77,7 @@ export async function getFeaturedEvents(limit = 6): Promise<EventItem[]> {
     .limit(limit);
 
   if (error) { console.error("[getFeaturedEvents]", error); return []; }
-  return (data as unknown as DbEventRow[]).map(adaptEvent);
+  return adaptCurrentOrFutureEvents(data as unknown as DbEventRow[]);
 }
 
 // Similar events (same category, excluding the current one)
@@ -83,10 +95,11 @@ export async function getSimilarEvents(
     .limit(20); // fetch more then filter — can't filter on joined column directly
 
   if (error) { console.error("[getSimilarEvents]", error); return []; }
-  return (data as unknown as DbEventRow[])
+  return adaptCurrentOrFutureEvents(
+    (data as unknown as DbEventRow[])
     .filter((row) => row.categories?.slug === categorySlug)
     .slice(0, limit)
-    .map(adaptEvent);
+  );
 }
 
 // Full-text + category search
@@ -106,7 +119,7 @@ export async function searchEvents(opts: {
   const { data, error } = await q.order("start_datetime", { ascending: true }).limit(60);
   if (error) { console.error("[searchEvents]", error); return []; }
 
-  let results = (data as unknown as DbEventRow[]).map(adaptEvent);
+  let results = adaptCurrentOrFutureEvents(data as unknown as DbEventRow[]);
 
   if (opts.category) {
     results = results.filter((e) => e.categorySlug === opts.category);
@@ -158,5 +171,5 @@ export async function getEventsByOrganizer(organizerUserId: string): Promise<Eve
     .order("start_datetime", { ascending: false });
 
   if (error) { console.error("[getEventsByOrganizer]", error); return []; }
-  return (data as unknown as DbEventRow[]).map(adaptEvent);
+  return adaptCurrentOrFutureEvents(data as unknown as DbEventRow[]);
 }

@@ -7,58 +7,55 @@ const ACCRA_TIME = new Date().toLocaleString("en-GH", {
   timeZone: "Africa/Accra",
 });
 
-const SYSTEM_PROMPT = `You are GoOutside's AI — a sharp, decisive event guide for Ghana. Today is ${ACCRA_TIME}.
+function buildSystemPrompt(validEventIds: string[] = []) {
+  const idList = validEventIds.length
+    ? `\nVALID EVENT IDs YOU MAY USE:\n${validEventIds.join("\n")}\n(Do not use any other IDs)`
+    : "";
+
+  return `You are GoOutside's AI — a sharp event guide for Ghana. Today is ${ACCRA_TIME}.
 
 ═══ NON-NEGOTIABLE RULES ═══
 
 RULE 1 — ALWAYS CALL TOOLS FIRST. No exceptions.
-On every single turn, call at least one tool. Never respond without calling tools.
-Never ask the user for more information before calling tools.
-Never say "I'd love to help" or "Could you tell me more" — just call the tools and answer.
+Call at least one tool every turn. Never respond before calling tools.
+Never ask for more info first. Never say "I'd love to help" — just call tools and answer.
 
-RULE 2 — ALWAYS CALL get_user_profile IN PARALLEL.
-Every time you search for events, also call get_user_profile in the same tool turn.
-This gives you the user's vibe, pulse score, location, and past events so you can personalize.
+RULE 2 — ALWAYS CALL get_user_profile IN PARALLEL with event searches.
+This gives you the user's vibe, pulse score, city, and recent events so you can personalize.
 
-RULE 3 — GO FAST. DO NOT ASK. DO NOT STALL.
-If the user asks "what should I do tonight?" → immediately call get_user_profile + search_events.
-If the user says "I have 200 GHS" → immediately call get_user_profile + get_budget_options.
-If the user asks "what's trending?" → immediately call get_user_profile + get_trending_events.
+RULE 3 — GO FAST. ACT IMMEDIATELY.
+"what should I do tonight?" → get_user_profile + search_events (parallel)
+"I have 200 GHS" → get_user_profile + get_budget_options (parallel)
+"what's trending?" → get_user_profile + get_trending_events (parallel)
+"good food / restaurants" → search_events with query="food" and category="food-drink"
 
-RULE 4 — GIVE DIRECT ANSWERS WITH SPECIFICS.
-Reference real event names, venues, prices, dates from your tool results.
-Lead with the best match. Don't bury the lede.
-Bad: "There are many events tonight across Accra."
-Good: "Three events fit you tonight — Rooftop Jazz at Kiza (GHS 80, starts 9pm) is your strongest match based on your music vibe."
+RULE 4 — ONLY USE REAL DATA FROM TOOL RESULTS. NEVER INVENT EVENTS.
+Reference ONLY event names, IDs, venues, prices that appear in your tool results.
+If tools return 0 events, say so honestly — "No events matched that search right now."
+If is_free was requested and tool returns only paid events, say "No free events found currently."
+NEVER make up event names like "Rooftop Live" or "Live Band" if they aren't in the results.
+NEVER fabricate slugs, IDs, or URLs.
+${idList}
 
-RULE 5 — followUps MUST BE ACTION CHIPS, NOT QUESTIONS.
-followUps are short phrases (3–5 words) users can tap to refine results.
-Good examples: "Free events only", "Earlier tonight", "Near East Legon", "Under GHS 100", "Afrobeats vibes", "Show me Kumasi"
-Bad examples: "What type of music do you like?", "Are you looking for free events?", "Do you have a budget in mind?"
-Generate 3 followUps that help the user explore further based on what you just returned.
-
-═══ TOOL STRATEGY ═══
-- General event query → get_user_profile + search_events (parallel)
-- Budget mentioned → get_user_profile + get_budget_options (parallel)
-- "Trending/popular/hot" → get_user_profile + get_trending_events (parallel)
-- Friends/social → get_friends_activity (+ get_user_profile)
-- Specific event → get_event_details
+RULE 5 — followUps MUST BE 3-5 WORD ACTION CHIPS (not questions).
+Good: "Free events only", "Earlier tonight", "Near East Legon", "Under GHS 100"
+Bad: "What music do you like?", "Do you have a budget?"
 
 ═══ RESPONSE FORMAT (strict JSON) ═══
 {
-  "message": "2–4 sentence response using REAL event names and details from tools",
+  "message": "2–4 sentence answer using REAL names/prices/times from tool results",
   "picks": [
     {
-      "event_id": "exact uuid from tool result — never fabricated",
-      "title": "Event title",
-      "reason": "One sentence: why this matches THIS user's specific profile and request"
+      "event_id": "EXACT uuid from tool result — NO fabrication",
+      "title": "Exact event title from tool result",
+      "reason": "One sentence why this fits this user"
     }
   ],
-  "followUps": ["Action chip 1", "Action chip 2", "Action chip 3"]
+  "followUps": ["Chip 1", "Chip 2", "Chip 3"]
 }
 
-Max 4 picks. Only use event_ids from tool results. Never invent events.
-Prices in GHS. Format: "GHS 150" not "150 GHS".`;
+Max 4 picks. event_id must be a real uuid returned by a tool. Prices in "GHS 150" format.`;
+}
 
 export type ExecutorResult = {
   message: string;
@@ -78,7 +75,7 @@ export async function runAICore(
 
   // ── Turn 1: LLM decides which tools to call ─────────────────────────────
   const turn1Messages: GroqMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: buildSystemPrompt() },
     ...history.slice(-10),
     { role: "user", content: userMessage },
   ];
@@ -140,10 +137,15 @@ export async function runAICore(
     }),
   );
 
+  // Collect valid event IDs from tool results to prevent hallucination
+  const validEventIds = collectEventIds(rawToolResults);
+
   // ── Turn 2: Feed tool results back, get final answer ────────────────────
   // IMPORTANT: tools are NOT included in turn 2 — prevents infinite loop
   const turn2Messages: GroqMessage[] = [
-    ...turn1Messages,
+    { role: "system", content: buildSystemPrompt(validEventIds) },
+    ...history.slice(-10),
+    { role: "user", content: userMessage },
     {
       role: "assistant",
       content: null,
@@ -163,15 +165,14 @@ export async function runAICore(
   const turn2 = await groqChat({
     model:           AI_MODELS.SMART,
     messages:        turn2Messages,
-    // No tools in turn 2
-    temperature:     0.55,
+    temperature:     0.45,
     max_tokens:      900,
     response_format: { type: "json_object" },
   });
 
   const raw = turn2.choices[0]?.message?.content ?? "{}";
   return {
-    ...parseFinalResponse(raw, toolNamesUsed),
+    ...parseFinalResponse(raw, toolNamesUsed, validEventIds),
     raw_tool_results: rawToolResults,
   };
 }
@@ -203,9 +204,10 @@ async function runFallbackToolPlan(
     }),
   );
 
+  const validEventIds = collectEventIds(rawToolResults);
   const context = JSON.stringify(rawToolResults);
   const finalMessages: GroqMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: buildSystemPrompt(validEventIds) },
     ...history.slice(-10),
     {
       role: "user",
@@ -217,13 +219,13 @@ async function runFallbackToolPlan(
     const final = await groqChat({
       model:           AI_MODELS.SMART,
       messages:        finalMessages,
-      temperature:     0.5,
+      temperature:     0.45,
       max_tokens:      900,
       response_format: { type: "json_object" },
     });
     const raw = final.choices[0]?.message?.content ?? "{}";
     return {
-      ...parseFinalResponse(raw, toolNamesUsed),
+      ...parseFinalResponse(raw, toolNamesUsed, validEventIds),
       raw_tool_results: rawToolResults,
     };
   } catch {
@@ -330,8 +332,27 @@ function collectEvents(rawToolResults: Record<string, unknown>) {
   return events;
 }
 
+// ── Collect all event IDs from tool results ───────────────────────────────────
+function collectEventIds(rawToolResults: Record<string, unknown>): string[] {
+  const ids: string[] = [];
+  for (const result of Object.values(rawToolResults)) {
+    if (!result || typeof result !== "object") continue;
+    const maybeEvents = (result as { events?: unknown[] }).events;
+    if (!Array.isArray(maybeEvents)) continue;
+    for (const event of maybeEvents) {
+      const id = (event as Record<string, unknown>)?.id;
+      if (typeof id === "string") ids.push(id);
+    }
+  }
+  return ids;
+}
+
 // ── Parse the LLM's JSON response and resolve event objects ─────────────────
-function parseFinalResponse(raw: string, toolNamesUsed: string[]): ExecutorResult {
+function parseFinalResponse(
+  raw: string,
+  toolNamesUsed: string[],
+  validEventIds: string[] = [],
+): ExecutorResult {
   let parsed: {
     message?: string;
     picks?: Array<{ event_id?: string; title?: string; reason?: string }>;
@@ -342,24 +363,28 @@ function parseFinalResponse(raw: string, toolNamesUsed: string[]): ExecutorResul
     parsed = JSON.parse(raw) as typeof parsed;
   } catch {
     return {
-      message:        raw.trim() || "I found some options that might work for you.",
-      picks:          [],
-      followUps:      ["What's trending tonight?", "Show me free events", "Events under GHS 100"],
+      message:         raw.trim() || "I couldn't parse a response. Try again.",
+      picks:           [],
+      followUps:       ["What's trending tonight?", "Free events only", "Under GHS 100"],
       tool_names_used: toolNamesUsed,
     };
   }
 
+  // Only allow picks whose event_id was actually returned by a tool
+  const allowedIds = new Set(validEventIds);
+  const picks = (parsed.picks ?? [])
+    .filter((p) => p.event_id && (allowedIds.size === 0 || allowedIds.has(p.event_id)))
+    .slice(0, 4)
+    .map((p) => ({
+      event_id: p.event_id!,
+      title:    p.title ?? "",
+      reason:   p.reason ?? "",
+    }));
+
   return {
-    message:    parsed.message?.trim() || "Here's what I found for you.",
-    picks:      (parsed.picks ?? [])
-      .filter((p) => p.event_id)
-      .slice(0, 4)
-      .map((p) => ({
-        event_id: p.event_id!,
-        title:    p.title ?? "",
-        reason:   p.reason ?? "",
-      })),
-    followUps:  (parsed.followUps ?? []).slice(0, 3),
+    message:         parsed.message?.trim() || "Here's what I found.",
+    picks,
+    followUps:       (parsed.followUps ?? []).slice(0, 3),
     tool_names_used: toolNamesUsed,
   };
 }

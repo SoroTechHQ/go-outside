@@ -218,7 +218,7 @@ function Content() {
           <motion.div
             initial={{ x: "105vw" }}
             animate={{ x: "-110vw" }}
-            transition={{ duration: 7, delay: 0.8, ease: [0.25, 0, 0.6, 1], repeat: Infinity, repeatDelay: 4 }}
+            transition={{ duration: 13, delay: 0.8, ease: [0.25, 0, 0.6, 1], repeat: Infinity, repeatDelay: 4 }}
             style={{ position: "absolute", top: 0, left: 0, width: "min(300px, 72vw)" }}>
             <Trotro style={{ width: "100%" }}/>
           </motion.div>

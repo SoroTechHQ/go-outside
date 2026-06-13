@@ -70,3 +70,16 @@ export async function groqChat(options: ChatOptions) {
     })
   );
 }
+
+export async function groqChatStream(options: Omit<ChatOptions, "response_format">) {
+  return callGroq((client) =>
+    client.chat.completions.create({
+      model:       options.model,
+      messages:    options.messages as Parameters<typeof client.chat.completions.create>[0]["messages"],
+      tools:       options.tools as Parameters<typeof client.chat.completions.create>[0]["tools"],
+      temperature: options.temperature ?? 0.5,
+      max_tokens:  options.max_tokens ?? 800,
+      stream:      true,
+    })
+  );
+}
