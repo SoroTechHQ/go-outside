@@ -7,7 +7,6 @@ import {
   Bell,
   ChartBar,
   ChatCircleDots,
-  Sparkle,
   GearSix,
   House,
   MagnifyingGlass,
@@ -98,15 +97,9 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
   const navItems: NavItem[] = [
     { href: "/", label: "Home", icon: House },
     { href: "/trending", label: "Explore", icon: MagnifyingGlass },
-    { href: "/ai", label: "AI", icon: Sparkle, activeWeight: "fill" },
     { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
     { href: "/wallets", label: "Wallet", icon: Wallet },
-    {
-      href: "/notifications",
-      label: "Notifications",
-      icon: Bell,
-      activeWeight: "fill",
-    },
+    { href: "/notifications", label: "Notifications", icon: Bell, activeWeight: "fill" },
   ];
 
   if (role === "organizer" || role === "admin") {
@@ -167,9 +160,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
               const active =
                 item.href === "/"
                   ? pathname === "/"
-                  : item.href === "/ai"
-                    ? pathname === "/ai" || pathname === "/dashboard/ai"
-                    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
               const iconWeight = active
                 ? item.activeWeight ?? "fill"

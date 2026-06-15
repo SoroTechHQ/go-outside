@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChatCircleText, Plus, Sparkle, Trash } from "@phosphor-icons/react";
+import {
+  ChatCircleTextIcon as ChatCircleText,
+  PlusIcon as Plus,
+  SparkleIcon as Sparkle,
+  TrashIcon as Trash,
+} from "@phosphor-icons/react";
 import AICoreChat from "../../../components/ai/AICoreChat";
 
 type AiChatPreview = {

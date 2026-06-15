@@ -115,14 +115,28 @@ export async function logToolCalls(
 
 // ── List user's chats ─────────────────────────────────────────────────────────
 export async function listChats(clerkId: string, limit = 20): Promise<AiChat[]> {
-  const { data } = await supabaseAdmin
+  // Try the view first (has last_assistant_message preview)
+  const { data, error } = await supabaseAdmin
     .from("ai_chats_with_preview")
     .select("*")
     .eq("clerk_id", clerkId)
     .order("updated_at", { ascending: false })
     .limit(limit);
 
-  return (data ?? []) as AiChat[];
+  if (!error && data) return data as AiChat[];
+
+  // View missing or permission issue — fall back to base table
+  if (error) console.error("[listChats] view query failed, falling back:", error.message);
+
+  const { data: fallback, error: fallbackError } = await supabaseAdmin
+    .from("ai_chats")
+    .select("id, clerk_id, user_id, title, model, created_at, updated_at")
+    .eq("clerk_id", clerkId)
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (fallbackError) console.error("[listChats] fallback query failed:", fallbackError.message);
+  return (fallback ?? []) as AiChat[];
 }
 
 // ── Get a single chat with all messages ───────────────────────────────────────

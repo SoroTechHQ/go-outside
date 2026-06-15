@@ -10,7 +10,6 @@ import {
   ChatCircleDots,
   House,
   MagnifyingGlass,
-  Sparkle,
   UserCircle,
 } from "@phosphor-icons/react";
 
@@ -48,9 +47,8 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const items: BottomNavItem[] = [
     { href: "/",         icon: House,          label: "Home" },
     { href: "/trending", icon: MagnifyingGlass, label: "Explore" },
-    { href: "/ai",       icon: Sparkle,        label: "AI" },
-    { href: "/messages", icon: ChatCircleDots, label: "Messages", badge: msgUnread },
-    { href: "/profile",  icon: UserCircle,     label: "Profile" },
+    { href: "/messages", icon: ChatCircleDots,  label: "Messages", badge: msgUnread },
+    { href: "/profile",  icon: UserCircle,      label: "Profile" },
   ];
 
   if (role === "organizer" || role === "admin") {
@@ -68,9 +66,7 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
           const active =
             item.href === "/"
               ? pathname === "/" || pathname === "/home"
-              : item.href === "/ai"
-                ? pathname === "/ai" || pathname === "/dashboard/ai"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
           return (
