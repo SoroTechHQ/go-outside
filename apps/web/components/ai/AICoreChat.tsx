@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ArrowUp,
   CalendarBlank,
+  CalendarPlus,
   Copy,
   MagnifyingGlass,
   Sparkle,
@@ -64,15 +65,17 @@ type StoredMessage = {
   tool_names_used?: string[] | null;
 };
 
-// ─── Starters ────────────────────────────────────────────────────────────────
+// ─── Starter icon cycle (assigned by index) ──────────────────────────────────
 
-const STARTERS = [
-  { label: "What's on tonight in Accra?", icon: CalendarBlank },
-  { label: "Events under GHS 100 this weekend", icon: CurrencyCircleDollar },
-  { label: "Live music near Osu", icon: TrendUp },
-  { label: "What are my friends going to?", icon: Users },
-  { label: "Free events in Accra", icon: Sparkle },
-  { label: "What's trending right now", icon: MagnifyingGlass },
+const STARTER_ICONS = [CalendarBlank, CurrencyCircleDollar, TrendUp, Users, Sparkle, MagnifyingGlass];
+
+const FALLBACK_STARTERS = [
+  "What's on tonight in Accra?",
+  "Events under GHS 100 this weekend",
+  "Live music near Osu",
+  "What are my friends going to?",
+  "Free events in Accra",
+  "What's trending right now",
 ];
 
 const TOOL_LABELS: Record<string, string> = {
@@ -122,6 +125,23 @@ function eventHref(ev: AiEvent | null, fallback: string) {
   return `/events/${fallback}`;
 }
 
+function googleCalendarUrl(ev: AiEvent | null, title: string): string | null {
+  if (!ev?.start_datetime) return null;
+  const start = new Date(ev.start_datetime);
+  const end = new Date(start.getTime() + 3 * 60 * 60 * 1000); // +3h estimate
+  const fmt = (d: Date) =>
+    d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const venue = getVenue(ev);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: ev.title ?? title,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    ...(venue ? { location: venue } : {}),
+    ...(ev.short_description ? { details: ev.short_description } : {}),
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 // ─── Event Pick Card ──────────────────────────────────────────────────────────
 
 function EventCard({ pick }: { pick: AiPick }) {
@@ -129,54 +149,75 @@ function EventCard({ pick }: { pick: AiPick }) {
   const date = fmtDate(ev?.start_datetime);
   const venue = getVenue(ev);
   const price = getPrice(ev);
+  const calUrl = googleCalendarUrl(ev, pick.title);
 
   return (
-    <Link
-      className="group flex items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5 transition hover:border-[var(--brand)]/35 hover:bg-[var(--bg-card)]"
-      href={eventHref(ev, pick.event_id)}
-    >
-      <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-muted)]">
-        {ev?.banner_url ? (
-          <Image alt={ev.title ?? pick.title} className="object-cover" fill sizes="52px" src={ev.banner_url} />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Sparkle size={16} weight="fill" className="text-[var(--brand)]" />
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold leading-tight text-[var(--text-primary)]">
-          {ev?.title ?? pick.title}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-[var(--text-secondary)]">
-          {date && (
-            <span className="inline-flex items-center gap-1">
-              <CalendarBlank size={10} weight="fill" />
-              {date}
-            </span>
-          )}
-          {venue && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin size={10} weight="fill" />
-              {venue}
-            </span>
-          )}
-          {price && (
-            <span className={cn("font-semibold", price === "Free" ? "text-emerald-500" : "text-[var(--brand)]")}>
-              {price}
-            </span>
+    <div className="group relative rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition hover:border-[var(--brand)]/35 hover:bg-[var(--bg-card)]">
+      <Link
+        className="flex items-start gap-3 p-3.5 pr-[3.25rem]"
+        href={eventHref(ev, pick.event_id)}
+      >
+        <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[12px] bg-[var(--bg-muted)]">
+          {ev?.banner_url ? (
+            <Image alt={ev.title ?? pick.title} className="object-cover" fill sizes="52px" src={ev.banner_url} />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <Sparkle size={16} weight="fill" className="text-[var(--brand)]" />
+            </div>
           )}
         </div>
-        {pick.reason && (
-          <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[var(--text-tertiary)]">{pick.reason}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-semibold leading-tight text-[var(--text-primary)]">
+            {ev?.title ?? pick.title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-[var(--text-secondary)]">
+            {date && (
+              <span className="inline-flex items-center gap-1">
+                <CalendarBlank size={10} weight="fill" />
+                {date}
+              </span>
+            )}
+            {venue && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin size={10} weight="fill" />
+                {venue}
+              </span>
+            )}
+            {price && (
+              <span className={cn("font-semibold", price === "Free" ? "text-emerald-500" : "text-[var(--brand)]")}>
+                {price}
+              </span>
+            )}
+          </div>
+          {pick.reason && (
+            <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[var(--text-tertiary)]">{pick.reason}</p>
+          )}
+        </div>
+      </Link>
+
+      {/* Actions row */}
+      <div className="absolute right-3 top-3 flex flex-col items-center gap-1.5">
+        <Link
+          href={eventHref(ev, pick.event_id)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-[var(--brand)]"
+          title="View event"
+        >
+          <ArrowRight size={13} weight="bold" />
+        </Link>
+        {calUrl && (
+          <a
+            href={calUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--bg-muted)] hover:text-emerald-500"
+            title="Add to Google Calendar"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CalendarPlus size={13} weight="bold" />
+          </a>
         )}
       </div>
-      <ArrowRight
-        size={14}
-        weight="bold"
-        className="mt-1 shrink-0 text-[var(--text-tertiary)] transition group-hover:translate-x-0.5 group-hover:text-[var(--brand)]"
-      />
-    </Link>
+    </div>
   );
 }
 
@@ -341,12 +382,22 @@ export function AICoreChat({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTools, setActiveTools] = useState<string[]>([]);
+  const [starters, setStarters] = useState<string[]>(FALLBACK_STARTERS);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastUserMsg = useRef("");
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { setChatId(activeChatId ?? null); }, [activeChatId]);
+
+  useEffect(() => {
+    fetch("/api/ai/suggestions")
+      .then((r) => r.json())
+      .then((data: { suggestions?: string[] }) => {
+        if (data.suggestions?.length) setStarters(data.suggestions);
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     let dead = false;
@@ -440,7 +491,9 @@ export function AICoreChat({
           const picks = (ev.picks ?? []) as AiPick[];
           const followUps = (ev.followUps ?? []) as string[];
           const cid = ev.chat_id as string | null;
-          if (cid && cid !== chatId) { setChatId(cid); onChatIdChange?.(cid); }
+          // Don't call onChatIdChange again — chat_id event already handled it.
+          // Just ensure local state is in sync.
+          if (cid) setChatId((prev) => prev ?? cid);
           setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, streaming: false, picks, followUps } : m));
           setActiveTools([]);
           setLoading(false);
@@ -500,17 +553,17 @@ export function AICoreChat({
                 Ask about events, budget, or what&apos;s happening. Pulls live data from GoOutside.
               </p>
               <div className="mt-6 grid max-w-[480px] grid-cols-2 gap-2">
-                {STARTERS.map((s) => {
-                  const Icon = s.icon;
+                {starters.map((label, i) => {
+                  const Icon = STARTER_ICONS[i % STARTER_ICONS.length];
                   return (
                     <button
-                      key={s.label}
+                      key={label}
                       className="flex items-start gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-3 text-left text-[12px] leading-snug text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
-                      onClick={() => sendMessage(s.label)}
+                      onClick={() => sendMessage(label)}
                       type="button"
                     >
                       <Icon size={13} className="mt-0.5 shrink-0 text-[var(--brand)]" />
-                      {s.label}
+                      {label}
                     </button>
                   );
                 })}

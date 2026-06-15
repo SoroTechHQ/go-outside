@@ -51,8 +51,13 @@ export default function AIDashboardClient({ initialChatId }: { initialChatId?: s
   };
 
   const handleChatIdChange = async (id: string | null) => {
+    if (id === activeChatId) {
+      await loadChats();
+      return;
+    }
     setActiveChatId(id);
-    if (id) router.push(`/ai/${id}`);
+    // Update the URL silently — no Next.js navigation, no remount, streaming stays alive
+    if (id) window.history.replaceState(null, "", `/ai/${id}`);
     await loadChats();
   };
 
