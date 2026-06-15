@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowRight,
-  ArrowUp,
-  CalendarBlank,
-  CalendarPlus,
-  Copy,
-  MagnifyingGlass,
-  Sparkle,
-  TrendUp,
-  Users,
-  CurrencyCircleDollar,
-  Check,
-  ArrowClockwise,
-  MapPin,
+  ArrowRightIcon as ArrowRight,
+  ArrowUpIcon as ArrowUp,
+  CalendarBlankIcon as CalendarBlank,
+  CalendarPlusIcon as CalendarPlus,
+  CopyIcon as Copy,
+  MagnifyingGlassIcon as MagnifyingGlass,
+  SparkleIcon as Sparkle,
+  TrendUpIcon as TrendUp,
+  UsersIcon as Users,
+  CurrencyCircleDollarIcon as CurrencyCircleDollar,
+  CheckIcon as Check,
+  ArrowClockwiseIcon as ArrowClockwise,
+  MapPinIcon as MapPin,
 } from "@phosphor-icons/react";
 import { cn } from "../../lib/utils";
 

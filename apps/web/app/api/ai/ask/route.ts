@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { GOOUTSIDE_TOOLS, executeTool, type ToolName } from "../../../../lib/ai-core/tools";
-import { groqChat, groqChatStream, AI_MODELS, type GroqMessage } from "../../../../lib/ai-core/groq-client";
+import { groqChat, groqChatStream, groqErrorMessage, AI_MODELS, type GroqMessage } from "../../../../lib/ai-core/groq-client";
 import {
   getOrCreateChat,
   saveUserMessage,
@@ -209,19 +209,15 @@ export async function POST(req: NextRequest) {
     return new Response("Invalid chat_id", { status: 400 });
   }
 
-  const { data: user } = await supabaseAdmin
-    .from("users")
-    .select("id")
-    .eq("clerk_id", clerkId)
-    .maybeSingle();
-  const userId = user?.id ?? "";
+  // ── Parallel: user lookup + rate limit check (saves one full round trip) ────
+  const [userResult, rateLimitResult] = await Promise.all([
+    supabaseAdmin.from("users").select("id").eq("clerk_id", clerkId).maybeSingle(),
+    supabaseAdmin.rpc("ai_check_rate_limit", { p_clerk_id: clerkId }),
+  ]);
 
-  // ── Rate limit: 30 messages / 60 seconds ───────────────────────────────────
-  if (userId) {
-    const { data: withinLimit } = await supabaseAdmin.rpc("ai_check_rate_limit", { p_clerk_id: clerkId });
-    if (withinLimit === false) {
-      return new Response("Too many requests. Try again in a moment.", { status: 429 });
-    }
+  const userId = userResult.data?.id ?? "";
+  if (rateLimitResult.data === false) {
+    return new Response("Too many requests. Try again in a moment.", { status: 429 });
   }
 
   let history: GroqMessage[] = [];
@@ -238,16 +234,23 @@ export async function POST(req: NextRequest) {
       };
 
       try {
-        // ── Resolve/create chat ─────────────────────────────────────────────
+        // ── Resolve/create chat + load history ─────────────────────────────
+        let saveUserMsgPromise: Promise<string | null> = Promise.resolve(null);
+
         if (clerkId && userId) {
           const chat = await getOrCreateChat(clerkId, userId, chatId || undefined, message);
           if (chat) {
             chatId = chat.id;
+
             if (body.chat_id) {
-              const { messages } = await getChatWithMessages(chatId, clerkId);
-              history = toGroqHistory(messages);
+              // Existing chat: load history and save user message in parallel
+              saveUserMsgPromise = saveUserMessage(chatId, message);
+              const historyData = await getChatWithMessages(chatId, clerkId);
+              history = toGroqHistory(historyData.messages);
+            } else {
+              // New chat: fire-and-forget save while Turn 1 runs (history is empty)
+              saveUserMsgPromise = saveUserMessage(chatId, message);
             }
-            await saveUserMessage(chatId, message);
           }
         }
 
@@ -269,11 +272,15 @@ export async function POST(req: NextRequest) {
             temperature: 0.35,
             max_tokens:  800,
           });
-        } catch {
-          emit("error", { message: "AI couldn't connect. Try again." });
+        } catch (err) {
+          console.error("[api/ai/ask] turn1 error", err);
+          emit("error", { message: groqErrorMessage(err) });
           controller.close();
           return;
         }
+
+        // Ensure user message is persisted before we write the assistant message
+        await saveUserMsgPromise;
 
         const turn1Choice = turn1Res.choices[0];
         const toolCalls = turn1Choice?.message?.tool_calls ?? [];
@@ -283,6 +290,7 @@ export async function POST(req: NextRequest) {
           const txt = turn1Choice?.message?.content ?? "";
           emit("tools", { names: [] });
           for (const char of txt) emit("token", { text: char });
+          await saveUserMsgPromise;
           emit("done", { picks: [], followUps: ["What's trending?", "Free events only", "Under GHS 100"], chat_id: chatId || null });
           controller.close();
           return;
@@ -364,7 +372,7 @@ export async function POST(req: NextRequest) {
         });
       } catch (err) {
         console.error("[api/ai/ask] stream_error", err);
-        emit("error", { message: "Something went wrong. Try again." });
+        emit("error", { message: groqErrorMessage(err) });
       } finally {
         clearTimeout(timeout);
         controller.close();
