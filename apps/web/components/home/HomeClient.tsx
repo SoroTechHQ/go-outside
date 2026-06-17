@@ -27,6 +27,8 @@ import {
 } from "@phosphor-icons/react";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { EventSidePane } from "./EventSidePane";
+import { FollowingFeed } from "./FollowingFeed";
+import { PlansFeed } from "./PlansFeed";
 import { useAppShell } from "../layout/AppShellContext";
 import {
   useInfiniteEvents,
@@ -750,6 +752,7 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
 
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
   const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
+  const [feedMode, setFeedMode] = useState<"for-you" | "following" | "plans">("for-you");
 
   // Real categories from DB (replaces hardcoded demo-data)
   const { data: dbCategories = [] } = useCategories();
@@ -906,6 +909,44 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                 />
               )}
 
+              {/* Feed mode tabs: For You | Following | Plans */}
+              <div className="mt-4 mb-1 flex gap-1 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-1">
+                {(["for-you", "following", "plans"] as const).map((mode) => {
+                  const labels = { "for-you": "For You", following: "Following", plans: "Plans" };
+                  const active = feedMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => setFeedMode(mode)}
+                      className={`flex-1 rounded-[14px] py-2 text-[13px] font-semibold transition ${
+                        active
+                          ? "bg-[var(--brand)] text-black shadow-sm"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {labels[mode]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Following feed */}
+              {feedMode === "following" && (
+                <div className="mt-2">
+                  <FollowingFeed />
+                </div>
+              )}
+
+              {/* Plans feed */}
+              {feedMode === "plans" && (
+                <div className="mt-2">
+                  <PlansFeed />
+                </div>
+              )}
+
+              {/* For You feed — only shown when mode is for-you */}
+              {feedMode === "for-you" && (
+                <>
               {/* Posts from people you follow */}
               <FollowingPostsStrip />
 
@@ -1029,6 +1070,8 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                   )}
                 </div>
               </section>
+                </>
+              )}
             </div>
 
             {/* ── Right sidebar — desktop only (xl+) ── */}

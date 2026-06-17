@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
@@ -12,17 +12,20 @@ import {
   Sparkle,
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
-import { AIChatPanel } from "../../components/search/AIChatPanel";
 import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
 import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform } from "../../lib/image-url";
+import { aiSearchHref } from "../../lib/search/ai-search-href";
+import type { SearchApiResponse, EventRow, UserRow, PostRow, DiscoveryModule } from "../../lib/search/types";
 
 type SearchTab = "all" | "events" | "users" | "posts";
-type SearchEvent   = { id: string; title: string; slug: string; banner_url: string | null; start_datetime: string | null; price_label: string | null; trending_score: number | null };
-type SearchUser    = { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null; avatar_url: string | null; pulse_tier: string | null; pulse_score: number | null };
-type SearchPost = { id: string; body: string; vibe_tags: string[]; created_at: string };
-type SearchResult  = { events: SearchEvent[]; users: SearchUser[]; posts: SearchPost[]; nextCursor: string | null };
 
-async function fetchSearch(q: string, type: SearchTab, categories: string, when: string, cursor?: string): Promise<SearchResult> {
+async function fetchSearch(
+  q: string,
+  type: SearchTab,
+  categories: string,
+  when: string,
+  cursor?: string,
+): Promise<SearchApiResponse> {
   const params = new URLSearchParams({ type, limit: "20" });
   if (q) params.set("q", q);
   if (cursor) params.set("cursor", cursor);
@@ -30,7 +33,7 @@ async function fetchSearch(q: string, type: SearchTab, categories: string, when:
   if (when) params.set("when", when);
   const res = await fetch(`/api/search?${params}`);
   if (!res.ok) throw new Error("Search failed");
-  return res.json() as Promise<SearchResult>;
+  return res.json() as Promise<SearchApiResponse>;
 }
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -43,7 +46,7 @@ function useDebounce<T>(value: T, ms: number): T {
 }
 
 // ── Event card ─────────────────────────────────────────────────────────────────
-function EventResult({ event }: { event: SearchEvent }) {
+function EventResult({ event }: { event: EventRow }) {
   const router = useRouter();
   const date = event.start_datetime
     ? new Date(event.start_datetime).toLocaleDateString("en-GH", { month: "short", day: "numeric" })
@@ -78,7 +81,7 @@ function EventResult({ event }: { event: SearchEvent }) {
 }
 
 // ── User card ──────────────────────────────────────────────────────────────────
-function UserResult({ user }: { user: SearchUser }) {
+function UserResult({ user }: { user: UserRow }) {
   const router = useRouter();
   const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "User";
 
@@ -108,7 +111,7 @@ function UserResult({ user }: { user: SearchUser }) {
 }
 
 // ── Post card ───────────────────────────────────────────────────────────────
-function PostResult({ post }: { post: SearchPost }) {
+function PostResult({ post }: { post: PostRow }) {
   return (
     <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5">
       <p className="text-[13px] leading-relaxed text-[var(--text-secondary)] line-clamp-3">{post.body}</p>
@@ -120,6 +123,18 @@ function PostResult({ post }: { post: SearchPost }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// ── Discovery module section ───────────────────────────────────────────────────
+function DiscoverySection({ module: m }: { module: DiscoveryModule }) {
+  return (
+    <section>
+      <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">{m.title}</h2>
+      <div className="space-y-2.5">
+        {m.items.map((e) => <EventResult key={e.id} event={e} />)}
+      </div>
+    </section>
   );
 }
 
@@ -142,10 +157,10 @@ function Skeleton({ count = 4 }: { count?: number }) {
 
 // ── Tabs ───────────────────────────────────────────────────────────────────────
 const TABS: { id: SearchTab; label: string }[] = [
-  { id: "all",      label: "All" },
-  { id: "events",   label: "Events" },
-  { id: "users",    label: "People" },
-  { id: "posts", label: "Posts" },
+  { id: "all",    label: "All"    },
+  { id: "events", label: "Events" },
+  { id: "users",  label: "People" },
+  { id: "posts",  label: "Posts"  },
 ];
 
 // ── Inner search component ────────────────────────────────────────────────────
@@ -156,26 +171,17 @@ function SearchInner() {
   const initialQ    = searchParams.get("q") ?? "";
   const initialCats = searchParams.get("categories") ?? "";
   const initialWhen = searchParams.get("when") ?? "";
-  const isSurprise  = searchParams.get("surprise") === "1";
-
-  // For "Surprise Me" flow: show AI panel with a cleaner prompt
-  const aiQuery = isSurprise
-    ? "Surprise me with something perfect for my vibe and Pulse Score tonight"
-    : initialQ;
 
   const [tab, setTab] = useState<SearchTab>("all");
-  const [showAI, setShowAI] = useState(isSurprise);
-  const aiPanelRef = useRef<HTMLDivElement>(null);
 
   // localQ tracks live typing via onQueryChange — updates results without router.push
   const [localQ, setLocalQ] = useState(initialQ);
-  // Sync back when URL changes (e.g. user navigates with Back or hits Search button)
   useEffect(() => { setLocalQ(initialQ); }, [initialQ]);
 
-  const debouncedQ    = useDebounce(isSurprise ? "" : localQ, 300);
+  const debouncedQ    = useDebounce(localQ, 300);
   const debouncedCats = useDebounce(initialCats, 300);
 
-  const hasQuery = !isSurprise && (debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0);
+  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0;
 
   const {
     data,
@@ -183,7 +189,7 @@ function SearchInner() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery<SearchResult>({
+  } = useInfiniteQuery<SearchApiResponse>({
     queryKey: ["search", debouncedQ, tab, debouncedCats, initialWhen],
     queryFn: ({ pageParam }) =>
       fetchSearch(debouncedQ, tab, debouncedCats, initialWhen, pageParam as string | undefined),
@@ -193,56 +199,29 @@ function SearchInner() {
     staleTime: 60_000,
   });
 
-  const allPages = data?.pages ?? [];
-  const events   = allPages.flatMap((p) => p.events);
-  const users    = allPages.flatMap((p) => p.users);
-  const posts = allPages.flatMap((p) => p.posts);
+  // Empty-state discovery (no query)
+  const { data: discoveryData, isLoading: discoveryLoading } = useInfiniteQuery<SearchApiResponse>({
+    queryKey: ["search-discovery"],
+    queryFn: () => fetchSearch("", "all", "", ""),
+    initialPageParam: undefined,
+    getNextPageParam: () => undefined,
+    enabled: !hasQuery,
+    staleTime: 5 * 60_000,
+  });
 
-  // ── Surprise Me mode: show only AI panel ──────────────────────────────────
-  if (isSurprise) {
-    return (
-      <main className="page-grid min-h-screen pb-36 md:pb-24">
-        <section className="container-shell px-4 pb-6 pt-8 md:py-10">
-          <div className="mx-auto max-w-3xl space-y-5">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3E9E1A] to-[#5FBF2A] shadow-[0_4px_16px_rgba(95,191,42,0.35)]">
-                <Sparkle size={18} weight="fill" className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-                  Your AI Pick for Tonight
-                </h1>
-                <p className="text-[12px] text-[var(--text-tertiary)]">
-                  Personalized for you based on your vibe and Pulse Score
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => router.push("/search")}
-                className="ml-auto rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--text-secondary)] transition hover:bg-[var(--bg-card)]"
-              >
-                Browse all
-              </button>
-            </div>
-
-            {/* AI Chat Panel — auto-fires surprise query */}
-            <AIChatPanel
-              initialQuery={aiQuery}
-              onDismiss={() => router.push("/search")}
-            />
-          </div>
-        </section>
-      </main>
-    );
-  }
+  const allPages     = data?.pages ?? [];
+  const events       = allPages.flatMap((p) => p.events);
+  const users        = allPages.flatMap((p) => p.users);
+  const posts        = allPages.flatMap((p) => p.posts);
+  const discovery    = discoveryData?.pages?.[0]?.discovery ?? [];
+  const currentIntent = allPages[0]?.intent;
 
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
       <section className="container-shell px-4 pb-6 pt-8 md:py-10">
         <div className="mx-auto max-w-3xl space-y-6">
 
-          {/* ── Search bar (search page owns this; header hides its pill on /search) ── */}
+          {/* ── Search bar ── */}
           <SearchPillExpanded
             initialQuery={initialQ}
             initialCategories={initialCats ? initialCats.split(",") : []}
@@ -267,44 +246,55 @@ function SearchInner() {
             ))}
           </div>
 
-          {/* ── AI banner / chat panel — shown after results ── */}
+          {/* ── AI CTA — routes to /ai, not inline panel ── */}
           {localQ.length >= 2 && (
-            <div ref={aiPanelRef}>
-              {showAI ? (
-                <AIChatPanel
-                  initialQuery={aiQuery}
-                  onDismiss={() => setShowAI(false)}
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAI(true);
-                    setTimeout(() => aiPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
-                  }}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-dashed border-[#5FBF2A]/50 bg-[#f0fae6] px-5 py-4 text-left transition hover:bg-[#e6f7d9] active:scale-[0.99]"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3E9E1A] to-[#5FBF2A] shadow-[0_4px_14px_rgba(95,191,42,0.32)]">
-                    <Sparkle size={16} weight="fill" className="text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-[#1a5c0a]">Not finding what you&rsquo;re looking for?</p>
-                    <p className="text-[12px] text-[#3E9E1A]/80">Ask our personalized AI — it knows your vibe</p>
-                  </div>
-                  <ArrowRight size={16} weight="bold" className="shrink-0 text-[#5FBF2A]" />
-                </button>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => router.push(aiSearchHref(localQ))}
+              className="flex w-full items-center gap-4 rounded-2xl border border-dashed border-[#5FBF2A]/50 bg-[#f0fae6] px-5 py-4 text-left transition hover:bg-[#e6f7d9] active:scale-[0.99]"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3E9E1A] to-[#5FBF2A] shadow-[0_4px_14px_rgba(95,191,42,0.32)]">
+                <Sparkle size={16} weight="fill" className="text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-[#1a5c0a]">Not finding what you&rsquo;re looking for?</p>
+                <p className="text-[12px] text-[#3E9E1A]/80">Ask our AI — it knows Accra&rsquo;s event scene</p>
+              </div>
+              <ArrowRight size={16} weight="bold" className="shrink-0 text-[#5FBF2A]" />
+            </button>
           )}
 
-          {/* ── Empty state ── */}
-          {!hasQuery && (
-            <div className="flex flex-col items-center gap-3 py-20 text-center">
-              <MagnifyingGlass size={36} className="text-[var(--text-tertiary)]" weight="light" />
-              <p className="text-[14px] text-[var(--text-tertiary)]">
-                Use the search bar above — pick a vibe, date, or let AI surprise you
+          {/* ── AI offer from intent parser ── */}
+          {currentIntent?.shouldOfferAi && hasQuery && events.length < 3 && (
+            <button
+              type="button"
+              onClick={() => router.push(aiSearchHref(debouncedQ))}
+              className="flex w-full items-center gap-3 rounded-2xl border border-[#5FBF2A]/30 bg-[#f0fae6] px-4 py-3.5 text-left transition hover:bg-[#e6f7d9] active:scale-[0.99]"
+            >
+              <Sparkle size={15} weight="fill" className="text-[#3E9E1A]" />
+              <p className="text-[13px] text-[#1a5c0a]">
+                This looks like a planning query — <span className="font-semibold">let AI help</span>
               </p>
-            </div>
+              <ArrowRight size={14} weight="bold" className="ml-auto shrink-0 text-[#5FBF2A]" />
+            </button>
+          )}
+
+          {/* ── Empty state — discovery modules ── */}
+          {!hasQuery && (
+            discoveryLoading ? (
+              <Skeleton count={3} />
+            ) : discovery.length > 0 ? (
+              <div className="space-y-8">
+                {discovery.map((m, i) => <DiscoverySection key={i} module={m} />)}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-20 text-center">
+                <MagnifyingGlass size={36} className="text-[var(--text-tertiary)]" weight="light" />
+                <p className="text-[14px] text-[var(--text-tertiary)]">
+                  Use the search bar above — pick a vibe, date, or let AI surprise you
+                </p>
+              </div>
+            )
           )}
 
           {/* ── Results ── */}
@@ -351,6 +341,13 @@ function SearchInner() {
                     <div className="flex flex-col items-center gap-3 py-16 text-center">
                       <p className="text-[14px] font-semibold text-[var(--text-primary)]">No results found</p>
                       <p className="text-[13px] text-[var(--text-tertiary)]">Try different keywords or pick another category.</p>
+                      <button
+                        type="button"
+                        onClick={() => router.push(aiSearchHref(localQ))}
+                        className="mt-2 flex items-center gap-2 rounded-full bg-[#5FBF2A] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#4da823]"
+                      >
+                        <Sparkle size={13} weight="fill" /> Ask AI instead
+                      </button>
                     </div>
                   )}
 

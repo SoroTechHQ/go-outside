@@ -372,10 +372,16 @@ export function AICoreChat({
   activeChatId,
   compact = false,
   onChatIdChange,
+  initialPrompt,
+  autoSendInitialPrompt = false,
+  onInitialPromptConsumed,
 }: {
   activeChatId?: string | null;
   compact?: boolean;
   onChatIdChange?: (id: string | null) => void;
+  initialPrompt?: string;
+  autoSendInitialPrompt?: boolean;
+  onInitialPromptConsumed?: () => void;
 }) {
   const [chatId, setChatId] = useState<string | null>(activeChatId ?? null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -387,6 +393,9 @@ export function AICoreChat({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastUserMsg = useRef("");
   const abortRef = useRef<AbortController | null>(null);
+  // Ref guard prevents double-fire in React StrictMode and ensures we only
+  // auto-send the initial prompt once even if the component re-renders.
+  const initialPromptFiredRef = useRef(false);
 
   useEffect(() => { setChatId(activeChatId ?? null); }, [activeChatId]);
 
@@ -429,6 +438,27 @@ export function AICoreChat({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading, activeTools]);
+
+  // Auto-send or prefill the initial prompt from URL handoff (e.g. /ai?prompt=...&autosend=1)
+  useEffect(() => {
+    if (!initialPrompt || initialPromptFiredRef.current) return;
+    // Don't fire if an existing chat is being loaded — wait until messages settle
+    if (activeChatId) return;
+    initialPromptFiredRef.current = true;
+    if (autoSendInitialPrompt) {
+      // Small delay so the component is fully mounted and streaming is ready
+      const t = setTimeout(() => {
+        sendMessage(initialPrompt);
+        onInitialPromptConsumed?.();
+      }, 80);
+      return () => clearTimeout(t);
+    } else {
+      setInput(initialPrompt);
+      onInitialPromptConsumed?.();
+    }
+    // sendMessage is stable via useCallback; including it would cause infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt, autoSendInitialPrompt, activeChatId]);
 
   useEffect(() => {
     const el = textareaRef.current;

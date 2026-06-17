@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AIDashboardClient from "../../dashboard/ai/AIDashboardClient";
 
 type Props = {
@@ -6,5 +7,9 @@ type Props = {
 
 export default async function AIChatPage({ params }: Props) {
   const { chatId } = await params;
-  return <AIDashboardClient initialChatId={chatId} />;
+  return (
+    <Suspense fallback={null}>
+      <AIDashboardClient initialChatId={chatId} />
+    </Suspense>
+  );
 }

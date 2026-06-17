@@ -39,6 +39,10 @@ const DEMO_THREADS: Record<string, { text: string; sender: string }[]> = {
 };
 
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Demo seed is disabled in production" }, { status: 403 });
+  }
+
   const clerk = await currentUser();
   if (!clerk) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

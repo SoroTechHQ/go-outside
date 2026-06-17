@@ -74,8 +74,8 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
                     style={{
                       height: `${130 - easedHomeProgress * 22}px`,
                       background: `linear-gradient(180deg,
-                        rgba(var(--brand-rgb),${0.16 + easedHomeProgress * 0.08}),
-                        rgba(var(--brand-rgb),${0.05 + easedHomeProgress * 0.06}) 38%,
+                        rgba(var(--brand-rgb),${0.06 + easedHomeProgress * 0.04}),
+                        rgba(var(--brand-rgb),${0.02 + easedHomeProgress * 0.02}) 38%,
                         rgba(255,255,255,0) 100%)`,
                     }}
                   />
@@ -83,11 +83,11 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
                     className="absolute inset-x-0 top-0"
                     style={{
                       height: `${90 + easedHomeProgress * 22}px`,
-                      opacity: 0.46 + easedHomeProgress * 0.34,
+                      opacity: 0.22 + easedHomeProgress * 0.28,
                       background: `linear-gradient(180deg,
-                        rgba(var(--bg-card-rgb),0.99) 0%,
-                        rgba(var(--bg-card-rgb),0.96) 46%,
-                        rgba(var(--bg-card-rgb),${0.56 - easedHomeProgress * 0.1}) 78%,
+                        rgba(var(--bg-card-rgb),0.92) 0%,
+                        rgba(var(--bg-card-rgb),0.82) 46%,
+                        rgba(var(--bg-card-rgb),${0.32 - easedHomeProgress * 0.1}) 78%,
                         rgba(var(--bg-card-rgb),0) 100%)`,
                     }}
                   />
