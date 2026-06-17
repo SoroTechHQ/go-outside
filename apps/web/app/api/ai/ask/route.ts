@@ -76,37 +76,58 @@ function collectEventIds(rawToolResults: Record<string, unknown>): string[] {
   return ids;
 }
 
-function buildSystemPrompt(validEventIds: string[] = []) {
-  const now = new Date().toLocaleString("en-GH", {
+function ghanaTime() {
+  return new Date().toLocaleString("en-GH", {
     weekday: "long", month: "long", day: "numeric",
     hour: "numeric", minute: "2-digit", hour12: true,
     timeZone: "Africa/Accra",
   });
+}
+
+// Turn 1: decide which tools to call
+function buildToolSelectionPrompt() {
+  return `You are GoOutside's AI event guide for Ghana. Today is ${ghanaTime()}.
+
+Your ONLY job right now is to decide which tools to call in parallel.
+
+MANDATORY RULES:
+- ALWAYS call get_user_profile with every request — no exceptions.
+- ALWAYS call at least one event search tool (search_events, get_budget_options, get_trending_events, or get_friends_activity).
+- NEVER respond with text. ONLY return tool calls.
+- ANY mention of events, activities, plans, budget, friends, trending, free, cheap, near, tonight, weekend → call search_events.
+- Short follow-up chips like "Free events only", "Near Osu", "Under GHS 100", "Near Accra" are SEARCH QUERIES — call search_events immediately.
+
+TOOL MAPPING:
+- "free events", "cheap", "under GHS X" → get_budget_options + get_user_profile
+- "trending", "popular", "what's hot" → get_trending_events + get_user_profile
+- "friends", "people I know", "going with" → get_friends_activity + get_user_profile
+- everything else → search_events + get_user_profile
+
+Do not explain. Do not ask questions. Just call the tools.`;
+}
+
+// Turn 2: generate the final response after tools have run
+function buildResponsePrompt(validEventIds: string[] = []) {
   const idList = validEventIds.length
-    ? `\nVALID EVENT IDs (only use these):\n${validEventIds.join("\n")}`
+    ? `\nVALID EVENT IDs — only use UUIDs from this list:\n${validEventIds.join("\n")}`
     : "";
 
-  return `You are GoOutside's AI — a sharp event guide for Ghana. Today is ${now}.
+  return `You are GoOutside's AI event guide for Ghana. Today is ${ghanaTime()}.
 
-NON-NEGOTIABLE RULES:
+The tools have already run. Their results are in the conversation above.
+Your ONLY job now is to write the final JSON response.
 
-1. ALWAYS CALL TOOLS FIRST. Never respond before calling tools. Never ask for more info first.
-2. ALWAYS CALL get_user_profile IN PARALLEL with event searches.
-3. ACT IMMEDIATELY — "food near me" → search_events(query="food", category="food-drink")
-4. NEVER INVENT EVENTS. Only use data from tool results. If tools return 0 events, say so honestly.
-   NEVER make up event names, venues, IDs, or slugs.${idList}
-5. followUps = 3-5 word action chips (not questions). "Free events only", "Near Osu", "Under GHS 100"
+STRICT RULES:
+- NEVER say "Calling tools to find..." — tools are already done.
+- NEVER say "I will search for..." or describe future actions.
+- NEVER invent events, venues, IDs, or prices not in the tool results.
+- If tools returned 0 events: say so in 1-2 honest sentences. Do NOT say you'll search again.
+- If tools returned events: name them specifically (event title, venue, price from the data).${idList}
 
-TOOL STRATEGY:
-- General query → get_user_profile + search_events (parallel)
-- Budget query → get_user_profile + get_budget_options (parallel)
-- Trending → get_user_profile + get_trending_events (parallel)
-- Friends → get_friends_activity + get_user_profile
+OUTPUT — respond with ONLY this JSON, no other text:
+{"message":"1-3 sentences using real data from tool results. Be specific: name events, prices, venues.","picks":[{"event_id":"exact uuid","title":"exact title from tools","reason":"why it fits the user"}],"followUps":["3-5 word chip","3-5 word chip","3-5 word chip"]}
 
-RESPONSE FORMAT (strict JSON):
-{"message":"2-4 sentences with REAL event names/prices from tools","picks":[{"event_id":"exact uuid from tools","title":"exact title","reason":"why this fits user"}],"followUps":["Chip 1","Chip 2","Chip 3"]}
-
-Max 4 picks. Prices: "GHS 150" format.`;
+Max 4 picks. Prices in "GHS 150" format. followUps are short action chips, not questions.`;
 }
 
 function parseFinalResponse(
@@ -258,7 +279,7 @@ export async function POST(req: NextRequest) {
 
         // ── Turn 1: tool selection ──────────────────────────────────────────
         const turn1Messages: GroqMessage[] = [
-          { role: "system", content: buildSystemPrompt() },
+          { role: "system", content: buildToolSelectionPrompt() },
           ...history.slice(-10),
           { role: "user", content: message },
         ];
@@ -320,7 +341,7 @@ export async function POST(req: NextRequest) {
         const validEventIds = collectEventIds(rawToolResults);
 
         const turn2Messages: GroqMessage[] = [
-          { role: "system", content: buildSystemPrompt(validEventIds) },
+          { role: "system", content: buildResponsePrompt(validEventIds) },
           ...history.slice(-10),
           { role: "user", content: message },
           {
