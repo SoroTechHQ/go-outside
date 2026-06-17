@@ -70,7 +70,11 @@ export async function POST(req: NextRequest) {
       media_urls: image_url ? [image_url] : [],
       event_id:   event_id ?? null,
     })
-    .select()
+    .select(`
+      id, body, media_urls, likes_count, created_at, event_id,
+      users!posts_user_id_fkey(id, first_name, last_name, username, avatar_url, clerk_id),
+      events!posts_event_id_fkey(id, title, slug, banner_url)
+    `)
     .single();
 
   if (error) {

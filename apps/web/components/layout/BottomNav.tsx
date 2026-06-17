@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  CalendarPlus,
   ChartBar,
   ChatCircleDots,
   House,
@@ -52,8 +51,7 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   ];
 
   if (role === "organizer" || role === "admin") {
-    items.push({ href: "/organizer/events/new", icon: CalendarPlus, label: "Host" });
-    items.push({ href: "/organizer",            icon: ChartBar,     label: "Org"  });
+    items.push({ href: "/organizer", icon: ChartBar, label: "Organizer" });
   }
 
   return (

@@ -713,12 +713,13 @@ function MessagesShell({
       setActiveChannel(channel);
       startTransition(() => {
         setSelectedChannelCid(channel.cid);
-        if (isMobile) setMobilePane("thread");
+        // Always set thread pane — the desktop cleanup effect resets it to "list" if not mobile
+        setMobilePane("thread");
       });
     };
 
     openDm().catch(console.error);
-  }, [dmUserId, client, identity.id, isMobile, setActiveChannel]);
+  }, [dmUserId, client, identity.id, setActiveChannel]);
 
   useEffect(() => {
     if (starterChannelCid && !selectedChannelCid) {

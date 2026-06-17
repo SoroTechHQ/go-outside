@@ -1803,6 +1803,25 @@ a {
 
   .go-stream-chat--mobile-thread .str-chat__list {
     padding-inline: 0.2rem;
+    /* Extra bottom clearance so last message isn't hidden behind the bottom nav */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+
+  /* Push the message input above the fixed bottom nav bar */
+  .go-stream-chat--mobile-thread .str-chat__input-flat,
+  .go-stream-chat--mobile-thread .str-chat__message-input {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+
+  /* Also pad the custom GoMessageInput wrapper */
+  .go-stream-chat--mobile-thread .go-message-input {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+
+  /* Pad channel list so bottom conversations aren't hidden behind the nav */
+  .go-stream-chat__sidebar .str-chat__channel-list,
+  .go-stream-chat__sidebar .str-chat__channel-list-messenger {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 
   .go-stream-compose {
@@ -1818,7 +1837,8 @@ a {
     border-radius: 0;
     box-shadow: none;
     height: 100%;
-    max-height: 100dvh;
+    /* Account for fixed bottom nav so content isn't clipped */
+    max-height: calc(100dvh - 80px - env(safe-area-inset-bottom));
     max-width: none;
     width: 100%;
   }
@@ -1832,13 +1852,15 @@ a {
   }
 
   .go-stream-compose--mobile .go-stream-compose__results {
-    padding: 0.9rem 0.7rem 1rem;
+    padding: 0.9rem 0.7rem calc(1rem + env(safe-area-inset-bottom));
   }
 }
 
 .app-content {
   position: relative;
-  z-index: 10;
+  /* No z-index here — avoids creating a stacking context that traps fixed
+     modals/sheets at a level below the BottomNav. Fixed children compete
+     at root stacking context level and win over the nav by DOM order. */
 }
 
 .no-scrollbar {
