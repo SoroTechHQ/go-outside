@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { aiSearchHref } from "../../lib/search/ai-search-href";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   MagnifyingGlass,
@@ -37,69 +38,120 @@ const CATEGORIES: Category[] = [
   { slug: "nightlife",  label: "Nightlife",    icon: <Moon size={16} weight="duotone" /> },
 ];
 
+// Date chips now include Today and Tonight, matching resolveWhen in lib/search
 const DATE_CHIPS = [
-  { label: "This weekend", value: "weekend" },
+  { label: "Today",        value: "today"     },
+  { label: "Tonight",      value: "tonight"   },
+  { label: "Tomorrow",     value: "tomorrow"  },
+  { label: "This weekend", value: "weekend"   },
   { label: "Next week",    value: "next-week" },
-  { label: "This month",   value: "month" },
-  { label: "Any time",     value: "" },
+  { label: "This month",   value: "month"     },
+  { label: "Any time",     value: ""          },
 ];
 
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS      = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DOWS = ["S","M","T","W","T","F","S"];
 
-// ── Mini calendar ──────────────────────────────────────────────────────────────
+// Format a Date to YYYY-MM-DD in local time
+function toDateString(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
-function MiniCalendar({ rangeStart, rangeEnd, onSelect }: {
-  rangeStart: number | null; rangeEnd: number | null; onSelect: (day: number) => void;
+// ── Mini calendar — controlled, uses full YYYY-MM-DD dates ────────────────────
+//
+// `offsetMonths`: how many months forward from today's month to display.
+// The two calendars in the When panel share rangeStart/rangeEnd state managed
+// by the parent, so cross-month ranges work correctly.
+
+function MiniCalendar({
+  rangeStart,
+  rangeEnd,
+  offsetMonths = 0,
+  viewYear,
+  viewMonth,
+  onSelect,
+  onPrev,
+  onNext,
+  hidePrev = false,
+  hideNext = false,
+}: {
+  rangeStart: string | null;   // YYYY-MM-DD
+  rangeEnd: string | null;     // YYYY-MM-DD
+  offsetMonths?: number;
+  viewYear: number;
+  viewMonth: number;           // 0-based
+  onSelect: (dateStr: string) => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  hidePrev?: boolean;
+  hideNext?: boolean;
 }) {
   const today = new Date();
-  const [month, setMonth] = useState(today.getMonth());
-  const [year, setYear] = useState(today.getFullYear());
+  const todayStr = toDateString(today);
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay     = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth  = new Date(viewYear, viewMonth + 1, 0).getDate();
 
-  const changeMonth = (dir: 1 | -1) => {
-    const next = new Date(year, month + dir, 1);
-    setMonth(next.getMonth());
-    setYear(next.getFullYear());
-  };
-
-  const isToday = (d: number) => today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
-  const isPast = (d: number) => new Date(year, month, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const isSelected = (d: number) => d === rangeStart || d === rangeEnd;
-  const inRange = (d: number) => rangeStart !== null && rangeEnd !== null && d > rangeStart && d < rangeEnd;
+  const isToday    = (d: number) => toDateString(new Date(viewYear, viewMonth, d)) === todayStr;
+  const isPast     = (d: number) => toDateString(new Date(viewYear, viewMonth, d)) < todayStr;
+  const dateStr    = (d: number) => `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const isSelected = (d: number) => dateStr(d) === rangeStart || dateStr(d) === rangeEnd;
+  const inRange    = (d: number) =>
+    rangeStart !== null && rangeEnd !== null &&
+    dateStr(d) > rangeStart && dateStr(d) < rangeEnd;
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <button type="button" onClick={() => changeMonth(-1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)]">
+        <button
+          type="button"
+          onClick={onPrev}
+          disabled={hidePrev}
+          className={`flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] ${hidePrev ? "invisible" : ""}`}
+        >
           <CaretLeft size={13} weight="bold" />
         </button>
-        <span className="text-[13px] font-semibold text-[var(--text-primary)]">{MONTHS[month]} {year}</span>
-        <button type="button" onClick={() => changeMonth(1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)]">
+        <span className="text-[13px] font-semibold text-[var(--text-primary)]">
+          {MONTHS[viewMonth]} {viewYear}
+        </span>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={hideNext}
+          className={`flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] ${hideNext ? "invisible" : ""}`}
+        >
           <CaretRight size={13} weight="bold" />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-0.5">
-        {DOWS.map((d, i) => <div key={i} className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">{d}</div>)}
-        {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
-        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
-          <button
-            key={d} type="button" disabled={isPast(d)} onClick={() => onSelect(d)}
-            className={[
-              "rounded-lg py-1.5 text-center text-[12px] transition",
-              isPast(d) ? "cursor-default opacity-40 text-[var(--text-tertiary)]" : "hover:bg-[var(--bg-muted)]",
-              isToday(d) ? "font-bold text-[#5FBF2A]" : "text-[var(--text-primary)]",
-              isSelected(d) ? "!bg-[#5FBF2A] !text-white font-bold" : "",
-              inRange(d) ? "!bg-[#f0fae6] !text-[#3E9E1A]" : "",
-            ].filter(Boolean).join(" ")}
-          >{d}</button>
+        {DOWS.map((d, i) => (
+          <div key={i} className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">{d}</div>
         ))}
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => {
+          const ds = dateStr(d);
+          return (
+            <button
+              key={d}
+              type="button"
+              disabled={isPast(d)}
+              onClick={() => onSelect(ds)}
+              className={[
+                "rounded-lg py-1.5 text-center text-[12px] transition",
+                isPast(d) ? "cursor-default opacity-40 text-[var(--text-tertiary)]" : "hover:bg-[var(--bg-muted)]",
+                isToday(d) ? "font-bold text-[#5FBF2A]" : "text-[var(--text-primary)]",
+                isSelected(d) ? "!bg-[#5FBF2A] !text-white font-bold" : "",
+                inRange(d) ? "!bg-[#f0fae6] !text-[#3E9E1A]" : "",
+              ].filter(Boolean).join(" ")}
+            >{d}</button>
+          );
+        })}
       </div>
-      {rangeStart && rangeEnd && (
-        <p className="mt-2 text-center text-[11px] font-semibold text-[#3E9E1A]">{MONTHS_SHORT[month]} {rangeStart} – {rangeEnd}</p>
+      {rangeStart && rangeEnd && rangeStart.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`) && (
+        <p className="mt-2 text-center text-[11px] font-semibold text-[#3E9E1A]">
+          {MONTHS_SHORT[viewMonth]} {Number(rangeStart.slice(8))} – {rangeEnd.slice(5).replace("-", " / ")}
+        </p>
       )}
     </div>
   );
@@ -136,8 +188,12 @@ export function SearchPillExpanded({
   const [active, setActive] = useState<ActiveSegment>(initialActive);
   const [selectedCats, setSelectedCats] = useState<string[]>(initialCategories);
   const [whenChip, setWhenChip] = useState(initialWhen);
-  const [rangeStart, setRangeStart] = useState<number | null>(null);
-  const [rangeEnd, setRangeEnd] = useState<number | null>(null);
+  // Full YYYY-MM-DD date strings, not day numbers — cross-month ranges work correctly
+  const [rangeStart, setRangeStart] = useState<string | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+  // Controlled calendar state: first calendar month; second is always +1
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [surpriseLoading, setSurpriseLoading] = useState(false);
   const [surpriseDone, setSurpriseDone] = useState(false);
   const [query, setQuery] = useState(initialQuery);
@@ -179,10 +235,31 @@ export function SearchPillExpanded({
     setSelectedCats((prev) => prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]);
   }, []);
 
-  const handleCalendarSelect = (d: number) => {
-    if (!rangeStart || (rangeStart && rangeEnd)) { setRangeStart(d); setRangeEnd(null); }
-    else if (d > rangeStart) setRangeEnd(d);
-    else { setRangeStart(d); setRangeEnd(null); }
+  const handleCalendarSelect = (dateStr: string) => {
+    if (!rangeStart || (rangeStart && rangeEnd)) {
+      setRangeStart(dateStr);
+      setRangeEnd(null);
+    } else if (dateStr > rangeStart) {
+      setRangeEnd(dateStr);
+    } else {
+      setRangeStart(dateStr);
+      setRangeEnd(null);
+    }
+  };
+
+  const calNextMonth = () => {
+    const next = new Date(calYear, calMonth + 1, 1);
+    setCalYear(next.getFullYear());
+    setCalMonth(next.getMonth());
+  };
+
+  const calPrevMonth = () => {
+    const prev = new Date(calYear, calMonth - 1, 1);
+    // Don't go before current month
+    const now = new Date();
+    if (prev.getFullYear() < now.getFullYear() || (prev.getFullYear() === now.getFullYear() && prev.getMonth() < now.getMonth())) return;
+    setCalYear(prev.getFullYear());
+    setCalMonth(prev.getMonth());
   };
 
   // Debounced typeahead with abort controller
@@ -230,7 +307,8 @@ export function SearchPillExpanded({
     setActive(null);
     try {
       setSurpriseDone(true);
-      setTimeout(() => router.push(`/search?q=Surprise me with something perfect for my vibe&surprise=1`), 350);
+      // Route to the AI chat page with the prompt auto-sent — not an inline panel
+      setTimeout(() => router.push(aiSearchHref("Surprise me with something perfect for my vibe and Pulse Score tonight")), 350);
     } finally {
       setSurpriseLoading(false);
     }
@@ -242,12 +320,11 @@ export function SearchPillExpanded({
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
     if (selectedCats.length > 0) params.set("categories", selectedCats.join(","));
-    if (whenChip) params.set("when", whenChip);
-    else if (rangeStart && rangeEnd) {
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), rangeStart).toISOString().slice(0, 10);
-      const to   = new Date(now.getFullYear(), now.getMonth(), rangeEnd).toISOString().slice(0, 10);
-      params.set("when", `${from}:${to}`);
+    if (whenChip) {
+      params.set("when", whenChip);
+    } else if (rangeStart && rangeEnd) {
+      // Full YYYY-MM-DD strings → resolveWhen handles the range
+      params.set("when", `${rangeStart}:${rangeEnd}`);
     }
     router.push(`/search?${params.toString()}`);
   };
@@ -261,7 +338,9 @@ export function SearchPillExpanded({
 
   const whenDisplay = whenChip
     ? DATE_CHIPS.find((c) => c.value === whenChip)?.label ?? whenChip
-    : (rangeStart && rangeEnd ? `${MONTHS_SHORT[new Date().getMonth()]} ${rangeStart}–${rangeEnd}` : null);
+    : (rangeStart && rangeEnd
+        ? `${MONTHS_SHORT[Number(rangeStart.slice(5, 7)) - 1]} ${Number(rangeStart.slice(8))} – ${MONTHS_SHORT[Number(rangeEnd.slice(5, 7)) - 1]} ${Number(rangeEnd.slice(8))}`
+        : null);
 
   const pillH = compact ? "h-12" : "h-[68px]";
   const segPx = compact ? "px-4" : "px-6";
@@ -529,9 +608,37 @@ export function SearchPillExpanded({
                         >{chip.label}</motion.button>
                       ))}
                     </div>
+                    {/* Two-month calendar: first = calMonth, second = calMonth+1 */}
                     <div className="grid grid-cols-2 gap-6">
-                      <MiniCalendar rangeStart={rangeStart} rangeEnd={rangeEnd} onSelect={handleCalendarSelect} />
-                      <MiniCalendar rangeStart={rangeStart} rangeEnd={rangeEnd} onSelect={handleCalendarSelect} />
+                      {(() => {
+                        const nextDate  = new Date(calYear, calMonth + 1, 1);
+                        const nextYear  = nextDate.getFullYear();
+                        const nextMonth = nextDate.getMonth();
+                        return (
+                          <>
+                            <MiniCalendar
+                              rangeStart={rangeStart}
+                              rangeEnd={rangeEnd}
+                              viewYear={calYear}
+                              viewMonth={calMonth}
+                              onSelect={handleCalendarSelect}
+                              onPrev={calPrevMonth}
+                              onNext={calNextMonth}
+                              hideNext
+                            />
+                            <MiniCalendar
+                              rangeStart={rangeStart}
+                              rangeEnd={rangeEnd}
+                              viewYear={nextYear}
+                              viewMonth={nextMonth}
+                              onSelect={handleCalendarSelect}
+                              onPrev={calPrevMonth}
+                              onNext={calNextMonth}
+                              hidePrev
+                            />
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-[var(--bg-muted)]/40 px-5 py-3">

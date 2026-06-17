@@ -84,7 +84,7 @@ export function MessagesFAB() {
         {isOpen ? (
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="glass-card fixed bottom-24 right-24 z-[60] hidden w-[320px] flex-col overflow-hidden md:flex"
+            className="glass-card fixed bottom-24 right-24 z-[60] hidden w-[320px] flex-col overflow-hidden md:flex rounded-3xl"
             exit={{ opacity: 0, scale: 0.96, y: 20 }}
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             transition={{ duration: 0.25, ease: "easeOut" }}

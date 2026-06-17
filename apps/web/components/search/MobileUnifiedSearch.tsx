@@ -1,34 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowRight,
   ClockCounterClockwise,
   Fire,
   MagnifyingGlass,
-  MapPin,
-  PaperPlaneTilt,
   Sparkle,
+  Ticket,
+  UserCircle,
   X,
 } from "@phosphor-icons/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CategoryIcon } from "../../lib/category-icons";
+import { aiSearchHref } from "../../lib/search/ai-search-href";
 
 const categories = [
-  { slug: "music",      name: "Music" },
-  { slug: "food-drink", name: "Food & Drink" },
-  { slug: "arts",       name: "Arts" },
-  { slug: "tech",       name: "Tech" },
-  { slug: "sports",     name: "Sports" },
+  { slug: "music",      name: "Music"      },
+  { slug: "food-drink", name: "Food & Drink"},
+  { slug: "arts",       name: "Arts"       },
+  { slug: "tech",       name: "Tech"       },
+  { slug: "sports",     name: "Sports"     },
   { slug: "networking", name: "Networking" },
-  { slug: "nightlife",  name: "Nightlife" },
-  { slug: "wellness",   name: "Wellness" },
+  { slug: "nightlife",  name: "Nightlife"  },
+  { slug: "wellness",   name: "Wellness"   },
 ];
-import type { EventItem } from "@gooutside/demo-data";
-const events: EventItem[] = [];
-import { thumbnailUrl } from "../../lib/image-url";
-import type { AssistantResponse } from "../../lib/ai-assistant";
+
+type Suggestion = {
+  id: string;
+  title: string;
+  slug: string;
+  type: "event" | "user";
+  subtitle?: string;
+};
 
 type MobileUnifiedSearchProps = {
   className?: string;
@@ -39,11 +43,10 @@ type MobileUnifiedSearchProps = {
   onSearch?: (query: string) => void;
 };
 
-type PanelMode = "search" | "ai";
-
-const RECENT_SEARCHES = ["Afrofuture 2025", "Osu rooftop", "Jazz under the stars"];
+const RECENT_SEARCHES   = ["Afrofuture 2025", "Osu rooftop", "Jazz under the stars"];
 const TRENDING_SEARCHES = ["Detty December events", "Rug Tufting Workshop", "Build Ghana Summit"];
-const QUICK_PROMPTS = [
+
+const AI_QUICK_PROMPTS = [
   "Something free and chill tonight",
   "Live music in Osu this weekend",
   "Best networking event this week",
@@ -61,45 +64,67 @@ export function MobileUnifiedSearch({
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const aiInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
-  const [panelMode, setPanelMode] = useState<PanelMode>("search");
   const [query, setQuery] = useState(value);
-  const [aiQuery, setAiQuery] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<AssistantResponse | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const suggestDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => { setQuery(value); }, [value]);
 
   useEffect(() => {
-    setQuery(value);
-  }, [value]);
+    if (open) {
+      const t = setTimeout(() => inputRef.current?.focus(), 120);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
 
-  useEffect(() => {
-    if (!open) {
+  // ── Live typeahead using /api/search ────────────────────────────────────────
+  const fetchSuggestions = useCallback((q: string) => {
+    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
+    abortRef.current?.abort();
+
+    if (!q.trim()) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
       return;
     }
 
-    const timer = setTimeout(() => {
-      if (panelMode === "search") {
-        inputRef.current?.focus();
-      } else {
-        aiInputRef.current?.focus();
+    setSuggestionsLoading(true);
+    suggestDebounceRef.current = setTimeout(async () => {
+      abortRef.current = new AbortController();
+      try {
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(q)}&type=all&limit=6`,
+          { signal: abortRef.current.signal },
+        );
+        if (res.ok) {
+          const data = await res.json() as {
+            events: { id: string; title: string; slug: string }[];
+            users: { clerk_id: string; first_name: string | null; last_name: string | null; username: string | null }[];
+          };
+          const eventSuggestions: Suggestion[] = (data.events ?? []).map((e) => ({
+            id: e.id, title: e.title, slug: e.slug, type: "event" as const,
+          }));
+          const userSuggestions: Suggestion[] = (data.users ?? []).slice(0, 2).map((u) => ({
+            id: u.clerk_id,
+            title: [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || "User",
+            slug: u.username ? `/go/${u.username}` : `/dashboard/user/${u.clerk_id}`,
+            type: "user" as const,
+            subtitle: u.username ? `@${u.username}` : undefined,
+          }));
+          setSuggestions([...eventSuggestions, ...userSuggestions].slice(0, 7));
+        }
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") setSuggestions([]);
+      } finally {
+        setSuggestionsLoading(false);
       }
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [open, panelMode]);
+    }, 200);
+  }, []);
 
   const visibleLabel = value.trim() || emptyLabel;
-  const normalizedQuery = query.trim().toLowerCase();
-  const suggestions = normalizedQuery
-    ? events
-        .filter((event) =>
-          `${event.title} ${event.shortDescription} ${event.venue} ${event.city}`
-            .toLowerCase()
-            .includes(normalizedQuery),
-        )
-        .slice(0, 6)
-    : [];
 
   const runSearch = (nextQuery: string) => {
     const trimmed = nextQuery.trim();
@@ -107,60 +132,32 @@ export function MobileUnifiedSearch({
       onSearch(trimmed);
     } else {
       const params = new URLSearchParams(searchParams.toString());
-      if (trimmed) {
-        params.set("q", trimmed);
-      } else {
-        params.delete("q");
-      }
+      if (trimmed) params.set("q", trimmed); else params.delete("q");
       const href = params.toString() ? `/search?${params.toString()}` : "/search";
       router.push(href);
     }
     setQuery(trimmed);
     setOpen(false);
-    setPanelMode("search");
+    setSuggestions([]);
   };
 
   const runCategorySearch = (slug: string) => {
     router.push(`/search?categories=${slug}`);
     setOpen(false);
-    setPanelMode("search");
+    setSuggestions([]);
   };
 
-  const askAssistant = async (message: string) => {
-    const trimmed = message.trim();
-    if (!trimmed) {
-      return;
-    }
-
-    setAiLoading(true);
-    setAiResult(null);
-
-    try {
-      const res = await fetch("/api/ai/weekend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
-      });
-      const data = (await res.json()) as AssistantResponse;
-      setAiResult(data);
-    } catch {
-      setAiResult({
-        intro: "I couldn't pull AI picks right now.",
-        summary: "Try again in a moment and I will pull matching live events from the site.",
-        followUps: [],
-        picks: [],
-        totalMatches: 0,
-        searchHref: null,
-      });
-    } finally {
-      setAiLoading(false);
-    }
+  const handleQueryChange = (q: string) => {
+    setQuery(q);
+    fetchSuggestions(q);
   };
 
   const closePanel = () => {
     setOpen(false);
-    setPanelMode("search");
+    setSuggestions([]);
   };
+
+  const normalizedQuery = query.trim().toLowerCase();
 
   return (
     <>
@@ -169,10 +166,7 @@ export function MobileUnifiedSearch({
       >
         <button
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          onClick={() => {
-            setPanelMode("search");
-            setOpen(true);
-          }}
+          onClick={() => setOpen(true)}
           type="button"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white">
@@ -186,13 +180,11 @@ export function MobileUnifiedSearch({
           </div>
         </button>
 
+        {/* AI button — routes directly to /ai (no inline overlay) */}
         <button
           aria-label="Open AI search"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--brand)] transition active:scale-95"
-          onClick={() => {
-            setPanelMode("ai");
-            setOpen(true);
-          }}
+          onClick={() => router.push(aiSearchHref("What's happening in Accra this weekend?"))}
           type="button"
         >
           <Sparkle size={13} weight="fill" />
@@ -218,373 +210,186 @@ export function MobileUnifiedSearch({
               style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
               transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="flex items-center gap-2 px-4 pb-2 pt-4">
-                <button
-                  className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    panelMode === "search"
-                      ? "bg-[var(--brand)] text-white"
-                      : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"
-                  }`}
-                  onClick={() => setPanelMode("search")}
-                  type="button"
-                >
-                  Search
-                </button>
-                <button
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    panelMode === "ai"
-                      ? "bg-[var(--brand)] text-white"
-                      : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"
-                  }`}
-                  onClick={() => setPanelMode("ai")}
-                  type="button"
-                >
-                  <Sparkle size={14} weight="fill" />
-                  AI Search
-                </button>
+              {/* Input row */}
+              <div className="flex items-center gap-3 px-4 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
+                  <MagnifyingGlass size={18} weight="bold" />
+                </div>
+                <input
+                  ref={inputRef}
+                  className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] caret-[var(--brand)]"
+                  onChange={(e) => handleQueryChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") runSearch(query);
+                    if (e.key === "Escape") closePanel();
+                  }}
+                  placeholder={searchPlaceholder}
+                  value={query}
+                />
+                {query ? (
+                  <button
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-tertiary)] transition active:scale-95"
+                    onClick={() => { setQuery(""); setSuggestions([]); inputRef.current?.focus(); }}
+                    type="button"
+                  >
+                    <X size={14} weight="bold" />
+                  </button>
+                ) : (
+                  <button
+                    className="text-sm font-semibold text-[var(--text-secondary)] transition active:scale-95"
+                    onClick={closePanel}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
 
-              {panelMode === "search" ? (
-                <>
-                  <div className="flex items-center gap-3 px-4 py-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
-                      <MagnifyingGlass size={18} weight="bold" />
-                    </div>
-                    <input
-                      ref={inputRef}
-                      className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] caret-[var(--brand)]"
-                      onChange={(event) => setQuery(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          runSearch(query);
-                        }
-                        if (event.key === "Escape") {
-                          closePanel();
-                        }
-                      }}
-                      placeholder={searchPlaceholder}
-                      value={query}
-                    />
-                    {query ? (
-                      <button
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-tertiary)] transition active:scale-95"
-                        onClick={() => setQuery("")}
-                        type="button"
-                      >
-                        <X size={14} weight="bold" />
-                      </button>
-                    ) : (
-                      <button
-                        className="text-sm font-semibold text-[var(--text-secondary)] transition active:scale-95"
-                        onClick={closePanel}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
+              <div className="h-px bg-[var(--border-subtle)]" />
+
+              <div className="max-h-[70vh] overflow-y-auto px-4 py-3">
+                {normalizedQuery ? (
+                  <div>
+                    {/* Live suggestions */}
+                    {suggestionsLoading && (
+                      <div className="flex items-center gap-2 py-2 text-[12px] text-[var(--text-tertiary)]">
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)]/30 border-t-[var(--brand)]" />
+                        Searching…
+                      </div>
                     )}
-                  </div>
 
-                  <div className="h-px bg-[var(--border-subtle)]" />
-
-                  <div className="max-h-[70vh] overflow-y-auto px-4 py-3">
-                    {normalizedQuery ? (
-                      <div>
-                        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                          Matching events
+                    {suggestions.length > 0 && (
+                      <div className="mb-3">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+                          Quick results
                         </p>
-                        {suggestions.length > 0 ? (
-                          <div className="space-y-1">
-                            {suggestions.map((event) => (
-                              <button
-                                key={event.id}
-                                className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-[var(--bg-muted)] active:bg-[var(--bg-muted)]"
-                                onClick={() => {
-                                  router.push(`/events/${event.slug}`);
-                                  closePanel();
-                                }}
-                                type="button"
-                              >
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-muted)] text-[var(--text-tertiary)]">
-                                  <MagnifyingGlass size={14} />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">
-                                    {event.title}
-                                  </p>
-                                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                                    {event.dateLabel} · {event.venue}
-                                  </p>
-                                </div>
-                                <span className="shrink-0 rounded-full bg-[var(--brand-dim)] px-2.5 py-1 text-[10px] font-semibold text-[var(--brand)]">
-                                  {event.city}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : (
+                        <div className="space-y-1">
+                          {suggestions.map((s) => (
+                            <button
+                              key={s.id}
+                              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[var(--bg-muted)] active:bg-[var(--bg-muted)]"
+                              onClick={() => {
+                                if (s.type === "user") router.push(s.slug);
+                                else router.push(`/events/${s.slug}`);
+                                closePanel();
+                              }}
+                              type="button"
+                            >
+                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${s.type === "event" ? "bg-[#f0fae6] text-[#5FBF2A]" : "bg-[var(--bg-muted)] text-[var(--text-tertiary)]"}`}>
+                                {s.type === "event" ? <Ticket size={14} weight="duotone" /> : <UserCircle size={14} weight="duotone" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-[var(--text-primary)]">{s.title}</p>
+                                {s.subtitle && <p className="text-xs text-[var(--text-tertiary)]">{s.subtitle}</p>}
+                              </div>
+                              <span className="shrink-0 rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
+                                {s.type === "event" ? "Event" : "Person"}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Search all + Ask AI CTAs */}
+                    <div className="space-y-1.5">
+                      <button
+                        className="flex w-full items-center gap-3 rounded-2xl bg-[var(--bg-muted)] px-4 py-3.5 text-left text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+                        onClick={() => runSearch(query)}
+                        type="button"
+                      >
+                        <MagnifyingGlass size={15} className="shrink-0 text-[var(--text-tertiary)]" />
+                        Search for &ldquo;{query.trim()}&rdquo;
+                      </button>
+
+                      <button
+                        className="flex w-full items-center gap-3 rounded-2xl border border-[#5FBF2A]/30 bg-[#f0fae6] px-4 py-3.5 text-left text-sm font-medium text-[#1a5c0a] transition hover:bg-[#e6f7d9]"
+                        onClick={() => { router.push(aiSearchHref(query.trim())); closePanel(); }}
+                        type="button"
+                      >
+                        <Sparkle size={15} className="shrink-0 text-[#5FBF2A]" weight="fill" />
+                        Ask AI about &ldquo;{query.trim()}&rdquo;
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {/* Recent searches */}
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Recent</p>
+                      <div className="space-y-0.5">
+                        {RECENT_SEARCHES.map((item) => (
                           <button
-                            className="w-full rounded-2xl bg-[var(--bg-muted)] px-4 py-4 text-left text-sm text-[var(--text-secondary)]"
-                            onClick={() => runSearch(query)}
+                            key={item}
+                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)]"
+                            onClick={() => runSearch(item)}
                             type="button"
                           >
-                            Search for “{query.trim()}”
+                            <ClockCounterClockwise size={16} className="shrink-0 text-[var(--text-tertiary)]" />
+                            {item}
                           </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        <div>
-                          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                            Recent
-                          </p>
-                          <div className="space-y-0.5">
-                            {RECENT_SEARCHES.map((item) => (
-                              <button
-                                key={item}
-                                className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] active:bg-[var(--bg-muted)]"
-                                onClick={() => runSearch(item)}
-                                type="button"
-                              >
-                                <ClockCounterClockwise size={16} className="shrink-0 text-[var(--text-tertiary)]" />
-                                {item}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                            Trending
-                          </p>
-                          <div className="space-y-0.5">
-                            {TRENDING_SEARCHES.map((item) => (
-                              <button
-                                key={item}
-                                className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)] active:bg-[var(--bg-muted)]"
-                                onClick={() => runSearch(item)}
-                                type="button"
-                              >
-                                <Fire size={16} className="shrink-0 text-[var(--brand)]" />
-                                {item}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
-                            Browse
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {categories.map((category) => (
-                              <button
-                                key={category.slug}
-                                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3.5 py-2 text-sm text-[var(--text-secondary)] transition active:scale-95"
-                                onClick={() => runCategorySearch(category.slug)}
-                                type="button"
-                              >
-                                <CategoryIcon slug={category.slug} size={12} weight="bold" className="inline-block" /> {category.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="px-4 py-4">
-                    <div className="mb-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white">
-                          <Sparkle size={16} weight="fill" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--text-primary)]">
-                            Ask for the vibe, not just keywords
-                          </p>
-                          <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
-                            Try prompts like “rooftop drinks on Friday” or “best networking event this week”.
-                          </p>
-                        </div>
+                        ))}
                       </div>
                     </div>
 
-                    {!aiResult && !aiLoading ? (
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        {QUICK_PROMPTS.map((prompt) => (
+                    {/* Trending */}
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Trending</p>
+                      <div className="space-y-0.5">
+                        {TRENDING_SEARCHES.map((item) => (
+                          <button
+                            key={item}
+                            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-muted)]"
+                            onClick={() => runSearch(item)}
+                            type="button"
+                          >
+                            <Fire size={16} className="shrink-0 text-[var(--brand)]" />
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* AI quick prompts */}
+                    <div>
+                      <div className="mb-2 flex items-center gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Ask AI</p>
+                        <Sparkle size={10} weight="fill" className="text-[#5FBF2A]" />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {AI_QUICK_PROMPTS.map((prompt) => (
                           <button
                             key={prompt}
-                            className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[12px] font-medium text-[var(--text-secondary)] transition active:scale-95"
-                            onClick={() => {
-                              setAiQuery(prompt);
-                              void askAssistant(prompt);
-                            }}
+                            className="rounded-full border border-[#5FBF2A]/30 bg-[#f0fae6] px-3 py-1.5 text-[12px] font-medium text-[#1a5c0a] transition active:scale-95"
+                            onClick={() => { router.push(aiSearchHref(prompt)); closePanel(); }}
                             type="button"
                           >
                             {prompt}
                           </button>
                         ))}
                       </div>
-                    ) : null}
+                    </div>
 
-                    <form
-                      className="flex items-center gap-2"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void askAssistant(aiQuery);
-                      }}
-                    >
-                      <input
-                        ref={aiInputRef}
-                        className="flex-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-4 py-3 text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-                        onChange={(event) => setAiQuery(event.target.value)}
-                        placeholder="Ask for an event, vibe, date, area, or budget…"
-                        value={aiQuery}
-                      />
-                      <button
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-[0_4px_12px_rgba(47,143,69,0.28)] transition active:scale-95 disabled:opacity-50 disabled:shadow-none"
-                        disabled={!aiQuery.trim() || aiLoading}
-                        type="submit"
-                      >
-                        <PaperPlaneTilt size={16} weight="fill" />
-                      </button>
-                    </form>
-                  </div>
-
-                  <div className="h-px bg-[var(--border-subtle)]" />
-
-                  <div className="max-h-[65vh] overflow-y-auto px-4 py-4">
-                    {aiLoading ? (
-                      <div className="flex items-center gap-2.5 rounded-2xl bg-[var(--bg-muted)] px-4 py-4">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
-                        <span className="text-sm text-[var(--text-secondary)]">
-                          Pulling matching live events from the site…
-                        </span>
-                      </div>
-                    ) : aiResult ? (
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <p className="text-sm text-[var(--text-secondary)]">{aiResult.intro}</p>
-                          <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">{aiResult.summary}</p>
-                          {aiResult.totalMatches > 0 && (
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--brand)]">
-                              {aiResult.totalMatches} live match{aiResult.totalMatches === 1 ? "" : "es"}
-                            </p>
-                          )}
-                        </div>
-
-                        {aiResult.picks.length === 0 ? (
-                          <p className="rounded-2xl bg-[var(--bg-muted)] px-4 py-4 text-sm text-[var(--text-secondary)]">
-                            No AI picks came back yet. Try a more specific vibe or date.
-                          </p>
-                        ) : (
-                          aiResult.picks.map((pick) => (
-                            <button
-                              key={pick.event_id}
-                              className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-muted)] p-3 text-left transition hover:border-[var(--brand)]/30 hover:bg-[var(--bg-card-hover)]"
-                              onClick={() => {
-                                if (pick.event?.slug) {
-                                  router.push(`/events/${pick.event.slug}`);
-                                  closePanel();
-                                }
-                              }}
-                              type="button"
-                            >
-                              {pick.event?.banner_url ? (
-                                <img
-                                  alt={pick.title}
-                                  className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                                  src={thumbnailUrl(pick.event.banner_url) ?? pick.event.banner_url}
-                                />
-                              ) : (
-                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-dim)] text-[var(--brand)]">
-                                  <Sparkle size={18} weight="fill" />
-                                </div>
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
-                                  {pick.title}
-                                </p>
-                                <p className="mt-1 line-clamp-2 text-[11px] text-[var(--text-secondary)]">
-                                  {pick.reason}
-                                </p>
-                                {pick.event && (
-                                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--text-tertiary)]">
-                                    <span>
-                                      {new Date(pick.event.start_datetime).toLocaleDateString("en-GH", {
-                                        weekday: "short",
-                                        month: "short",
-                                        day: "numeric",
-                                      })}
-                                    </span>
-                                    {pick.event.venue_name && (
-                                      <span className="flex items-center gap-1">
-                                        <MapPin size={10} />
-                                        {pick.event.venue_name}
-                                      </span>
-                                    )}
-                                    <span>{pick.event.price_label}</span>
-                                  </div>
-                                )}
-                              </div>
-                              <ArrowRight size={14} className="shrink-0 text-[var(--text-tertiary)]" />
-                            </button>
-                          ))
-                        )}
-
-                        {aiResult.followUps.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {aiResult.followUps.map((prompt) => (
-                              <button
-                                key={prompt}
-                                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition active:scale-95"
-                                onClick={() => {
-                                  setAiQuery(prompt);
-                                  void askAssistant(prompt);
-                                }}
-                                type="button"
-                              >
-                                {prompt}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {aiResult.searchHref && aiResult.picks.length > 0 && (
+                    {/* Category browse */}
+                    <div>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">Browse</p>
+                      <div className="flex flex-wrap gap-2">
+                        {categories.map((cat) => (
                           <button
-                            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--brand)]"
-                            onClick={() => {
-                              router.push(aiResult.searchHref as string);
-                              closePanel();
-                            }}
+                            key={cat.slug}
+                            className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3.5 py-2 text-sm text-[var(--text-secondary)] transition active:scale-95"
+                            onClick={() => runCategorySearch(cat.slug)}
                             type="button"
                           >
-                            See all matching events
-                            <ArrowRight size={12} />
+                            <CategoryIcon slug={cat.slug} size={12} weight="bold" className="inline-block mr-1" />
+                            {cat.name}
                           </button>
-                        )}
-
-                        <button
-                          className="text-[12px] font-semibold text-[var(--brand)]"
-                          onClick={() => {
-                            setAiResult(null);
-                            aiInputRef.current?.focus();
-                          }}
-                          type="button"
-                        >
-                          Ask something else
-                        </button>
+                        ))}
                       </div>
-                    ) : (
-                      <p className="rounded-2xl bg-[var(--bg-muted)] px-4 py-4 text-sm text-[var(--text-secondary)]">
-                        Tap a prompt or ask for the kind of event you want.
-                      </p>
-                    )}
+                    </div>
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </motion.div>
           </>
         )}
