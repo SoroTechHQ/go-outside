@@ -27,7 +27,7 @@ export function EventPreviewCard({ event, variant, onClick }: EventPreviewCardPr
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
-      className="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-[16px] border border-black/[0.08] bg-white text-left shadow-[0_2px_8px_rgba(0,0,0,0.07)] transition-all duration-200 hover:-translate-y-[4px] hover:border-[rgba(47,143,69,0.30)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+      className="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-[16px] border border-black/[0.10] bg-white text-left shadow-[0_4px_16px_rgba(0,0,0,0.10),0_1px_3px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-[4px] hover:border-[rgba(47,143,69,0.35)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
     >
       {/* Image */}
       <div className="relative w-full shrink-0 overflow-hidden" style={{ height: imgH }}>
