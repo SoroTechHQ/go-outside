@@ -11,7 +11,6 @@ import {
   House,
   MagnifyingGlass,
   UserCircle,
-  Users,
 } from "@phosphor-icons/react";
 
 type BottomNavRole = "attendee" | "organizer" | "admin";
@@ -48,7 +47,6 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const items: BottomNavItem[] = [
     { href: "/",         icon: House,          label: "Home" },
     { href: "/trending", icon: MagnifyingGlass, label: "Explore" },
-    { href: "/people",   icon: Users,           label: "People" },
     { href: "/messages", icon: ChatCircleDots,  label: "Messages", badge: msgUnread },
     { href: "/profile",  icon: UserCircle,      label: "Profile" },
   ];

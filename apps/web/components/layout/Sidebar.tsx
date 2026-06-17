@@ -15,7 +15,6 @@ import {
   SignOut,
   SunDim,
   UserCircle,
-  Users,
   Wallet,
 } from "@phosphor-icons/react";
 import { usePathname, useRouter } from "next/navigation";
@@ -98,7 +97,6 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
   const navItems: NavItem[] = [
     { href: "/", label: "Home", icon: House },
     { href: "/trending", label: "Explore", icon: MagnifyingGlass },
-    { href: "/people", label: "People", icon: Users },
     { href: "/messages", label: "Messages", icon: ChatCircleDots, unread: true },
     { href: "/wallets", label: "Wallet", icon: Wallet },
     { href: "/notifications", label: "Notifications", icon: Bell, activeWeight: "fill" },

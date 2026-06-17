@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowRight,
   BookmarkSimple,
   CalendarBlank,
   ChatCircleDots,
@@ -20,6 +21,7 @@ import {
   Sparkle,
   Ticket,
   TrendUp,
+  UserCirclePlus,
   UsersThree,
   Warning,
   X,
@@ -705,6 +707,135 @@ function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCa
   );
 }
 
+// ── People you may know — right rail widget ───────────────────
+
+type SidebarPerson = {
+  id: string;
+  name: string;
+  username: string | null;
+  avatarUrl: string | null;
+  reason: string;
+  isFollowing: boolean;
+  followedBy: boolean;
+};
+
+function PeopleSidebarWidget() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["people-sidebar"],
+    queryFn: async () => {
+      const res = await fetch("/api/social/people?limit=3");
+      if (!res.ok) return { users: [] };
+      const json = await res.json() as { users: SidebarPerson[] };
+      return json;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const people = (data?.users ?? []).slice(0, 3);
+
+  if (!isLoading && people.length === 0) return null;
+
+  return (
+    <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <UserCirclePlus size={14} weight="fill" className="text-[var(--brand)]" />
+          <h3 className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">People you may know</h3>
+        </div>
+        <Link className="text-xs font-medium text-[var(--brand)]" href="/people">See all</Link>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-2.5 animate-pulse">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-[var(--bg-muted)]" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-24 rounded bg-[var(--bg-muted)]" />
+                <div className="h-2.5 w-32 rounded bg-[var(--bg-muted)]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {people.map((person) => (
+            <PersonSidebarRow key={person.id} person={person} />
+          ))}
+        </div>
+      )}
+
+      <Link
+        href="/people"
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-2 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/30 hover:text-[var(--brand)]"
+      >
+        View more
+        <ArrowRight size={12} weight="bold" />
+      </Link>
+    </section>
+  );
+}
+
+function PersonSidebarRow({ person }: { person: SidebarPerson }) {
+  const [following, setFollowing] = useState(person.isFollowing);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = useCallback(async () => {
+    setLoading(true);
+    const next = !following;
+    setFollowing(next);
+    try {
+      await fetch("/api/social/follows", {
+        method: next ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: person.id }),
+      });
+    } catch {
+      setFollowing(!next);
+    } finally {
+      setLoading(false);
+    }
+  }, [following, person.id]);
+
+  const href = person.username ? `/go/${person.username}` : `/dashboard/user/${person.id}`;
+
+  return (
+    <div className="flex items-center gap-2.5 rounded-[12px] p-1.5 transition hover:bg-[var(--bg-elevated)]">
+      <Link href={href} className="shrink-0">
+        <div className="h-9 w-9 overflow-hidden rounded-full bg-[var(--bg-muted)]">
+          {person.avatarUrl ? (
+            <Image src={person.avatarUrl} alt={person.name} width={36} height={36} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-[#4a9f63]/20 text-[11px] font-bold text-[#4a9f63]">
+              {person.name[0]?.toUpperCase()}
+            </div>
+          )}
+        </div>
+      </Link>
+      <div className="min-w-0 flex-1">
+        <Link href={href}>
+          <p className="truncate text-[12px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand)]">{person.name}</p>
+        </Link>
+        <p className="truncate text-[10px] text-[var(--text-tertiary)]">{person.reason}</p>
+      </div>
+      <button
+        onClick={toggle}
+        disabled={loading}
+        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition disabled:opacity-60 ${
+          following
+            ? "border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:border-red-500/30 hover:text-red-500"
+            : person.followedBy
+              ? "border border-[var(--brand)] bg-[var(--bg-card)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black"
+              : "bg-[var(--brand)] text-black hover:opacity-90"
+        }`}
+        type="button"
+      >
+        {following ? "Following" : person.followedBy ? "Follow back" : "Follow"}
+      </button>
+    </div>
+  );
+}
+
 // ── Main HomeClient component ──────────────────────────────────
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -1155,6 +1286,9 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                       })}
                     </div>
                   </section>
+
+                  {/* People you may know */}
+                  <PeopleSidebarWidget />
                 </motion.aside>
               ) : null}
             </AnimatePresence>
