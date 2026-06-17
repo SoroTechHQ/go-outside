@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTracking } from "../tracking/TrackingProvider";
 import Link from "next/link";
+import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -714,16 +715,20 @@ type SidebarPerson = {
   name: string;
   username: string | null;
   avatarUrl: string | null;
-  reason: string;
+  reason: string | null;
   isFollowing: boolean;
   followedBy: boolean;
+  pulseTier: string | null;
+  city: string | null;
+  mutualCount: number;
+  followerCount: number;
 };
 
 function PeopleSidebarWidget() {
   const { data, isLoading } = useQuery({
     queryKey: ["people-sidebar"],
     queryFn: async () => {
-      const res = await fetch("/api/social/people?limit=3");
+      const res = await fetch("/api/social/people?limit=4");
       if (!res.ok) return { users: [] };
       const json = await res.json() as { users: SidebarPerson[] };
       return json;
@@ -731,47 +736,55 @@ function PeopleSidebarWidget() {
     staleTime: 5 * 60_000,
   });
 
-  const people = (data?.users ?? []).slice(0, 3);
+  const people = (data?.users ?? []).slice(0, 4);
 
   if (!isLoading && people.length === 0) return null;
 
   return (
-    <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] p-4 shadow-[var(--home-shadow)]">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <UserCirclePlus size={14} weight="fill" className="text-[var(--brand)]" />
-          <h3 className="text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">People you may know</h3>
+    <section className="rounded-[var(--radius-card)] border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[var(--home-shadow)]">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <UserCirclePlus size={13} weight="fill" className="text-[var(--brand)]" />
+            <h3 className="text-[0.88rem] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">People you may know</h3>
+          </div>
+          <p className="mt-0.5 text-[10px] text-[var(--text-tertiary)]">Based on your interests and connections</p>
         </div>
-        <Link className="text-xs font-medium text-[var(--brand)]" href="/people">See all</Link>
+        <Link className="shrink-0 text-[11px] font-semibold text-[var(--brand)]" href="/people">See all</Link>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex items-center gap-2.5 animate-pulse">
-              <div className="h-9 w-9 shrink-0 rounded-full bg-[var(--bg-muted)]" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-24 rounded bg-[var(--bg-muted)]" />
-                <div className="h-2.5 w-32 rounded bg-[var(--bg-muted)]" />
+      {/* Cards */}
+      <div className="divide-y divide-[var(--border-subtle)]">
+        {isLoading ? (
+          [0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-[var(--bg-muted)]" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-28 rounded-full bg-[var(--bg-muted)]" />
+                <div className="h-2.5 w-20 rounded-full bg-[var(--bg-muted)]" />
+                <div className="h-4 w-16 rounded-full bg-[var(--bg-muted)]" />
               </div>
+              <div className="h-7 w-16 shrink-0 rounded-full bg-[var(--bg-muted)]" />
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {people.map((person) => (
+          ))
+        ) : (
+          people.map((person) => (
             <PersonSidebarRow key={person.id} person={person} />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
-      <Link
-        href="/people"
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-2 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/30 hover:text-[var(--brand)]"
-      >
-        View more
-        <ArrowRight size={12} weight="bold" />
-      </Link>
+      {/* Footer CTA */}
+      <div className="px-4 py-3">
+        <Link
+          href="/people"
+          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-2 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/30 hover:text-[var(--brand)]"
+        >
+          Explore the community
+          <ArrowRight size={11} weight="bold" />
+        </Link>
+      </div>
     </section>
   );
 }
@@ -799,34 +812,77 @@ function PersonSidebarRow({ person }: { person: SidebarPerson }) {
 
   const href = person.username ? `/go/${person.username}` : `/dashboard/user/${person.id}`;
 
+  // Pick a reason icon based on the reason text
+  const reasonIcon = person.reason?.toLowerCase().includes("mutual")
+    ? <UsersThree size={9} weight="fill" />
+    : person.reason?.toLowerCase().includes("follows")
+      ? <UserCirclePlus size={9} weight="fill" />
+      : <MapPin size={9} weight="fill" />;
+
   return (
-    <div className="flex items-center gap-2.5 rounded-[12px] p-1.5 transition hover:bg-[var(--bg-elevated)]">
-      <Link href={href} className="shrink-0">
-        <div className="h-9 w-9 overflow-hidden rounded-full bg-[var(--bg-muted)]">
+    <div className="group flex items-start gap-3 px-4 py-3 transition hover:bg-[var(--bg-elevated)]">
+      {/* NaviiAvatar or real photo */}
+      <Link href={href} className="shrink-0 mt-0.5">
+        <div className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-transparent transition group-hover:ring-[var(--brand)]/25">
           {person.avatarUrl ? (
-            <Image src={person.avatarUrl} alt={person.name} width={36} height={36} className="h-full w-full object-cover" />
+            <Image src={person.avatarUrl} alt={person.name} width={40} height={40} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-[#4a9f63]/20 text-[11px] font-bold text-[#4a9f63]">
-              {person.name[0]?.toUpperCase()}
-            </div>
+            <NaviiAvatar seed={person.username ?? person.name} size={40} title={person.name} className="h-full w-full" />
+          )}
+          {/* Online-style pulse dot if they follow back */}
+          {person.followedBy && !following && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[var(--bg-card)] bg-[var(--brand)]" />
           )}
         </div>
       </Link>
+
+      {/* Info block */}
       <div className="min-w-0 flex-1">
-        <Link href={href}>
-          <p className="truncate text-[12px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand)]">{person.name}</p>
-        </Link>
-        <p className="truncate text-[10px] text-[var(--text-tertiary)]">{person.reason}</p>
+        {/* Name row */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Link href={href}>
+            <p className="text-[12px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand)] transition-colors">{person.name}</p>
+          </Link>
+          {person.pulseTier && (
+            <span className="rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-1.5 py-0.5 text-[9px] font-bold text-[var(--brand)]">
+              {person.pulseTier}
+            </span>
+          )}
+        </div>
+
+        {/* Username + city */}
+        <div className="mt-0.5 flex items-center gap-1 flex-wrap">
+          {person.username && (
+            <span className="text-[10px] text-[var(--text-tertiary)]">@{person.username}</span>
+          )}
+          {person.city && (
+            <span className="flex items-center gap-0.5 text-[10px] text-[var(--text-tertiary)]">
+              {person.username && <span>·</span>}
+              <MapPin size={8} weight="fill" className="text-[var(--brand)]/60" />
+              {person.city}
+            </span>
+          )}
+        </div>
+
+        {/* Reason chip — why they're suggested */}
+        {person.reason && (
+          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--brand-dim)] px-2 py-0.5 text-[10px] font-semibold text-[var(--brand)]">
+            {reasonIcon}
+            {person.reason}
+          </span>
+        )}
       </div>
+
+      {/* Follow button */}
       <button
         onClick={toggle}
         disabled={loading}
-        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition disabled:opacity-60 ${
+        className={`mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition active:scale-95 disabled:opacity-50 ${
           following
-            ? "border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:border-red-500/30 hover:text-red-500"
+            ? "border border-[var(--border-default)] bg-transparent text-[var(--text-tertiary)] hover:border-red-400/40 hover:text-red-400"
             : person.followedBy
-              ? "border border-[var(--brand)] bg-[var(--bg-card)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black"
-              : "bg-[var(--brand)] text-black hover:opacity-90"
+              ? "border border-[var(--brand)] bg-transparent text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black"
+              : "bg-[var(--brand)] text-black hover:opacity-85"
         }`}
         type="button"
       >
@@ -835,6 +891,7 @@ function PersonSidebarRow({ person }: { person: SidebarPerson }) {
     </div>
   );
 }
+
 
 // ── Main HomeClient component ──────────────────────────────────
 
