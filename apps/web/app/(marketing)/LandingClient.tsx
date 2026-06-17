@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowDown,
+  UserCirclePlus,
 } from "@phosphor-icons/react";
 import { EventPreviewCard } from "../../components/landing/EventPreviewCard";
 import { LockModal }        from "../../components/landing/LockModal";
@@ -19,15 +20,17 @@ import { TickerBar }        from "../../components/landing/TickerBar";
 import { AnimatedCounter }  from "../../components/landing/AnimatedCounter";
 import type { LandingEvent, TickerEvent } from "../../lib/landing-data";
 
-/* ── Typewriter ──────────────────────────────────────────────────────── */
+/* ── Typewriter (search bar placeholder cycling) ─────────────────── */
 
 const TYPEWRITER_PHRASES = [
-  "Detty December events",
-  "Afrofuture 2025",
-  "Rug Tufting Workshop",
-  "Ga Rooftop After Hours",
-  "Build Ghana Summit",
-  "Jazz in Accra",
+  "Karnival Kingdom · Apr 25",
+  "Rapperholic 2026",
+  "Chale Wote · August",
+  "things to do this weekend",
+  "Bhim Festival · Dec 24",
+  "jazz nights in Accra",
+  "Accra Food Festival",
+  "beach vibes in Labadi",
 ];
 
 function useTypewriter(active: boolean) {
@@ -47,10 +50,10 @@ function useTypewriter(active: boolean) {
         setDisplay(phrase.slice(0, charIdx.current));
         if (charIdx.current === phrase.length) {
           deleting.current = true;
-          timeout = setTimeout(tick, 2000);
+          timeout = setTimeout(tick, 2200);
           return;
         }
-        timeout = setTimeout(tick, 80);
+        timeout = setTimeout(tick, 72);
       } else {
         charIdx.current--;
         setDisplay(phrase.slice(0, charIdx.current));
@@ -60,7 +63,7 @@ function useTypewriter(active: boolean) {
           timeout = setTimeout(tick, 300);
           return;
         }
-        timeout = setTimeout(tick, 40);
+        timeout = setTimeout(tick, 38);
       }
     }
 
@@ -71,7 +74,7 @@ function useTypewriter(active: boolean) {
   return display;
 }
 
-/* ── Search loader overlay ───────────────────────────────────────────── */
+/* ── Search loader overlay ───────────────────────────────────────── */
 
 const SEARCH_TEXTS = ["Finding events…", "Checking the scene…", "Almost there…"];
 
@@ -132,7 +135,7 @@ function SearchLoader({ query }: { query: string }) {
   );
 }
 
-/* ── Variants ────────────────────────────────────────────────────────── */
+/* ── Variants ────────────────────────────────────────────────────── */
 
 const containerVariants = {
   hidden:  {},
@@ -160,8 +163,6 @@ function AnimatedSection({ children, className = "" }: { children: React.ReactNo
   );
 }
 
-/* ── Client-side shuffle (runs once per page load, never again) ──────── */
-
 function clientShuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -171,19 +172,18 @@ function clientShuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/* ── Props ───────────────────────────────────────────────────────────── */
+/* ── Props ───────────────────────────────────────────────────────── */
 
 interface LandingClientProps {
   events:      LandingEvent[];
   tickerItems: TickerEvent[];
 }
 
-/* ── Page ────────────────────────────────────────────────────────────── */
+/* ── Page ────────────────────────────────────────────────────────── */
 
 export function LandingClient({ events, tickerItems }: LandingClientProps) {
   const router = useRouter();
 
-  // Shuffle once on mount — stable for this user's session, different per visitor
   const [displayEvents] = useState<LandingEvent[]>(() => clientShuffle(events));
 
   const [searchVal,     setSearchVal]     = useState("");
@@ -209,12 +209,13 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   function scrollRow(dir: number) {
-    scrollRef.current?.scrollBy({ left: dir * 420, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir * 360, behavior: "smooth" });
   }
 
-  const featuredEvent   = displayEvents[0]!;
-  const gridEvents      = displayEvents.slice(1, 5);
-  const recentEvents    = displayEvents.slice(1, 9);
+  const featuredEvent = displayEvents[0]!;
+  const gridEvents    = displayEvents.slice(1, 5);
+  const recentEvents  = displayEvents.slice(1, 12);
+  const mobileCards   = displayEvents.slice(0, 3);
 
   return (
     <>
@@ -222,7 +223,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       {/* ════════════════════════════════════════
           SECTION 1 — HERO
       ════════════════════════════════════════ */}
-      <section className="relative flex h-screen items-center justify-center overflow-hidden px-5">
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-5">
         {/* ── Video + shader stack ── */}
         <div className="absolute inset-0" style={{ zIndex: 0, isolation: "isolate" }}>
           <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover">
@@ -239,10 +240,10 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           />
         </div>
 
-        {/* ── Floating card left ── */}
+        {/* ── Floating card left — desktop only ── */}
         <motion.div
-          className="pointer-events-none absolute left-[calc(50%-480px)] top-1/2 hidden -translate-y-1/2 md:block"
-          style={{ rotate: -6, opacity: 0.75, willChange: "transform", zIndex: 5 }}
+          className="pointer-events-none absolute left-[calc(50%-490px)] top-1/2 hidden -translate-y-1/2 lg:block"
+          style={{ rotate: -6, opacity: 0.80, willChange: "transform", zIndex: 5 }}
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -251,10 +252,10 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           </div>
         </motion.div>
 
-        {/* ── Floating card right ── */}
+        {/* ── Floating card right — desktop only ── */}
         <motion.div
-          className="pointer-events-none absolute right-[calc(50%-480px)] top-1/2 hidden -translate-y-1/2 md:block"
-          style={{ rotate: 6, opacity: 0.75, willChange: "transform", zIndex: 5 }}
+          className="pointer-events-none absolute right-[calc(50%-490px)] top-1/2 hidden -translate-y-1/2 lg:block"
+          style={{ rotate: 6, opacity: 0.80, willChange: "transform", zIndex: 5 }}
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         >
@@ -272,7 +273,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             className="mb-5 flex flex-col items-center gap-2"
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(47,143,69,0.50)] bg-[rgba(20,60,30,0.45)] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86efac] backdrop-blur-xl shadow-[0_0_20px_rgba(47,143,69,0.15),inset_0_1px_0_rgba(255,255,255,0.08)]">
-              🇬🇭 &nbsp;Now in Accra
+              🇬🇭 &nbsp;Made in Ghana
             </span>
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
               Accra&apos;s Social Event Platform
@@ -298,12 +299,12 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="mb-8 max-w-[480px] text-[15px] font-light text-white/70 sm:text-[18px]"
+            className="mb-8 max-w-[480px] text-[15px] font-light text-white/75 sm:text-[18px]"
           >
-            Discover events. Go with friends. Build your scene.
+            Find what&apos;s on. See who&apos;s going. Go with your people.
           </motion.p>
 
-          {/* Search bar */}
+          {/* Search bar — functional from the landing page */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -311,13 +312,9 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             className="mb-7 w-full"
           >
             <div
-              role="button"
-              tabIndex={0}
-              onClick={() => triggerSearch(searchVal)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") triggerSearch(searchVal); }}
-              className="flex h-14 w-full cursor-pointer items-center rounded-full bg-white/95 backdrop-blur-md transition-all duration-200"
+              className="flex h-14 w-full items-center rounded-full bg-white/95 backdrop-blur-md transition-all duration-200"
               style={{
-                border:    searchFocused ? "1px solid rgba(47,143,69,0.50)" : "1px solid rgba(255,255,255,0.20)",
+                border:    searchFocused ? "1px solid rgba(47,143,69,0.55)" : "1px solid rgba(255,255,255,0.20)",
                 boxShadow: searchFocused ? "0 0 0 3px rgba(47,143,69,0.15), 0 4px 30px rgba(0,0,0,0.25)" : "0 4px 30px rgba(0,0,0,0.30)",
               }}
             >
@@ -329,27 +326,30 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
                   onChange={(e) => setSearchVal(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  onClick={() => triggerSearch(searchVal)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-                  className="w-full cursor-pointer bg-transparent text-[15px] text-[#0f110f] outline-none placeholder-transparent"
-                  placeholder="Search"
+                  className="w-full bg-transparent text-[15px] text-[#0f110f] outline-none placeholder-transparent"
+                  placeholder="Search events"
                   aria-label="Search events"
-                  readOnly
                 />
                 {!searchVal && !searchFocused && (
                   <span
-                    className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[15px] text-[#c0c0c0]"
+                    className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[15px] text-[#b0b0b0]"
                     aria-hidden
                   >
                     {typewriter}
                     <span className="ml-px inline-block w-[1px] animate-pulse bg-[#c0c0c0]">&nbsp;</span>
                   </span>
                 )}
+                {!searchVal && !searchFocused && !typewriter && (
+                  <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[15px] text-[#c0c0c0]" aria-hidden>
+                    Search events in Accra&hellip;
+                  </span>
+                )}
               </div>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); handleSearch(); }}
-                className="mr-2 flex h-10 items-center rounded-full bg-[#2f8f45] px-5 text-[14px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.40)] transition hover:bg-[#256f36]"
+                onClick={handleSearch}
+                className="mr-2 flex h-10 items-center rounded-full bg-[#2f8f45] px-5 text-[14px] font-bold text-white shadow-[0_2px_12px_rgba(47,143,69,0.40)] transition hover:bg-[#256f36] active:scale-95"
               >
                 Search
               </button>
@@ -361,33 +361,48 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.6 }}
-            className="flex items-center gap-6"
+            className="flex items-center gap-5"
           >
             {[
-              { num: "89K+", label: "users discovering events" },
-              { num: "340+", label: "events this month" },
-              { num: "4.9★", label: "average event rating" },
+              { num: "12K+", label: "going out in Accra" },
+              { num: "200+", label: "events this month" },
+              { num: "4.8★", label: "avg event rating" },
             ].map((stat, i) => (
-              <div key={stat.num} className="flex items-center gap-6">
+              <div key={stat.num} className="flex items-center gap-5">
                 {i > 0 && <div className="h-4 w-px bg-white/20" />}
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-[16px] font-bold text-[#4ade80]"
-                  >
-                    {stat.num}
-                  </span>
-                  <span className="text-[12px] font-light text-white/55">{stat.label}</span>
+                  <span className="text-[15px] font-bold text-[#4ade80]">{stat.num}</span>
+                  <span className="text-[11px] font-light text-white/55">{stat.label}</span>
                 </div>
               </div>
             ))}
           </motion.div>
 
-          {/* Scroll indicator */}
+          {/* Mobile event cards strip — visible on small screens only */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="mt-8 w-full lg:hidden"
+          >
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
+              Happening now
+            </p>
+            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {mobileCards.map((ev) => (
+                <div key={ev.id} className="w-[190px] shrink-0">
+                  <EventPreviewCard event={ev} variant="compact" onClick={() => openLock(ev)} />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Scroll indicator — desktop only */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.6 }}
-            className="mt-10 flex flex-col items-center gap-1.5"
+            className="mt-10 hidden flex-col items-center gap-1.5 lg:flex"
           >
             <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/35">Scroll</span>
             <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}>
@@ -403,32 +418,36 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       <TickerBar events={tickerItems} />
 
       {/* ════════════════════════════════════════
-          SECTION 2b — BRANDS / EVENTS STRIP
+          SECTION 2b — EVENTS YOU'LL FIND
       ════════════════════════════════════════ */}
       <section className="border-y border-black/[0.06] bg-[#fafafa] py-10">
         <div className="mx-auto max-w-5xl px-5 md:px-8">
           <p className="mb-6 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-[#c0c0c0]">
-            Events you&apos;ll find on GoOutside
+            What&apos;s on GoOutside right now
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
             {[
-              { name: "Afronation Ghana",      style: { fontWeight: 800, letterSpacing: "-0.02em" } },
-              { name: "Chale Wote",            style: { fontWeight: 700, fontStyle: "italic" } },
-              { name: "Tidal Rave",            style: { fontWeight: 800 } },
-              { name: "VGMA",                  style: { fontWeight: 900, letterSpacing: "0.1em" } },
-              { name: "Ghana Tech Summit",     style: { fontWeight: 600 } },
-              { name: "Osu Night Market",      style: { fontWeight: 700, fontStyle: "italic" } },
-              { name: "Detty December",        style: { fontWeight: 800 } },
-              { name: "Sankofa Sessions",      style: { fontWeight: 600, fontStyle: "italic" } },
-            ].map(({ name, style }) => (
-              <span
-                key={name}
-                className="text-[15px] text-[#b0b0b0] transition-colors hover:text-[#0f110f]"
-                style={style}
-              >
-                {name}
-              </span>
-            ))}
+              { name: "Afro Nation Ghana",              style: { fontWeight: 800, letterSpacing: "-0.02em" } },
+              { name: "Rapperholic",                    style: { fontWeight: 700, fontStyle: "italic" } },
+              { name: "Chale Wote",                     style: { fontWeight: 800 } },
+              { name: "Karnival Kingdom",               style: { fontWeight: 900, letterSpacing: "-0.01em" } },
+              { name: "Detty December",                 style: { fontWeight: 800 } },
+              { name: "Accra Food Festival",            style: { fontWeight: 600 } },
+              { name: "Bhim Festival",                  style: { fontWeight: 700, fontStyle: "italic" } },
+              { name: "Tidal Rave",                     style: { fontWeight: 800 } },
+              { name: "Chale Wote",                     style: { fontWeight: 600, fontStyle: "italic" } },
+              { name: "Jazz at Alliance Française",     style: { fontWeight: 600 } },
+            ]
+              .filter((v, i, arr) => arr.findIndex(x => x.name === v.name) === i)
+              .map(({ name, style }) => (
+                <span
+                  key={name}
+                  className="text-[15px] text-[#b0b0b0] transition-colors hover:text-[#0f110f]"
+                  style={style}
+                >
+                  {name}
+                </span>
+              ))}
           </div>
         </div>
       </section>
@@ -447,7 +466,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
               What&apos;s happening in Accra
             </h2>
             <p className="mt-1 text-[16px] font-light text-[#6f6f6f]">
-              Browse upcoming events. Sign up to save and buy tickets.
+              Sign up to save events, buy tickets, and see what your crew is going to.
             </p>
           </motion.div>
           <motion.div variants={itemVariants} className="shrink-0">
@@ -461,7 +480,6 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
         </AnimatedSection>
 
         <AnimatedSection>
-          {/* Featured + 4-card grid — featured takes ~55% on wide screens */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[55fr_45fr]">
             <motion.div variants={itemVariants} className="min-h-[420px]">
               <EventPreviewCard event={featuredEvent} variant="featured" onClick={() => openLock(featuredEvent)} />
@@ -489,7 +507,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
                 className="text-[22px] font-normal italic text-[#0f110f]"
                 style={{ fontFamily: "'DM Serif Display', serif" }}
               >
-                Happening recently
+                More events to explore
               </h3>
             </motion.div>
             <motion.div variants={itemVariants} className="flex items-center gap-3">
@@ -523,7 +541,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           {recentEvents.map((ev) => (
             <div
               key={ev.id}
-              className="w-[300px] shrink-0 sm:w-[340px]"
+              className="w-[280px] shrink-0 sm:w-[320px]"
               style={{ scrollSnapAlign: "start" }}
             >
               <EventPreviewCard event={ev} variant="standard" onClick={() => openLock(ev)} />
@@ -537,12 +555,18 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       ════════════════════════════════════════ */}
       <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
         <AnimatedSection className="mb-10 text-center">
+          <motion.p variants={itemVariants} className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">
+            How it works
+          </motion.p>
           <motion.h2
             variants={itemVariants}
             className="text-[28px] font-bold text-[#0f110f] md:text-[36px]"
           >
-            How GoOutside works
+            GoOutside is a social thing.
           </motion.h2>
+          <motion.p variants={itemVariants} className="mx-auto mt-2 max-w-[420px] text-[15px] font-light text-[#6f6f6f]">
+            It&apos;s not just about finding events. It&apos;s about going together.
+          </motion.p>
         </AnimatedSection>
 
         <AnimatedSection className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -550,26 +574,26 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             {
               icon: MagnifyingGlass,
               step: "01",
-              title: "Discover events",
-              body:  "Browse events happening across Accra and Ghana, personalised to your interests and what your friends are doing.",
+              title: "Find your vibe",
+              body:  "Browse events personalised to what you love and what your people are doing. Accra has more going on than you think.",
+            },
+            {
+              icon: UserCirclePlus,
+              step: "02",
+              title: "See who&apos;s going",
+              body:  "Follow friends, see their plans, save events as a crew. Know before you go — who from your circle is already there.",
             },
             {
               icon: Ticket,
-              step: "02",
-              title: "Get tickets in seconds",
-              body:  "Buy tickets with Paystack — card, mobile money, or bank. Your QR code arrives instantly.",
-            },
-            {
-              icon: UsersThree,
               step: "03",
-              title: "Go with your people",
-              body:  "See what your friends are attending, coordinate going together, and share post-event memories.",
+              title: "Get there. Earn more.",
+              body:  "Buy tickets with Paystack — card, MoMo, or bank. Check in with your QR code and earn Pulse Points for every event.",
             },
           ].map(({ icon: Icon, step, title, body }) => (
             <motion.div
               key={step}
               variants={itemVariants}
-              className="relative overflow-hidden rounded-[16px] border border-black/[0.07] bg-white p-7 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+              className="relative overflow-hidden rounded-[16px] border border-black/[0.07] bg-white p-7 shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
             >
               <div
                 className="absolute left-0 right-0 top-0 h-px"
@@ -584,12 +608,8 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
               <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(47,143,69,0.08)]">
                 <Icon size={28} color="#2f8f45" />
               </div>
-              <h3
-                className="mb-2 text-[20px] font-semibold text-[#0f110f]"
-              >
-                {title}
-              </h3>
-              <p className="text-[14px] font-light leading-[1.65] text-[#6f6f6f]">{body}</p>
+              <h3 className="mb-2 text-[20px] font-semibold text-[#0f110f]">{title}</h3>
+              <p className="text-[14px] font-light leading-[1.65] text-[#6f6f6f]" dangerouslySetInnerHTML={{ __html: body }} />
             </motion.div>
           ))}
         </AnimatedSection>
@@ -601,17 +621,15 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
       <section className="border-y border-black/[0.06] bg-[#f8faf8] py-10">
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-8 px-5 sm:flex-row sm:gap-0">
           {[
-            { target: 89,  suffix: "K+", label: "People going out" },
-            { target: 340, suffix: "+",  label: "Events this month" },
-            { target: 28,  suffix: "",   label: "Cities" },
-            { display: "4.9★", label: "Average rating" },
+            { target: 12,  suffix: "K+", label: "People going out" },
+            { target: 200, suffix: "+",  label: "Events this month" },
+            { target: 6,   suffix: "",   label: "Cities covered" },
+            { display: "4.8★", label: "Average rating" },
           ].map((stat, i) => (
             <div key={stat.label} className="flex flex-1 items-center">
               {i > 0 && <div className="mx-auto hidden h-12 w-px self-center bg-black/[0.07] sm:block" />}
               <div className="flex-1 text-center">
-                <p
-                  className="text-[32px] font-bold leading-none text-[#0f110f] md:text-[40px]"
-                >
+                <p className="text-[32px] font-bold leading-none text-[#0f110f] md:text-[40px]">
                   {"display" in stat && stat.display ? stat.display : (
                     <AnimatedCounter
                       target={(stat as { target: number; suffix: string; label: string }).target}
@@ -634,22 +652,20 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           <div className="space-y-5">
             <motion.div variants={itemVariants}>
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">For Organizers</p>
-              <h2
-                className="text-[28px] font-bold text-[#0f110f] md:text-[36px]"
-              >
-                Bring your events to life
+              <h2 className="text-[28px] font-bold text-[#0f110f] md:text-[36px]">
+                Turn your idea into Accra&apos;s next big event.
               </h2>
             </motion.div>
             <motion.p variants={itemVariants} className="text-[16px] font-light leading-relaxed text-[#6f6f6f]">
-              GoOutside gives you everything you need to sell tickets, manage attendees, and grow your audience in Ghana.
-              No monthly fees. Just a small platform fee per ticket sold.
+              Sell tickets, grow your audience, and track your numbers — all in one place.
+              Built for Ghana. No monthly fees. Just a small platform cut when you sell.
             </motion.p>
             <motion.ul variants={itemVariants} className="space-y-3">
               {[
-                "Live ticket sales with Paystack",
-                "Real-time attendee check-in via QR",
-                "Analytics: revenue, ticket velocity, ratings",
-                "Free to list. 5% fee on paid tickets only.",
+                "Live ticket sales with Paystack — card, MoMo, bank",
+                "Real-time attendee check-in via QR code",
+                "Analytics: revenue, ticket velocity, audience breakdown",
+                "Free to list. 5% only on paid ticket sales.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-[14px] text-[#6f6f6f]">
                   <CheckCircle size={20} color="#2f8f45" weight="fill" className="mt-0.5 shrink-0" />
@@ -670,7 +686,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           {/* Dashboard preview */}
           <motion.div variants={itemVariants}>
             <div
-              className="rounded-[16px] border border-black/[0.07] bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.07)]"
+              className="rounded-[16px] border border-black/[0.07] bg-white p-5 shadow-[0_4px_24px_rgba(0,0,0,0.09)]"
               style={{ transform: "rotate(2deg)" }}
             >
               <div className="mb-4 flex items-center justify-between">
@@ -681,25 +697,21 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
               </div>
               <div className="mb-4 grid grid-cols-3 gap-2">
                 {[
-                  { val: "GHS 12,400", lbl: "Revenue" },
-                  { val: "247",        lbl: "Tickets sold" },
+                  { val: "GHS 18,600", lbl: "Revenue" },
+                  { val: "342",        lbl: "Tickets sold" },
                   { val: "4.8★",      lbl: "Avg rating" },
                 ].map((s) => (
                   <div key={s.lbl} className="rounded-[10px] bg-[#f5f5f5] px-3 py-2.5">
-                    <p
-                      className="text-[18px] font-bold text-[#0f110f]"
-                    >
-                      {s.val}
-                    </p>
+                    <p className="text-[15px] font-bold text-[#0f110f]">{s.val}</p>
                     <p className="text-[11px] text-[#a9a9a9]">{s.lbl}</p>
                   </div>
                 ))}
               </div>
               <div className="space-y-2">
                 {[
-                  { dot: "#7c3aed", name: "Ga Rooftop After Hours", status: "Published", sBg: "rgba(47,143,69,0.08)", sClr: "#2f8f45", amount: "GHS 5,400" },
-                  { dot: "#2563eb", name: "Product Market Accra",   status: "Published", sBg: "rgba(47,143,69,0.08)", sClr: "#2f8f45", amount: "Free" },
-                  { dot: "#d97706", name: "Accra Chef Table",        status: "Draft",     sBg: "rgba(0,0,0,0.05)",    sClr: "#9a9a9a", amount: "GHS 3,200" },
+                  { dot: "#7c3aed", name: "Karnival Kingdom",   status: "Published", sBg: "rgba(47,143,69,0.08)", sClr: "#2f8f45", amount: "GHS 8,200" },
+                  { dot: "#d97706", name: "Accra Food Festival", status: "Published", sBg: "rgba(47,143,69,0.08)", sClr: "#2f8f45", amount: "GHS 6,400" },
+                  { dot: "#2563eb", name: "Osu Night Market Vol. 3", status: "Draft", sBg: "rgba(0,0,0,0.05)", sClr: "#9a9a9a", amount: "Free" },
                 ].map((row) => (
                   <div key={row.name} className="flex items-center gap-2 rounded-[10px] bg-[#f8f8f8] px-3 py-2.5">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: row.dot }} />
@@ -723,16 +735,36 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           SECTION 8 — TESTIMONIALS
       ════════════════════════════════════════ */}
       <section className="mx-auto max-w-5xl px-5 py-10 md:px-8">
+        <AnimatedSection className="mb-8 text-center">
+          <motion.p variants={itemVariants} className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#a9a9a9]">
+            Real people. Real nights out.
+          </motion.p>
+        </AnimatedSection>
         <AnimatedSection className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {[
-            { quote: "I found the Ga Rooftop event on a Friday afternoon and had tickets by evening. The QR check-in was seamless.",          name: "Kofi Mensah",   desc: "Music lover · Osu, Accra",          initials: "KM" },
-            { quote: "As an organizer, I sold out my first event in 48 hours. The analytics dashboard showed me exactly where my audience was coming from.", name: "Ama Asante",   desc: "Founder · Sankofa Sessions",        initials: "AA" },
-            { quote: "I never knew there were this many things happening in Accra on weekends. GoOutside changed how I plan my weekends completely.",         name: "Ekow Boateng", desc: "Tech professional · East Legon",    initials: "EB" },
+            {
+              quote:    "Saw Karnival Kingdom was on through my friend's feed. Had 4 of us with tickets in 20 minutes. That's the app doing its thing.",
+              name:     "Kwame Acheampong",
+              desc:     "Music head · Labone, Accra",
+              initials: "KA",
+            },
+            {
+              quote:    "I found out about a rooftop in Osu because someone I follow saved it. Went. Met new people. The Following feed is underrated.",
+              name:     "Abena Darko",
+              desc:     "Content creator · East Legon, Accra",
+              initials: "AD",
+            },
+            {
+              quote:    "Sold 280 tickets to our Accra Food Festival pop-up in 5 days. The analytics showed me exactly where my audience came from. Proper.",
+              name:     "Nana Osei-Bonsu",
+              desc:     "Founder · Kesa Events, Accra",
+              initials: "NO",
+            },
           ].map(({ quote, name, desc, initials }) => (
             <motion.div
               key={name}
               variants={itemVariants}
-              className="relative overflow-hidden rounded-[16px] border border-black/[0.07] bg-white p-6 shadow-[0_1px_4px_rgba(0,0,0,0.05)]"
+              className="relative overflow-hidden rounded-[16px] border border-black/[0.07] bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
             >
               <div
                 className="absolute left-0 right-0 top-0 h-px"
@@ -775,12 +807,12 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             </motion.div>
             <motion.p variants={itemVariants} className="text-[16px] font-light leading-relaxed text-[#6f6f6f]">
               Every event you attend, ticket you buy, and friend you bring earns Pulse Points.
-              Points unlock tiers — and tiers unlock real rewards you can redeem towards tickets, perks, and exclusive access.
+              Unlock tiers — and tiers unlock real rewards: tickets, perks, and early access.
             </motion.p>
             <motion.ul variants={itemVariants} className="space-y-3">
               {[
-                "Earn points by attending events",
-                "Unlock tiers from Newcomer to Legend",
+                "Earn points every time you go out",
+                "Climb from Newcomer to Legend",
                 "Redeem for tickets and event perks",
                 "2× points for Founding Explorers",
               ].map((item) => (
@@ -795,11 +827,11 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           {/* Right: tier cards */}
           <motion.div variants={itemVariants} className="flex flex-col gap-2.5">
             {[
-              { tier: "Newcomer",   range: "0 – 499 pts",    color: "#6f6f6f", bg: "#f7f7f7",            border: "rgba(0,0,0,0.07)"         },
+              { tier: "Newcomer",   range: "0 – 499 pts",    color: "#6f6f6f", bg: "#f7f7f7",              border: "rgba(0,0,0,0.07)"        },
               { tier: "Regular",    range: "500 – 1,499 pts", color: "#2563eb", bg: "rgba(37,99,235,0.05)", border: "rgba(37,99,235,0.15)"    },
-              { tier: "Plugged In", range: "1,500 – 3,999",  color: "#7c3aed", bg: "rgba(124,58,237,0.05)", border: "rgba(124,58,237,0.18)"  },
-              { tier: "Scene King", range: "4,000 – 9,999",  color: "#d97706", bg: "rgba(217,119,6,0.05)",  border: "rgba(217,119,6,0.2)"    },
-              { tier: "Legend",     range: "10,000+ pts",    color: "#2f8f45", bg: "rgba(47,143,69,0.06)",  border: "rgba(47,143,69,0.22)",
+              { tier: "Plugged In", range: "1,500 – 3,999",  color: "#7c3aed", bg: "rgba(124,58,237,0.05)",border: "rgba(124,58,237,0.18)"   },
+              { tier: "Scene King", range: "4,000 – 9,999",  color: "#d97706", bg: "rgba(217,119,6,0.05)", border: "rgba(217,119,6,0.2)"     },
+              { tier: "Legend",     range: "10,000+ pts",    color: "#2f8f45", bg: "rgba(47,143,69,0.06)", border: "rgba(47,143,69,0.22)",
                 badge: "Founding Explorer 2× bonus" },
             ].map(({ tier, range, color, bg, border, badge }) => (
               <div
@@ -810,13 +842,11 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
                 <div className="flex items-center gap-3">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
                   <div>
-                    <p className="text-[14px] font-semibold" style={{ color: "#0f110f" }}>{tier}</p>
-                    {badge && (
-                      <p className="text-[11px]" style={{ color }}>{badge}</p>
-                    )}
+                    <p className="text-[14px] font-semibold text-[#0f110f]">{tier}</p>
+                    {badge && <p className="text-[11px]" style={{ color }}>{badge}</p>}
                   </div>
                 </div>
-                <span className="text-[12px] font-medium" style={{ color: "#a9a9a9" }}>{range}</span>
+                <span className="text-[12px] font-medium text-[#a9a9a9]">{range}</span>
               </div>
             ))}
           </motion.div>
@@ -846,8 +876,8 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           </motion.h2>
 
           <motion.p variants={itemVariants} className="mb-8 text-[16px] font-light text-[#6f6f6f]">
-            Create your free account in seconds. Discover events, buy tickets,
-            and go out with your people in Accra.
+            Create your account in seconds. Find what&apos;s happening, see what your crew is going to,
+            and go outside — together.
           </motion.p>
 
           <motion.div variants={itemVariants}>
@@ -861,7 +891,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           </motion.div>
 
           <motion.p variants={itemVariants} className="mt-5 text-[13px] text-[#c0c0c0]">
-            No credit card · Free to browse · Ghanaian-made 🇬🇭
+            Made in Ghana 🇬🇭 · Built for Ghanaians · Go outside.
           </motion.p>
           <motion.p variants={itemVariants} className="mt-3">
             <Link href="/docs" className="text-[13px] text-[#c0c0c0] underline-offset-2 hover:text-[#a9a9a9] hover:underline">
