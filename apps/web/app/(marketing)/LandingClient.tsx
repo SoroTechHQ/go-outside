@@ -580,7 +580,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
             {
               icon: UserCirclePlus,
               step: "02",
-              title: "See who&apos;s going",
+              title: "See who's going",
               body:  "Follow friends, see their plans, save events as a crew. Know before you go — who from your circle is already there.",
             },
             {
@@ -891,12 +891,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           </motion.div>
 
           <motion.p variants={itemVariants} className="mt-5 text-[13px] text-[#c0c0c0]">
-            Made in Ghana 🇬🇭 · Built for Ghanaians · Go outside.
-          </motion.p>
-          <motion.p variants={itemVariants} className="mt-3">
-            <Link href="/docs" className="text-[13px] text-[#c0c0c0] underline-offset-2 hover:text-[#a9a9a9] hover:underline">
-              Help &amp; docs →
-            </Link>
+            Made in Ghana 🇬🇭 &nbsp;·&nbsp; Built for Ghanaians &nbsp;·&nbsp; Go outside.
           </motion.p>
         </AnimatedSection>
       </section>
