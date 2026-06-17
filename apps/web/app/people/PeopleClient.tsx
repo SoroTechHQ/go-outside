@@ -12,9 +12,18 @@ import {
   Lightning,
   Sparkle,
   ArrowRight,
+  Tag,
+  X,
 } from "@phosphor-icons/react";
 import type { SocialUser } from "../../lib/social/types";
 import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
+
+const GHANA_CITIES = ["Accra", "Kumasi", "Takoradi", "Tamale", "Cape Coast"];
+
+const COMMON_INTERESTS = [
+  "Music", "Food", "Tech", "Art", "Sports", "Networking",
+  "Nightlife", "Wellness", "Comedy", "Fashion",
+];
 
 type PeopleResponse = {
   users: SocialUser[];
@@ -23,10 +32,14 @@ type PeopleResponse = {
 
 async function fetchPeople(params: {
   q: string;
+  city: string;
+  interest: string;
   cursor?: string;
 }): Promise<PeopleResponse> {
   const url = new URL("/api/social/people", window.location.origin);
   if (params.q) url.searchParams.set("q", params.q);
+  if (params.city) url.searchParams.set("city", params.city);
+  if (params.interest) url.searchParams.set("interest", params.interest);
   if (params.cursor) url.searchParams.set("cursor", params.cursor);
   url.searchParams.set("limit", "20");
   const res = await fetch(url.toString());
@@ -79,7 +92,7 @@ function PersonCard({ user, onToggle }: { user: SocialUser; onToggle?: (id: stri
       </Link>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link href={profileHref} className="text-[14px] font-semibold text-[var(--text-primary)] hover:underline truncate">
             {user.name}
           </Link>
@@ -162,11 +175,19 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: 
 export default function PeopleClient() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [interestFilter, setInterestFilter] = useState("");
+  const [showInterests, setShowInterests] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(searchInput), 300);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  const activeFilters = [
+    cityFilter && { label: cityFilter, clear: () => setCityFilter("") },
+    interestFilter && { label: interestFilter, clear: () => setInterestFilter("") },
+  ].filter(Boolean) as { label: string; clear: () => void }[];
 
   const {
     data,
@@ -175,18 +196,21 @@ export default function PeopleClient() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ["social-people", debouncedQ],
+    queryKey: ["social-people", debouncedQ, cityFilter, interestFilter],
     queryFn: ({ pageParam }) =>
-      fetchPeople({ q: debouncedQ, cursor: pageParam as string | undefined }),
+      fetchPeople({ q: debouncedQ, city: cityFilter, interest: interestFilter, cursor: pageParam as string | undefined }),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
   });
 
   const allUsers = data?.pages.flatMap((p) => p.users) ?? [];
+  const isFiltered = !!(debouncedQ || cityFilter || interestFilter);
 
-  // Split into sections when no search query
-  const suggested = allUsers.filter((u) => u.followedBy || u.mutualCount > 0).slice(0, 8);
-  const others = debouncedQ
+  // Split into sections when no filters applied
+  const suggested = !isFiltered
+    ? allUsers.filter((u) => u.followedBy || u.mutualCount > 0).slice(0, 8)
+    : [];
+  const others = isFiltered
     ? allUsers
     : allUsers.filter((u) => !suggested.find((s) => s.id === u.id));
 
@@ -206,19 +230,100 @@ export default function PeopleClient() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-6">
+      <div className="relative mb-4">
         <MagnifyingGlass
           size={16}
           className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
         />
         <input
           type="text"
-          placeholder="Search by name or username..."
+          placeholder="Search by name, username, or bio..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] py-3 pl-10 pr-4 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--brand)] transition"
         />
       </div>
+
+      {/* City filter pills */}
+      <div className="mb-3 flex gap-1.5 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setCityFilter("")}
+          className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+            !cityFilter
+              ? "bg-[var(--text-primary)] text-[var(--bg-surface)]"
+              : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+          }`}
+        >
+          All cities
+        </button>
+        {GHANA_CITIES.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCityFilter(c === cityFilter ? "" : c)}
+            className={`shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+              cityFilter === c
+                ? "bg-[#5FBF2A] text-white"
+                : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+            }`}
+          >
+            <MapPin size={9} weight="fill" /> {c}
+          </button>
+        ))}
+      </div>
+
+      {/* Interest filter toggle */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowInterests((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition"
+        >
+          <Tag size={11} weight="fill" />
+          {showInterests ? "Hide interests" : "Filter by interest"}
+        </button>
+
+        {showInterests && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {COMMON_INTERESTS.map((i) => (
+              <button
+                key={i}
+                onClick={() => setInterestFilter(i === interestFilter ? "" : i)}
+                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                  interestFilter === i
+                    ? "bg-[#5FBF2A] text-white"
+                    : "border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                }`}
+              >
+                {i}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Active filter badges */}
+      {activeFilters.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {activeFilters.map((f) => (
+            <span
+              key={f.label}
+              className="flex items-center gap-1.5 rounded-full bg-[#5FBF2A]/12 border border-[#5FBF2A]/25 px-3 py-1 text-[11px] font-semibold text-[#2d7a0e]"
+            >
+              {f.label}
+              <button onClick={f.clear} className="opacity-60 hover:opacity-100 transition">
+                <X size={10} weight="bold" />
+              </button>
+            </span>
+          ))}
+          {activeFilters.length > 1 && (
+            <button
+              onClick={() => { setCityFilter(""); setInterestFilter(""); }}
+              className="text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       {isLoading && (
         <div className="space-y-3">
@@ -234,17 +339,25 @@ export default function PeopleClient() {
             <Users size={24} className="text-[var(--text-tertiary)]" />
           </div>
           <p className="mt-4 text-[14px] font-semibold text-[var(--text-secondary)]">
-            {debouncedQ ? "No people found" : "No people yet"}
+            {isFiltered ? "No people found" : "No people yet"}
           </p>
           <p className="mt-1 text-[13px] text-[var(--text-tertiary)]">
-            {debouncedQ
-              ? "Try a different name or username"
+            {isFiltered
+              ? "Try a different name, city, or interest"
               : "Complete your profile and start exploring events to connect with people"}
           </p>
+          {isFiltered && (
+            <button
+              onClick={() => { setSearchInput(""); setCityFilter(""); setInterestFilter(""); }}
+              className="mt-4 rounded-full border border-[var(--border-default)] px-4 py-2 text-[12px] font-semibold text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)] transition"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       )}
 
-      {!isLoading && !debouncedQ && suggested.length > 0 && (
+      {!isLoading && !isFiltered && suggested.length > 0 && (
         <div className="mb-8">
           <SectionHeader icon={Sparkle} title="Suggested for you" />
           <div className="space-y-2">
@@ -258,8 +371,16 @@ export default function PeopleClient() {
       {!isLoading && others.length > 0 && (
         <div className="mb-6">
           <SectionHeader
-            icon={debouncedQ ? MagnifyingGlass : UserPlus}
-            title={debouncedQ ? `Results for "${debouncedQ}"` : "More people in Accra"}
+            icon={isFiltered ? MagnifyingGlass : UserPlus}
+            title={
+              debouncedQ
+                ? `Results for "${debouncedQ}"`
+                : cityFilter
+                ? `People in ${cityFilter}`
+                : interestFilter
+                ? `Into ${interestFilter}`
+                : "More people in Accra"
+            }
           />
           <div className="space-y-2">
             {others.map((user) => (

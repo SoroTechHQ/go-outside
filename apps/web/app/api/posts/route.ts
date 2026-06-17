@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin
     .from("posts")
     .select(`
-      id, body, image_url, like_count, created_at, event_id,
+      id, body, media_urls, likes_count, created_at, event_id,
       users!posts_user_id_fkey(id, first_name, last_name, username, avatar_url, clerk_id),
       events!posts_event_id_fkey(id, title, slug, banner_url)
     `)
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const { body, image_url, event_id } = await req.json() as {
     body: string;
-    image_url?: string;
+    image_url?: string;  // client sends image_url; we store as media_urls array
     event_id?: string;
   };
 
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id:    (user as { id: string }).id,
       body:       body.trim(),
-      image_url:  image_url ?? null,
+      media_urls: image_url ? [image_url] : [],
       event_id:   event_id ?? null,
     })
     .select()

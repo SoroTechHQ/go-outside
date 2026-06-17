@@ -40,6 +40,9 @@ export type UserRow = {
   avatar_url: string | null;
   pulse_tier: string | null;
   pulse_score: number | null;
+  bio: string | null;
+  city: string | null;
+  interests: string[] | null;
 };
 
 export type PostRow = {

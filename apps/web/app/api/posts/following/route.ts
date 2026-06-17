@@ -27,7 +27,7 @@ export async function GET() {
   const { data: posts } = await supabaseAdmin
     .from("posts")
     .select(`
-      id, body, image_url, like_count, created_at,
+      id, body, media_urls, likes_count, created_at,
       users!posts_user_id_fkey(id, first_name, last_name, username, avatar_url, clerk_id),
       events!posts_event_id_fkey(id, title, slug, banner_url)
     `)
