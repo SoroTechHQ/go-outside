@@ -238,13 +238,13 @@ function FollowersSheet({
     <>
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
-      {/* Mobile: bottom sheet — sits above the bottom nav (nav is ~80px) */}
+      {/* Mobile: bottom sheet — sits above the bottom nav */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-[60] flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-[70] flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -252,7 +252,7 @@ function FollowersSheet({
       </div>
       {/* Desktop: centered modal */}
       <div
-        className={`fixed left-1/2 top-1/2 z-[60] hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+        className={`fixed left-1/2 top-1/2 z-[70] hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
         }`}
       >
@@ -287,13 +287,13 @@ function Overlay({
     <>
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
       {/* Mobile: slide-up sheet */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-[70] flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[28px] border-t border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -301,7 +301,7 @@ function Overlay({
       </div>
       {/* Desktop: centered modal */}
       <div
-        className={`fixed left-1/2 top-1/2 z-50 hidden -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+        className={`fixed left-1/2 top-1/2 z-[70] hidden -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[#0c1a10] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
           wide ? "w-[560px]" : "w-[480px]"
         } max-h-[85vh] ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
@@ -365,7 +365,7 @@ export function ProfileClient({ profile, pastTickets, pastEvents }: Props) {
   return (
     <>
       {/* ── Cover ────────────────────────────────────────────────────────────── */}
-      <div className="relative h-[180px] w-full overflow-hidden md:h-[220px]">
+      <div className="relative h-[120px] w-full overflow-hidden md:h-[220px]">
         {currentProfile.coverUrl ? (
           <Image src={currentProfile.coverUrl} alt="Cover" fill className="object-cover object-center" priority />
         ) : (

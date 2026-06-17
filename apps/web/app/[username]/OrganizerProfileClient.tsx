@@ -230,7 +230,7 @@ export default function OrganizerProfileClient({
   return (
     <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
       {/* Cover */}
-      <div className="relative h-[240px] w-full overflow-hidden md:h-[280px]">
+      <div className="relative h-[140px] w-full overflow-hidden md:h-[280px]">
         {resolvedCover ? (
           <Image src={resolvedCover} alt="Cover" fill className="object-cover object-center" priority />
         ) : (

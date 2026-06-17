@@ -181,13 +181,13 @@ function PeopleSheet({
     <>
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
-      {/* Mobile: bottom sheet — z-[60] sits above bottom nav */}
+      {/* Mobile: bottom sheet — z-[70] sits above bottom nav (z-50) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-[60] flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-[70] flex max-h-[82dvh] flex-col overflow-hidden rounded-t-[24px] border-t border-[var(--border-subtle)] bg-[var(--bg-base)] shadow-[0_-24px_64px_rgba(0,0,0,0.7)] transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -195,7 +195,7 @@ function PeopleSheet({
       </div>
       {/* Desktop: centered modal */}
       <div
-        className={`fixed left-1/2 top-1/2 z-[60] hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
+        className={`fixed left-1/2 top-1/2 z-[70] hidden w-[500px] max-h-[82vh] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] border border-[#4a9f63]/15 bg-[var(--bg-base)] shadow-[0_32px_72px_rgba(0,0,0,0.65)] transition-[opacity,transform] duration-200 md:flex ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-[0.96] pointer-events-none"
         }`}
       >
@@ -621,7 +621,7 @@ export default function UserProfilePage() {
     <main className="min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
 
       {/* ── Cover header ────────────────────────────────────────────────── */}
-      <div className="relative h-[200px] w-full overflow-hidden md:h-[240px]">
+      <div className="relative h-[130px] w-full overflow-hidden md:h-[240px]">
         {coverUrl ? (
           <Image src={coverUrl} alt="Cover" fill className="object-cover object-center" priority />
         ) : (
