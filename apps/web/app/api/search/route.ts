@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
   const limit      = Math.min(Number(searchParams.get("limit") ?? LIMIT_MAX), LIMIT_MAX);
   const cursorRaw  = searchParams.get("cursor") ?? null;
   const when       = searchParams.get("when") ?? "";
+  const city       = searchParams.get("city") ?? undefined;
   const categories = (searchParams.get("categories") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
       ? searchEvents({ q: intent.cleanedQuery || q, categories, dateRange, limit, offset, userInterests, wantsFree })
       : Promise.resolve([]),
     type === "all" || type === "users"
-      ? searchUsers({ q, limit, offset })
+      ? searchUsers({ q, limit, offset, city: city || intent.city })
       : Promise.resolve([]),
     type === "all" || type === "posts"
       ? searchPosts({ q, limit, offset })

@@ -2,14 +2,18 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   CalendarBlank,
   Fire,
   MagnifyingGlass,
+  MapPin,
   Sparkle,
+  Tag,
+  UsersThree,
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
 import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
@@ -19,11 +23,16 @@ import type { SearchApiResponse, EventRow, UserRow, PostRow, DiscoveryModule } f
 
 type SearchTab = "all" | "events" | "users" | "posts";
 
+const GHANA_CITIES = ["Accra", "Kumasi", "Takoradi", "Tamale", "Cape Coast"];
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+
 async function fetchSearch(
   q: string,
   type: SearchTab,
   categories: string,
   when: string,
+  city: string,
   cursor?: string,
 ): Promise<SearchApiResponse> {
   const params = new URLSearchParams({ type, limit: "20" });
@@ -31,9 +40,32 @@ async function fetchSearch(
   if (cursor) params.set("cursor", cursor);
   if (categories) params.set("categories", categories);
   if (when) params.set("when", when);
+  if (city) params.set("city", city);
   const res = await fetch(`/api/search?${params}`);
   if (!res.ok) throw new Error("Search failed");
   return res.json() as Promise<SearchApiResponse>;
+}
+
+type PeopleSuggestion = {
+  id: string;
+  clerkId: string;
+  name: string;
+  handle: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  pulseScore: number;
+  pulseTier: string;
+  city: string | null;
+  interests: string[];
+  followerCount: number;
+  isFollowing: boolean;
+};
+
+async function fetchPeopleYouMayKnow(): Promise<PeopleSuggestion[]> {
+  const res = await fetch("/api/users/people?limit=12");
+  if (!res.ok) return [];
+  const json = await res.json() as { users: PeopleSuggestion[] };
+  return json.users ?? [];
 }
 
 function useDebounce<T>(value: T, ms: number): T {
@@ -80,33 +112,100 @@ function EventResult({ event }: { event: EventRow }) {
   );
 }
 
-// ── User card ──────────────────────────────────────────────────────────────────
+// ── User card — richer with bio, city, interests ────────────────────────────
 function UserResult({ user }: { user: UserRow }) {
   const router = useRouter();
   const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username || "User";
+  const topInterests = (user.interests ?? []).slice(0, 2);
+  const bioSnippet = user.bio ? user.bio.slice(0, 72) + (user.bio.length > 72 ? "…" : "") : null;
 
   return (
     <button
       onClick={() => router.push(user.username ? `/go/${user.username}` : `/dashboard/user/${user.clerk_id}`)}
-      className="flex gap-3 items-center rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 text-left transition hover:border-[var(--border-default)] hover:shadow-sm active:scale-[0.99] w-full"
+      className="flex gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 text-left transition hover:border-[var(--border-default)] hover:shadow-sm active:scale-[0.99] w-full"
     >
-      <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 44, height: 44 }}>
+      <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 46, height: 46 }}>
         {user.avatar_url ? (
-          <Image src={withAvatarTransform(user.avatar_url) ?? user.avatar_url} alt={name} width={44} height={44} className="h-full w-full object-cover" />
+          <Image src={withAvatarTransform(user.avatar_url) ?? user.avatar_url} alt={name} width={46} height={46} className="h-full w-full object-cover" />
         ) : (
-          <NaviiAvatar seed={user.username ?? user.clerk_id ?? name} title={name} size={44} className="h-full w-full object-cover" />
+          <NaviiAvatar seed={user.username ?? user.clerk_id ?? name} title={name} size={46} className="h-full w-full object-cover" />
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">{name}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">{name}</p>
+          {user.pulse_tier && (
+            <span className="rounded-full border border-[#4a9f63]/25 bg-[#4a9f63]/8 px-2 py-0.5 text-[9px] font-semibold text-[#4a9f63]">
+              {user.pulse_tier}
+            </span>
+          )}
+        </div>
         {user.username && <p className="text-[11px] text-[var(--text-tertiary)]">@{user.username}</p>}
+        {bioSnippet && (
+          <p className="mt-1 text-[11px] leading-snug text-[var(--text-secondary)] line-clamp-1">{bioSnippet}</p>
+        )}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {user.city && (
+            <span className="flex items-center gap-0.5 text-[10px] text-[var(--text-tertiary)]">
+              <MapPin size={9} weight="fill" className="text-[var(--brand)]" /> {user.city}
+            </span>
+          )}
+          {topInterests.map((i) => (
+            <span key={i} className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-1.5 py-0.5 text-[9px] text-[var(--text-tertiary)]">
+              {i}
+            </span>
+          ))}
+        </div>
       </div>
-      {user.pulse_tier && (
-        <span className="shrink-0 rounded-full border border-[#4a9f63]/25 bg-[#4a9f63]/8 px-2 py-0.5 text-[9px] font-medium text-[#4a9f63]">
-          {user.pulse_tier}
-        </span>
-      )}
     </button>
+  );
+}
+
+// ── People you may know card (from /api/users/people) ─────────────────────────
+function PeopleCard({ person }: { person: PeopleSuggestion }) {
+  const topInterests = person.interests.slice(0, 2);
+  const bioSnippet = person.bio ? person.bio.slice(0, 64) + (person.bio.length > 64 ? "…" : "") : null;
+
+  return (
+    <Link
+      href={person.clerkId ? `/dashboard/user/${person.clerkId}` : "#"}
+      className="flex gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3.5 transition hover:border-[var(--border-default)] hover:shadow-sm active:scale-[0.99]"
+    >
+      <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 46, height: 46 }}>
+        {person.avatarUrl ? (
+          <Image src={withAvatarTransform(person.avatarUrl) ?? person.avatarUrl} alt={person.name} width={46} height={46} className="h-full w-full object-cover" />
+        ) : (
+          <NaviiAvatar seed={person.clerkId} title={person.name} size={46} className="h-full w-full object-cover" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">{person.name}</p>
+          <span className="rounded-full border border-[#4a9f63]/25 bg-[#4a9f63]/8 px-2 py-0.5 text-[9px] font-semibold text-[#4a9f63]">
+            {person.pulseTier}
+          </span>
+        </div>
+        <p className="text-[11px] text-[var(--text-tertiary)]">{person.handle}</p>
+        {bioSnippet && (
+          <p className="mt-1 text-[11px] leading-snug text-[var(--text-secondary)] line-clamp-1">{bioSnippet}</p>
+        )}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {person.city && (
+            <span className="flex items-center gap-0.5 text-[10px] text-[var(--text-tertiary)]">
+              <MapPin size={9} weight="fill" className="text-[var(--brand)]" /> {person.city}
+            </span>
+          )}
+          {topInterests.map((i) => (
+            <span key={i} className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-1.5 py-0.5 text-[9px] text-[var(--text-tertiary)]">
+              {i}
+            </span>
+          ))}
+          {person.followerCount > 0 && (
+            <span className="text-[10px] text-[var(--text-tertiary)]">{person.followerCount} followers</span>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -173,15 +272,17 @@ function SearchInner() {
   const initialWhen = searchParams.get("when") ?? "";
 
   const [tab, setTab] = useState<SearchTab>("all");
+  const [cityFilter, setCityFilter] = useState<string>("");
 
   // localQ tracks live typing via onQueryChange — updates results without router.push
   const [localQ, setLocalQ] = useState(initialQ);
   useEffect(() => { setLocalQ(initialQ); }, [initialQ]);
 
-  const debouncedQ    = useDebounce(localQ, 300);
-  const debouncedCats = useDebounce(initialCats, 300);
+  const debouncedQ      = useDebounce(localQ, 300);
+  const debouncedCats   = useDebounce(initialCats, 300);
+  const debouncedCity   = useDebounce(cityFilter, 200);
 
-  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0;
+  const hasQuery = debouncedQ.length >= 2 || debouncedCats.length > 0 || initialWhen.length > 0 || !!debouncedCity;
 
   const {
     data,
@@ -190,22 +291,30 @@ function SearchInner() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<SearchApiResponse>({
-    queryKey: ["search", debouncedQ, tab, debouncedCats, initialWhen],
+    queryKey: ["search", debouncedQ, tab, debouncedCats, initialWhen, debouncedCity],
     queryFn: ({ pageParam }) =>
-      fetchSearch(debouncedQ, tab, debouncedCats, initialWhen, pageParam as string | undefined),
+      fetchSearch(debouncedQ, tab, debouncedCats, initialWhen, debouncedCity, pageParam as string | undefined),
     initialPageParam: undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: hasQuery,
     staleTime: 60_000,
   });
 
-  // Empty-state discovery (no query)
+  // Empty-state discovery (no query, not People tab)
   const { data: discoveryData, isLoading: discoveryLoading } = useInfiniteQuery<SearchApiResponse>({
     queryKey: ["search-discovery"],
-    queryFn: () => fetchSearch("", "all", "", ""),
+    queryFn: () => fetchSearch("", "all", "", "", ""),
     initialPageParam: undefined,
     getNextPageParam: () => undefined,
-    enabled: !hasQuery,
+    enabled: !hasQuery && tab !== "users",
+    staleTime: 5 * 60_000,
+  });
+
+  // People discovery — shown when People tab open with no query
+  const { data: peopleData, isLoading: peopleLoading } = useQuery({
+    queryKey: ["people-discovery"],
+    queryFn: fetchPeopleYouMayKnow,
+    enabled: !hasQuery && tab === "users",
     staleTime: 5 * 60_000,
   });
 
@@ -215,6 +324,8 @@ function SearchInner() {
   const posts        = allPages.flatMap((p) => p.posts);
   const discovery    = discoveryData?.pages?.[0]?.discovery ?? [];
   const currentIntent = allPages[0]?.intent;
+
+  const isPeopleTab = tab === "users";
 
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
@@ -234,7 +345,7 @@ function SearchInner() {
             {TABS.map(({ id, label }) => (
               <button
                 key={id}
-                onClick={() => setTab(id)}
+                onClick={() => { setTab(id); if (id !== "users") setCityFilter(""); }}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-[12px] font-semibold transition-all ${
                   tab === id
                     ? "bg-[#5FBF2A] text-white"
@@ -245,6 +356,35 @@ function SearchInner() {
               </button>
             ))}
           </div>
+
+          {/* ── City filter pills — only on People tab ── */}
+          {isPeopleTab && (
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setCityFilter("")}
+                className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                  !cityFilter
+                    ? "bg-[var(--text-primary)] text-[var(--bg-surface)]"
+                    : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+                }`}
+              >
+                All cities
+              </button>
+              {GHANA_CITIES.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCityFilter(c === cityFilter ? "" : c)}
+                  className={`shrink-0 flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                    cityFilter === c
+                      ? "bg-[#5FBF2A] text-white"
+                      : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+                  }`}
+                >
+                  <MapPin size={9} weight="fill" /> {c}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* ── AI CTA — routes to /ai, not inline panel ── */}
           {localQ.length >= 2 && (
@@ -279,8 +419,37 @@ function SearchInner() {
             </button>
           )}
 
+          {/* ── People discovery — People tab + no query ── */}
+          {!hasQuery && isPeopleTab && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UsersThree size={15} weight="fill" className="text-[var(--brand)]" />
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+                    {cityFilter ? `People in ${cityFilter}` : "People you may know"}
+                  </h2>
+                </div>
+                <Link href="/people" className="text-[11px] font-semibold text-[var(--brand)] hover:underline">
+                  Browse all
+                </Link>
+              </div>
+              {peopleLoading ? (
+                <Skeleton count={4} />
+              ) : (peopleData ?? []).length > 0 ? (
+                <div className="space-y-2.5">
+                  {(peopleData ?? []).map((p) => <PeopleCard key={p.clerkId} person={p} />)}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-12 text-center">
+                  <UsersThree size={32} className="text-[var(--text-tertiary)]" weight="light" />
+                  <p className="text-[13px] text-[var(--text-tertiary)]">No one found — try searching by name</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Empty state — discovery modules ── */}
-          {!hasQuery && (
+          {!hasQuery && !isPeopleTab && (
             discoveryLoading ? (
               <Skeleton count={3} />
             ) : discovery.length > 0 ? (
@@ -320,6 +489,34 @@ function SearchInner() {
                       {tab === "all" && (
                         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">People</h2>
                       )}
+                      {/* City filter on People tab with results */}
+                      {tab === "users" && (
+                        <div className="mb-3 flex gap-1.5 overflow-x-auto no-scrollbar">
+                          <button
+                            onClick={() => setCityFilter("")}
+                            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                              !cityFilter
+                                ? "bg-[var(--text-primary)] text-[var(--bg-surface)]"
+                                : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+                            }`}
+                          >
+                            All cities
+                          </button>
+                          {GHANA_CITIES.map((c) => (
+                            <button
+                              key={c}
+                              onClick={() => setCityFilter(c === cityFilter ? "" : c)}
+                              className={`shrink-0 flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
+                                cityFilter === c
+                                  ? "bg-[#5FBF2A] text-white"
+                                  : "bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
+                              }`}
+                            >
+                              <MapPin size={9} weight="fill" /> {c}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       <div className="space-y-2.5">
                         {users.map((u) => <UserResult key={u.clerk_id} user={u} />)}
                       </div>
@@ -341,13 +538,15 @@ function SearchInner() {
                     <div className="flex flex-col items-center gap-3 py-16 text-center">
                       <p className="text-[14px] font-semibold text-[var(--text-primary)]">No results found</p>
                       <p className="text-[13px] text-[var(--text-tertiary)]">Try different keywords or pick another category.</p>
-                      <button
-                        type="button"
-                        onClick={() => router.push(aiSearchHref(localQ))}
-                        className="mt-2 flex items-center gap-2 rounded-full bg-[#5FBF2A] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#4da823]"
-                      >
-                        <Sparkle size={13} weight="fill" /> Ask AI instead
-                      </button>
+                      {!isPeopleTab && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(aiSearchHref(localQ))}
+                          className="mt-2 flex items-center gap-2 rounded-full bg-[#5FBF2A] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#4da823]"
+                        >
+                          <Sparkle size={13} weight="fill" /> Ask AI instead
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -364,6 +563,17 @@ function SearchInner() {
               )}
             </div>
           )}
+
+          {/* ── People tab footer CTA ── */}
+          {isPeopleTab && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Tag size={12} className="text-[var(--text-tertiary)]" />
+              <Link href="/people" className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--brand)]">
+                Browse the full community directory
+              </Link>
+            </div>
+          )}
+
         </div>
       </section>
     </main>

@@ -130,26 +130,25 @@ export async function getSocialActivity(opts: {
   }
 
   if (mode === "plans" || mode === "following") {
-    // Events that followed users saved
+    // Events that followed users saved (uses proper saved_events table)
     const { data: savedRows } = await supabaseAdmin
-      .from("graph_edges")
+      .from("saved_events")
       .select(`
-        from_id, to_id, created_at,
-        actor:from_id(id, first_name, last_name, username, avatar_url),
-        event:to_id(id, title, slug, banner_url)
+        id, user_id, event_id, created_at,
+        users!saved_events_user_id_fkey(id, first_name, last_name, username, avatar_url),
+        events!saved_events_event_id_fkey(id, title, slug, banner_url)
       `)
-      .in("from_id", followedIds)
-      .eq("edge_type", "saved")
+      .in("user_id", followedIds)
       .order("created_at", { ascending: false })
       .limit(limit);
 
     for (const row of savedRows ?? []) {
-      const actor = asUser(row.actor);
-      const event = asEvent(row.event);
+      const actor = asUser(row.users);
+      const event = asEvent(row.events);
       if (!actor || !event) continue;
 
       items.push({
-        id: `saved_${row.from_id}_${row.to_id}`,
+        id: `saved_${row.id}`,
         actorUserId: actor.id,
         actorName: `${actor.first_name ?? ""} ${actor.last_name ?? ""}`.trim() || "Someone",
         actorUsername: actor.username,
