@@ -9,6 +9,7 @@ import {
   useMarkNotificationsRead,
   useNotifications,
 } from "../../../../hooks/useNotifications";
+import type { NotificationFeedItem } from "../../../../lib/notification-feed";
 import { NotificationItem } from "./NotificationItem";
 import { NotificationSkeleton } from "./NotificationSkeleton";
 
@@ -19,6 +20,7 @@ interface NotificationFeedProps {
 export function NotificationFeed({ userId }: NotificationFeedProps) {
   const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const autoMarkedRef = useRef(false);
   const [markingRead, setMarkingRead] = useState(false);
   const markNotificationsRead = useMarkNotificationsRead();
 
@@ -82,6 +84,36 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
   const allItems = data?.pages.flatMap((page) => page.items) ?? [];
   const unreadCount = data?.pages[0]?.unreadCount ?? 0;
 
+  // Auto-mark as read after a short delay when first loaded with unread items
+  useEffect(() => {
+    if (!data || unreadCount === 0 || autoMarkedRef.current) return;
+    autoMarkedRef.current = true;
+    const timer = setTimeout(() => {
+      void markNotificationsRead.mutateAsync();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [data, unreadCount, markNotificationsRead]);
+
+  // Group items by time bucket
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const todayItems: NotificationFeedItem[] = [];
+  const thisWeekItems: NotificationFeedItem[] = [];
+  const earlierItems: NotificationFeedItem[] = [];
+
+  for (const item of allItems) {
+    const d = new Date(item.timestamp);
+    if (d.toDateString() === todayStr) {
+      todayItems.push(item);
+    } else if (d >= weekAgo) {
+      thisWeekItems.push(item);
+    } else {
+      earlierItems.push(item);
+    }
+  }
+
   if (isLoading) {
     return <NotificationSkeleton count={7} />;
   }
@@ -112,6 +144,26 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
     );
   }
 
+  // Compute a global index offset for stagger animations across groups
+  let globalIndex = 0;
+
+  const renderGroup = (label: string, items: NotificationFeedItem[]) => {
+    if (items.length === 0) return null;
+    const nodes = items.map((item) => {
+      const node = <NotificationItem key={item.id} item={item} index={globalIndex} />;
+      globalIndex++;
+      return node;
+    });
+    return (
+      <div key={label}>
+        <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)] first:mt-0">
+          {label}
+        </p>
+        <div className="space-y-3">{nodes}</div>
+      </div>
+    );
+  };
+
   return (
     <div>
       {unreadCount > 0 && (
@@ -129,10 +181,10 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
         </div>
       )}
 
-      <div className="space-y-3">
-        {allItems.map((item, index) => (
-          <NotificationItem key={item.id} item={item} index={index} />
-        ))}
+      <div>
+        {renderGroup("Today", todayItems)}
+        {renderGroup("This week", thisWeekItems)}
+        {renderGroup("Earlier", earlierItems)}
       </div>
 
       <div ref={sentinelRef} className="py-6">
