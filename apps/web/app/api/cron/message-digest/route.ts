@@ -4,7 +4,7 @@ import { supabaseAdmin } from "../../../../lib/supabase";
 import { sendWebPush } from "../../../../lib/notifications/send-web-push";
 import { sendMessageNudge } from "../../../../lib/email";
 
-// Vercel cron: runs every minute.
+// Vercel cron: runs daily (Vercel Hobby plan restriction).
 // Finds users who received a message more than `messages_email_delay_mins` minutes ago
 // and haven't had a re-engagement nudge sent yet, then fires Web Push + email.
 

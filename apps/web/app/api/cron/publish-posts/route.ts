@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase";
 
-// Called by Vercel cron: "0 * * * *" (every hour)
-// vercel.json: { "crons": [{ "path": "/api/cron/publish-posts", "schedule": "0 * * * *" }] }
+// Called by Vercel cron: "0 9 * * *" (daily at 9:00 AM)
+// vercel.json: { "crons": [{ "path": "/api/cron/publish-posts", "schedule": "0 9 * * *" }] }
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (
