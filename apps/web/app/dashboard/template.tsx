@@ -6,16 +6,16 @@ import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 
 export default function DashboardTemplate({ children }: { children: React.ReactNode }) {
   const segment = useSelectedLayoutSegment();
-  const { variants } = useAnimationConfig();
+  const { reduceMotion } = useAnimationConfig();
 
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={segment ?? "dashboard"}
-        variants={variants.page}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
       >
         {children}
       </motion.div>

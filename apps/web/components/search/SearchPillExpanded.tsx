@@ -379,7 +379,7 @@ export function SearchPillExpanded({
                     (document.querySelector("[data-suggestion-item]") as HTMLElement)?.focus();
                   }
                 }}
-                placeholder="Search events, vibes, venues…"
+                placeholder="Search events, organizers, people, vibes, venues…"
                 className={`${showLabels ? "mt-0.5" : ""} w-full bg-transparent text-[13px] font-medium text-[var(--text-primary)] outline-none caret-[#5FBF2A] placeholder:text-[var(--text-tertiary)] placeholder:font-normal`}
               />
               {query && (
@@ -402,7 +402,7 @@ export function SearchPillExpanded({
               </span>
             )}
             <span className={`${showLabels ? "mt-0.5" : ""} truncate text-[13px] font-medium ${whatDisplay ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)] font-normal"}`}>
-              {whatDisplay ?? (compact ? "Search events, people…" : "Search or pick a vibe…")}
+              {whatDisplay ?? (compact ? "Events, people, venues…" : "Events, organizers, people, vibes, venues…")}
             </span>
           </motion.button>
         )}

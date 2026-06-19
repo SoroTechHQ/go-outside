@@ -263,7 +263,7 @@ export function OrganizerShell({
         organizerName={organizer?.name ?? organizerName}
         ownEvents={ownEvents}
       />
-      <div className="flex h-screen w-full overflow-hidden bg-[var(--bg-elevated)]">
+      <div className="flex h-screen w-full overflow-hidden bg-[var(--bg-elevated)] md:pl-[72px]">
         <div className="flex h-full w-full" style={{ display: "flex" }}>
           {/* Sidebar */}
           <aside
