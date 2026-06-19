@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lightning, X } from "@phosphor-icons/react";
 import { supabaseBrowser } from "../../lib/supabase-browser";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 
 const TIER_COLOR: Record<string, string> = {
   Newcomer:      "#888888",
@@ -26,6 +27,7 @@ type PulseHistoryItem = {
 // ── Pulse pill ────────────────────────────────────────────────────────────────
 
 export function PulseScorePill({ clerkId }: { clerkId: string }) {
+  const { reduceMotion, springs } = useAnimationConfig();
   const queryClient = useQueryClient();
   const [floatDelta, setFloatDelta] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -90,10 +92,12 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
   return (
     <>
       <div className="relative">
-        <button
+        <motion.button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="relative flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition active:scale-95"
+          whileTap={reduceMotion ? undefined : { scale: 0.92 }}
+          transition={springs.snappy}
+          className="relative flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold"
           style={{
             borderColor: `${color}35`,
             backgroundColor: `${color}12`,
@@ -103,7 +107,7 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
           <Lightning size={11} weight="fill" />
           <span>{score.toLocaleString()}</span>
           <span className="hidden text-[9px] font-semibold opacity-70 sm:inline">{tier}</span>
-        </button>
+        </motion.button>
 
         {/* +X pts float animation */}
         <AnimatePresence>
@@ -134,10 +138,10 @@ export function PulseScorePill({ clerkId }: { clerkId: string }) {
               onClick={() => setSheetOpen(false)}
             />
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              initial={reduceMotion ? { opacity: 0 } : { y: "100%" }}
+              animate={reduceMotion ? { opacity: 1 } : { y: 0 }}
+              exit={reduceMotion   ? { opacity: 0 } : { y: "100%" }}
+              transition={reduceMotion ? { duration: 0.15 } : springs.sheet}
               className="fixed bottom-0 inset-x-0 z-[71] rounded-t-3xl bg-[var(--bg-card)] pb-safe shadow-2xl"
               style={{ maxHeight: "70dvh" }}
             >
