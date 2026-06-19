@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
+import { useAnimationConfig } from "@/hooks/useAnimationConfig";
 import { type FeedEventCard, useInfiniteFeed } from "@/hooks/useInfiniteFeed";
 import { thumbnailUrl as withThumbnailTransform } from "@/lib/image-url";
 import { SkeletonCard } from "./SkeletonCard";
@@ -41,6 +43,7 @@ function EventGridCard({
   onPreview?: (slug: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const { reduceMotion, springs } = useAnimationConfig();
 
   const imageUrl = withThumbnailTransform(event.bannerUrl)
     ?? event.bannerUrl
@@ -48,17 +51,22 @@ function EventGridCard({
 
   return (
     <Link href={`/events/${event.slug}`} style={{ textDecoration: "none", display: "block" }}>
-      <article
+      <motion.article
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: reduceMotion ? 0 : 10 }}
+        viewport={{ once: true, margin: "-30px" }}
+        whileHover={reduceMotion ? undefined : { y: -3, transition: springs.snappy }}
+        whileTap={{ scale: 0.98, transition: springs.snappy }}
+        transition={reduceMotion ? { duration: 0.15 } : springs.gentle}
         style={{
           background:   "var(--bg-card)",
           border:       `1px solid ${hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)"}`,
           borderRadius: "16px",
           overflow:     "hidden",
-          transform:    hovered ? "translateY(-3px)" : "translateY(0)",
           boxShadow:    hovered ? "0 12px 32px rgba(0,0,0,0.4)" : "none",
-          transition:   "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
+          transition:   "border-color 200ms ease, box-shadow 200ms ease",
           position:     "relative",
         }}
       >
@@ -148,7 +156,7 @@ function EventGridCard({
             )}
           </div>
         </div>
-      </article>
+      </motion.article>
     </Link>
   );
 }

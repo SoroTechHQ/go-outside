@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import {
   Eye,
   MapPin,
@@ -57,6 +58,7 @@ export function HomeEventCard({
   const hoverStartRef = useRef<number>(0);
   const { trackHoverStart } = useTracking();
   useViewportTrack(cardRef, { eventId: event.id, source: "feed" });
+  const { reduceMotion, springs } = useAnimationConfig();
 
   const handleMouseEnter = useCallback(() => {
     hoverStartRef.current = Date.now();
@@ -99,11 +101,16 @@ export function HomeEventCard({
   return (
     <motion.article
       ref={cardRef}
-      animate={{ opacity: 1, scale: 1, x: 0 }}
-      className={`group relative overflow-hidden rounded-[24px] cursor-pointer transition-all duration-300 bg-zinc-900 ${sizeClasses} ${
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+      whileInView={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={reduceMotion ? { duration: 0.15 } : springs.gentle}
+      whileHover={reduceMotion || mode === "mobile" ? undefined : { y: -3, transition: springs.snappy }}
+      whileTap={{ scale: 0.986, transition: springs.snappy }}
+      className={`group relative overflow-hidden rounded-[24px] cursor-pointer bg-zinc-900 ${sizeClasses} ${
         isActive
           ? "shadow-[0_0_0_2px_var(--brand),0_0_0_5px_rgba(var(--brand-rgb),0.12)]"
-          : "hover:-translate-y-0.5"
+          : ""
       }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeaveTracked}
@@ -121,8 +128,6 @@ export function HomeEventCard({
       }}
       onPointerLeave={() => { if (longPressTimer) window.clearTimeout(longPressTimer); }}
       onPointerUp={() => { if (longPressTimer) window.clearTimeout(longPressTimer); }}
-      whileTap={{ scale: 0.986 }}
-      initial={{ opacity: 0, scale: 0.98 }}
     >
       {/* Mobile swipe hints */}
       {isLane && mode === "mobile" ? (
