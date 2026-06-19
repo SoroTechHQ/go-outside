@@ -30,6 +30,7 @@ export const SENDERS = {
   general:  "GoOutside <hello@mail.gooutside.club>",
   tickets:  "GoOutside Tickets <tickets@mail.gooutside.club>",
   notify:   "GoOutside <noreply@mail.gooutside.club>",
+  messages: "GoOutside Messages <messages@mail.gooutside.club>",
   pioneers: "Gabby from GoOutside <founders@mail.gooutside.club>",
   waitlist: "GoOutside <waitlist@mail.gooutside.club>",
 } as const;
@@ -50,7 +51,7 @@ function txnHeaders(extra?: Record<string, string>): Record<string, string> {
 // ─── Public send functions ─────────────────────────────────────────────────────
 export async function sendMessageNudge(opts: { to: string; senderName: string; channelUrl?: string }) {
   return resend.emails.send({
-    from:    SENDERS.notify,
+    from:    SENDERS.messages,
     to:      opts.to,
     subject: `💬 ${opts.senderName} is waiting for your reply`,
     headers: notifHeaders(),
