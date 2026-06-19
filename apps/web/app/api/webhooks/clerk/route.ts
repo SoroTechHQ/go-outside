@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { sendNewSignInEmail } from "../../../../lib/email";
+import { insertNotification } from "../../../../lib/db/insert-notification";
 
 /**
  * Clerk → Supabase user sync webhook.
@@ -20,8 +22,8 @@ type ClerkEmailAddress = {
   email_address:  string;
 };
 
-type ClerkUserEvent = {
-  type: string;
+type ClerkUserEventData = {
+  type: "user.created" | "user.updated" | "user.deleted";
   data: {
     id:                       string;
     email_addresses:          ClerkEmailAddress[];
@@ -31,6 +33,20 @@ type ClerkUserEvent = {
     image_url:                string | null;
   };
 };
+
+type ClerkSessionEventData = {
+  type: "session.created";
+  data: {
+    id:             string;
+    user_id:        string;
+    status:         string;
+    last_active_at: number;
+    created_at:     number;
+    client_id:      string;
+  };
+};
+
+type ClerkUserEvent = ClerkUserEventData | ClerkSessionEventData;
 
 export async function POST(req: NextRequest) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
@@ -62,7 +78,73 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const { type, data } = event;
+  const { type } = event;
+
+  if (type === "session.created") {
+    const sessionData = (event as ClerkSessionEventData).data;
+    const clerkUserId = sessionData.user_id;
+
+    const { data: userRow } = await supabaseAdmin
+      .from("users")
+      .select("id, email, notification_prefs")
+      .eq("clerk_id", clerkUserId)
+      .maybeSingle();
+
+    if (userRow) {
+      const prefs = (userRow as { notification_prefs?: Record<string, unknown> }).notification_prefs ?? {};
+      const emailEnabled = (prefs as { email?: boolean }).email !== false;
+
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: recentNotif } = await supabaseAdmin
+        .from("notifications")
+        .select("id")
+        .eq("user_id", (userRow as { id: string }).id)
+        .eq("type", "new_sign_in")
+        .gte("created_at", fiveMinutesAgo)
+        .limit(1)
+        .maybeSingle();
+
+      if (!recentNotif) {
+        const now = new Date();
+        const timeStr = now.toLocaleString("en-GB", {
+          timeZone: "Africa/Accra",
+          day:   "2-digit",
+          month: "short",
+          year:  "numeric",
+          hour:  "2-digit",
+          minute: "2-digit",
+        }) + " GMT";
+
+        const notifBody = `Device: GoOutside app · Location: Ghana · ${timeStr}`;
+
+        insertNotification({
+          userId:     (userRow as { id: string }).id,
+          type:       "new_sign_in",
+          title:      "New sign-in to your account",
+          body:       notifBody,
+          actionHref: "/settings",
+          data:       { device: "GoOutside app", location: "Ghana", time: timeStr },
+        });
+
+        if (emailEnabled && (userRow as { email?: string }).email) {
+          await sendNewSignInEmail({
+            to:           (userRow as { email: string }).email,
+            device:       "GoOutside app",
+            browser:      "GoOutside app",
+            location:     "Ghana",
+            ip:           "—",
+            time:         timeStr,
+            signInMethod: "GoOutside account",
+          });
+        }
+      }
+    }
+
+    return NextResponse.json({ received: true });
+  }
+
+  const userEvent = event as ClerkUserEventData;
+  const data = userEvent.data;
 
   const primaryEmail = data.email_addresses.find(
     (e) => e.id === data.primary_email_address_id
