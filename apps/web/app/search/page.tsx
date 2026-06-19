@@ -16,6 +16,7 @@ import {
   UsersThree,
 } from "@phosphor-icons/react";
 import { SearchPillExpanded } from "../../components/search/SearchPillExpanded";
+import { PageEntrance } from "../../components/layout/PageEntrance";
 import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
 import { avatarUrl as withAvatarTransform, thumbnailUrl as withThumbnailTransform } from "../../lib/image-url";
 import { aiSearchHref } from "../../lib/search/ai-search-href";
@@ -329,7 +330,7 @@ function SearchInner() {
 
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
-      <section className="container-shell px-4 pb-6 pt-8 md:py-10">
+      <PageEntrance className="container-shell px-4 pb-6 pt-8 md:py-10">
         <div className="mx-auto max-w-3xl space-y-6">
 
           {/* ── Search bar ── */}
@@ -575,7 +576,7 @@ function SearchInner() {
           )}
 
         </div>
-      </section>
+      </PageEntrance>
     </main>
   );
 }

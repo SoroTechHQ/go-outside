@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { PageEntrance } from "../../../components/layout/PageEntrance";
 import {
   Gift,
   Lightning,
@@ -1061,7 +1062,7 @@ export function RewardsClient({
   return (
     <>
       <main className="min-h-screen bg-[var(--bg-base)] pb-48 text-[var(--text-primary)]">
-        <div className="mx-auto max-w-lg px-4 pt-8">
+        <PageEntrance className="mx-auto max-w-lg px-4 pt-8">
 
           {/* ── Back + Header ── */}
           <div className="mb-6 flex items-center gap-3">
@@ -1217,7 +1218,7 @@ export function RewardsClient({
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
+        </PageEntrance>
       </main>
 
       {/* ── Redemption modal ── */}
