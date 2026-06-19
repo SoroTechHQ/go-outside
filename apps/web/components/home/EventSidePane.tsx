@@ -696,7 +696,11 @@ export function EventSidePane({
         initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
         animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
         exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
-        transition={reduceMotion ? { duration: 0.15 } : springs.page}
+        transition={
+          reduceMotion
+            ? { duration: 0.15 }
+            : { type: "tween", duration: 0.36, ease: [0.22, 1, 0.36, 1] }
+        }
         style={{ width: paneWidth }}
       >
         {/* Drag handle */}
