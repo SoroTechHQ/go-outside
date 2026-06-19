@@ -21,6 +21,7 @@
     "seed:ghana": "node scripts/seed-ghana-real.mjs --seed",
     "seed:teardown": "node scripts/seed-ghana-real.mjs --teardown",
     "seed:status": "node scripts/seed-ghana-real.mjs --status",
-    "seed:dry": "node scripts/seed-ghana-real.mjs --seed --dry-run"
+    "seed:dry": "node scripts/seed-ghana-real.mjs --seed --dry-run",
+    "launch:check": "node scripts/check-launch-readiness.mjs"
   }
 }
