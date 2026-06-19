@@ -463,6 +463,55 @@ export async function getOrganizerEvents(args: {
   return { events: data ?? [], count: (data ?? []).length };
 }
 
+// ── Tool: get_user_calendar ───────────────────────────────────────────────────
+export async function getUserCalendar(clerkId: string) {
+  if (!clerkId) return { error: "Not authenticated", upcoming_events: [] };
+
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("id")
+    .eq("clerk_id", clerkId)
+    .maybeSingle();
+
+  if (!user) return { upcoming_events: [], count: 0 };
+
+  const now = new Date().toISOString();
+  const { data: tickets } = await supabaseAdmin
+    .from("tickets")
+    .select("id, events!inner(id, title, slug, start_datetime, venues(name, city))")
+    .eq("user_id", user.id)
+    .gte("events.start_datetime", now)
+    .order("events.start_datetime", { ascending: true })
+    .limit(10);
+
+  const upcoming_events = (tickets ?? [])
+    .map((t: Record<string, unknown>) => {
+      const ev = Array.isArray(t.events) ? t.events[0] : t.events;
+      if (!ev) return null;
+      const venue = Array.isArray((ev as Record<string, unknown>).venues)
+        ? ((ev as Record<string, unknown>).venues as unknown[])[0]
+        : (ev as Record<string, unknown>).venues;
+      return {
+        event_id: (ev as Record<string, unknown>).id,
+        title: (ev as Record<string, unknown>).title,
+        slug: (ev as Record<string, unknown>).slug,
+        start_datetime: (ev as Record<string, unknown>).start_datetime,
+        venue: (venue as { name?: string } | null)?.name ?? null,
+        city: (venue as { city?: string } | null)?.city ?? "Accra",
+        href: `/events/${(ev as Record<string, unknown>).slug}`,
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    upcoming_events,
+    count: upcoming_events.length,
+    message: upcoming_events.length === 0
+      ? "You don't have any upcoming events booked yet."
+      : `You have ${upcoming_events.length} upcoming event${upcoming_events.length === 1 ? "" : "s"}.`,
+  };
+}
+
 // ── Tool registry — maps LLM tool names to executor functions ─────────────────
 export type ToolName =
   | "search_events"
@@ -471,7 +520,8 @@ export type ToolName =
   | "get_user_profile"
   | "get_event_details"
   | "get_friends_activity"
-  | "get_organizer_events";
+  | "get_organizer_events"
+  | "get_user_calendar";
 
 export async function executeTool(
   name: ToolName,
@@ -487,6 +537,7 @@ export async function executeTool(
     case "get_event_details":     return getEventDetails(normalizedArgs as Parameters<typeof getEventDetails>[0]);
     case "get_friends_activity":  return getFriendsActivity(clerkId, normalizedArgs as { upcoming_only?: boolean });
     case "get_organizer_events":  return getOrganizerEvents(normalizedArgs as Parameters<typeof getOrganizerEvents>[0]);
+    case "get_user_calendar":     return getUserCalendar(clerkId);
     default:
       return { error: `Unknown tool: ${name}` };
   }
@@ -619,6 +670,17 @@ export const GOOUTSIDE_TOOLS: GroqTool[] = [
           organizer_id:   { type: "string" },
           upcoming_only:  { type: "boolean" },
         },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_user_calendar",
+      description: "Returns the user's upcoming events based on purchased tickets. Call this when the user asks about their schedule, what events they're going to, whether they're free on a date, or anything about their own bookings.",
+      parameters: {
+        type: "object",
+        properties: {},
       },
     },
   },

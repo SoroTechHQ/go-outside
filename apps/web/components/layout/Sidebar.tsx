@@ -24,6 +24,7 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useAppShell } from "./AppShellContext";
 import { useCart } from "../cart/CartContext";
 import { useAnimationConfig } from "../../hooks/useAnimationConfig";
+import { MiniCartDrawer } from "../tickets/MiniCartDrawer";
 
 type SidebarRole = "attendee" | "organizer" | "admin";
 
@@ -63,6 +64,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
   const [hovered, setHovered] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [miniCartOpen, setMiniCartOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const { setSidebarWidth } = useAppShell();
   const { totalCount } = useCart();
@@ -216,17 +218,18 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
         </div>
 
         <div className="px-2 pt-4">
-          <Link
+          <button
             className={`relative flex h-[52px] w-full items-center rounded-[12px] transition-colors ${
-              pathname.startsWith("/cart")
+              miniCartOpen
                 ? "bg-[var(--brand-dim)] font-semibold text-[var(--brand)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}
-            href="/cart"
+            onClick={() => setMiniCartOpen(true)}
+            type="button"
           >
             <ShoppingCart
               size={24}
-              weight={pathname.startsWith("/cart") ? "fill" : "regular"}
+              weight={miniCartOpen ? "fill" : "regular"}
               className="text-current"
             />
             <AnimatePresence>
@@ -242,13 +245,14 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
                 </motion.span>
               ) : null}
             </AnimatePresence>
-            {/* Cart count badge */}
             {totalCount > 0 && (
               <div className={`absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[9px] font-bold text-black ${isExpanded ? "right-3 top-3" : "right-3.5 top-3"}`}>
                 {totalCount > 99 ? "99+" : totalCount}
               </div>
             )}
-          </Link>
+          </button>
+
+          <MiniCartDrawer open={miniCartOpen} onClose={() => setMiniCartOpen(false)} />
 
           <button
             className={`flex h-[52px] w-full items-center rounded-[12px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] ${

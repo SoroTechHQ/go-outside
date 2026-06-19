@@ -101,6 +101,7 @@ TOOL MAPPING:
 - "free events", "cheap", "under GHS X" → get_budget_options + get_user_profile
 - "trending", "popular", "what's hot" → get_trending_events + get_user_profile
 - "friends", "people I know", "going with" → get_friends_activity + get_user_profile
+- "my calendar", "my tickets", "what am I going to", "am I free", "my upcoming events", "what events do I have" → get_user_calendar + get_user_profile
 - everything else → search_events + get_user_profile
 
 Do not explain. Do not ask questions. Just call the tools.`;
@@ -121,23 +122,34 @@ STRICT RULES:
 - NEVER say "Calling tools to find..." — tools are already done.
 - NEVER say "I will search for..." or describe future actions.
 - NEVER invent events, venues, IDs, or prices not in the tool results.
-- If tools returned 0 events: say so in 1-2 honest sentences. Do NOT say you'll search again.
+- If tools returned 0 events: say so honestly in 1-2 sentences. Suggest a different search (e.g. "Try a broader date range or different category"). Do NOT say you'll search again.
 - If tools returned events: name them specifically (event title, venue, price from the data).${idList}
 
-OUTPUT — respond with ONLY this JSON, no other text:
-{"message":"1-3 sentences using real data from tool results. Be specific: name events, prices, venues.","picks":[{"event_id":"exact uuid","title":"exact title from tools","reason":"why it fits the user"}],"followUps":["3-5 word chip","3-5 word chip","3-5 word chip"]}
+FOLLOW-UP CHIPS (followUps array):
+- ONLY include search-refinement chips that help discover MORE or DIFFERENT events
+- Good: "Free events only", "Near Osu", "Under GHS 100", "This weekend", "Live music", "Near Kumasi"
+- BANNED — never output these in followUps: book, view, details, directions, tickets, attend, calendar, try again, retry, new search, find shows, learn more, add to, check later, book later, book now, get tickets, nearby, navigate, check calendar, find trails
 
-Max 4 picks. Prices in "GHS 150" format. followUps are short action chips, not questions.`;
+ACTIONS PER PICK:
+- Always include "get_tickets" and "view_details"
+- Include "get_directions" when the venue location is known
+
+OUTPUT — respond with ONLY this JSON, no other text:
+{"message":"1-3 sentences using real data from tool results. Be specific: name events, prices, venues.","picks":[{"event_id":"exact uuid","title":"exact title from tools","reason":"why it fits the user","actions":["get_tickets","view_details","get_directions"]}],"followUps":["Free events only","Under GHS 100"]}
+
+Max 4 picks. Prices in "GHS 150" format.`;
 }
+
+const BANNED_FOLLOWUP_RE = /\b(book|view|detail|direction|ticket|attend|calendar|try again|retry|new search|find show|learn more|add to|check later|book later|book now|get ticket|nearby|navigate|check calendar|find trail|map|explore)\b/i;
 
 function parseFinalResponse(
   raw: string,
   toolNamesUsed: string[],
   validEventIds: string[],
-): { message: string; picks: Array<{ event_id: string; title: string; reason: string }>; followUps: string[]; tool_names_used: string[] } {
+): { message: string; picks: Array<{ event_id: string; title: string; reason: string; actions?: string[] }>; followUps: string[]; tool_names_used: string[] } {
   let parsed: {
     message?: string;
-    picks?: Array<{ event_id?: string; title?: string; reason?: string }>;
+    picks?: Array<{ event_id?: string; title?: string; reason?: string; actions?: string[] }>;
     followUps?: string[];
   } = {};
 
@@ -147,7 +159,7 @@ function parseFinalResponse(
     return {
       message: raw.trim() || "I couldn't find matching events right now.",
       picks: [],
-      followUps: ["What's trending?", "Free events only", "Under GHS 100"],
+      followUps: ["Free events only", "Under GHS 100", "This weekend"],
       tool_names_used: toolNamesUsed,
     };
   }
@@ -156,12 +168,16 @@ function parseFinalResponse(
   const picks = (parsed.picks ?? [])
     .filter((p) => p.event_id && (allowed.size === 0 || allowed.has(p.event_id)))
     .slice(0, 4)
-    .map((p) => ({ event_id: p.event_id!, title: p.title ?? "", reason: p.reason ?? "" }));
+    .map((p) => ({ event_id: p.event_id!, title: p.title ?? "", reason: p.reason ?? "", actions: p.actions }));
+
+  const followUps = (parsed.followUps ?? [])
+    .filter((f) => f.length > 2 && !BANNED_FOLLOWUP_RE.test(f))
+    .slice(0, 3);
 
   return {
     message: parsed.message?.trim() || "Here's what I found.",
     picks,
-    followUps: (parsed.followUps ?? []).slice(0, 3),
+    followUps,
     tool_names_used: toolNamesUsed,
   };
 }
@@ -169,7 +185,7 @@ function parseFinalResponse(
 // ── Enrich picks with full event data ────────────────────────────────────────
 
 async function enrichPicks(
-  picks: Array<{ event_id: string; title: string; reason: string }>,
+  picks: Array<{ event_id: string; title: string; reason: string; actions?: string[] }>,
   rawToolResults: Record<string, unknown>,
 ) {
   if (!picks.length) return [];
@@ -188,7 +204,7 @@ async function enrichPicks(
   if (missingIds.length > 0) {
     const { data } = await supabaseAdmin
       .from("events")
-      .select("id, title, slug, short_description, banner_url, start_datetime, categories(name,slug), venues(name,city), ticket_types(price,price_type,is_active)")
+      .select("id, title, slug, short_description, banner_url, start_datetime, categories(name,slug), venues(name,city), ticket_types(id,name,price,price_type,is_active)")
       .in("id", missingIds);
     for (const ev of data ?? []) {
       const e = ev as Record<string, unknown>;
@@ -312,7 +328,7 @@ export async function POST(req: NextRequest) {
           emit("tools", { names: [] });
           for (const char of txt) emit("token", { text: char });
           await saveUserMsgPromise;
-          emit("done", { picks: [], followUps: ["What's trending?", "Free events only", "Under GHS 100"], chat_id: chatId || null });
+          emit("done", { picks: [], followUps: ["Free events only", "Under GHS 100", "This weekend"], chat_id: chatId || null });
           controller.close();
           return;
         }

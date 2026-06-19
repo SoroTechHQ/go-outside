@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { MagnifyingGlass, ShoppingCart } from "@phosphor-icons/react";
+import { MagnifyingGlass } from "@phosphor-icons/react";
 import { ThemeToggle } from "@gooutside/ui";
 import { usePathname } from "next/navigation";
 import HomeSearchHero from "../search/HomeSearchHero";
@@ -10,7 +10,6 @@ import { SearchPillExpanded } from "../search/SearchPillExpanded";
 import { useSearchBarScroll } from "../../hooks/useSearchBarScroll";
 import { useAppShell } from "./AppShellContext";
 import { NotificationBell } from "../notifications/NotificationBell";
-import { useCart } from "../cart/CartContext";
 
 type HeaderProps = {
   appShell?: boolean;
@@ -31,7 +30,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
   const pathname = usePathname();
   const { isCompact, isMini, compactProgress, miniProgress } = useSearchBarScroll();
   const { peekPanelWidth } = useAppShell();
-  const { totalCount, openCart } = useCart();
   const stableSidebarOffset = 88;
   const isSearch    = pathname === "/search";
   const isMessages  = pathname === "/messages" || pathname === "/dashboard/messages";
@@ -138,19 +136,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
               ) : (
                 <div className="flex-1" />
               )}
-              {totalCount > 0 && (
-                <button
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)]"
-                  onClick={openCart}
-                  type="button"
-                  suppressHydrationWarning
-                >
-                  <ShoppingCart size={17} weight="bold" />
-                  <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
-                    {totalCount}
-                  </span>
-                </button>
-              )}
             </div>
           </header>
         )}
@@ -163,17 +148,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
             </Link>
             <div className="flex items-center gap-1.5">
               <NotificationBell />
-              <button
-                  className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition active:scale-95 ${totalCount === 0 ? "hidden" : ""}`}
-                  onClick={openCart}
-                  type="button"
-                  suppressHydrationWarning
-                >
-                  <ShoppingCart size={17} weight="bold" />
-                  <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
-                    {totalCount}
-                  </span>
-                </button>
               <ThemeToggle />
               <Link
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition active:scale-95"
@@ -202,17 +176,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
           )}
           <div className="flex items-center gap-2">
             <NotificationBell />
-            <button
-                className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)] ${totalCount === 0 ? "hidden" : ""}`}
-                onClick={openCart}
-                type="button"
-                suppressHydrationWarning
-              >
-                <ShoppingCart size={17} weight="bold" />
-                <span suppressHydrationWarning className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] text-[9px] font-bold text-white">
-                  {totalCount}
-                </span>
-              </button>
             <ThemeToggle />
             <Link
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand)] text-sm font-semibold text-black transition hover:opacity-90"
