@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import {
   ChartBar,
   ChatCircleDots,
@@ -42,6 +43,7 @@ function useStreamUnread() {
 export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const pathname   = usePathname();
   const msgUnread  = useStreamUnread();
+  const { reduceMotion, springs } = useAnimationConfig();
 
   const items: BottomNavItem[] = [
     { href: "/",         icon: House,          label: "Home" },
@@ -68,8 +70,13 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
           const Icon = item.icon;
 
           return (
-            <Link
+            <motion.div
               key={item.href}
+              whileTap={reduceMotion ? undefined : { scale: 0.88 }}
+              transition={springs.snappy}
+              className="relative flex min-w-0 flex-1"
+            >
+            <Link
               className="relative flex min-w-0 flex-1 flex-col items-center pt-2.5"
               href={item.href}
             >
@@ -79,15 +86,18 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
                   <motion.span
                     layoutId="nav-pill"
                     className="absolute top-1.5 h-8 w-12 rounded-full bg-[var(--brand-dim)]"
-                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                    transition={reduceMotion ? { duration: 0.15 } : springs.snappy}
                   />
                 )}
               </AnimatePresence>
 
               <motion.span
                 className="relative z-10 flex flex-col items-center gap-0.5 pb-1"
-                animate={{ scale: active ? 1 : 0.92, opacity: active ? 1 : 0.62 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                animate={reduceMotion
+                  ? { opacity: active ? 1 : 0.62 }
+                  : { scale: active ? 1 : 0.92, opacity: active ? 1 : 0.62 }
+                }
+                transition={reduceMotion ? { duration: 0.15 } : springs.snappy}
               >
                 <Icon
                   size={21}
@@ -107,11 +117,17 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
 
               {/* Unread badge */}
               {item.badge && item.badge > 0 && !active ? (
-                <span className="absolute right-[calc(50%-18px)] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#5FBF2A] px-1 text-[8px] font-bold text-white">
+                <motion.span
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={springs.snappy}
+                  className="absolute right-[calc(50%-18px)] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#5FBF2A] px-1 text-[8px] font-bold text-white"
+                >
                   {item.badge > 99 ? "99+" : item.badge}
-                </span>
+                </motion.span>
               ) : null}
             </Link>
+            </motion.div>
           );
         })}
       </div>

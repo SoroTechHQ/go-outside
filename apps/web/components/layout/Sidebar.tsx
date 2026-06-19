@@ -23,6 +23,7 @@ import { useClerk } from "@clerk/nextjs";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useAppShell } from "./AppShellContext";
 import { useCart } from "../cart/CartContext";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 
 type SidebarRole = "attendee" | "organizer" | "admin";
 
@@ -65,6 +66,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
   const profileRef = useRef<HTMLDivElement>(null);
   const { setSidebarWidth } = useAppShell();
   const { totalCount } = useCart();
+  const { reduceMotion, springs } = useAnimationConfig();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -169,7 +171,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
               return (
                 <Link key={item.href} href={item.href}>
                   <motion.div
-                    className={`relative flex h-[52px] items-center ${
+                    className={`relative flex h-[52px] items-center rounded-[12px] ${
                       isExpanded ? "gap-3.5 px-5" : "justify-center"
                     } ${
                       active
@@ -177,19 +179,28 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     }`}
                     transition={{ duration: 0.15 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={reduceMotion ? undefined : { backgroundColor: "var(--bg-card)" }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.97 }}
                   >
+                    {/* Active background pill */}
+                    {active && (
+                      <motion.span
+                        layoutId="sidebar-pill"
+                        className="absolute inset-0 rounded-[12px] bg-[var(--brand-dim)]"
+                        transition={reduceMotion ? { duration: 0.15 } : springs.snappy}
+                      />
+                    )}
                     <Icon
                       size={24}
                       weight={iconWeight}
-                      className={active ? "text-[var(--brand)]" : "text-current"}
+                      className={`relative z-10 ${active ? "text-[var(--brand)]" : "text-current"}`}
                     />
 
                     <AnimatePresence>
                       {isExpanded ? (
                         <motion.span
                           animate={{ opacity: 1, width: "auto" }}
-                          className="overflow-hidden whitespace-nowrap text-sm font-medium"
+                          className="relative z-10 overflow-hidden whitespace-nowrap text-sm font-medium"
                           exit={{ opacity: 0, width: 0 }}
                           initial={{ opacity: 0, width: 0 }}
                           transition={{ duration: 0.2 }}
@@ -201,7 +212,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
 
                     {item.unread ? (
                       <div
-                        className={`absolute h-1.5 w-1.5 rounded-full bg-[#22c55e] ${
+                        className={`absolute z-10 h-1.5 w-1.5 rounded-full bg-[#22c55e] ${
                           isExpanded ? "right-3 top-3" : "right-4 top-3"
                         }`}
                       />
