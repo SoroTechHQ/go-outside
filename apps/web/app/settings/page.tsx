@@ -80,16 +80,7 @@ export default async function SettingsPage() {
   }));
 
   return (
-    <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
-      <div className="border-b border-[var(--border-subtle)] px-4 py-5 md:px-6">
-        <h1 className="font-display text-[22px] font-bold italic text-[var(--text-primary)]">
-          Settings
-        </h1>
-        <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
-          Manage your account and preferences
-        </p>
-      </div>
-
+    <main className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
       <SettingsClient
         isOrganizer={isOrganizer}
         orgName={orgName}

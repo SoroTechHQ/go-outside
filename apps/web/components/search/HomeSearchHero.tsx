@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarBlank,
@@ -381,21 +381,34 @@ export function HomeSearchHero({
     setWhen(searchParams.get("when") ?? "");
   }, [searchParams]);
 
+  const [pendingSegment, setPendingSegment] = useState<ActiveSegment>(null);
+
   const isExpanded = mode === "expanded";
   const isMini = mode === "mini";
   const isMobile = mode === "mobile";
 
-  const handleSurpriseMe = () => {
+  const handleSurpriseMe = useCallback(() => {
     router.push(`/search?q=Surprise me with something perfect for my vibe&surprise=1`);
-  };
+  }, [router]);
 
-  const handleMiniSegmentClick = (seg: ActiveSegment) => {
+  const handleMiniSegmentClick = useCallback((seg: ActiveSegment) => {
     if (seg === "lucky") {
       handleSurpriseMe();
     } else {
+      // Store the desired panel, scroll back to top so the expanded bar appears,
+      // then the expanded bar picks up pendingSegment via initialActive.
+      setPendingSegment(seg);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  };
+  }, [handleSurpriseMe]);
+
+  // Once we're no longer in mini mode the expanded bar has consumed the segment — clear it.
+  useEffect(() => {
+    if (!isMini && pendingSegment) {
+      const t = setTimeout(() => setPendingSegment(null), 600);
+      return () => clearTimeout(t);
+    }
+  }, [isMini, pendingSegment]);
 
   // ── Mobile: render compact pill + overlay ──
   if (isMobile) {
@@ -434,7 +447,7 @@ export function HomeSearchHero({
   return (
     <div className={`w-full ${className}`.trim()}>
       <div className="mx-auto w-full" style={{ maxWidth: 1020 }}>
-        <SearchPillExpanded compact={false} />
+        <SearchPillExpanded compact={false} initialActive={pendingSegment} />
       </div>
     </div>
   );

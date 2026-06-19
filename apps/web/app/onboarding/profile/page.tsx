@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { UserCircle } from "@phosphor-icons/react";
 import { LocationAutocomplete, type PlaceResult } from "../../../components/ui/LocationAutocomplete";
+import { DateOfBirthPicker } from "../../../components/ui/DateOfBirthPicker";
 
 const MIN_DOB = (() => {
   const d = new Date();
@@ -184,7 +185,7 @@ export default function OnboardingProfilePage() {
           </div>
           <div className="text-center">
             <h1
-              className="text-[26px] font-semibold tracking-tight"
+              className="text-[26px] font-bold tracking-tight"
               style={{ color: "var(--ob-heading)" }}
             >
               Is this you?
@@ -245,12 +246,17 @@ export default function OnboardingProfilePage() {
 
           <div>
             <label className={labelCls}>Date of birth</label>
-            <input
-              {...register("date_of_birth")}
-              type="date"
-              className={inputCls}
-              min={MIN_DOB}
-              max={MAX_DOB}
+            <Controller
+              name="date_of_birth"
+              control={control}
+              render={({ field }) => (
+                <DateOfBirthPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  minYear={new Date().getFullYear() - 120}
+                  maxYear={new Date().getFullYear() - 13}
+                />
+              )}
             />
             {errors.date_of_birth && (
               <p className="mt-1 text-[11px] text-red-400">{errors.date_of_birth.message}</p>

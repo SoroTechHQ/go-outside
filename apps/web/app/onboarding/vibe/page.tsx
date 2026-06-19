@@ -155,12 +155,12 @@ export default function OnboardingVibePage() {
       <div>
         <div className="mb-8 text-center">
           <h1
-            className="text-[26px] font-normal italic"
-            style={{ fontFamily: "'DM Serif Display', serif", color: "var(--ob-heading)" }}
+            className="text-[26px] font-bold tracking-tight"
+            style={{ color: "var(--ob-heading)" }}
           >
             Tell us about yourself
           </h1>
-          <p className="mt-2 text-[14px] font-light" style={{ color: "var(--ob-text-muted)" }}>
+          <p className="mt-2 text-[14px]" style={{ color: "var(--ob-text-muted)" }}>
             Helps us find your kind of scene
           </p>
         </div>

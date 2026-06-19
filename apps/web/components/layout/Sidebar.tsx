@@ -12,14 +12,11 @@ import {
   MagnifyingGlass,
   MoonStars,
   ShoppingCart,
-  SignOut,
   SunDim,
-  UserCircle,
   Wallet,
 } from "@phosphor-icons/react";
-import { usePathname, useRouter } from "next/navigation";
-import { type ComponentProps, useEffect, useRef, useState } from "react";
-import { useClerk } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
+import { type ComponentProps, useEffect, useState } from "react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useAppShell } from "./AppShellContext";
 import { useCart } from "../cart/CartContext";
@@ -55,30 +52,16 @@ function getInitials(name: string) {
     .toUpperCase() || "GO";
 }
 
-export function Sidebar({ role = "attendee", userName = "", avatarUrl, username, email }: SidebarProps) {
+export function Sidebar({ role = "attendee", userName = "", avatarUrl, username }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { signOut } = useClerk();
   const isTabletUp = useMediaQuery("(min-width: 768px)");
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [hovered, setHovered] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [miniCartOpen, setMiniCartOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
   const { setSidebarWidth } = useAppShell();
   const { totalCount } = useCart();
-  const { reduceMotion, springs } = useAnimationConfig();
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const { reduceMotion } = useAnimationConfig();
 
   useEffect(() => {
     const syncTheme = () => {
@@ -293,15 +276,16 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
             </AnimatePresence>
           </button>
 
-          <div ref={profileRef} className="relative mt-2">
-            <button
-              onClick={() => setProfileMenuOpen((v) => !v)}
-              onContextMenu={(e) => { e.preventDefault(); setProfileMenuOpen(true); }}
-              className={`flex h-[56px] w-full items-center transition ${
-                pathname.startsWith("/profile")
-                  ? "font-semibold text-[var(--brand)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              } ${isExpanded ? "gap-3.5 px-4" : "justify-center px-0"}`}
+          {/* Profile + Settings row */}
+          <div className={`mt-2 ${isExpanded ? "flex items-center gap-1" : "flex flex-col gap-0.5"}`}>
+            {/* Profile — navigates directly */}
+            <Link
+              href={username ? `/${username}` : "/dashboard/profile"}
+              className={`flex items-center rounded-[12px] transition-colors ${
+                pathname === "/dashboard/profile" || (username && pathname === `/${username}`)
+                  ? "bg-[var(--brand-dim)] text-[var(--brand)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+              } ${isExpanded ? "h-[52px] flex-1 gap-3 px-3" : "h-[44px] w-full justify-center"}`}
             >
               <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-[var(--brand)]/40">
                 {avatarUrl ? (
@@ -328,48 +312,29 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
                     transition={{ duration: 0.2 }}
                   >
                     <p className="truncate text-sm font-medium text-[var(--text-primary)]">Profile</p>
-                    <span className="mt-1 inline-flex text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+                    <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
                       {userName}
                     </span>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
-            </button>
+            </Link>
 
-            <AnimatePresence>
-              {profileMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute bottom-full left-2 right-2 mb-1 overflow-hidden rounded-[14px] border border-[var(--border-card)] bg-[var(--bg-elevated)] shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-                >
-                  <button
-                    onClick={() => { setProfileMenuOpen(false); router.push(username ? `/${username}` : "/dashboard/profile"); }}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-[var(--text-primary)] transition hover:bg-[var(--bg-card)]"
-                  >
-                    <UserCircle size={15} className="text-[var(--text-tertiary)]" />
-                    View Profile
-                  </button>
-                  <button
-                    onClick={() => { setProfileMenuOpen(false); router.push("/settings"); }}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-[var(--text-primary)] transition hover:bg-[var(--bg-card)]"
-                  >
-                    <GearSix size={15} className="text-[var(--text-tertiary)]" />
-                    Settings
-                  </button>
-                  <div className="mx-3 h-px bg-[var(--border-subtle)]" />
-                  <button
-                    onClick={() => signOut(() => router.push("/"))}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] text-red-400 transition hover:bg-[var(--bg-card)]"
-                  >
-                    <SignOut size={15} />
-                    Sign Out
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Settings — dedicated direct button */}
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className={`flex shrink-0 items-center justify-center rounded-[12px] transition-colors ${
+                pathname.startsWith("/settings")
+                  ? "bg-[var(--brand-dim)] text-[var(--brand)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
+              } ${isExpanded ? "h-[52px] w-[44px]" : "h-[36px] w-full"}`}
+            >
+              <GearSix
+                size={isExpanded ? 20 : 17}
+                weight={pathname.startsWith("/settings") ? "fill" : "regular"}
+              />
+            </Link>
           </div>
         </div>
       </div>

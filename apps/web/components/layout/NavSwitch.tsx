@@ -8,7 +8,7 @@ export function NavSwitch({
   userName = "",
   avatarUrl,
   username,
-  email,
+  email: _email,
 }: {
   role?: NavSwitchRole;
   userName?: string;
@@ -19,7 +19,7 @@ export function NavSwitch({
   return (
     <>
       <div className="hidden md:block">
-        <Sidebar role={role} userName={userName} avatarUrl={avatarUrl} username={username} email={email} />
+        <Sidebar role={role} userName={userName} avatarUrl={avatarUrl} username={username} />
       </div>
       <div className="md:hidden">
         <BottomNav role={role} />

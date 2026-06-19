@@ -23,8 +23,8 @@ export function useNotifications() {
     queryFn: ({ pageParam }) => fetchNotifications(pageParam as string | null),
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 0,
+    refetchInterval: 15_000,
   });
 }
 

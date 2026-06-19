@@ -51,16 +51,15 @@ export function NotificationFeed({ userId }: NotificationFeedProps) {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   useEffect(() => {
+    // Use a broadcast channel to receive server-pushed invalidation signals.
+    // We avoid postgres_changes here because it requires a Supabase auth session
+    // (auth.uid()) to satisfy RLS — our app uses Clerk, not Supabase auth, so
+    // the anon browser client has no uid and the filter is always rejected.
     const channel = supabaseBrowser
-      .channel(`notifications:${userId}`)
+      .channel(`notifications-broadcast:${userId}`)
       .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
+        "broadcast",
+        { event: "new_notification" },
         () => {
           void queryClient.invalidateQueries({ queryKey: notificationsQueryKey });
         }
