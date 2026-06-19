@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   const [fullRes, opRes] = await Promise.all([
     supabaseAdmin
       .from("users")
-      .select("account_type, is_verified_organizer, notification_prefs, email")
+      .select("account_type, is_verified_organizer, notification_prefs, email, checkout_details_enabled, checkout_attendee_name, checkout_attendee_email, checkout_mobile_number, checkout_mobile_network")
       .eq("id", user.id)
       .maybeSingle(),
 
@@ -86,6 +86,13 @@ export default async function SettingsPage() {
         orgName={orgName}
         notifPrefs={notifPrefs}
         maskedEmail={maskedEmail}
+        checkoutDetails={{
+          enabled: full?.checkout_details_enabled === true,
+          attendeeName: (full?.checkout_attendee_name as string | null | undefined) ?? null,
+          attendeeEmail: (full?.checkout_attendee_email as string | null | undefined) ?? null,
+          mobileNumber: (full?.checkout_mobile_number as string | null | undefined) ?? null,
+          mobileNetwork: (full?.checkout_mobile_network as "mtn" | "vodafone" | "airteltigo" | null | undefined) ?? null,
+        }}
         activeSessions={activeSessions}
       />
     </main>

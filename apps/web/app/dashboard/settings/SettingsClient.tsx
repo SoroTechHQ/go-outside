@@ -22,6 +22,9 @@ import {
   MoonStars,
   UserCircle,
   ChatCircleDots,
+  Ticket,
+  EnvelopeSimple,
+  Phone,
 } from "@phosphor-icons/react";
 import { useClerk } from "@clerk/nextjs";
 import { useAnimationSettings } from "../../../lib/animation-settings";
@@ -65,15 +68,24 @@ type ActiveSession = {
   } | null;
 };
 
+type CheckoutDetails = {
+  enabled:       boolean;
+  attendeeName:  string | null;
+  attendeeEmail: string | null;
+  mobileNumber:  string | null;
+  mobileNetwork: "mtn" | "vodafone" | "airteltigo" | null;
+};
+
 type Props = {
   isOrganizer:    boolean;
   orgName:        string | null;
   notifPrefs:     NotifPrefs;
   maskedEmail?:   string;
+  checkoutDetails: CheckoutDetails;
   activeSessions: ActiveSession[];
 };
 
-type Section = "account-type" | "notifications" | "appearance" | "security";
+type Section = "account-type" | "checkout" | "notifications" | "appearance" | "security";
 
 const NAV_GROUPS: { label: string; items: { id: Section; label: string; icon: React.ElementType; desc: string }[] }[] = [
   {
@@ -85,6 +97,7 @@ const NAV_GROUPS: { label: string; items: { id: Section; label: string; icon: Re
   {
     label: "Preferences",
     items: [
+      { id: "checkout",      label: "Checkout",      icon: Ticket,     desc: "Ticket contact defaults" },
       { id: "notifications", label: "Notifications", icon: BellSimple, desc: "Push, email & in-app alerts" },
       { id: "appearance",    label: "Appearance",    icon: PaintBrush, desc: "Theme and motion settings" },
     ],
@@ -99,6 +112,7 @@ const NAV_GROUPS: { label: string; items: { id: Section; label: string; icon: Re
 
 const SECTION_TITLES: Record<Section, string> = {
   "account-type": "Account type",
+  "checkout": "Checkout",
   "notifications": "Notifications",
   "appearance": "Appearance",
   "security": "Security & Devices",
@@ -350,6 +364,160 @@ function AccountTypeSection({
             Edit
             <ArrowRight size={11} />
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Section: Checkout ──────────────────────────────────────────────────── */
+function CheckoutDetailsSection({ initialDetails }: { initialDetails: CheckoutDetails }) {
+  const [enabled, setEnabled] = useState(initialDetails.enabled);
+  const [attendeeName, setAttendeeName] = useState(initialDetails.attendeeName ?? "");
+  const [attendeeEmail, setAttendeeEmail] = useState(initialDetails.attendeeEmail ?? "");
+  const [mobileNumber, setMobileNumber] = useState(initialDetails.mobileNumber ?? "");
+  const [mobileNetwork, setMobileNetwork] = useState<CheckoutDetails["mobileNetwork"]>(initialDetails.mobileNetwork ?? "mtn");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const inputCls = "w-full rounded-[12px] border border-[var(--border-default)] bg-[var(--bg-elevated)] px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition focus:border-[#4a9f63]/60 focus:ring-1 focus:ring-[#4a9f63]/20";
+
+  async function save(nextEnabled = enabled) {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkout_details_enabled: nextEnabled,
+          checkout_attendee_name: attendeeName.trim() || null,
+          checkout_attendee_email: attendeeEmail.trim() || null,
+          checkout_mobile_number: mobileNumber.trim() || null,
+          checkout_mobile_network: mobileNetwork,
+        }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Could not save checkout details");
+      }
+      setMessage("Saved");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Could not save checkout details");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function clearDetails() {
+    setEnabled(false);
+    setAttendeeName("");
+    setAttendeeEmail("");
+    setMobileNumber("");
+    setMobileNetwork("mtn");
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          checkout_details_enabled: false,
+          checkout_attendee_name: null,
+          checkout_attendee_email: null,
+          checkout_mobile_number: null,
+          checkout_mobile_network: null,
+        }),
+      });
+      if (!res.ok) throw new Error("Could not clear checkout details");
+      setMessage("Cleared");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Could not clear checkout details");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)]">
+        <button
+          onClick={async () => {
+            const next = !enabled;
+            setEnabled(next);
+            await save(next);
+          }}
+          className="flex w-full items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4 transition hover:bg-[var(--bg-elevated)]"
+        >
+          <div className="flex items-center gap-3 text-left">
+            <Ticket size={16} className="shrink-0 text-[var(--text-tertiary)]" />
+            <div>
+              <p className="text-[13px] font-medium text-[var(--text-primary)]">Use saved checkout details</p>
+              <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">Prefill ticket contact details and mobile-money prompts</p>
+            </div>
+          </div>
+          <Toggle on={enabled} />
+        </button>
+
+        <div className="space-y-4 px-5 py-5">
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+              <UserCircle size={12} /> Attendee name
+            </label>
+            <input className={inputCls} value={attendeeName} onChange={(e) => setAttendeeName(e.target.value)} placeholder="Kofi Mensah" />
+          </div>
+
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+              <EnvelopeSimple size={12} /> Attendee email
+            </label>
+            <input className={inputCls} value={attendeeEmail} onChange={(e) => setAttendeeEmail(e.target.value)} placeholder="kofi@example.com" type="email" />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[1fr_160px]">
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                <Phone size={12} /> Mobile-money number
+              </label>
+              <input className={inputCls} value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} placeholder="0247 153 173" type="tel" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">Network</label>
+              <select
+                className={`${inputCls} appearance-none`}
+                value={mobileNetwork ?? ""}
+                onChange={(e) => setMobileNetwork((e.target.value || null) as CheckoutDetails["mobileNetwork"])}
+              >
+                <option value="mtn">MTN</option>
+                <option value="vodafone">Vodafone</option>
+                <option value="airteltigo">AirtelTigo</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3">
+            <p className="text-[12px] text-[var(--text-tertiary)]">
+              GoOutside does not store card numbers, CVV, expiry dates, mobile-money PINs, or bank details. Paystack handles payment credentials.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => save()}
+              disabled={saving}
+              className="rounded-full bg-[#4a9f63] px-5 py-2.5 text-[12px] font-bold text-white transition hover:bg-[#3d8f56] disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save checkout details"}
+            </button>
+            <button
+              onClick={clearDetails}
+              disabled={saving}
+              className="rounded-full border border-[var(--border-subtle)] px-5 py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:text-red-500 disabled:opacity-50"
+            >
+              Clear
+            </button>
+            {message && <span className="text-[12px] text-[var(--text-tertiary)]">{message}</span>}
+          </div>
         </div>
       </div>
     </div>
@@ -658,7 +826,7 @@ function SecuritySection({ activeSessions: initialSessions }: { activeSessions: 
 }
 
 /* ─── Main SettingsClient ─────────────────────────────────────────────────── */
-export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, activeSessions }: Props) {
+export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, checkoutDetails, activeSessions }: Props) {
   const router = useRouter();
   const { signOut } = useClerk();
 
@@ -802,6 +970,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
           {section === "notifications" && (
             <NotificationsSection notifPrefs={notifPrefs} maskedEmail={maskedEmail} />
           )}
+          {section === "checkout" && <CheckoutDetailsSection initialDetails={checkoutDetails} />}
           {section === "appearance" && <AppearanceSection />}
           {section === "security" && <SecuritySection activeSessions={activeSessions} />}
         </div>

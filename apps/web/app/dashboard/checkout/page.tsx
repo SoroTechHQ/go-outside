@@ -35,6 +35,13 @@ function validateContact(name: string, email: string): ContactErrors {
 type PaymentMethod = "mobile_money" | "card";
 type MomoNetwork   = "mtn" | "vodafone" | "airteltigo";
 type PaystackTransaction = { reference?: string; transaction?: string; status?: string };
+type CheckoutDefaults = {
+  checkout_details_enabled?: boolean;
+  checkout_attendee_name?: string | null;
+  checkout_attendee_email?: string | null;
+  checkout_mobile_number?: string | null;
+  checkout_mobile_network?: MomoNetwork | null;
+};
 
 // Ghana numbers — all three formats accepted:
 //   0XXXXXXXXX   (10 digits, local format)
@@ -97,11 +104,30 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!clerkUser) return;
-    setForm({
-      name:  clerkUser.fullName ?? `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim(),
-      email: clerkUser.primaryEmailAddress?.emailAddress ?? "",
-    });
+    setForm((current) => ({
+      name:  current.name || clerkUser.fullName || `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim(),
+      email: current.email || clerkUser.primaryEmailAddress?.emailAddress || "",
+    }));
   }, [clerkUser]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/users/me", { cache: "no-store" })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data: CheckoutDefaults | null) => {
+        if (cancelled || !data?.checkout_details_enabled) return;
+        setForm((current) => ({
+          name: data.checkout_attendee_name || current.name,
+          email: data.checkout_attendee_email || current.email,
+        }));
+        if (data.checkout_mobile_number) setMomoNumber(data.checkout_mobile_number);
+        if (data.checkout_mobile_network) setMomoNetwork(data.checkout_mobile_network);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const isContactValid = Object.keys(validateContact(form.name, form.email)).length === 0;
 
@@ -121,16 +147,15 @@ export default function CheckoutPage() {
     return true;
   }
 
-  async function completePurchase(reference: string, selectedMethod: PaymentMethod, selectedNetwork?: MomoNetwork) {
+  async function completePurchase(reference: string | null, selectedMethod: PaymentMethod, selectedNetwork?: MomoNetwork) {
     const body = items.map((item) => ({
       eventId:           item.eventId,
       tierId:            item.tier.id,
       quantity:          item.quantity,
       attendeeName:      form.name.trim(),
       attendeeEmail:     form.email.trim(),
-      paymentReference:  reference,
-      paymentMethod:     selectedMethod,
-      paymentNetwork:    selectedNetwork ?? null,
+      ...(reference ? { paymentReference: reference } : {}),
+      ...(reference ? { paymentMethod: selectedMethod, paymentNetwork: selectedNetwork ?? null } : {}),
     }));
 
     const res = await fetch("/api/tickets/purchase", {
@@ -149,15 +174,14 @@ export default function CheckoutPage() {
     const contactErrs = validateContact(form.name, form.email);
     setErrors(contactErrs);
     if (Object.keys(contactErrs).length > 0) return;
-    if (method === "mobile_money" && !validateMomo()) return;
+    if (finalTotal > 0 && method === "mobile_money" && !validateMomo()) return;
 
     setLoading(true);
     setPaymentError(null);
-    const reference = `GO-${nanoidShort()}`;
     const paymentAmount = Math.round(finalTotal * 100);
 
     if (finalTotal === 0) {
-      completePurchase(reference, method).then(() => {
+      completePurchase(null, method).then(() => {
         setLoading(false);
         setSuccess(true);
         clearCart();
@@ -167,6 +191,8 @@ export default function CheckoutPage() {
       });
       return;
     }
+
+    const reference = `GO-${nanoidShort()}`;
 
     const launch = () => {
       // @ts-expect-error paystack global
@@ -372,89 +398,99 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Payment method */}
-              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <ShieldCheck size={18} weight="fill" className="text-[var(--brand)] shrink-0" />
-                  <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Payment Method</h2>
+              {finalTotal === 0 ? (
+                <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck size={18} weight="fill" className="text-[var(--brand)] shrink-0" />
+                    <div>
+                      <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Free Reservation</h2>
+                      <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">No payment method is needed for this order.</p>
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+                  <div className="mb-4 flex items-center gap-3">
+                    <ShieldCheck size={18} weight="fill" className="text-[var(--brand)] shrink-0" />
+                    <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Payment Method</h2>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {([
-                    { id: "mobile_money", label: "Mobile Money", icon: Phone },
-                    { id: "card",         label: "Card",         icon: CreditCard },
-                  ] as const).map(({ id, label, icon: Icon }) => (
-                    <button
-                      key={id}
-                      className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 py-3.5 px-2 transition-all text-center ${method === id ? "border-[var(--brand)] bg-[var(--brand-dim)]" : "border-[var(--border-subtle)] hover:border-[var(--border-default)]"}`}
-                      onClick={() => setMethod(id)}
-                      type="button"
-                    >
-                      <Icon size={20} weight="fill" className={method === id ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"} />
-                      <span className={`text-[11px] font-semibold ${method === id ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"}`}>{label}</span>
-                    </button>
-                  ))}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {([
+                      { id: "mobile_money", label: "Mobile Money", icon: Phone },
+                      { id: "card",         label: "Card",         icon: CreditCard },
+                    ] as const).map(({ id, label, icon: Icon }) => (
+                      <button
+                        key={id}
+                        className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 py-3.5 px-2 transition-all text-center ${method === id ? "border-[var(--brand)] bg-[var(--brand-dim)]" : "border-[var(--border-subtle)] hover:border-[var(--border-default)]"}`}
+                        onClick={() => setMethod(id)}
+                        type="button"
+                      >
+                        <Icon size={20} weight="fill" className={method === id ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"} />
+                        <span className={`text-[11px] font-semibold ${method === id ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"}`}>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {method === "mobile_money" && (
+                      <motion.div key="momo" animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} initial={{ opacity: 0, y: 8 }} className="space-y-3">
+                        <div>
+                          <label className="mb-2 block text-[12px] font-semibold text-[var(--text-secondary)]">Network</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {(["mtn", "vodafone", "airteltigo"] as const).map((net) => (
+                              <button
+                                key={net}
+                                className={`rounded-xl border-2 py-2.5 text-[12px] font-semibold transition-all uppercase ${momoNetwork === net ? "border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)]" : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)]"}`}
+                                onClick={() => setMomoNetwork(net)}
+                                type="button"
+                              >
+                                {net === "airteltigo" ? "AirtelTigo" : net.charAt(0).toUpperCase() + net.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">Mobile Number</label>
+                          <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${momoError ? "border-red-400" : "border-[var(--border-default)]"}`}>
+                            <Phone size={15} className="text-[var(--text-tertiary)] shrink-0" />
+                            <input
+                              className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setMomoNumber(val);
+                                setMomoError(null);
+                                const norm = normalizeGhanaPhone(val);
+                                if (norm) {
+                                  const detected = inferNetwork(norm);
+                                  if (detected) setMomoNetwork(detected);
+                                }
+                              }}
+                              onBlur={validateMomo}
+                              placeholder="0247 153 173"
+                              type="tel"
+                              value={momoNumber}
+                            />
+                          </div>
+                          {momoError ? (
+                            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400"><WarningCircle size={11} weight="fill" /> {momoError}</p>
+                          ) : (
+                            <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">You&apos;ll receive a USSD prompt to approve the payment</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {method === "card" && (
+                      <motion.div key="card" animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} initial={{ opacity: 0, y: 8 }} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 text-center space-y-2">
+                        <CreditCard size={28} className="mx-auto text-[var(--brand)]" weight="duotone" />
+                        <p className="text-[13px] font-semibold text-[var(--text-primary)]">Paystack Secure Card Form</p>
+                        <p className="text-[12px] text-[var(--text-tertiary)]">Clicking "Pay" opens Paystack&apos;s PCI-compliant card modal. We never touch your card details.</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-
-                <AnimatePresence mode="wait">
-                  {method === "mobile_money" && (
-                    <motion.div key="momo" animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} initial={{ opacity: 0, y: 8 }} className="space-y-3">
-                      <div>
-                        <label className="mb-2 block text-[12px] font-semibold text-[var(--text-secondary)]">Network</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {(["mtn", "vodafone", "airteltigo"] as const).map((net) => (
-                            <button
-                              key={net}
-                              className={`rounded-xl border-2 py-2.5 text-[12px] font-semibold transition-all uppercase ${momoNetwork === net ? "border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)]" : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)]"}`}
-                              onClick={() => setMomoNetwork(net)}
-                              type="button"
-                            >
-                              {net === "airteltigo" ? "AirtelTigo" : net.charAt(0).toUpperCase() + net.slice(1)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">Mobile Number</label>
-                        <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${momoError ? "border-red-400" : "border-[var(--border-default)]"}`}>
-                          <Phone size={15} className="text-[var(--text-tertiary)] shrink-0" />
-                          <input
-                            className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setMomoNumber(val);
-                              setMomoError(null);
-                              // Auto-select network as user types
-                              const norm = normalizeGhanaPhone(val);
-                              if (norm) {
-                                const detected = inferNetwork(norm);
-                                if (detected) setMomoNetwork(detected);
-                              }
-                            }}
-                            onBlur={validateMomo}
-                            placeholder="0247 153 173"
-                            type="tel"
-                            value={momoNumber}
-                          />
-                        </div>
-                        {momoError ? (
-                          <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400"><WarningCircle size={11} weight="fill" /> {momoError}</p>
-                        ) : (
-                          <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">You&apos;ll receive a USSD prompt to approve the payment</p>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {method === "card" && (
-                    <motion.div key="card" animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} initial={{ opacity: 0, y: 8 }} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 text-center space-y-2">
-                      <CreditCard size={28} className="mx-auto text-[var(--brand)]" weight="duotone" />
-                      <p className="text-[13px] font-semibold text-[var(--text-primary)]">Paystack Secure Card Form</p>
-                      <p className="text-[12px] text-[var(--text-tertiary)]">Clicking "Pay" opens Paystack&apos;s PCI-compliant card modal. We never touch your card details.</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              )}
             </div>
 
             {/* Right column — order summary + pay button */}
@@ -512,7 +548,7 @@ export default function CheckoutPage() {
 
                 <button
                   className="mt-4 w-full rounded-2xl bg-[var(--brand)] py-3.5 text-[15px] font-semibold text-white transition hover:bg-[var(--brand-hover)] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60"
-                  disabled={loading || !isContactValid || (method === "mobile_money" && !momoNumber)}
+                  disabled={loading || !isContactValid || (finalTotal > 0 && method === "mobile_money" && !momoNumber)}
                   onClick={handlePay}
                   type="button"
                 >
@@ -524,7 +560,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <Lock size={15} weight="bold" />
-                      Pay {finalTotal === 0 ? "Free" : `GHS ${finalTotal.toLocaleString()}`}
+                      {finalTotal === 0 ? "Reserve Free Ticket" : `Pay GHS ${finalTotal.toLocaleString()}`}
                     </>
                   )}
                 </button>
@@ -535,9 +571,11 @@ export default function CheckoutPage() {
                   </p>
                 )}
 
-                <p className="mt-3 text-center text-[11px] text-[var(--text-tertiary)]">
-                  Secured by Paystack · 256-bit SSL encryption
-                </p>
+                {finalTotal > 0 && (
+                  <p className="mt-3 text-center text-[11px] text-[var(--text-tertiary)]">
+                    Secured by Paystack · 256-bit SSL encryption
+                  </p>
+                )}
               </div>
             </div>
           </div>

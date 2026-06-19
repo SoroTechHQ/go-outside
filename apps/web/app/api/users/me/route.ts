@@ -27,6 +27,11 @@ const USER_PUBLIC_SELECT = [
   "pulse_score",
   "pulse_tier",
   "onboarding_complete",
+  "checkout_details_enabled",
+  "checkout_attendee_name",
+  "checkout_attendee_email",
+  "checkout_mobile_number",
+  "checkout_mobile_network",
 ] as const;
 
 type PublicUserDto = Partial<Record<(typeof USER_PUBLIC_SELECT)[number], unknown>>;
@@ -90,6 +95,11 @@ export async function PATCH(req: NextRequest) {
     "pulse_score", "pulse_tier", "onboarding_complete",
     "avatar_url", "cover_url",
     "notification_prefs",
+    "checkout_details_enabled",
+    "checkout_attendee_name",
+    "checkout_attendee_email",
+    "checkout_mobile_number",
+    "checkout_mobile_network",
   ] as const;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
