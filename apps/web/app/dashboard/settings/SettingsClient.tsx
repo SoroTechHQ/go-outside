@@ -11,7 +11,9 @@ import {
   CaretDown,
   X,
   Confetti,
+  Lightning,
 } from "@phosphor-icons/react";
+import { useAnimationSettings } from "../../../lib/animation-settings";
 
 const PRIMARY_SCENES = [
   "Music & Nightlife",
@@ -47,6 +49,7 @@ type Props = {
 
 export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }: Props) {
   const router = useRouter();
+  const { reduceMotion, setReduceMotion } = useAnimationSettings();
 
   const [showOrgForm,   setShowOrgForm]   = useState(false);
   const [orgNameVal,    setOrgNameVal]    = useState("");
@@ -318,6 +321,40 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
             )}
           </div>
         )}
+      </section>
+
+      {/* ── Appearance ─────────────────────────────────────────────────── */}
+      <section className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)]">
+        <div className="border-b border-[var(--border-subtle)] px-5 py-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+            Appearance
+          </p>
+        </div>
+        <button
+          onClick={() => setReduceMotion(!reduceMotion)}
+          className="flex w-full items-center justify-between px-5 py-4 transition hover:bg-[var(--bg-elevated)] active:scale-[0.995]"
+        >
+          <div className="flex items-center gap-3">
+            <Lightning size={16} className="shrink-0 text-[var(--text-tertiary)]" />
+            <div className="text-left">
+              <p className="text-[13px] font-medium text-[var(--text-primary)]">Reduce animations</p>
+              <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                Use simpler fade transitions instead of motion effects
+              </p>
+            </div>
+          </div>
+          <div
+            className={`relative h-[26px] w-[46px] shrink-0 rounded-full transition-colors duration-200 ${
+              reduceMotion ? "bg-[#4a9f63]" : "bg-[var(--border-card)]"
+            }`}
+          >
+            <div
+              className={`absolute top-[3px] h-5 w-5 rounded-full shadow transition-transform duration-200 ${
+                reduceMotion ? "translate-x-[22px] bg-white" : "translate-x-[3px] bg-[var(--bg-base)]"
+              }`}
+            />
+          </div>
+        </button>
       </section>
 
       {/* ── Notifications ──────────────────────────────────────────────── */}
