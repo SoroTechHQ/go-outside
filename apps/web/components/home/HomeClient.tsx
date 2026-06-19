@@ -6,6 +6,7 @@ import Link from "next/link";
 import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import {
   ArrowRight,
   BookmarkSimple,
@@ -937,6 +938,7 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setPeekPanelWidth } = useAppShell();
+  const { variants: animVariants, reduceMotion, springs } = useAnimationConfig();
 
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
   const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
@@ -1208,7 +1210,13 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                     return (
                       <Fragment key={`section-${sectionIdx}`}>
                         {section && (
-                          <div className={sectionIdx === 0 ? "mb-3 mt-2" : "mb-3"}>
+                          <motion.div
+                            className={sectionIdx === 0 ? "mb-3 mt-2" : "mb-3"}
+                            variants={animVariants.fadeUp}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, margin: "-20px" }}
+                          >
                             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
                               {section.resolvedEyebrow}
                             </p>
@@ -1218,7 +1226,7 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                             {section.subtext && (
                               <p className="mt-1 text-[0.8rem] text-[var(--text-secondary)]">{section.subtext}</p>
                             )}
-                          </div>
+                          </motion.div>
                         )}
                         <div className={feedLayout === "grid" ? "grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4" : "flex flex-col gap-3"}>
                           {sectionEvents.map((event) => (
