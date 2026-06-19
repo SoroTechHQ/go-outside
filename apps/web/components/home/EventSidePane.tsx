@@ -602,14 +602,20 @@ export function EventSidePane({
             transition: isSnapping ? "height 0.38s cubic-bezier(0.22,1,0.36,1)" : "none",
           }}
         >
+          {/* Safe-area spacer — only visible when sheet is at full height */}
+          {sheetHeight >= SNAP_FULL - 5 && (
+            <div style={{ height: "env(safe-area-inset-top, 12px)", minHeight: 12 }} className="shrink-0" />
+          )}
+
           {/* Drag handle area */}
           <div
-            className="flex shrink-0 touch-none flex-col items-center pt-3 pb-1"
+            className="flex shrink-0 touch-none flex-col items-center py-3"
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
             onTouchStart={handleTouchStart}
+            style={{ minHeight: 32 }}
           >
-            <div className="h-1 w-10 rounded-full bg-[var(--border-default)] opacity-60" />
+            <div className="h-1.5 w-12 rounded-full bg-[var(--border-default)] opacity-50" />
           </div>
 
           {/* Sheet header */}
