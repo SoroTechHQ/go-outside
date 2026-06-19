@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 import { supabaseAdmin } from "../../../../lib/supabase";
-import { Resend } from "resend";
+import { getResendClient } from "../../../../lib/email";
 
 export const dynamic = "force-dynamic";
 
 const SECRET = process.env.PAYSTACK_SECRET_KEY ?? "";
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 function verifySignature(payload: string, signature: string): boolean {
   if (!SECRET || !signature) return false;
@@ -110,7 +109,7 @@ async function fulfillTickets(reference: string): Promise<void> {
   const totalStr = total === 0 ? "Free" : `GHS ${total.toFixed(2)}`;
   const attendeeName = firstTicket.attendee_name ?? firstName;
 
-  await resend.emails.send({
+  await getResendClient().emails.send({
     from: "GoOutside <noreply@mail.gooutside.club>",
     to: userRow.email,
     subject: `Your ticket for ${eventRow.title} is confirmed!`,

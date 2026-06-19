@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { supabaseAdmin } from "../../../../lib/supabase";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getResendClient } from "../../../../lib/email";
 
 export async function POST(req: NextRequest) {
   // Auth check
@@ -40,7 +38,7 @@ export async function POST(req: NextRequest) {
         : "event goer";
 
   try {
-    await resend.emails.send({
+    await getResendClient().emails.send({
       from: "GoOutside <waitlist@mail.gooutside.club>",
       to: signup.email,
       subject: "You're in — GoOutside is coming to Accra 🟢",

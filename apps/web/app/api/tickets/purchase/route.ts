@@ -3,9 +3,7 @@ import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { insertNotification } from "../../../../lib/db/insert-notification";
 import { enforceSameOrigin } from "../../../../lib/api-security";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getResendClient } from "../../../../lib/email";
 
 type PurchaseItem = {
   eventId: string;
@@ -306,7 +304,7 @@ export async function POST(req: NextRequest) {
       const totalStr = total === 0 ? "Free" : `GHS ${total.toFixed(2)}`;
       const attendeeName = eventItems[0]?.attendeeName ?? `${user.first_name} ${user.last_name}`.trim();
 
-      resend.emails.send({
+      getResendClient().emails.send({
         from: "GoOutside <noreply@mail.gooutside.club>",
         to: user.email,
         subject: `Your ticket for ${ev.title} is confirmed!`,

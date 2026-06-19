@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { Resend } from "resend";
 import { supabaseAdmin } from "../../../../lib/supabase";
+import { getResendClient } from "../../../../lib/email";
 import type { AlphaFeedbackPayload, CapturedLog } from "../../../../lib/alpha";
 import { DEV_EMAIL, FROM_EMAIL, FEEDBACK_TYPES } from "../../../../lib/alpha";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth();
@@ -75,7 +73,7 @@ export async function POST(req: NextRequest) {
     : "";
 
   try {
-    await resend.emails.send({
+    await getResendClient().emails.send({
       from: FROM_EMAIL,
       to:   DEV_EMAIL,
       subject: `[Alpha] ${label} — ${pageUrl.replace(/^https?:\/\/[^/]+/, "")}`,

@@ -34,6 +34,7 @@ function validateContact(name: string, email: string): ContactErrors {
 
 type PaymentMethod = "mobile_money" | "card";
 type MomoNetwork   = "mtn" | "vodafone" | "airteltigo";
+type PaystackTransaction = { reference?: string; transaction?: string; status?: string };
 
 // Ghana numbers — all three formats accepted:
 //   0XXXXXXXXX   (10 digits, local format)
@@ -153,6 +154,7 @@ export default function CheckoutPage() {
     setLoading(true);
     setPaymentError(null);
     const reference = `GO-${nanoidShort()}`;
+    const paymentAmount = Math.round(finalTotal * 100);
 
     if (finalTotal === 0) {
       completePurchase(reference, method).then(() => {
@@ -171,13 +173,18 @@ export default function CheckoutPage() {
       const handler = window.PaystackPop?.setup({
         key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "",
         email:    form.email || "customer@gooutside.club",
-        amount:   finalTotal * 100,
+        amount:   paymentAmount,
         currency: "GHS",
         reference,
         channels: method === "mobile_money" ? ["mobile_money"] : ["card"],
-        metadata: { phone: normalizeGhanaPhone(momoNumber) ?? momoNumber.replace(/\s/g, ""), network: momoNetwork },
-        callback: () => {
-          completePurchase(reference, method, momoNetwork).then(() => {
+        metadata: {
+          localReference: reference,
+          phone: method === "mobile_money" ? normalizeGhanaPhone(momoNumber) ?? momoNumber.replace(/\s/g, "") : null,
+          network: method === "mobile_money" ? momoNetwork : null,
+        },
+        callback: (transaction: PaystackTransaction) => {
+          const completedReference = transaction?.reference ?? reference;
+          completePurchase(completedReference, method, method === "mobile_money" ? momoNetwork : undefined).then(() => {
             setLoading(false);
             setSuccess(true);
             clearCart();
@@ -188,7 +195,12 @@ export default function CheckoutPage() {
         },
         onClose: () => setLoading(false),
       });
-      handler?.openIframe();
+      if (!handler) {
+        setPaymentError("Could not load Paystack checkout");
+        setLoading(false);
+        return;
+      }
+      handler.openIframe();
     };
 
     if (document.getElementById("paystack-js")) {

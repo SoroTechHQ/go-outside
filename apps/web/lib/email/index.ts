@@ -9,9 +9,22 @@
 
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE   = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
 const ICONS  = `${BASE}/email-icons`;
+
+let resend: Resend | null = null;
+
+export function getResendClient() {
+  if (resend) return resend;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is required.");
+  }
+
+  resend = new Resend(apiKey);
+  return resend;
+}
 
 // ─── Colors (light mode) ──────────────────────────────────────────────────────
 const BG      = "#f4f4f4";   // page background
@@ -50,7 +63,7 @@ function txnHeaders(extra?: Record<string, string>): Record<string, string> {
 
 // ─── Public send functions ─────────────────────────────────────────────────────
 export async function sendMessageNudge(opts: { to: string; senderName: string; channelUrl?: string }) {
-  return resend.emails.send({
+  return getResendClient().emails.send({
     from:    SENDERS.messages,
     to:      opts.to,
     subject: `💬 ${opts.senderName} is waiting for your reply`,
@@ -64,7 +77,7 @@ export async function sendTicketReceipt(opts: {
   ticketId: string; qrUrl: string; venue: string; venueAddress?: string;
   mapsUrl?: string; ticketType?: string;
 }) {
-  return resend.emails.send({
+  return getResendClient().emails.send({
     from:    SENDERS.tickets,
     to:      opts.to,
     replyTo: "hello@mail.gooutside.club",
@@ -78,7 +91,7 @@ export async function sendEventReminder(opts: {
   to: string; firstName: string; eventName: string;
   eventDate: string; venue: string; slug: string;
 }) {
-  return resend.emails.send({
+  return getResendClient().emails.send({
     from:    SENDERS.notify,
     to:      opts.to,
     subject: `⏰ Starting in 2 hours: ${opts.eventName}`,
@@ -88,7 +101,7 @@ export async function sendEventReminder(opts: {
 }
 
 export async function sendPioneerInvite(opts: { to: string; firstName: string }) {
-  return resend.emails.send({
+  return getResendClient().emails.send({
     from:    SENDERS.pioneers,
     to:      opts.to,
     replyTo: "hello@mail.gooutside.club",
@@ -99,7 +112,7 @@ export async function sendPioneerInvite(opts: { to: string; firstName: string })
 }
 
 export async function sendWaitlistConfirmation(opts: { to: string; firstName: string; roleLabel: string }) {
-  return resend.emails.send({
+  return getResendClient().emails.send({
     from:    SENDERS.waitlist,
     to:      opts.to,
     subject: `✅ You're on the list — GoOutside`,
@@ -118,7 +131,7 @@ export async function sendNewSignInEmail(opts: {
   signInMethod: string;
 }): Promise<void> {
   try {
-    await resend.emails.send({
+    await getResendClient().emails.send({
       from:    SENDERS.notify,
       to:      opts.to,
       subject: "New sign-in to your GoOutside account",
@@ -138,7 +151,7 @@ export async function sendFollowEmail(opts: {
   followersCount?: number;
 }): Promise<void> {
   try {
-    await resend.emails.send({
+    await getResendClient().emails.send({
       from:    SENDERS.notify,
       to:      opts.to,
       subject: `${opts.followerName} started following you on GoOutside`,
@@ -156,7 +169,7 @@ export async function sendPostLikeEmail(opts: {
   postPreview: string;
 }): Promise<void> {
   try {
-    await resend.emails.send({
+    await getResendClient().emails.send({
       from:    SENDERS.notify,
       to:      opts.to,
       subject: `${opts.likerName} liked your post`,
