@@ -140,16 +140,16 @@ function MiniCalendar({
               className={[
                 "rounded-lg py-1.5 text-center text-[12px] transition",
                 isPast(d) ? "cursor-default opacity-40 text-[var(--text-tertiary)]" : "hover:bg-[var(--bg-muted)]",
-                isToday(d) ? "font-bold text-[#5FBF2A]" : "text-[var(--text-primary)]",
-                isSelected(d) ? "!bg-[#5FBF2A] !text-white font-bold" : "",
-                inRange(d) ? "!bg-[#f0fae6] !text-[#3E9E1A]" : "",
+                isToday(d) ? "font-bold text-[var(--brand)]" : "text-[var(--text-primary)]",
+                isSelected(d) ? "!bg-[var(--brand)] !text-white font-bold" : "",
+                inRange(d) ? "!bg-[var(--brand-dim)] !text-[var(--brand)]" : "",
               ].filter(Boolean).join(" ")}
             >{d}</button>
           );
         })}
       </div>
       {rangeStart && rangeEnd && rangeStart.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`) && (
-        <p className="mt-2 text-center text-[11px] font-semibold text-[#3E9E1A]">
+        <p className="mt-2 text-center text-[11px] font-semibold text-[var(--brand)]">
           {MONTHS_SHORT[viewMonth]} {Number(rangeStart.slice(8))} – {rangeEnd.slice(5).replace("-", " / ")}
         </p>
       )}
@@ -350,13 +350,13 @@ export function SearchPillExpanded({
     <div ref={pillRef} className={`relative w-full ${className}`}>
       {/* ── Pill shell ── */}
       <motion.div
-        className={`flex ${pillH} items-stretch overflow-visible rounded-full border transition-all duration-200 ${
+        className={`flex ${pillH} items-stretch overflow-visible rounded-full border transition-[border-color,box-shadow] duration-200 ${
           active
             ? "border-[var(--border-default)] shadow-[0_8px_40px_rgba(0,0,0,0.13)]"
             : "border-[var(--border-subtle)] shadow-[0_2px_16px_rgba(0,0,0,0.07)]"
         } bg-[var(--bg-card)]`}
-        whileHover={!active ? { scale: 1.022, boxShadow: "0 8px 36px rgba(0,0,0,0.13)" } : {}}
-        transition={{ type: "spring", stiffness: 380, damping: 28 }}
+        whileHover={!active ? { scale: 1.015, boxShadow: "0 8px 36px rgba(0,0,0,0.13)" } : {}}
+        transition={{ type: "spring", stiffness: 500, damping: 32 }}
       >
         {/* ── WHAT segment ── */}
         {active === "what" ? (
@@ -380,7 +380,7 @@ export function SearchPillExpanded({
                   }
                 }}
                 placeholder="Search events, organizers, people, vibes, venues…"
-                className={`${showLabels ? "mt-0.5" : ""} w-full bg-transparent text-[13px] font-medium text-[var(--text-primary)] outline-none caret-[#5FBF2A] placeholder:text-[var(--text-tertiary)] placeholder:font-normal`}
+                className={`${showLabels ? "mt-0.5" : ""} w-full bg-transparent text-[13px] font-medium text-[var(--text-primary)] outline-none caret-[var(--brand)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal`}
               />
               {query && (
                 <button type="button" onClick={() => { setQuery(""); setSuggestions([]); whatInputRef.current?.focus(); onQueryChange?.(""); }} className="ml-2 shrink-0 text-[var(--text-tertiary)] transition hover:text-[var(--text-secondary)]">
@@ -394,7 +394,7 @@ export function SearchPillExpanded({
             type="button"
             onClick={() => setActive("what")}
             whileTap={{ scale: 0.98 }}
-            className={`flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors rounded-l-full hover:bg-[var(--bg-muted)/60]`}
+            className={`flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors rounded-l-full hover:bg-[var(--bg-muted)]`}
           >
             {showLabels && (
               <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">
@@ -416,7 +416,7 @@ export function SearchPillExpanded({
           onClick={() => setActive(active === "when" ? null : "when")}
           whileTap={{ scale: 0.98 }}
           className={`relative flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors ${
-            active === "when" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)/60]"
+            active === "when" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)]"
           }`}
         >
           {showLabels && (
@@ -438,7 +438,7 @@ export function SearchPillExpanded({
           onClick={() => setActive(active === "lucky" ? null : "lucky")}
           whileTap={{ scale: 0.98 }}
           className={`relative flex min-w-0 flex-1 flex-col justify-center ${segPx} text-left transition-colors ${
-            active === "lucky" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)/60]"
+            active === "lucky" ? "bg-[var(--bg-muted)]" : "hover:bg-[var(--bg-muted)]"
           }`}
         >
           {showLabels && (
@@ -455,7 +455,7 @@ export function SearchPillExpanded({
             type="button"
             onClick={handleSearch}
             whileTap={{ scale: 0.94 }}
-            className={`flex ${compact ? "h-9" : "h-12"} items-center gap-2 rounded-full bg-[#5FBF2A] px-5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(95,191,42,0.35)] transition hover:bg-[#4da823]`}
+            className={`flex ${compact ? "h-9" : "h-12"} items-center gap-2 rounded-full bg-[var(--brand)] px-5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(var(--brand-rgb),0.35)] transition hover:bg-[var(--brand-hover)]`}
           >
             <MagnifyingGlass size={15} weight="bold" />
             <span className="hidden sm:inline">Search</span>
@@ -475,10 +475,10 @@ export function SearchPillExpanded({
 
             <motion.div
               key={active}
-              initial={{ opacity: 0, y: -6, scale: 0.99 }}
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.99 }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.8 }}
               className="absolute left-0 right-0 top-[calc(100%+8px)] z-50"
             >
               {/* ── WHAT panel: suggestions + categories (no separate input) ── */}
@@ -495,7 +495,7 @@ export function SearchPillExpanded({
                         exit={{ opacity: 0 }}
                         className="flex items-center gap-2.5 px-5 py-3.5 text-[12px] text-[var(--text-tertiary)]"
                       >
-                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#5FBF2A]/30 border-t-[#5FBF2A]" />
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--brand)]/30 border-t-[var(--brand)]" />
                         Searching…
                       </motion.div>
                     )}
@@ -520,7 +520,7 @@ export function SearchPillExpanded({
                             }}
                             className="flex w-full items-center gap-3 px-5 py-2.5 text-left transition hover:bg-[var(--bg-muted)] focus:bg-[var(--bg-muted)] focus:outline-none"
                           >
-                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${s.type === "event" ? "bg-[#f0fae6] text-[#5FBF2A]" : "bg-[var(--bg-muted)] text-[var(--text-tertiary)]"}`}>
+                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${s.type === "event" ? "bg-[var(--brand-dim)] text-[var(--brand)]" : "bg-[var(--bg-muted)] text-[var(--text-tertiary)]"}`}>
                               {s.type === "event" ? <Ticket size={14} weight="duotone" /> : <UserCircle size={14} weight="duotone" />}
                             </div>
                             <div className="min-w-0 flex-1">
@@ -571,11 +571,11 @@ export function SearchPillExpanded({
                             key={cat.slug} type="button" onClick={() => toggleCat(cat.slug)} whileTap={{ scale: 0.94 }}
                             className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center text-[11px] font-medium transition ${
                               sel
-                                ? "border-[#5FBF2A] bg-[#f0fae6] text-[#3E9E1A]"
+                                ? "border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)]"
                                 : "border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:border-[var(--border-default)] hover:bg-[var(--bg-card)]"
                             }`}
                           >
-                            <span className={sel ? "text-[#3E9E1A]" : "text-[var(--text-secondary)]"}>{cat.icon}</span>
+                            <span className={sel ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"}>{cat.icon}</span>
                             {cat.label}
                           </motion.button>
                         );
@@ -602,8 +602,8 @@ export function SearchPillExpanded({
                           onClick={() => { setWhenChip(chip.value); setRangeStart(null); setRangeEnd(null); }}
                           className={`rounded-full border px-4 py-1.5 text-[12px] font-medium transition ${
                             whenChip === chip.value
-                              ? "border-[#5FBF2A] bg-[#f0fae6] text-[#3E9E1A]"
-                              : "border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:border-[#5FBF2A]/60 hover:text-[#3E9E1A]"
+                              ? "border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)]"
+                              : "border-[var(--border-subtle)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:border-[var(--brand)]/60 hover:text-[var(--brand)]"
                           }`}
                         >{chip.label}</motion.button>
                       ))}
@@ -646,7 +646,7 @@ export function SearchPillExpanded({
                       {whenDisplay ? `Showing events for: ${whenDisplay}` : "Select a date range"}
                     </span>
                     <motion.button type="button" onClick={handleSearch} whileTap={{ scale: 0.96 }}
-                      className="flex items-center gap-2 rounded-full bg-[#5FBF2A] px-4 py-1.5 text-[12px] font-semibold text-white shadow-[0_2px_10px_rgba(95,191,42,0.3)] transition hover:bg-[#4da823]"
+                      className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-1.5 text-[12px] font-semibold text-white shadow-[0_2px_10px_rgba(var(--brand-rgb),0.3)] transition hover:bg-[var(--brand-hover)]"
                     >
                       <MagnifyingGlass size={13} weight="bold" /> Search
                     </motion.button>
@@ -679,7 +679,7 @@ export function SearchPillExpanded({
                     <motion.button
                       type="button" disabled={surpriseLoading || surpriseDone}
                       onClick={handleSurprise} whileTap={{ scale: 0.97 }}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#3E9E1A] to-[#5FBF2A] py-4 text-[14px] font-semibold text-white shadow-[0_4px_20px_rgba(95,191,42,0.3)] transition hover:opacity-90 disabled:opacity-70"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[var(--brand-hover)] to-[var(--brand)] py-4 text-[14px] font-semibold text-white shadow-[0_4px_20px_rgba(var(--brand-rgb),0.3)] transition hover:opacity-90 disabled:opacity-70"
                     >
                       {surpriseDone ? (
                         <><span>✓</span> Found your match!</>
@@ -729,7 +729,7 @@ export function SearchPillMobile({ className = "" }: { className?: string }) {
         whileTap={{ scale: 0.98 }}
         className={`flex w-full items-center gap-3 rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-left shadow-sm transition ${className}`}
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5FBF2A] text-white">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white">
           <MagnifyingGlass size={15} weight="bold" />
         </div>
         <div className="min-w-0 flex-1">
@@ -753,7 +753,7 @@ export function SearchPillMobile({ className = "" }: { className?: string }) {
               style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
             >
               <div className="flex items-center gap-3 px-4 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0fae6] text-[#5FBF2A]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
                   <MagnifyingGlass size={18} weight="bold" />
                 </div>
                 <input
@@ -761,7 +761,7 @@ export function SearchPillMobile({ className = "" }: { className?: string }) {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); if (e.key === "Escape") setOpen(false); }}
                   placeholder="Search events, people, vibes…"
-                  className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] caret-[#5FBF2A]"
+                  className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] caret-[var(--brand)]"
                 />
                 <button type="button" onClick={() => setOpen(false)} className="text-[13px] font-semibold text-[var(--text-secondary)]">Cancel</button>
               </div>

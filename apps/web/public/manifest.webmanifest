@@ -1,0 +1,24 @@
+{
+  "name": "GoOutside",
+  "short_name": "GoOutside",
+  "description": "Social-first event discovery for Ghana.",
+  "start_url": "/home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2f8f45",
+  "icons": [
+    {
+      "src": "/favicon-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

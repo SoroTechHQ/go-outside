@@ -7,6 +7,7 @@ import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAnimationConfig } from "../../hooks/useAnimationConfig";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import {
   ArrowRight,
   BookmarkSimple,
@@ -86,6 +87,14 @@ type PulseData = {
 };
 
 const CARDS_PER_SECTION = 4;
+const PEEK_PANEL_WIDTH_STORAGE_KEY = "go:home-peek-panel-width";
+const DEFAULT_PEEK_PANEL_WIDTH = 520;
+const MIN_PEEK_PANEL_WIDTH = 420;
+const MAX_PEEK_PANEL_WIDTH = 960;
+
+function clampPeekPanelWidth(width: number) {
+  return Math.min(MAX_PEEK_PANEL_WIDTH, Math.max(MIN_PEEK_PANEL_WIDTH, width));
+}
 
 type SponsoredSpotlight = {
   href: string;
@@ -939,6 +948,7 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
   const searchParams = useSearchParams();
   const { setPeekPanelWidth } = useAppShell();
   const { variants: animVariants, reduceMotion, springs } = useAnimationConfig();
+  const isDesktopPane = useMediaQuery("(min-width: 768px)");
 
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
   const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
@@ -960,7 +970,7 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
       body: JSON.stringify({ eventId, edgeType }),
     });
   }, []);
-  const [paneWidth, setPaneWidth] = useState(520);
+  const [paneWidth, setPaneWidth] = useState(DEFAULT_PEEK_PANEL_WIDTH);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const selectedCategories = useMemo(
@@ -1019,8 +1029,22 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
     return pickSectionHeaders(numSections, sessionSeed, allFriendNames, hour, day);
   }, [visibleEvents, sessionSeed, now]);
 
+  useEffect(() => {
+    const stored = window.localStorage.getItem(PEEK_PANEL_WIDTH_STORAGE_KEY);
+    if (!stored) return;
+    const parsed = Number(stored);
+    if (Number.isFinite(parsed)) setPaneWidth(clampPeekPanelWidth(parsed));
+  }, []);
+
+  const handlePaneWidthChange = useCallback((width: number) => {
+    if (width <= 0) return;
+    const nextWidth = clampPeekPanelWidth(width);
+    setPaneWidth(nextWidth);
+    window.localStorage.setItem(PEEK_PANEL_WIDTH_STORAGE_KEY, String(nextWidth));
+  }, []);
+
   // Sync pane width to AppShellContext
-  useEffect(() => { setPeekPanelWidth(selectedEvent ? paneWidth : 0); }, [selectedEvent, paneWidth, setPeekPanelWidth]);
+  useEffect(() => { setPeekPanelWidth(selectedEvent && isDesktopPane ? paneWidth : 0); }, [selectedEvent, isDesktopPane, paneWidth, setPeekPanelWidth]);
   useEffect(() => () => { setPeekPanelWidth(0); }, [setPeekPanelWidth]);
 
   // Infinite scroll sentinel
@@ -1365,9 +1389,10 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
       {selectedEvent && (
         <EventSidePane
           event={selectedEvent}
+          initialWidth={paneWidth}
           organizer={undefined}
           onClose={() => setSelectedEvent(null)}
-          onWidthChange={setPaneWidth}
+          onWidthChange={handlePaneWidthChange}
         />
       )}
     </>

@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { useClerk } from "@clerk/nextjs";
 import { useAnimationSettings } from "../../../lib/animation-settings";
+import { enableBrowserPush, getSavedBrowserPushState } from "../../../lib/notifications/browser-push";
 
 const PRIMARY_SCENES = [
   "Music & Nightlife",
@@ -94,6 +95,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
 
   const [prefs,       setPrefs]       = useState<NotifPrefs>(notifPrefs);
   const [savingNotif, setSavingNotif] = useState(false);
+  const [pushStatusMessage, setPushStatusMessage] = useState<string | null>(null);
   const [msgEmailDelay, setMsgEmailDelay] = useState(notifPrefs.messages_email_delay_mins ?? 60);
 
   const [sessions,        setSessions]        = useState<ActiveSession[]>(activeSessions);
@@ -136,10 +138,10 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
 
   async function handleNotifToggle(key: keyof NotifPrefs) {
     if (key === "push" && !prefs.push) {
-      if (typeof Notification !== "undefined" && Notification.permission === "default") {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
-      }
+      setPushStatusMessage(null);
+      const result = await enableBrowserPush();
+      setPushStatusMessage(result.message);
+      if (!result.ok) return;
     }
 
     const nextValue = !prefs[key];
@@ -161,6 +163,14 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
       setSavingNotif(false);
     }
   }
+
+  useEffect(() => {
+    getSavedBrowserPushState()
+      .then((result) => {
+        if (!result.ok) setPushStatusMessage(result.message);
+      })
+      .catch(() => undefined);
+  }, []);
 
   async function handleRevokeSession(sessionId: string) {
     setRevokingId(sessionId);
@@ -460,6 +470,11 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
               <div className="text-left">
                 <p className="text-[13px] font-medium text-[var(--text-primary)]">{label}</p>
                 <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{desc}</p>
+                {key === "push" && pushStatusMessage ? (
+                  <p className="mt-1.5 max-w-[420px] text-[11px] leading-relaxed text-[var(--brand)]">
+                    {pushStatusMessage}
+                  </p>
+                ) : null}
               </div>
             </div>
             {/* Toggle pill */}

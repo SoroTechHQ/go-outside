@@ -50,15 +50,15 @@ function renderChatList(
   }
   return (
     <AnimatePresence initial={false}>
-      <div className="space-y-px p-2">
+      <div className="space-y-1.5 p-3">
         {chats.map((chat) => {
           const active = chat.id === activeChatId;
           return (
             <motion.button
               animate={{ opacity: 1, y: 0 }}
-              className={`group flex w-full cursor-pointer items-start gap-2 rounded-[10px] px-2.5 py-2 text-left transition ${
+              className={`group flex w-full cursor-pointer items-start gap-3 rounded-[14px] px-3.5 py-3 text-left transition ${
                 active
-                  ? "bg-[var(--brand-dim)] text-[var(--brand)]"
+                  ? "bg-[var(--brand-dim)] text-[var(--brand)] shadow-[inset_0_0_0_1px_rgba(var(--brand-rgb),0.18)]"
                   : "text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
               }`}
               initial={{ opacity: 0, y: 3 }}
@@ -68,26 +68,26 @@ function renderChatList(
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
-                  <p className="truncate text-[12px] font-medium leading-tight">
+                  <p className="truncate text-[13px] font-semibold leading-tight">
                     {chat.title || "Chat"}
                   </p>
-                  <span className="shrink-0 text-[9px] font-medium text-[var(--text-tertiary)]">
+                  <span className="shrink-0 text-[10px] font-medium text-[var(--text-tertiary)]">
                     {timeAgo(chat.updated_at)}
                   </span>
                 </div>
                 {chat.last_assistant_message && (
-                  <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--text-secondary)]">
+                  <p className="mt-1 line-clamp-2 text-[12px] leading-[1.45] text-[var(--text-secondary)]">
                     {chat.last_assistant_message}
                   </p>
                 )}
               </div>
               <button
                 aria-label="Delete"
-                className="hidden h-4 w-4 shrink-0 items-center justify-center text-[var(--text-tertiary)] transition hover:text-red-400 group-hover:flex"
+                className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-red-500/10 hover:text-red-400 group-hover:flex"
                 onClick={(e) => { e.stopPropagation(); onDelete(chat.id); }}
                 type="button"
               >
-                <Trash size={11} weight="bold" />
+                <Trash size={12} weight="bold" />
               </button>
             </motion.button>
           );
@@ -238,14 +238,14 @@ export default function AIDashboardClient({ initialChatId }: { initialChatId?: s
         <div className="flex min-h-0 flex-1">
 
           {/* Sidebar — desktop only */}
-          <aside className="hidden w-[260px] shrink-0 flex-col gap-0 border-r border-[var(--border-subtle)] lg:flex">
-            <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-3 py-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand)] text-white">
-                <Sparkle size={13} weight="fill" />
+          <aside className="hidden w-[340px] shrink-0 flex-col gap-0 border-r border-[var(--border-subtle)] bg-[var(--bg-page)] lg:flex xl:w-[360px]">
+            <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-4 py-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--brand)] text-white">
+                <Sparkle size={14} weight="fill" />
               </div>
-              <span className="text-[13px] font-semibold text-[var(--text-primary)]"></span>
+              <span className="text-[14px] font-semibold text-[var(--text-primary)]">AI chats</span>
               <button
-                className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--brand)]"
+                className="ml-auto flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] transition hover:border-[var(--brand)]/35 hover:text-[var(--brand)]"
                 onClick={() => selectChat(null)}
                 title="New chat"
                 type="button"

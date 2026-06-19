@@ -84,6 +84,15 @@ const FALLBACK_STARTERS = [
   "What's trending right now",
 ];
 
+const LOADING_MESSAGES = [
+  "Reading the city pulse...",
+  "Checking live events...",
+  "Matching your vibe...",
+  "Pulling useful details...",
+  "Almost there...",
+  "Still working. Getting the best answer...",
+];
+
 const TOOL_LABELS: Record<string, string> = {
   search_events:        "Searched events",
   get_budget_options:   "Checked budget",
@@ -389,9 +398,11 @@ function EventCard({
 
 // ─── Loading state ────────────────────────────────────────────────────────────
 
-function ToolsLoader({ names }: { names: string[] }) {
+function ToolsLoader({ names, elapsedMs = 0 }: { names: string[]; elapsedMs?: number }) {
+  const message = LOADING_MESSAGES[Math.min(LOADING_MESSAGES.length - 1, Math.floor(elapsedMs / 3500))]!;
+
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {names.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {names.map((t) => (
@@ -407,22 +418,32 @@ function ToolsLoader({ names }: { names: string[] }) {
           ))}
         </div>
       )}
-      <div className="flex items-center gap-3 py-1">
+      <div className="flex items-center gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-3">
         <motion.div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]"
-          animate={{ scale: [1, 1.12, 1] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]"
+          animate={{
+            scale: [1, 1.14, 1],
+            boxShadow: [
+              "0 0 0 0 rgba(47,143,69,0.35)",
+              "0 0 0 10px rgba(47,143,69,0)",
+              "0 0 0 0 rgba(47,143,69,0)",
+            ],
+          }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
         >
           <Sparkle size={12} weight="fill" className="text-white" />
         </motion.div>
-        <div className="flex items-center gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]"
-              style={{ animation: "ai-pulse 1.1s ease-in-out infinite", animationDelay: `${i * 0.18}s` }}
-            />
-          ))}
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-[var(--text-primary)]">{message}</p>
+          <div className="mt-1 flex items-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="h-1.5 w-1.5 rounded-full bg-[var(--brand)]"
+                style={{ animation: "ai-pulse 1.1s ease-in-out infinite", animationDelay: `${i * 0.18}s` }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -591,6 +612,8 @@ export function AICoreChat({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingStartedAt, setLoadingStartedAt] = useState<number | null>(null);
+  const [loadingElapsedMs, setLoadingElapsedMs] = useState(0);
   const [activeTools, setActiveTools] = useState<string[]>([]);
   const [starters, setStarters] = useState<string[]>(FALLBACK_STARTERS);
   const [ticketPick, setTicketPick] = useState<AiPick | null>(null);
@@ -644,6 +667,17 @@ export function AICoreChat({
   }, [messages, loading, activeTools]);
 
   useEffect(() => {
+    if (!loadingStartedAt) {
+      setLoadingElapsedMs(0);
+      return;
+    }
+    const update = () => setLoadingElapsedMs(Date.now() - loadingStartedAt);
+    update();
+    const id = window.setInterval(update, 500);
+    return () => window.clearInterval(id);
+  }, [loadingStartedAt]);
+
+  useEffect(() => {
     if (!initialPrompt || initialPromptFiredRef.current) return;
     if (activeChatId) return;
     initialPromptFiredRef.current = true;
@@ -682,6 +716,7 @@ export function AICoreChat({
     ]);
     setInput("");
     setLoading(true);
+    setLoadingStartedAt(Date.now());
     setActiveTools([]);
 
     abortRef.current?.abort();
@@ -725,10 +760,12 @@ export function AICoreChat({
           setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, streaming: false, picks, followUps } : m));
           setActiveTools([]);
           setLoading(false);
+          setLoadingStartedAt(null);
         } else if (t === "error") {
           setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, content: (ev.message as string) || "Something went wrong.", streaming: false } : m));
           setActiveTools([]);
           setLoading(false);
+          setLoadingStartedAt(null);
         }
       };
 
@@ -745,6 +782,7 @@ export function AICoreChat({
       setMessages((p) => p.map((m) => m.id === assistantMsgId ? { ...m, content: "Couldn't reach the server. Try again.", streaming: false } : m));
       setActiveTools([]);
       setLoading(false);
+      setLoadingStartedAt(null);
     }
   }, [chatId, loading, onChatIdChange]);
 
@@ -766,7 +804,7 @@ export function AICoreChat({
 
   const hasMessages = messages.length > 0;
   const shellClass = compact
-    ? "h-[520px] max-h-[calc(100svh-140px)] rounded-[22px] border border-[var(--border-subtle)]"
+    ? "h-[min(620px,calc(100svh-128px))] rounded-[24px] border border-[var(--border-subtle)] shadow-[0_22px_70px_rgba(0,0,0,0.22)]"
     : "h-full";
 
   // Build EventForTicket from the active pick when ticket modal is open
@@ -807,7 +845,7 @@ export function AICoreChat({
         )}
       </AnimatePresence>
 
-      <div className={cn("flex flex-col bg-[var(--bg-page)]", shellClass)}>
+      <div className={cn("flex flex-col bg-[var(--bg-page)]", compact && "overflow-hidden", shellClass)}>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <AnimatePresence initial={false}>
             {!hasMessages ? (
@@ -860,7 +898,7 @@ export function AICoreChat({
                     {msg.role === "user" ? (
                       <UserBubble content={msg.content} />
                     ) : msg.streaming && !msg.content ? (
-                      <ToolsLoader names={activeTools} />
+                      <ToolsLoader names={activeTools} elapsedMs={loadingElapsedMs} />
                     ) : msg.toolNamesUsed?.includes("get_user_calendar") && msg.picks?.length ? (
                       // Calendar tool response — show compact calendar cards
                       <div className="space-y-3">

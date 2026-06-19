@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingCart, ArrowRight, Trash, Minus, Plus } from "@phosphor-icons/react";
 import { useCart } from "../cart/CartContext";
 import { useRouter } from "next/navigation";
 import { useAnimationConfig } from "../../hooks/useAnimationConfig";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useAppShell } from "../layout/AppShellContext";
 
 type MiniCartDrawerProps = {
   open: boolean;
@@ -15,32 +18,41 @@ export function MiniCartDrawer({ open, onClose }: MiniCartDrawerProps) {
   const { items, totalCount, totalPrice, removeItem, updateQuantity } = useCart();
   const router = useRouter();
   const { reduceMotion, springs } = useAnimationConfig();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { setPeekPanelWidth } = useAppShell();
+  const paneWidth = 380;
+
+  useEffect(() => {
+    setPeekPanelWidth(open && isDesktop ? paneWidth : 0);
+    return () => setPeekPanelWidth(0);
+  }, [isDesktop, open, setPeekPanelWidth]);
 
   function handleCheckout() {
     onClose();
-    router.push("/checkout");
+    router.push("/dashboard/checkout");
   }
 
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            onClick={onClose}
-          />
+          {!isDesktop && (
+            <motion.div
+              className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={onClose}
+            />
+          )}
 
-          {/* Drawer — slides in from the left, next to the sidebar */}
+          {/* Drawer */}
           <motion.div
             animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
-            className="fixed left-[72px] top-0 z-[56] flex h-full w-[300px] flex-col bg-[var(--bg-card)] shadow-2xl"
-            exit={reduceMotion ? { opacity: 0 } : { x: "-100%" }}
-            initial={reduceMotion ? { opacity: 0 } : { x: "-100%" }}
+            className="fixed right-0 top-0 z-[56] flex h-full w-full max-w-[380px] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-page)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)]"
+            exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+            initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
             transition={reduceMotion ? { duration: 0.15 } : springs.sheet}
           >
             {/* Header */}

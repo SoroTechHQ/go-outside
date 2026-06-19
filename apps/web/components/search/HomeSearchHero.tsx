@@ -42,14 +42,6 @@ type HomeSearchHeroProps = {
 const RECENT_SEARCHES = ["Afrofuture 2025", "Osu rooftop", "Jazz under the stars"];
 const TRENDING_SEARCHES = ["Detty December events", "Rug Tufting Workshop", "Build Ghana Summit"];
 
-function lerp(start: number, end: number, progress: number) {
-  return start + (end - start) * progress;
-}
-
-function smoothStep(progress: number) {
-  return progress * progress * (3 - 2 * progress);
-}
-
 // ── Mobile full-screen search overlay ────────────────────────────────────────
 function MobileSearchOverlay({
   open,
@@ -325,7 +317,7 @@ function MiniSearchPill({ onSegmentClick }: { onSegmentClick: (seg: ActiveSegmen
           type="button"
           onClick={() => onSegmentClick("what")}
           whileTap={{ scale: 0.93 }}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-[0_2px_10px_rgba(95,191,42,0.35)] transition hover:bg-[var(--brand-hover)]"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-[0_2px_10px_rgba(var(--brand-rgb),0.35)] transition hover:bg-[var(--brand-hover)]"
         >
           <MagnifyingGlass size={15} weight="bold" />
         </motion.button>
@@ -334,48 +326,6 @@ function MiniSearchPill({ onSegmentClick }: { onSegmentClick: (seg: ActiveSegmen
   );
 }
 
-// ── Mini-pill expansion modal ──────────────────────────────────────────────────
-function MiniExpandModal({
-  open,
-  initialActive,
-  onClose,
-}: {
-  open: boolean;
-  initialActive: ActiveSegment;
-  onClose: () => void;
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            key="mini-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-[3px]"
-            onClick={onClose}
-          />
-          <motion.div
-            key="mini-modal"
-            initial={{ opacity: 0, y: -16, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -16, scale: 0.97 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-4 top-16 z-[56] mx-auto md:inset-x-[10%]"
-            style={{ maxWidth: 860 }}
-          >
-            <SearchPillExpanded
-              initialActive={initialActive}
-              className="w-full"
-            />
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
 
 // ── Compact mobile search pill (shown inline on home) ─────────────────────────
 function MobileSearchPill({ onOpen }: { onOpen: () => void }) {
@@ -425,9 +375,6 @@ export function HomeSearchHero({
   const [where, setWhere] = useState(searchParams.get("q") ?? "");
   const [when, setWhen] = useState(searchParams.get("when") ?? "");
 
-  // Mini pill expansion state
-  const [miniExpanded, setMiniExpanded] = useState(false);
-  const [miniActiveSegment, setMiniActiveSegment] = useState<ActiveSegment>(null);
 
   useEffect(() => {
     setWhere(searchParams.get("q") ?? "");
@@ -446,13 +393,9 @@ export function HomeSearchHero({
     if (seg === "lucky") {
       handleSurpriseMe();
     } else {
-      setMiniActiveSegment(seg);
-      setMiniExpanded(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
-
-  const totalProgress = smoothStep(Math.min(1, compactProgress * 0.6 + miniProgress * 0.4));
-  const dynamicMaxWidth = `${Math.round(lerp(1020, 720, totalProgress))}px`;
 
   // ── Mobile: render compact pill + overlay ──
   if (isMobile) {
@@ -483,15 +426,6 @@ export function HomeSearchHero({
         <AnimatePresence mode="wait">
           <MiniSearchPill key="mini-pill" onSegmentClick={handleMiniSegmentClick} />
         </AnimatePresence>
-
-        <MiniExpandModal
-          open={miniExpanded}
-          initialActive={miniActiveSegment}
-          onClose={() => {
-            setMiniExpanded(false);
-            setMiniActiveSegment(null);
-          }}
-        />
       </div>
     );
   }
@@ -499,11 +433,8 @@ export function HomeSearchHero({
   // ── Desktop: SearchPillExpanded — has typeahead, category chips, date picker ──
   return (
     <div className={`w-full ${className}`.trim()}>
-      <div
-        className="mx-auto w-full transition-[max-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{ maxWidth: dynamicMaxWidth }}
-      >
-        <SearchPillExpanded compact={totalProgress > 0.35} />
+      <div className="mx-auto w-full" style={{ maxWidth: 1020 }}>
+        <SearchPillExpanded compact={false} />
       </div>
     </div>
   );

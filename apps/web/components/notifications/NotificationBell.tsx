@@ -21,6 +21,7 @@ import {
 } from "../../hooks/useNotifications";
 import type { NotificationFeedItem } from "../../lib/notification-feed";
 import { useAppBootstrap } from "../../hooks/useAppBootstrap";
+import { enableBrowserPush, getSavedBrowserPushState } from "../../lib/notifications/browser-push";
 
 const ICON_MAP: Record<string, React.ComponentType<{ size: number; weight: "fill" | "regular"; className: string }>> = {
   ticket: Ticket,
@@ -45,6 +46,9 @@ export function NotificationBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
+  const [pushMessage, setPushMessage] = useState<string | null>(null);
+  const [pushActive, setPushActive] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const { reduceMotion, springs } = useAnimationConfig();
@@ -55,6 +59,12 @@ export function NotificationBell() {
 
   useEffect(() => {
     if ("Notification" in window) setBrowserPermission(Notification.permission);
+    getSavedBrowserPushState()
+      .then((result) => {
+        setPushActive(result.ok);
+        setPushMessage(result.ok ? null : result.message);
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -66,14 +76,25 @@ export function NotificationBell() {
   }, []);
 
   async function requestBrowserNotifications() {
-    if (!("Notification" in window)) return;
-    const perm = await Notification.requestPermission();
-    setBrowserPermission(perm);
-    if (perm === "granted") {
-      new Notification("GoOutside Notifications Enabled", {
-        body: "You'll now receive event and friend updates.",
-        icon: "/favicon.ico",
-      });
+    setPushBusy(true);
+    setPushMessage(null);
+    try {
+      const result = await enableBrowserPush();
+      if ("Notification" in window) setBrowserPermission(Notification.permission);
+      setPushActive(result.ok);
+      setPushMessage(result.ok ? null : result.message);
+      if (result.ok) {
+        try {
+          new Notification("GoOutside Notifications Enabled", {
+            body: "You'll now receive event and friend updates.",
+            icon: "/favicon-icon.png",
+          });
+        } catch {
+          // Some mobile browsers only show notifications from the service worker.
+        }
+      }
+    } finally {
+      setPushBusy(false);
     }
   }
 
@@ -145,21 +166,22 @@ export function NotificationBell() {
               </div>
             </div>
 
-            {browserPermission === "default" && (
+            {!pushActive && (
               <div className="border-b border-[var(--border-subtle)] bg-[var(--brand-dim)] px-4 py-2.5">
                 <p className="mb-1.5 text-[12px] text-[var(--text-secondary)]">
-                  Enable browser notifications to get updates when you&apos;re away
+                  {pushMessage ?? "Enable browser notifications to get updates when you're away"}
                 </p>
                 <button
-                  className="rounded-lg bg-[var(--brand)] px-3 py-1.5 text-[11px] font-semibold text-white transition hover:brightness-110"
+                  className="rounded-lg bg-[var(--brand)] px-3 py-1.5 text-[11px] font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                  disabled={pushBusy}
                   onClick={requestBrowserNotifications}
                   type="button"
                 >
-                  Enable Notifications
+                  {pushBusy ? "Enabling..." : "Enable Notifications"}
                 </button>
               </div>
             )}
-            {browserPermission === "granted" && (
+            {pushActive && (
               <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--brand-dim)] px-4 py-2">
                 <CheckCircle size={14} weight="fill" className="text-[var(--brand)]" />
                 <p className="text-[11px] font-medium text-[var(--brand)]">Browser notifications active</p>

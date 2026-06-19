@@ -477,20 +477,21 @@ export function EventSidePane({
     followersLabel: "Community host",
     eventsLabel: "Active event page",
   },
+  initialWidth = DEFAULT_WIDTH,
   onClose,
   onWidthChange,
 }: {
   event: EventItem;
   organizer?: Organizer;
+  initialWidth?: number;
   onClose: () => void;
   onWidthChange?: (w: number) => void;
 }) {
   const images = getEventImages(event);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const { reduceMotion, springs } = useAnimationConfig();
+  const { reduceMotion } = useAnimationConfig();
 
-  const [paneWidth, setPaneWidth] = useState(DEFAULT_WIDTH);
-  const [mounted, setMounted] = useState(false);
+  const [paneWidth, setPaneWidth] = useState(() => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, initialWidth)));
   const [photoModal, setPhotoModal] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
   const { isSaved, toggleSave } = useEventSave(event.id);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
@@ -504,11 +505,10 @@ export function EventSidePane({
 
   const dragRef = useRef<{ active: boolean; startX: number; startWidth: number }>({ active: false, startX: 0, startWidth: DEFAULT_WIDTH });
 
-  // Slide-in / mount animation
   useEffect(() => {
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+    if (dragRef.current.active) return;
+    setPaneWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, initialWidth)));
+  }, [initialWidth]);
 
   // Reset sheet when event changes
   useEffect(() => { setSheetHeight(SNAP_PEEK); }, [event]);
@@ -698,13 +698,13 @@ export function EventSidePane({
   return (
     <>
       <motion.div
-        className="fixed right-0 top-0 z-50 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)]"
-        initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
-        animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
-        exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+        className="fixed right-0 top-0 z-50 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-page)] opacity-100 shadow-[-8px_0_48px_rgba(0,0,0,0.16)]"
+        initial={reduceMotion ? false : { x: "100%", opacity: 1 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={reduceMotion ? undefined : { x: "100%", opacity: 1 }}
         transition={
           reduceMotion
-            ? { duration: 0.15 }
+            ? { duration: 0 }
             : { type: "tween", duration: 0.36, ease: [0.22, 1, 0.36, 1] }
         }
         style={{ width: paneWidth }}

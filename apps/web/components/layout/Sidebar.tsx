@@ -257,7 +257,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
               ) : null}
             </AnimatePresence>
             {totalCount > 0 && (
-              <div className={`absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[9px] font-bold text-black ${isExpanded ? "right-3 top-3" : "right-3.5 top-3"}`}>
+              <div className={`absolute z-30 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[var(--bg-card)] bg-[var(--brand)] px-1 text-[10px] font-bold leading-none text-white shadow-sm ${isExpanded ? "right-2.5 top-1.5" : "right-2 top-1.5"}`}>
                 {totalCount > 99 ? "99+" : totalCount}
               </div>
             )}

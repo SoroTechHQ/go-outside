@@ -56,10 +56,11 @@ export function AIFAB() {
         {open ? (
           <motion.div
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="fixed bottom-24 right-6 z-[60] hidden w-[420px] max-w-[calc(100vw-48px)] md:block"
+            className="fixed bottom-24 right-6 z-[60] hidden w-[min(460px,calc(100vw-48px))] md:block"
             exit={{ opacity: 0, scale: 0.96, y: 18 }}
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ transformOrigin: "bottom right" }}
           >
             <div className="mb-2 flex justify-end">
               <Link
@@ -71,7 +72,9 @@ export function AIFAB() {
                 Open tab
               </Link>
             </div>
-            <AICoreChat compact />
+            <div className="overflow-hidden rounded-[24px]">
+              <AICoreChat compact />
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>

@@ -30,6 +30,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "GoOutside", template: "%s | GoOutside" },
   description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon-icon.png",
     apple: "/favicon-icon.png",

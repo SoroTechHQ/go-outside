@@ -1,15 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trash, ShoppingCart, ArrowRight, Minus, Plus } from "@phosphor-icons/react";
 import { useCart } from "../cart/CartContext";
 import { useRouter } from "next/navigation";
 import { useAnimationConfig } from "../../hooks/useAnimationConfig";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useAppShell } from "../layout/AppShellContext";
 
 export function CartDrawer() {
   const { items, totalCount, totalPrice, isOpen, closeCart, removeItem, updateQuantity, clearCart } = useCart();
   const router = useRouter();
   const { reduceMotion, springs } = useAnimationConfig();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { setPeekPanelWidth } = useAppShell();
+  const paneWidth = 420;
+
+  useEffect(() => {
+    setPeekPanelWidth(isOpen && isDesktop ? paneWidth : 0);
+    return () => setPeekPanelWidth(0);
+  }, [isDesktop, isOpen, setPeekPanelWidth]);
 
   function handleCheckout() {
     closeCart();
@@ -20,17 +31,19 @@ export function CartDrawer() {
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div
-            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            onClick={closeCart}
-          />
+          {!isDesktop && (
+            <motion.div
+              className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              onClick={closeCart}
+            />
+          )}
           <motion.div
             animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
-            className="fixed right-0 top-0 z-[61] flex h-full w-full max-w-sm flex-col bg-[var(--bg-card)] shadow-2xl"
+            className="fixed right-0 top-0 z-[61] flex h-full w-full max-w-[420px] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-page)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)]"
             exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
             initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
             transition={reduceMotion ? { duration: 0.15 } : springs.sheet}
