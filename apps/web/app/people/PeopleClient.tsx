@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import type { SocialUser } from "../../lib/social/types";
 import { NaviiAvatar } from "../../components/profile/NaviiAvatar";
+import { PageEntrance } from "../../components/layout/PageEntrance";
 
 const GHANA_CITIES = ["Accra", "Kumasi", "Takoradi", "Tamale", "Cape Coast"];
 
@@ -219,7 +220,7 @@ export default function PeopleClient() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <PageEntrance className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-[var(--text-primary)] mb-1">
           People
@@ -403,6 +404,6 @@ export default function PeopleClient() {
           </button>
         </div>
       )}
-    </div>
+    </PageEntrance>
   );
 }
