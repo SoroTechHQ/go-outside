@@ -12,7 +12,12 @@ import {
   X,
   Confetti,
   Lightning,
+  DeviceMobile,
+  Monitor,
+  Shield,
+  SignOut,
 } from "@phosphor-icons/react";
+import { useClerk } from "@clerk/nextjs";
 import { useAnimationSettings } from "../../../lib/animation-settings";
 
 const PRIMARY_SCENES = [
@@ -40,15 +45,42 @@ type NotifPrefs = {
   messages_email_delay_mins?: number;
 };
 
-type Props = {
-  isOrganizer:   boolean;
-  orgName:       string | null;
-  notifPrefs:    NotifPrefs;
-  maskedEmail?:  string;
+type ActiveSession = {
+  id: string;
+  lastActiveAt: number; // unix ms
+  createdAt: number;
+  latestActivity: {
+    deviceType:  string | null;
+    browserName: string | null;
+    country:     string | null;
+    city:        string | null;
+    ipAddress:   string | null;
+    isMobile:    boolean | null;
+  } | null;
 };
 
-export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }: Props) {
+type Props = {
+  isOrganizer:    boolean;
+  orgName:        string | null;
+  notifPrefs:     NotifPrefs;
+  maskedEmail?:   string;
+  activeSessions: ActiveSession[];
+};
+
+function relativeTime(ms: number): string {
+  const diff = Date.now() - ms;
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1)  return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, activeSessions }: Props) {
   const router = useRouter();
+  const clerk  = useClerk();
   const { reduceMotion, setReduceMotion } = useAnimationSettings();
 
   const [showOrgForm,   setShowOrgForm]   = useState(false);
@@ -63,6 +95,10 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
   const [prefs,       setPrefs]       = useState<NotifPrefs>(notifPrefs);
   const [savingNotif, setSavingNotif] = useState(false);
   const [msgEmailDelay, setMsgEmailDelay] = useState(notifPrefs.messages_email_delay_mins ?? 60);
+
+  const [sessions,        setSessions]        = useState<ActiveSession[]>(activeSessions);
+  const [revokingId,      setRevokingId]      = useState<string | null>(null);
+  const [revokingAll,     setRevokingAll]     = useState(false);
 
   useEffect(() => {
     if (!converted) return;
@@ -123,6 +159,32 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
       setPrefs(prefs);
     } finally {
       setSavingNotif(false);
+    }
+  }
+
+  async function handleRevokeSession(sessionId: string) {
+    setRevokingId(sessionId);
+    try {
+      await fetch(`/api/account/sessions/${sessionId}`, { method: "DELETE" });
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    } catch {
+      // silent
+    } finally {
+      setRevokingId(null);
+    }
+  }
+
+  async function handleRevokeAll() {
+    if (sessions.length <= 1) return;
+    setRevokingAll(true);
+    try {
+      const others = sessions.slice(1);
+      await Promise.all(others.map((s) => fetch(`/api/account/sessions/${s.id}`, { method: "DELETE" })));
+      setSessions((prev) => prev.slice(0, 1));
+    } catch {
+      // silent
+    } finally {
+      setRevokingAll(false);
     }
   }
 
@@ -454,6 +516,98 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail }
           </div>
         </section>
       )}
+
+      {/* ── Security & Devices ─────────────────────────────────────────── */}
+      <section className="overflow-hidden rounded-[20px] border border-[var(--border-card)] bg-[var(--bg-card)]">
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+            Security &amp; Devices
+          </p>
+          {sessions.length > 1 && (
+            <button
+              onClick={handleRevokeAll}
+              disabled={revokingAll}
+              className="text-[11px] font-semibold text-red-500 transition hover:opacity-70 disabled:opacity-40"
+            >
+              {revokingAll ? "Signing out…" : "Sign out all other devices"}
+            </button>
+          )}
+        </div>
+
+        {sessions.length === 0 ? (
+          <div className="px-5 py-5">
+            <p className="text-[13px] text-[var(--text-tertiary)]">No active sessions found.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[var(--border-subtle)]">
+            {sessions.map((s, i) => {
+              const isCurrent = i === 0;
+              const act = s.latestActivity;
+              const isMobile = act?.isMobile ?? false;
+              const deviceLabel = act?.deviceType
+                ? act.deviceType
+                : isMobile ? "Mobile" : "Desktop";
+              const browserLabel = act?.browserName ?? "GoOutside app";
+              const locationLabel =
+                act?.city && act?.country
+                  ? `${act.city}, ${act.country}`
+                  : act?.country ?? "Unknown location";
+
+              return (
+                <div key={s.id} className="flex items-center gap-3 px-5 py-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-elevated)]">
+                    {isMobile
+                      ? <DeviceMobile size={18} className="text-[var(--text-secondary)]" />
+                      : <Monitor size={18} className="text-[var(--text-secondary)]" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[13px] font-semibold text-[var(--text-primary)]">
+                        {deviceLabel} · {browserLabel}
+                      </p>
+                      {isCurrent && (
+                        <span className="rounded-full bg-[#4a9f63]/15 px-2 py-0.5 text-[10px] font-bold text-[#4a9f63]">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                      {locationLabel} · {relativeTime(s.lastActiveAt)}
+                    </p>
+                  </div>
+                  {!isCurrent && (
+                    <button
+                      onClick={() => handleRevokeSession(s.id)}
+                      disabled={revokingId === s.id}
+                      className="flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-red-500/30 hover:text-red-500 disabled:opacity-40"
+                    >
+                      <SignOut size={12} />
+                      {revokingId === s.id ? "Signing out…" : "Sign out"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Change password */}
+        <div className="border-t border-[var(--border-subtle)]">
+          <button
+            onClick={() => clerk.openUserProfile()}
+            className="flex w-full items-center gap-3 px-5 py-4 transition hover:bg-[var(--bg-elevated)] active:scale-[0.995]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--bg-elevated)]">
+              <Shield size={18} className="text-[var(--text-secondary)]" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[13px] font-medium text-[var(--text-primary)]">Password &amp; security</p>
+              <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">Change password, manage 2FA</p>
+            </div>
+            <ArrowRight size={14} className="shrink-0 text-[var(--text-tertiary)]" />
+          </button>
+        </div>
+      </section>
 
     </div>
   );

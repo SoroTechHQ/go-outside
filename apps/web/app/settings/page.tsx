@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { clerkClient } from "@clerk/nextjs/server";
 import { getOrCreateSupabaseUser } from "../../lib/db/users";
 import { supabaseAdmin } from "../../lib/supabase";
 import { SettingsClient } from "../dashboard/settings/SettingsClient";
@@ -55,6 +56,29 @@ export default async function SettingsPage() {
     return `${visible}${"•".repeat(Math.max(2, local.length - 2))}@${domain}`;
   })();
 
+  const clerky = await clerkClient();
+  const sessionsList = await clerky.sessions
+    .getSessionList({ userId: user.clerk_id, status: "active" })
+    .catch(() => ({ data: [] }));
+  const activeSessions = (sessionsList.data ?? []).map((s) => ({
+    id: s.id,
+    lastActiveAt: s.lastActiveAt,
+    createdAt: s.createdAt,
+    latestActivity: s.latestActivity
+      ? (() => {
+          const a = s.latestActivity as unknown as Record<string, unknown>;
+          return {
+            deviceType:  (a.deviceType  as string  | null) ?? null,
+            browserName: (a.browserName as string  | null) ?? null,
+            country:     (a.country     as string  | null) ?? null,
+            city:        (a.city        as string  | null) ?? null,
+            ipAddress:   (a.ipAddress   as string  | null) ?? null,
+            isMobile:    (a.isMobile    as boolean | null) ?? null,
+          };
+        })()
+      : null,
+  }));
+
   return (
     <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
       <div className="border-b border-[var(--border-subtle)] px-4 py-5 md:px-6">
@@ -71,6 +95,7 @@ export default async function SettingsPage() {
         orgName={orgName}
         notifPrefs={notifPrefs}
         maskedEmail={maskedEmail}
+        activeSessions={activeSessions}
       />
     </main>
   );
