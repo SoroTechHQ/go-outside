@@ -171,29 +171,20 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
               return (
                 <Link key={item.href} href={item.href}>
                   <motion.div
-                    className={`relative flex h-[52px] items-center rounded-[12px] ${
+                    className={`relative flex h-[52px] items-center rounded-[12px] transition-colors ${
                       isExpanded ? "gap-3.5 px-5" : "justify-center"
                     } ${
                       active
-                        ? "font-semibold text-[var(--brand)]"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        ? "bg-[var(--brand-dim)] font-semibold text-[var(--brand)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                     }`}
-                    transition={{ duration: 0.15 }}
-                    whileHover={reduceMotion ? undefined : { backgroundColor: "var(--bg-card)" }}
                     whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+                    transition={{ duration: 0.1 }}
                   >
-                    {/* Active background pill */}
-                    {active && (
-                      <motion.span
-                        layoutId="sidebar-pill"
-                        className="absolute inset-0 rounded-[12px] bg-[var(--brand-dim)]"
-                        transition={reduceMotion ? { duration: 0.15 } : springs.snappy}
-                      />
-                    )}
                     <Icon
                       size={24}
                       weight={iconWeight}
-                      className={`relative z-10 ${active ? "text-[var(--brand)]" : "text-current"}`}
+                      className="text-current"
                     />
 
                     <AnimatePresence>
@@ -226,17 +217,17 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
 
         <div className="px-2 pt-4">
           <Link
-            className={`relative flex h-[52px] w-full items-center transition ${
+            className={`relative flex h-[52px] w-full items-center rounded-[12px] transition-colors ${
               pathname.startsWith("/cart")
-                ? "font-semibold text-[var(--brand)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "bg-[var(--brand-dim)] font-semibold text-[var(--brand)]"
+                : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}
             href="/cart"
           >
             <ShoppingCart
               size={24}
               weight={pathname.startsWith("/cart") ? "fill" : "regular"}
-              className={pathname.startsWith("/cart") ? "text-[var(--brand)]" : "text-current"}
+              className="text-current"
             />
             <AnimatePresence>
               {isExpanded ? (
@@ -260,7 +251,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
           </Link>
 
           <button
-            className={`flex h-[52px] w-full items-center text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] ${
+            className={`flex h-[52px] w-full items-center rounded-[12px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] ${
               isExpanded ? "gap-3.5 px-5" : "justify-center"
             }`}
             onClick={() => {
@@ -271,7 +262,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
             }}
             type="button"
           >
-            {theme === "dark" ? <SunDim size={24} weight="bold" /> : <MoonStars size={24} weight="bold" />}
+            {theme === "dark" ? <SunDim size={24} weight="regular" /> : <MoonStars size={24} weight="regular" />}
             <AnimatePresence>
               {isExpanded ? (
                 <motion.span

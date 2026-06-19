@@ -114,7 +114,11 @@ export function EventPeekPanel({
             exit={reduceMotion ? { opacity: 0 } : isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
             initial={reduceMotion ? { opacity: 0 } : isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
             style={isDesktop ? { width: PANEL_WIDTH } : undefined}
-            transition={reduceMotion ? { duration: 0.15 } : isDesktop ? springs.page : springs.sheet}
+            transition={
+              reduceMotion
+                ? { duration: 0.15 }
+                : { type: "tween", duration: 0.32, ease: [0.22, 1, 0.36, 1] }
+            }
           >
             {/* Header image */}
             <div className="relative h-[200px] shrink-0">
