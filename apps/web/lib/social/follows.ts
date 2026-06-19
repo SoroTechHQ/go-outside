@@ -3,6 +3,7 @@
 
 import { supabaseAdmin } from "../supabase";
 import { insertNotification } from "../db/insert-notification";
+import { sendFollowEmail } from "../email";
 import type { FollowStatus } from "./types";
 
 export async function resolveUserIdFromClerkId(clerkId: string): Promise<string | null> {
@@ -90,6 +91,25 @@ export async function followUser(
     },
     actionHref: actor?.username ? `/${actor.username}` : `/dashboard/user/${followerId}`,
   });
+
+  // Fire-and-forget follow email — only if the followed user has email notifications enabled
+  void (async () => {
+    const { data: followed } = await supabaseAdmin
+      .from("users")
+      .select("email, notification_prefs")
+      .eq("id", followingId)
+      .maybeSingle();
+
+    const prefs = (followed?.notification_prefs ?? {}) as Record<string, unknown>;
+    if (followed?.email && prefs.email !== false) {
+      await sendFollowEmail({
+        to: followed.email as string,
+        followerName: actorName,
+        followerUsername: actor?.username ?? null,
+        followerAvatarUrl: actor?.avatar_url ?? null,
+      });
+    }
+  })();
 
   return {};
 }

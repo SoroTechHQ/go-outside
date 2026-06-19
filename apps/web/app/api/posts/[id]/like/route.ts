@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../../lib/supabase";
 import { insertNotification } from "../../../../../lib/db/insert-notification";
+import { sendPostLikeEmail } from "../../../../../lib/email";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -97,6 +98,24 @@ export async function POST(_req: NextRequest, { params }: Params) {
       },
       actionHref: likerRow?.username ? `/go/${likerRow.username}` : undefined,
     });
+
+    // Fire-and-forget post like email — only if the post owner has email notifications enabled
+    void (async () => {
+      const { data: owner } = await supabaseAdmin
+        .from("users")
+        .select("email, notification_prefs")
+        .eq("id", postRow.user_id)
+        .maybeSingle();
+
+      const prefs = (owner?.notification_prefs ?? {}) as Record<string, unknown>;
+      if (owner?.email && prefs.email !== false) {
+        await sendPostLikeEmail({
+          to: owner.email as string,
+          likerName: actorName,
+          postPreview: postRow.body,
+        });
+      }
+    })();
   }
 
   return NextResponse.json({ ok: true });

@@ -45,6 +45,7 @@ const EXACT_VISUALS: Record<string, { accentTone: NotificationAccentTone; iconKe
   ticket_purchase:  { iconKey: "ticket",          accentTone: "gold" },
   post_posted:   { iconKey: "note-pencil",     accentTone: "purple" },
   post_liked:    { iconKey: "heart",           accentTone: "red" },
+  new_sign_in:   { iconKey: "shield-check",    accentTone: "red" },
 };
 
 export function getNotificationVisuals(type: string) {
