@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import { GetTicketModal, type EventForTicket } from "../tickets/GetTicketModal";
 import {
   ArrowLeft,
@@ -485,6 +487,7 @@ export function EventSidePane({
 }) {
   const images = getEventImages(event);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { reduceMotion, springs } = useAnimationConfig();
 
   const [paneWidth, setPaneWidth] = useState(DEFAULT_WIDTH);
   const [mounted, setMounted] = useState(false);
@@ -582,9 +585,12 @@ export function EventSidePane({
     return (
       <>
         {/* Backdrop */}
-        <div
+        <motion.div
           className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-          style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.3s ease" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={onClose}
         />
 
@@ -685,9 +691,13 @@ export function EventSidePane({
   // ── Desktop side panel ──
   return (
     <>
-      <div
-        className="fixed right-0 top-0 z-50 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)] transition-transform duration-300 ease-out"
-        style={{ width: paneWidth, transform: mounted ? "translateX(0)" : "translateX(100%)" }}
+      <motion.div
+        className="fixed right-0 top-0 z-50 flex h-screen flex-col border-l border-[var(--home-border)] bg-[var(--bg-card)] shadow-[-8px_0_48px_rgba(0,0,0,0.16)]"
+        initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+        animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
+        exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+        transition={reduceMotion ? { duration: 0.15 } : springs.page}
+        style={{ width: paneWidth }}
       >
         {/* Drag handle */}
         <div
@@ -732,7 +742,7 @@ export function EventSidePane({
 
         {/* Sticky footer */}
         <PaneFooter event={event} onToggleSaved={toggleSave} saved={isSaved} onGetTickets={() => setTicketModalOpen(true)} />
-      </div>
+      </motion.div>
 
       {photoModal.open && (
         <PhotoModal

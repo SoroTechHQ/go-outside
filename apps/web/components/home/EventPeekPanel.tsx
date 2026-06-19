@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import {
   BellSimple,
   CalendarDots,
@@ -66,6 +67,7 @@ export function EventPeekPanel({
   signal,
 }: EventPeekPanelProps) {
   const { setPeekPanelWidth } = useAppShell();
+  const { reduceMotion, springs } = useAnimationConfig();
   const isOpen = Boolean(event && organizer && signal);
 
   // Push page content when panel opens on desktop
@@ -103,18 +105,16 @@ export function EventPeekPanel({
           ) : null}
 
           <motion.aside
-            animate={isDesktop ? { x: 0 } : { y: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : isDesktop ? { x: 0 } : { y: 0 }}
             className={
               isDesktop
-                ? // Desktop: flush right edge, full height, no border radius, pushes content
-                  "fixed inset-y-0 right-0 z-[60] flex flex-col border-l border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[-12px_0_40px_rgba(0,0,0,0.18)]"
-                : // Mobile: bottom sheet with top radius only
-                  "fixed inset-x-0 bottom-0 z-[60] flex max-h-[90vh] flex-col overflow-hidden rounded-t-[28px] border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[0_-8px_32px_rgba(0,0,0,0.24)]"
+                ? "fixed inset-y-0 right-0 z-[60] flex flex-col border-l border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[-12px_0_40px_rgba(0,0,0,0.18)]"
+                : "fixed inset-x-0 bottom-0 z-[60] flex max-h-[90vh] flex-col overflow-hidden rounded-t-[28px] border-t border-[color:var(--border-subtle)] bg-[color:var(--bg-elevated)] shadow-[0_-8px_32px_rgba(0,0,0,0.24)]"
             }
-            exit={isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
-            initial={isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
+            exit={reduceMotion ? { opacity: 0 } : isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
+            initial={reduceMotion ? { opacity: 0 } : isDesktop ? { x: PANEL_WIDTH } : { y: "100%" }}
             style={isDesktop ? { width: PANEL_WIDTH } : undefined}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={reduceMotion ? { duration: 0.15 } : isDesktop ? springs.page : springs.sheet}
           >
             {/* Header image */}
             <div className="relative h-[200px] shrink-0">

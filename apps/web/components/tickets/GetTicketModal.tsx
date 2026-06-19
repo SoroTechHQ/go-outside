@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import {
   X,
   Ticket,
@@ -44,6 +45,7 @@ function formatPrice(price: number, type: TicketTier["priceType"]) {
 }
 
 export function GetTicketModal({ event, onClose }: GetTicketModalProps) {
+  const { reduceMotion, springs } = useAnimationConfig();
   const [step, setStep] = useState<Step>("select");
   const [selectedTier, setSelectedTier] = useState<TicketTier | null>(
     event.ticketTypes[0] ?? null,
@@ -93,14 +95,21 @@ export function GetTicketModal({ event, onClose }: GetTicketModalProps) {
       className="fixed inset-0 z-[70] flex items-end justify-center md:items-center"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        onClick={onClose}
+      />
 
       <motion.div
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl md:rounded-3xl bg-[var(--bg-card)] shadow-2xl"
-        exit={{ opacity: 0, y: 40 }}
-        initial={{ opacity: 0, y: 40, scale: 0.98 }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 40 }}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 40, scale: 0.98 }}
+        transition={reduceMotion ? { duration: 0.15 } : springs.sheet}
       >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-[var(--border-subtle)] px-5 py-4">

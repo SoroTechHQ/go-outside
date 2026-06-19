@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Trash, ShoppingCart, ArrowRight, Minus, Plus } from "@phosphor-icons/react";
 import { useCart } from "../cart/CartContext";
 import { useRouter } from "next/navigation";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 
 export function CartDrawer() {
   const { items, totalCount, totalPrice, isOpen, closeCart, removeItem, updateQuantity, clearCart } = useCart();
   const router = useRouter();
+  const { reduceMotion, springs } = useAnimationConfig();
 
   function handleCheckout() {
     closeCart();
@@ -18,16 +20,20 @@ export function CartDrawer() {
     <AnimatePresence>
       {isOpen && (
         <>
-          <div
+          <motion.div
             className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
             onClick={closeCart}
           />
           <motion.div
-            animate={{ x: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
             className="fixed right-0 top-0 z-[61] flex h-full w-full max-w-sm flex-col bg-[var(--bg-card)] shadow-2xl"
-            exit={{ x: "100%" }}
-            initial={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+            initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
+            transition={reduceMotion ? { duration: 0.15 } : springs.sheet}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
