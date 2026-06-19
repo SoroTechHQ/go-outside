@@ -163,7 +163,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
             {navItems.map((item) => {
               const active =
                 item.href === "/"
-                  ? pathname === "/"
+                  ? pathname === "/" || pathname === "/home" || pathname.startsWith("/home/")
                   : pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
               const iconWeight = active
@@ -177,23 +177,34 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
                       isExpanded ? "gap-3.5 px-5" : "justify-center"
                     } ${
                       active
-                        ? "bg-[var(--brand-dim)] font-semibold text-[var(--brand)]"
+                        ? "font-semibold text-[var(--brand)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
                     }`}
                     whileTap={reduceMotion ? undefined : { scale: 0.97 }}
                     transition={{ duration: 0.1 }}
                   >
+                    {/* Sliding active pill */}
+                    {active && !reduceMotion && (
+                      <motion.span
+                        layoutId="sidebar-pill"
+                        className="absolute inset-0 rounded-[12px] bg-[var(--brand-dim)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                      />
+                    )}
+                    {active && reduceMotion && (
+                      <span className="absolute inset-0 rounded-[12px] bg-[var(--brand-dim)]" />
+                    )}
                     <Icon
                       size={24}
                       weight={iconWeight}
-                      className="text-current"
+                      className="relative z-10 text-current"
                     />
 
                     <AnimatePresence>
                       {isExpanded ? (
                         <motion.span
                           animate={{ opacity: 1, width: "auto" }}
-                          className="relative z-10 overflow-hidden whitespace-nowrap text-sm font-medium"
+                          className="relative z-10 overflow-hidden whitespace-nowrap text-sm font-medium text-current"
                           exit={{ opacity: 0, width: 0 }}
                           initial={{ opacity: 0, width: 0 }}
                           transition={{ duration: 0.2 }}
@@ -230,7 +241,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username,
             <ShoppingCart
               size={24}
               weight={miniCartOpen ? "fill" : "regular"}
-              className="text-current"
+              className={`relative z-10 ${miniCartOpen ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"}`}
             />
             <AnimatePresence>
               {isExpanded ? (

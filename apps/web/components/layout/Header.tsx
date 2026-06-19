@@ -34,12 +34,24 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
   const isSearch    = pathname === "/search";
   const isMessages  = pathname === "/messages" || pathname === "/dashboard/messages";
   const isWallets   = pathname === "/wallets" || pathname.startsWith("/wallets/") || pathname.startsWith("/dashboard/wallets");
-  const isProfile   = pathname === "/profile" || pathname.startsWith("/profile/") || pathname.startsWith("/dashboard/profile");
+  const isProfile   = pathname === "/profile" || pathname.startsWith("/profile/") || pathname.startsWith("/dashboard/profile") || pathname.startsWith("/dashboard/user/");
   const isEventDetail = pathname.startsWith("/events/");
+
+  // Public profile pages — single segment paths not matching reserved routes
+  const RESERVED = new Set([
+    "home","search","explore","events","e","go","organizer","organizers","dashboard",
+    "api","admin","settings","login","signup","sign-in","sign-up","onboarding","about",
+    "help","support","terms","privacy","blog","careers","press","waitlist","ad-waitlist",
+    "categories","trending","notifications","saved","rewards","checkout","messages",
+    "wallets","people","sign_in","sign_up",
+  ]);
+  const segments = pathname.split("/").filter(Boolean);
+  const isPublicProfile = segments.length === 1 && !RESERVED.has(segments[0]!);
+
   const totalHomeProgress = Math.min(1, compactProgress * 0.58 + miniProgress * 0.42);
   const easedHomeProgress =
     totalHomeProgress * totalHomeProgress * (3 - 2 * totalHomeProgress);
-  if (isMessages || isWallets || isProfile || isEventDetail) return null;
+  if (isMessages || isWallets || isProfile || isEventDetail || isPublicProfile) return null;
 
   const isHome = pathname === "/home" || pathname === "/";
 

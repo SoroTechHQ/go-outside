@@ -5,6 +5,7 @@ import OrganizerShell from "./_components/OrganizerShell";
 import { getOrganizerDashboardData } from "./_lib/dashboard";
 import { getOrCreateSupabaseUser } from "../../lib/db/users";
 import { STEP_ROUTES } from "../../lib/onboarding-utils";
+import { AppChrome } from "../../components/layout/AppChrome";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
 
   return (
     <div className="h-screen overflow-hidden">
+      <AppChrome />
       <OrganizerShell
         organizer={dashboard.organizer ?? null}
         organizerName={dashboard.organizer?.name ?? fallbackName}
