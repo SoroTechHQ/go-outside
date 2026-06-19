@@ -63,48 +63,6 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
           /* Home: keep original animated hero search widget */
           <header className="sticky top-0 z-40 hidden md:flex pointer-events-none">
             <div
-              className="pointer-events-none absolute top-0 px-4 md:px-6"
-              style={{
-                width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
-                marginLeft: `${stableSidebarOffset}px`,
-                transition: "width 0.3s ease-in-out",
-              }}
-            >
-              <div className="mx-auto w-full max-w-[1120px]">
-                <div
-                  className="relative mx-auto overflow-hidden rounded-b-[36px]"
-                  style={{
-                    width: `${1020 - easedHomeProgress * 188}px`,
-                    minWidth: "648px",
-                    height: `${112 - easedHomeProgress * 4}px`,
-                  }}
-                >
-                  <div
-                    className="absolute inset-x-0 top-0"
-                    style={{
-                      height: `${130 - easedHomeProgress * 22}px`,
-                      background: `linear-gradient(180deg,
-                        rgba(var(--brand-rgb),${0.06 + easedHomeProgress * 0.04}),
-                        rgba(var(--brand-rgb),${0.02 + easedHomeProgress * 0.02}) 38%,
-                        rgba(255,255,255,0) 100%)`,
-                    }}
-                  />
-                  <div
-                    className="absolute inset-x-0 top-0"
-                    style={{
-                      height: `${90 + easedHomeProgress * 22}px`,
-                      opacity: 0.22 + easedHomeProgress * 0.28,
-                      background: `linear-gradient(180deg,
-                        rgba(var(--bg-card-rgb),0.92) 0%,
-                        rgba(var(--bg-card-rgb),0.82) 46%,
-                        rgba(var(--bg-card-rgb),${0.32 - easedHomeProgress * 0.1}) 78%,
-                        rgba(var(--bg-card-rgb),0) 100%)`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div
               className="pointer-events-auto flex justify-center px-4 md:px-6"
               style={{
                 width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
@@ -132,7 +90,7 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
         ) : (
           /* Non-home app pages: compact 72px bar — search bar only on desktop */
           <header
-            className="sticky top-0 z-40 hidden md:flex items-center border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] backdrop-blur-xl"
+            className="sticky top-0 z-40 hidden md:flex items-center"
             style={{
               width: `calc(100vw - ${stableSidebarOffset}px - ${peekPanelWidth}px)`,
               marginLeft: `${stableSidebarOffset}px`,
@@ -153,7 +111,7 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
         )}
 
         {/* Mobile header */}
-        <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
+        <header className="sticky top-0 z-40 px-4 py-3 md:hidden">
           <div className="flex items-center justify-between gap-3">
             <Link href="/">
               <Image src="/logo-mini.png" alt="GoOutside" width={32} height={32} style={{ objectFit: "contain" }} />
@@ -176,7 +134,7 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 hidden border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.82)] backdrop-blur-xl md:flex">
+      <header className="sticky top-0 z-40 hidden md:flex">
         <div className="container-shell flex w-full items-center justify-between gap-6 py-4">
           <Link href="/">
             <Image src="/logo-full.png" alt="GoOutside" width={120} height={34} style={{ objectFit: "contain" }} />
@@ -199,7 +157,7 @@ export function Header({ appShell = false, userName = "" }: HeaderProps) {
         </div>
       </header>
 
-      <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 md:hidden">
+      <header className="sticky top-0 z-40 px-4 py-3 md:hidden">
         <div className="flex items-center justify-between gap-3">
           <Link href="/">
             <Image src="/logo-mini.png" alt="GoOutside" width={32} height={32} style={{ objectFit: "contain" }} />
