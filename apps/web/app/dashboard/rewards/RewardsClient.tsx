@@ -165,7 +165,10 @@ function RewardCard({
   const soldOut = reward.remaining_qty !== null && reward.remaining_qty <= 0;
 
   return (
-    <div
+    <motion.div
+      variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      whileTap={{ scale: 0.97 }}
       className={`relative flex flex-col rounded-[20px] border p-4 transition-all ${
         canAfford && !soldOut
           ? "border-[var(--border-card)] bg-[var(--bg-card)]"
@@ -244,7 +247,7 @@ function RewardCard({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -305,7 +308,12 @@ function RewardsShopTab({
           No rewards in this category yet.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <motion.div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+          variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+          initial="hidden"
+          animate="visible"
+        >
           {filtered.map((r) => (
             <RewardCard
               key={r.id}
@@ -314,7 +322,7 @@ function RewardsShopTab({
               onRedeem={onRedeem}
             />
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

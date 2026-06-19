@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { PageEntrance } from "../../../components/layout/PageEntrance";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -482,7 +483,7 @@ export default function ExplorePage() {
 
   return (
     <main className="page-grid min-h-screen pb-28">
-      <div className="container-shell px-4 pt-6 pb-6">
+      <PageEntrance className="container-shell px-4 pt-6 pb-6">
         <div className="mx-auto max-w-2xl">
 
           {/* ── Search bar ─────────────────────────────────────────────────── */}
@@ -551,7 +552,7 @@ export default function ExplorePage() {
           )}
 
         </div>
-      </div>
+      </PageEntrance>
     </main>
   );
 }

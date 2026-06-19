@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 
 interface SpinnerProps {
@@ -30,11 +33,16 @@ export function Spinner({ size = "md", label, className }: SpinnerProps) {
   );
 }
 
-/** Full-page centered spinner */
+/** Full-page centered spinner — fades in after 150ms to avoid flash on fast loads */
 export function PageSpinner({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center">
+    <motion.div
+      className="flex min-h-[40vh] items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, delay: 0.15 }}
+    >
       <Spinner size="lg" label={label} />
-    </div>
+    </motion.div>
   );
 }
