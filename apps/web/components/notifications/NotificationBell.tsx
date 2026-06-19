@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 import {
   Bell,
   BellRinging,
@@ -46,6 +47,7 @@ export function NotificationBell() {
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission>("default");
   const ref = useRef<HTMLDivElement>(null);
 
+  const { reduceMotion, springs } = useAnimationConfig();
   const { data: bootstrap } = useAppBootstrap();
   const markAllRead = useMarkNotificationsRead();
   const items = bootstrap?.notifications.items ?? [];
@@ -82,31 +84,43 @@ export function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        className="relative flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[var(--bg-muted)] active:scale-95"
+      <motion.button
+        className="relative flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[var(--bg-muted)]"
+        whileTap={reduceMotion ? undefined : { scale: 0.88 }}
+        transition={springs.snappy}
         onClick={() => setOpen((v) => !v)}
         type="button"
       >
-        {unreadCount > 0 ? (
-          <BellRinging size={20} weight="fill" className="text-[var(--brand)]" />
-        ) : (
-          <Bell size={20} weight="regular" className="text-[var(--text-secondary)]" />
-        )}
+        <motion.span
+          animate={!reduceMotion && unreadCount > 0 ? { rotate: [0, -12, 10, -8, 6, 0] } : {}}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          {unreadCount > 0 ? (
+            <BellRinging size={20} weight="fill" className="text-[var(--brand)]" />
+          ) : (
+            <Bell size={20} weight="regular" className="text-[var(--text-secondary)]" />
+          )}
+        </motion.span>
         {unreadCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={springs.snappy}
+            className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white"
+          >
             {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
+          </motion.span>
         )}
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             className="absolute right-0 top-full z-[80] mt-2 w-80 overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-xl"
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ type: "spring", damping: 24, stiffness: 300 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.97 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.97 }}
+            transition={reduceMotion ? { duration: 0.15 } : springs.gentle}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3">
               <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Notifications</h3>

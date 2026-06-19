@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, UserMinus, UserCheck } from "@phosphor-icons/react";
 import type { FollowStatus } from "../../lib/social/types";
+import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 
 type Props = {
   /** Supabase user UUID of the person to follow */
@@ -13,6 +15,7 @@ type Props = {
 };
 
 export function FollowButton({ userId, initialFollowing = false, size = "md", onToggle }: Props) {
+  const { reduceMotion, springs } = useAnimationConfig();
   const [status, setStatus] = useState<FollowStatus>({
     following: initialFollowing,
     followedBy: false,
@@ -69,7 +72,9 @@ export function FollowButton({ userId, initialFollowing = false, size = "md", on
 
   if (status.following) {
     return (
-      <button
+      <motion.button
+        whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+        transition={springs.snappy}
         className={`${baseClass} border border-[var(--border-default)] bg-[var(--bg-muted)] text-[var(--text-secondary)] hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500`}
         disabled={loading}
         onClick={toggle}
@@ -78,16 +83,29 @@ export function FollowButton({ userId, initialFollowing = false, size = "md", on
         type="button"
         aria-label={hovered ? "Unfollow" : "Following"}
       >
-        {hovered ? <UserMinus size={iconSize} weight="bold" /> : <UserCheck size={iconSize} weight="bold" />}
-        {hovered ? "Unfollow" : status.mutual ? "Mutuals" : "Following"}
-      </button>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={hovered ? "minus" : "check"}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.7 }}
+            transition={springs.snappy}
+            className="inline-flex items-center gap-1.5"
+          >
+            {hovered ? <UserMinus size={iconSize} weight="bold" /> : <UserCheck size={iconSize} weight="bold" />}
+            {hovered ? "Unfollow" : status.mutual ? "Mutuals" : "Following"}
+          </motion.span>
+        </AnimatePresence>
+      </motion.button>
     );
   }
 
   if (status.followedBy) {
     return (
-      <button
-        className={`${baseClass} bg-[var(--bg-card)] border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black active:scale-95 disabled:opacity-60`}
+      <motion.button
+        whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+        transition={springs.snappy}
+        className={`${baseClass} bg-[var(--bg-card)] border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-black disabled:opacity-60`}
         disabled={loading}
         onClick={toggle}
         type="button"
@@ -95,13 +113,15 @@ export function FollowButton({ userId, initialFollowing = false, size = "md", on
       >
         <UserPlus size={iconSize} weight="bold" />
         Follow back
-      </button>
+      </motion.button>
     );
   }
 
   return (
-    <button
-      className={`${baseClass} bg-[var(--brand)] text-black hover:opacity-90 active:scale-95 disabled:opacity-60`}
+    <motion.button
+      whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+      transition={springs.snappy}
+      className={`${baseClass} bg-[var(--brand)] text-black hover:opacity-90 disabled:opacity-60`}
       disabled={loading}
       onClick={toggle}
       type="button"
@@ -109,7 +129,7 @@ export function FollowButton({ userId, initialFollowing = false, size = "md", on
     >
       <UserPlus size={iconSize} weight="bold" />
       Follow
-    </button>
+    </motion.button>
   );
 }
 
