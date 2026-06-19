@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import type webpush from "web-push";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { sendWebPush } from "../../../../lib/notifications/send-web-push";
+import { sendMessageNudge } from "../../../../lib/email";
 
-// Vercel cron: runs every 15 minutes.
+// Vercel cron: runs every minute.
 // Finds users who received a message more than `messages_email_delay_mins` minutes ago
-// and haven't had a re-engagement nudge sent yet, then fires a Web Push.
+// and haven't had a re-engagement nudge sent yet, then fires Web Push + email.
 
-const DEFAULT_DELAY_MINS = 60;
-const MIN_DELAY_MINS = 15;
+const DEFAULT_DELAY_MINS = 1;
+const MIN_DELAY_MINS = 1;
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const { data: candidates, error } = await supabaseAdmin
     .from("users")
-    .select("clerk_id, push_subscriptions, notification_prefs, unread_nudge_pending_at, unread_nudge_sent_at")
+    .select("clerk_id, email, first_name, push_subscriptions, notification_prefs, unread_nudge_pending_at, unread_nudge_sent_at")
     .not("unread_nudge_pending_at", "is", null)
     .lte("unread_nudge_pending_at", cutoff)
     .limit(200);
@@ -55,8 +56,10 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Push notifications must be enabled. Keep legacy global `push` as a fallback.
-    if (prefs.messages_push === false || prefs.push === false) {
+    // Push/email must be enabled
+    const pushEnabled = prefs.messages_push !== false && prefs.push !== false;
+    const emailEnabled = prefs.messages_email !== false && prefs.email !== false;
+    if (!pushEnabled && !emailEnabled) {
       await supabaseAdmin
         .from("users")
         .update({ unread_nudge_pending_at: null })
@@ -74,25 +77,36 @@ export async function GET(req: NextRequest) {
       if (Date.now() - lastSent < requiredDelay) continue;
     }
 
+    const now = new Date().toISOString();
     const pushSubs = user.push_subscriptions as Record<string, webpush.PushSubscription> | null;
-    if (!pushSubs || Object.keys(pushSubs).length === 0) {
+
+    if (pushEnabled && pushSubs && Object.keys(pushSubs).length > 0) {
+      await Promise.all(
+        Object.values(pushSubs).map((sub) =>
+          sendWebPush(sub, {
+            title: "GoOutside · Unread message",
+            body: "You have an unread message waiting for you.",
+            url: "/dashboard/messages",
+          }).catch(() => {})
+        )
+      );
+    }
+
+    if (emailEnabled && (user as { email?: string }).email) {
+      void sendMessageNudge({
+        to:         (user as { email: string }).email,
+        senderName: "Someone",
+        channelUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club"}/dashboard/messages`,
+      });
+    }
+
+    if (!pushEnabled && !emailEnabled) {
       await supabaseAdmin
         .from("users")
         .update({ unread_nudge_pending_at: null })
         .eq("clerk_id", user.clerk_id);
       continue;
     }
-
-    const now = new Date().toISOString();
-    await Promise.all(
-      Object.values(pushSubs).map((sub) =>
-        sendWebPush(sub, {
-          title: "GoOutside · Unread message",
-          body: "You have an unread message waiting for you.",
-          url: "/dashboard/messages",
-        }).catch(() => {})
-      )
-    );
 
     await supabaseAdmin
       .from("users")
