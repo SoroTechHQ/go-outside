@@ -45,6 +45,9 @@ export function BottomNav({ role = "attendee" }: BottomNavProps) {
   const msgUnread  = useStreamUnread();
   const { reduceMotion, springs } = useAnimationConfig();
 
+  // Hide entirely on the messages route — the chat UI owns the bottom safe area
+  if (pathname.startsWith("/messages") || pathname.startsWith("/dashboard/messages")) return null;
+
   const items: BottomNavItem[] = [
     { href: "/",         icon: House,          label: "Home" },
     { href: "/trending", icon: MagnifyingGlass, label: "Explore" },

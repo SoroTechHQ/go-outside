@@ -801,10 +801,11 @@ a {
   box-shadow: none !important;
   color: #111111 !important;
   font-size: 0.875rem;
-  line-height: 1.45;
+  font-weight: 450;
+  line-height: 1.5;
   min-width: 48px;
   overflow-wrap: break-word;
-  padding: 0.15rem 0.05rem;
+  padding: 0.625rem 0.875rem;
   word-break: normal;
 }
 
@@ -1803,25 +1804,23 @@ a {
 
   .go-stream-chat--mobile-thread .str-chat__list {
     padding-inline: 0.2rem;
-    /* Extra bottom clearance so last message isn't hidden behind the bottom nav */
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom, 8px);
   }
 
-  /* Push the message input above the fixed bottom nav bar */
+  /* Pin message input flush to the device bottom — nav is hidden on this route */
   .go-stream-chat--mobile-thread .str-chat__input-flat,
   .go-stream-chat--mobile-thread .str-chat__message-input {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom, 8px);
   }
 
-  /* Also pad the custom GoMessageInput wrapper */
   .go-stream-chat--mobile-thread .go-message-input {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom, 8px);
   }
 
-  /* Pad channel list so bottom conversations aren't hidden behind the nav */
+  /* Pad channel list to device bottom — no nav overlay */
   .go-stream-chat__sidebar .str-chat__channel-list,
   .go-stream-chat__sidebar .str-chat__channel-list-messenger {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
   }
 
   .go-stream-compose {
@@ -1837,8 +1836,7 @@ a {
     border-radius: 0;
     box-shadow: none;
     height: 100%;
-    /* Account for fixed bottom nav so content isn't clipped */
-    max-height: calc(100dvh - 80px - env(safe-area-inset-bottom));
+    max-height: 100dvh;
     max-width: none;
     width: 100%;
   }
@@ -1853,6 +1851,22 @@ a {
 
   .go-stream-compose--mobile .go-stream-compose__results {
     padding: 0.9rem 0.7rem calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Smooth slide transitions between list / thread / compose */
+  .go-stream-chat__sidebar,
+  .go-stream-chat__thread {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .go-stream-chat--mobile-thread .go-stream-chat__thread {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .go-stream-chat__thread {
+    opacity: 0;
+    transform: translateX(12px);
   }
 }
 

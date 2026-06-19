@@ -18,7 +18,6 @@ import {
   Channel,
   ChannelList,
   Chat,
-  LoadingIndicator,
   MessageInput,
   MessageList,
   TypingIndicator,
@@ -51,28 +50,19 @@ function getChannelConversationType(channel: StreamChannel): GoConversationType 
 }
 
 function getStreamTheme(type: GoConversationType): React.CSSProperties {
-  const base: React.CSSProperties = {
-    "--str-chat__primary-color":                          "#5FBF2A",
-    "--str-chat__own-message-bubble-background-color":    "#5FBF2A",
-    "--str-chat__own-message-bubble-color":               "#ffffff",
-    "--str-chat__message-bubble-background-color":        "#1e1e1e",
-    "--str-chat__message-bubble-color":                   "#f0f0f0",
-    "--str-chat__border-radius-md":                       "18px",
-    "--str-chat__border-radius-sm":                       "12px",
+  // Only set primary/own-bubble colors here. Incoming bubble colors and
+  // border-radii are handled centrally in globals.css with !important to
+  // avoid the split-brain styling bug where inline vars competed with CSS.
+  const base = {
+    "--str-chat__primary-color":                       "#5FBF2A",
+    "--str-chat__own-message-bubble-background-color": "#5FBF2A",
+    "--str-chat__own-message-bubble-color":            "#ffffff",
   } as React.CSSProperties;
 
   if (type === "message_request") {
     return {
       ...base,
       "--str-chat__own-message-bubble-background-color": "#3a3a3a",
-      "--str-chat__own-message-bubble-color":            "#ffffff",
-    } as React.CSSProperties;
-  }
-
-  if (type === "organizer_chat") {
-    return {
-      ...base,
-      "--str-chat__message-bubble-background-color": "#161e12",
     } as React.CSSProperties;
   }
 
@@ -180,21 +170,6 @@ function formatConversationTime(channel: StreamChannel) {
 }
 
 
-function MessagesLoadingState({ label }: { label: string }) {
-  return (
-    <div className="flex h-dvh w-full items-center justify-center bg-[var(--bg-base)]">
-      <div className="flex max-w-sm flex-col items-center gap-4 rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-8 py-10 text-center shadow-[0_24px_80px_rgba(0,0,0,0.07)]">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
-          <SpinnerGap className="animate-spin" size={24} weight="bold" />
-        </div>
-        <div>
-          <p className="text-[17px] font-semibold text-[var(--text-primary)]">Loading messages</p>
-          <p className="mt-1 text-[14px] text-[var(--text-tertiary)]">{label}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function MessagesPageSkeleton() {
   return (
@@ -236,6 +211,22 @@ function MessagesConfigError({ detail }: { detail: string }) {
           <p className="mt-1 text-[14px] text-[var(--text-tertiary)]">{detail}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ChannelListSkeleton() {
+  return (
+    <div aria-hidden="true">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-center gap-3 px-4 py-3">
+          <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[var(--bg-surface)]" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-28 animate-pulse rounded bg-[var(--bg-surface)]" />
+            <div className="h-3 w-40 animate-pulse rounded bg-[var(--border-subtle)]" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -869,7 +860,7 @@ function MessagesShell({
           <ChannelList
             key="active"
             EmptyStateIndicator={ChannelListEmptyState}
-            LoadingIndicator={LoadingIndicator}
+            LoadingIndicator={ChannelListSkeleton}
             Preview={(previewProps) => (
               <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
             )}
@@ -902,7 +893,7 @@ function MessagesShell({
                 </div>
               </div>
             )}
-            LoadingIndicator={LoadingIndicator}
+            LoadingIndicator={ChannelListSkeleton}
             Preview={(previewProps) => (
               <ConversationPreview {...previewProps} onOpenChannel={handleOpenChannel} />
             )}
@@ -1038,7 +1029,7 @@ function MessagesPageInner() {
     return <MessagesConfigError detail="Add NEXT_PUBLIC_STREAM_API_KEY in the web app env and restart." />;
   }
   if (!authLoaded || !userLoaded) {
-    return <MessagesLoadingState label="Checking your session…" />;
+    return <MessagesPreviewShell label="Checking your session…" />;
   }
   if (!user) {
     return <MessagesConfigError detail="Sign in to access your messages." />;
@@ -1054,7 +1045,7 @@ function MessagesPageInner() {
 
 export default function MessagesPage() {
   return (
-    <Suspense fallback={<MessagesLoadingState label="Loading…" />}>
+    <Suspense fallback={<MessagesPreviewShell label="Loading…" />}>
       <MessagesPageInner />
     </Suspense>
   );
