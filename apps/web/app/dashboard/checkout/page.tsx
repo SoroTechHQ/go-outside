@@ -35,7 +35,32 @@ function validateContact(name: string, email: string): ContactErrors {
 type PaymentMethod = "mobile_money" | "card";
 type MomoNetwork   = "mtn" | "vodafone" | "airteltigo";
 
-const GHANA_PHONE = /^\+233[0-9]{9}$/;
+// Ghana numbers — all three formats accepted:
+//   0XXXXXXXXX   (10 digits, local format)
+//   233XXXXXXXXX (12 digits, no leading +)
+//   +233XXXXXXXXX (12 digits, E.164)
+// Spaces, dashes, and parentheses are stripped before testing.
+function normalizeGhanaPhone(raw: string): string | null {
+  const s = raw.replace(/[\s\-().]/g, "");
+  if (/^0[0-9]{9}$/.test(s))       return "+233" + s.slice(1); // 0247... → +233247...
+  if (/^\+233[0-9]{9}$/.test(s))   return s;                   // +233247...
+  if (/^233[0-9]{9}$/.test(s))     return "+" + s;             // 233247... → +233247...
+  return null;
+}
+
+// Map the 2-digit subscriber prefix (after +233) to a network.
+// Sources: NCA Ghana operator prefix allocations.
+const MTN_PREFIXES       = ["24", "25", "53", "54", "55", "59"];
+const VODAFONE_PREFIXES  = ["20", "50"];
+const AIRTELTIGO_PREFIXES= ["26", "27", "56", "57"];
+
+function inferNetwork(e164: string): MomoNetwork | null {
+  const prefix = e164.slice(4, 6); // +233 is 4 chars; next 2 are the operator code
+  if (MTN_PREFIXES.includes(prefix))        return "mtn";
+  if (VODAFONE_PREFIXES.includes(prefix))   return "vodafone";
+  if (AIRTELTIGO_PREFIXES.includes(prefix)) return "airteltigo";
+  return null;
+}
 
 function nanoidShort() {
   return Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -85,12 +110,13 @@ export default function CheckoutPage() {
   }
 
   function validateMomo(): boolean {
-    const normalized = momoNumber.replace(/\s/g, "");
-    if (!GHANA_PHONE.test(normalized)) {
-      setMomoError("Enter a valid Ghana number: +233 XX XXX XXXX");
+    const normalized = normalizeGhanaPhone(momoNumber);
+    if (!normalized) {
+      setMomoError("Enter a valid Ghana number: 0247153173, 233247153173, or +233247153173");
       return false;
     }
     setMomoError(null);
+    setMomoNumber(normalized); // canonicalize to E.164 on blur
     return true;
   }
 
@@ -149,7 +175,7 @@ export default function CheckoutPage() {
         currency: "GHS",
         reference,
         channels: method === "mobile_money" ? ["mobile_money"] : ["card"],
-        metadata: { phone: momoNumber.replace(/\s/g, ""), network: momoNetwork },
+        metadata: { phone: normalizeGhanaPhone(momoNumber) ?? momoNumber.replace(/\s/g, ""), network: momoNetwork },
         callback: () => {
           completePurchase(reference, method, momoNetwork).then(() => {
             setLoading(false);
@@ -382,9 +408,19 @@ export default function CheckoutPage() {
                           <Phone size={15} className="text-[var(--text-tertiary)] shrink-0" />
                           <input
                             className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-                            onChange={(e) => { setMomoNumber(e.target.value); setMomoError(null); }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setMomoNumber(val);
+                              setMomoError(null);
+                              // Auto-select network as user types
+                              const norm = normalizeGhanaPhone(val);
+                              if (norm) {
+                                const detected = inferNetwork(norm);
+                                if (detected) setMomoNetwork(detected);
+                              }
+                            }}
                             onBlur={validateMomo}
-                            placeholder="+233 24 000 0000"
+                            placeholder="0247 153 173"
                             type="tel"
                             value={momoNumber}
                           />
