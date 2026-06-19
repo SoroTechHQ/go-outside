@@ -38,7 +38,7 @@ export async function GET(
     .select("id")
     .eq("from_id", supabaseUserId)
     .eq("to_id", eventId)
-    .eq("edge_type", "check_in")
+    .eq("edge_type", "checked_in")
     .gte("updated_at", cutoff)
     .maybeSingle();
 
@@ -71,7 +71,7 @@ export async function POST(
     .select("id")
     .eq("from_id", supabaseUserId)
     .eq("to_id", eventId)
-    .eq("edge_type", "check_in")
+    .eq("edge_type", "checked_in")
     .gte("updated_at", cutoff)
     .maybeSingle();
 

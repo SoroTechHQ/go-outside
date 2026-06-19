@@ -219,7 +219,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username 
                 ? "bg-[var(--brand-dim)] font-semibold text-[var(--brand)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)]"
             } ${isExpanded ? "gap-3.5 px-5" : "justify-center"}`}
-            onClick={() => setMiniCartOpen(true)}
+            onClick={() => setMiniCartOpen((v) => !v)}
             type="button"
           >
             <ShoppingCart
