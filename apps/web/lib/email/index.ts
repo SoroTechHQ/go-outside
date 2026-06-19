@@ -107,6 +107,66 @@ export async function sendWaitlistConfirmation(opts: { to: string; firstName: st
   });
 }
 
+export async function sendNewSignInEmail(opts: {
+  to: string;
+  device: string;
+  browser: string;
+  location: string;
+  ip: string;
+  time: string;
+  signInMethod: string;
+}): Promise<void> {
+  try {
+    await resend.emails.send({
+      from:    SENDERS.notify,
+      to:      opts.to,
+      subject: "New sign-in to your GoOutside account",
+      headers: txnHeaders(),
+      html:    buildNewSignInEmail(opts),
+    });
+  } catch (err) {
+    console.error("[email] sendNewSignInEmail failed:", err);
+  }
+}
+
+export async function sendFollowEmail(opts: {
+  to: string;
+  followerName: string;
+  followerUsername: string | null;
+  followerAvatarUrl: string | null;
+  followersCount?: number;
+}): Promise<void> {
+  try {
+    await resend.emails.send({
+      from:    SENDERS.notify,
+      to:      opts.to,
+      subject: `${opts.followerName} started following you on GoOutside`,
+      headers: notifHeaders(),
+      html:    buildFollowEmail(opts),
+    });
+  } catch (err) {
+    console.error("[email] sendFollowEmail failed:", err);
+  }
+}
+
+export async function sendPostLikeEmail(opts: {
+  to: string;
+  likerName: string;
+  postPreview: string;
+}): Promise<void> {
+  try {
+    await resend.emails.send({
+      from:    SENDERS.notify,
+      to:      opts.to,
+      subject: `${opts.likerName} liked your post`,
+      headers: notifHeaders(),
+      html:    buildPostLikeEmail(opts),
+    });
+  } catch (err) {
+    console.error("[email] sendPostLikeEmail failed:", err);
+  }
+}
+
 // ─── Shell ────────────────────────────────────────────────────────────────────
 function shell(content: string, footer?: string): string {
   return `<!DOCTYPE html>
@@ -416,4 +476,133 @@ function buildWaitlistEmail(firstName: string, roleLabel: string): string {
     <p style="margin:0;font-size:12px;color:${MUTED};">We'll reach out when early access opens. — The GoOutside Team</p>
   `, `Received because you joined the GoOutside waitlist.<br>
      <a href="mailto:hello@mail.gooutside.club" style="color:${DIM};text-decoration:underline;">hello@mail.gooutside.club</a>`);
+}
+
+// ─── 6. New sign-in alert ─────────────────────────────────────────────────────
+function buildNewSignInEmail(opts: {
+  device: string;
+  browser: string;
+  location: string;
+  ip: string;
+  time: string;
+  signInMethod: string;
+}): string {
+  function row(label: string, value: string): string {
+    return `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid ${BORDER};width:38%;font-size:12px;font-weight:600;color:${MUTED};vertical-align:top;">${label}</td>
+        <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:12px;color:${TEXT};vertical-align:top;">${value}</td>
+      </tr>`;
+  }
+
+  return shell(`
+    ${eyebrow("Security alert")}
+    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:${TEXT};letter-spacing:-0.02em;line-height:1.2;">
+      New sign-in to your account
+    </h1>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.75;color:${BODY};">
+      We noticed a new sign-in to your GoOutside account. If this was you, no action is needed. If you don't recognise this, secure your account immediately.
+    </p>
+
+    <div style="background-color:${BRAND_BG};border:1px solid ${BRAND_BD};border-radius:12px;padding:4px 20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        ${row("Sign-in method", opts.signInMethod)}
+        ${row("Device", opts.device)}
+        ${row("Browser", opts.browser)}
+        ${row("Location", opts.location)}
+        ${row("IP address", opts.ip)}
+        <tr>
+          <td style="padding:10px 0;width:38%;font-size:12px;font-weight:600;color:${MUTED};vertical-align:top;">Time</td>
+          <td style="padding:10px 0;font-size:12px;color:${TEXT};vertical-align:top;">${opts.time}</td>
+        </tr>
+      </table>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td style="padding-right:8px;">${btn("Secure my account", `${BASE}/settings`)}</td>
+      </tr>
+    </table>
+
+    ${hr()}
+
+    <p style="margin:0;font-size:12px;color:${MUTED};line-height:1.8;">
+      <a href="${BASE}/settings" style="color:${BRAND};font-weight:600;text-decoration:none;">This was me</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="${BASE}/settings" style="color:#c0392b;font-weight:600;text-decoration:none;">Not me? Secure your account</a>
+    </p>
+  `, `You received this security alert because a new session was created on your GoOutside account.<br>
+     <a href="${BASE}/settings" style="color:${DIM};text-decoration:underline;">Manage security settings</a>`);
+}
+
+// ─── 7. New follower ──────────────────────────────────────────────────────────
+function buildFollowEmail(opts: {
+  followerName: string;
+  followerUsername: string | null;
+  followerAvatarUrl: string | null;
+  followersCount?: number;
+}): string {
+  const profileUrl = opts.followerUsername
+    ? `${BASE}/go/${opts.followerUsername}`
+    : `${BASE}/home`;
+
+  const avatarBlock = opts.followerAvatarUrl
+    ? `<img src="${opts.followerAvatarUrl}" width="56" height="56" alt="${opts.followerName}" style="display:block;width:56px;height:56px;border-radius:50%;border:2px solid ${BORDER};object-fit:cover;">`
+    : `<div style="width:56px;height:56px;border-radius:50%;background-color:${BRAND_BG};border:2px solid ${BRAND_BD};display:flex;align-items:center;justify-content:center;"><span style="font-size:22px;font-weight:700;color:${BRAND};">${opts.followerName.charAt(0).toUpperCase()}</span></div>`;
+
+  return shell(`
+    ${eyebrow("New follower")}
+    <h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:${TEXT};letter-spacing:-0.02em;line-height:1.2;">
+      ${opts.followerName} started following you
+    </h1>
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:24px;">
+      <tr>
+        <td style="width:68px;vertical-align:top;">
+          ${avatarBlock}
+        </td>
+        <td style="vertical-align:middle;padding-left:14px;">
+          <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:${TEXT};">${opts.followerName}</p>
+          ${opts.followerUsername ? `<p style="margin:0;font-size:12px;color:${MUTED};">@${opts.followerUsername}</p>` : ""}
+        </td>
+      </tr>
+    </table>
+
+    ${btn("View their profile", profileUrl)}
+
+    ${hr()}
+    <p style="margin:0;font-size:11px;color:${MUTED};">
+      You're getting this because follow notifications are on.
+      <a href="${BASE}/dashboard/settings" style="color:${MUTED};text-decoration:underline;">Turn off</a>
+    </p>
+  `);
+}
+
+// ─── 8. Post liked ────────────────────────────────────────────────────────────
+function buildPostLikeEmail(opts: {
+  likerName: string;
+  postPreview: string;
+}): string {
+  const excerpt = opts.postPreview.length > 120
+    ? opts.postPreview.slice(0, 117) + "..."
+    : opts.postPreview;
+
+  return shell(`
+    ${eyebrow("Activity")}
+    <h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:${TEXT};letter-spacing:-0.02em;line-height:1.2;">
+      ${opts.likerName} liked your post
+    </h1>
+
+    <div style="background-color:#f8f8f8;border-left:3px solid ${BRAND};border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:24px;">
+      <p style="margin:0;font-size:13px;color:${BODY};line-height:1.7;font-style:italic;">"${excerpt}"</p>
+    </div>
+
+    ${btn("See your post", `${BASE}/dashboard/profile`)}
+
+    ${hr()}
+    <p style="margin:0;font-size:11px;color:${MUTED};">
+      You're getting this because post activity notifications are on.
+      <a href="${BASE}/dashboard/settings" style="color:${MUTED};text-decoration:underline;">Turn off</a>
+    </p>
+  `);
 }
