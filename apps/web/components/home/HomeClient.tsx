@@ -19,6 +19,7 @@ import {
   Images,
   Lightning,
   MapPin,
+  PencilSimple,
   Rows,
   SquaresFour,
   Sparkle,
@@ -30,11 +31,13 @@ import {
   X,
   XCircle,
 } from "@phosphor-icons/react";
+import { useUser } from "@clerk/nextjs";
 import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { EventSidePane } from "./EventSidePane";
 import { FollowingFeed } from "./FollowingFeed";
 import { PlansFeed } from "./PlansFeed";
 import { useAppShell } from "../layout/AppShellContext";
+import { PostComposer } from "../posts/PostComposer";
 import {
   useInfiniteEvents,
   useSaveEvent,
@@ -604,9 +607,7 @@ function FollowingPostsStrip() {
                   {author.avatar_url ? (
                     <Image src={author.avatar_url} alt={name} width={28} height={28} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-[#4a9f63]/20 text-[10px] font-bold text-[#4a9f63]">
-                      {name[0]?.toUpperCase()}
-                    </div>
+                    <NaviiAvatar seed={author.username ?? author.clerk_id ?? name} title={name} size={28} className="h-full w-full object-cover" />
                   )}
                 </div>
                 <div className="min-w-0">
@@ -903,6 +904,53 @@ function PersonSidebarRow({ person }: { person: SidebarPerson }) {
 }
 
 
+// ── Quick Composer — inline post from home feed ──────────────────────────────
+
+function QuickComposer() {
+  const { user } = useUser();
+  const [expanded, setExpanded] = useState(false);
+
+  if (!user) return null;
+
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || "You";
+  const avatarUrl = user.imageUrl ?? null;
+
+  if (expanded) {
+    return (
+      <section className="mt-4">
+        <PostComposer
+          clerkId={user.id}
+          name={name}
+          avatarUrl={avatarUrl}
+          onPosted={() => setExpanded(false)}
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section className="mt-4">
+      <button
+        onClick={() => setExpanded(true)}
+        className="flex w-full items-center gap-3 rounded-[18px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-left transition hover:border-[var(--brand)]/30 hover:bg-[var(--bg-elevated)] active:scale-[0.99]"
+        type="button"
+      >
+        <div className="shrink-0 overflow-hidden rounded-full" style={{ width: 34, height: 34 }}>
+          {avatarUrl ? (
+            <Image src={avatarUrl} alt={name} width={34} height={34} className="h-full w-full object-cover" />
+          ) : (
+            <NaviiAvatar seed={user.id} title={name} size={34} className="h-full w-full object-cover" />
+          )}
+        </div>
+        <span className="flex-1 text-[13px] text-[var(--text-tertiary)]">What's the vibe tonight?</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[var(--brand)]">
+          <PencilSimple size={13} weight="bold" />
+        </span>
+      </button>
+    </section>
+  );
+}
+
 // ── Main HomeClient component ──────────────────────────────────
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -1163,6 +1211,9 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                 <>
               {/* Posts from people you follow */}
               <FollowingPostsStrip />
+
+              {/* Quick post composer */}
+              <QuickComposer />
 
               {/* Category filter chips + layout toggle */}
               <section className="mt-4">

@@ -15,11 +15,13 @@ import {
   Images,
   MapPin,
   ShieldCheck,
+  Sparkle,
   Star,
   Ticket,
   WhatsappLogo,
   X,
 } from "@phosphor-icons/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { getEventImage, type EventItem, type Organizer } from "@gooutside/demo-data";
 import { CategoryIcon } from "../../../lib/category-icons";
 import { useEventSave } from "../../../hooks/useEventSave";
@@ -70,6 +72,101 @@ function getEventImages(event: EventItem): string[] {
     real.push(getEventImage(undefined, ALL_SLUGS[(base + real.length) % ALL_SLUGS.length]));
   }
   return real;
+}
+
+// ── Check-in button — contextual, shows during event window ───────────────────
+
+function isInCheckInWindow(startDatetime: string | null, endDatetime: string | null): boolean {
+  const now = Date.now();
+  if (startDatetime) {
+    const start = new Date(startDatetime).getTime();
+    const end = endDatetime ? new Date(endDatetime).getTime() : start + 6 * 60 * 60 * 1000;
+    const windowStart = start - 2 * 60 * 60 * 1000; // 2h before
+    const windowEnd = end + 2 * 60 * 60 * 1000;     // 2h after
+    return now >= windowStart && now <= windowEnd;
+  }
+  return false;
+}
+
+function CheckInButton({ eventSlug, startDatetime, endDatetime }: {
+  eventSlug: string;
+  startDatetime: string | null;
+  endDatetime: string | null;
+}) {
+  const inWindow = isInCheckInWindow(startDatetime, endDatetime);
+  const [flashPoints, setFlashPoints] = useState(false);
+
+  const { data: statusData, isLoading: statusLoading } = useQuery({
+    queryKey: ["check-in", eventSlug],
+    queryFn: async () => {
+      const res = await fetch(`/api/events/${eventSlug}/checkin`);
+      return res.json() as Promise<{ checked_in: boolean }>;
+    },
+    staleTime: 5 * 60_000,
+    enabled: inWindow,
+  });
+
+  const checkedIn = statusData?.checked_in ?? false;
+
+  const checkIn = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/events/${eventSlug}/checkin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      return res.json() as Promise<{ checked_in: boolean; already_checked_in: boolean; points_awarded: number }>;
+    },
+    onSuccess: (data) => {
+      if (!data.already_checked_in && data.points_awarded > 0) {
+        setFlashPoints(true);
+        setTimeout(() => setFlashPoints(false), 3000);
+      }
+    },
+  });
+
+  if (!inWindow || statusLoading) return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => !checkedIn && !checkIn.isPending && checkIn.mutate()}
+        disabled={checkedIn || checkIn.isPending}
+        className={`flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition ${
+          checkedIn
+            ? "border border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)] cursor-default"
+            : "border border-[var(--home-border)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:bg-[var(--brand-dim)] hover:text-[var(--brand)] active:scale-[0.98]"
+        } disabled:opacity-70`}
+        type="button"
+      >
+        {checkedIn || checkIn.data?.checked_in ? (
+          <>
+            <CheckCircle size={16} weight="fill" />
+            Checked In
+          </>
+        ) : checkIn.isPending ? (
+          <>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+            Checking in…
+          </>
+        ) : (
+          <>
+            <MapPin size={16} weight="bold" />
+            Check In · Earn 50 PP
+          </>
+        )}
+      </button>
+
+      {/* Points flash */}
+      {flashPoints && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="animate-[fadeUp_0.8s_ease-out_forwards] flex items-center gap-1 rounded-full bg-[var(--brand)] px-3 py-1 text-xs font-bold text-white shadow-lg">
+            <Sparkle size={11} weight="fill" />
+            +50 Pulse Points
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Photo lightbox ─────────────────────────────────────────────────────────────
@@ -630,6 +727,14 @@ export function EventDetailClient({
                   <Ticket size={16} weight="bold" />
                   {event.priceValue === 0 ? "Register for Free" : `Get Tickets · ${event.priceLabel}`}
                 </button>
+
+                {/* Check-in — only shows during event window */}
+                <CheckInButton
+                  eventSlug={event.slug}
+                  startDatetime={event.startDatetime ?? null}
+                  endDatetime={event.endDatetime ?? null}
+                />
+
                 <div className="flex gap-2">
                   <button
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition ${isSaved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}

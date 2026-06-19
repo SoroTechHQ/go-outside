@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NaviiAvatar } from "../profile/NaviiAvatar";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
@@ -359,7 +360,9 @@ export function PostList({
               <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[var(--bg-muted)]">
                 {post.user?.avatar_url ? (
                   <img alt={post.user.name} className="h-full w-full object-cover" src={post.user.avatar_url} />
-                ) : null}
+                ) : (
+                  <NaviiAvatar seed={post.user?.username ?? post.user?.name} title={post.user?.name} size={40} className="h-full w-full object-cover" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

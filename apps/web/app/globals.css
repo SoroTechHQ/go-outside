@@ -2240,3 +2240,10 @@ a {
   100% { transform: translateX(320%); }
 }
 
+/* ── Check-in points flash ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  0%   { opacity: 1; transform: translateY(0); }
+  60%  { opacity: 1; transform: translateY(-24px); }
+  100% { opacity: 0; transform: translateY(-36px); }
+}
+

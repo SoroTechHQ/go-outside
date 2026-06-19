@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { NaviiAvatar } from "../../../../components/profile/NaviiAvatar";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -39,15 +40,19 @@ export function NotificationItem({ item, index }: NotificationItemProps) {
       {/* Main row: avatar + text + timestamp */}
       <div className="flex items-start gap-4">
         {/* Avatar or icon */}
-        {item.actorAvatarUrl ? (
+        {item.actorName ? (
           <div className="relative shrink-0">
-            <Image
-              src={item.actorAvatarUrl}
-              alt={item.actorName ?? ""}
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-2xl object-cover"
-            />
+            {item.actorAvatarUrl ? (
+              <Image
+                src={item.actorAvatarUrl}
+                alt={item.actorName}
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-2xl object-cover"
+              />
+            ) : (
+              <NaviiAvatar seed={item.actorName} title={item.actorName} size={40} className="h-10 w-10 rounded-2xl object-cover" />
+            )}
             <span
               className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[var(--bg-card)] ${ACCENT_CLASSES[item.accentTone]}`}
             >

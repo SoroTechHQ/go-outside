@@ -32,6 +32,7 @@ import { GoMessageInput } from "../../../components/chat/GoMessageInput";
 import { GoChannelHeader } from "../../../components/chat/GoChannelHeader";
 import { GoRequestBanner } from "../../../components/chat/GoRequestBanner";
 import { MessagesPreviewShell } from "../../../components/messages/MessagesPreviewShell";
+import { NaviiAvatar } from "../../../components/profile/NaviiAvatar";
 
 type GoConversationType =
   | "friend_dm"
@@ -266,7 +267,7 @@ function ChannelMessagesEmptyState() {
 function ComposeUserAvatar({ user }: { user: ChatUserSummary }) {
   return (
     <div className="go-stream-user-avatar">
-      {user.image ? <img alt={user.name} src={user.image} /> : <span>{user.name.slice(0, 1).toUpperCase()}</span>}
+      {user.image ? <img alt={user.name} src={user.image} /> : <NaviiAvatar seed={user.id || user.name} title={user.name} size={36} className="h-full w-full rounded-full object-cover" />}
       {user.online ? <span className="go-stream-user-avatar__status" /> : null}
     </div>
   );
@@ -346,7 +347,7 @@ function ConversationPreview(
         {participant?.image ? (
           <img alt={participant.name || "Conversation"} src={participant.image} />
         ) : (
-          <span>{(participant?.name || getConversationTitle(channel, client.userID)).slice(0, 1).toUpperCase()}</span>
+          <NaviiAvatar seed={participant?.id || getConversationTitle(channel, client.userID)} title={participant?.name || getConversationTitle(channel, client.userID)} size={44} className="h-full w-full rounded-full object-cover" />
         )}
         {participant?.online ? <span className="go-stream-conversation__online" /> : null}
       </div>

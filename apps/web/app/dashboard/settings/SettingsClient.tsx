@@ -675,7 +675,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
 
   if (showCelebrate) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center p-6">
+      <div className="flex h-full items-center justify-center p-6">
         <div className="flex flex-col items-center gap-5 rounded-[24px] border border-[#4a9f63]/20 bg-[#4a9f63]/6 px-8 py-14 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#4a9f63]/20">
             <Confetti size={32} weight="fill" className="text-[#4a9f63]" />
@@ -701,10 +701,10 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
   const activeNavItem = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.id === section);
 
   return (
-    <div className="flex min-h-[calc(100vh-0px)]">
+    <div className="flex h-full">
       {/* ── Left nav pane ──────────────────────────────────────────────────── */}
       <div className={`
-        w-full shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)]
+        h-full w-full shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)]
         md:w-[280px] md:flex md:flex-col
         ${mobileShowContent ? "hidden md:flex" : "flex flex-col"}
       `}>
@@ -767,7 +767,7 @@ export function SettingsClient({ isOrganizer, orgName, notifPrefs, maskedEmail, 
 
       {/* ── Right content pane ─────────────────────────────────────────────── */}
       <div className={`
-        flex-1 min-w-0
+        h-full flex-1 min-w-0
         ${mobileShowContent ? "flex flex-col" : "hidden md:flex md:flex-col"}
       `}>
         {/* Content header */}

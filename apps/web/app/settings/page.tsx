@@ -80,7 +80,7 @@ export default async function SettingsPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <main className="page-grid go-stream-page bg-[var(--bg-base)] text-[var(--text-primary)]">
       <SettingsClient
         isOrganizer={isOrganizer}
         orgName={orgName}

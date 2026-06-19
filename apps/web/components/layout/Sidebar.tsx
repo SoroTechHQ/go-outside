@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -297,9 +298,7 @@ export function Sidebar({ role = "attendee", userName = "", avatarUrl, username 
                     sizes="32px"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-[var(--bg-card)] text-[11px] font-semibold text-[var(--brand)]">
-                    {getInitials(userName)}
-                  </div>
+                  <NaviiAvatar seed={userName} title={userName} size={32} className="h-full w-full object-cover" />
                 )}
               </div>
               <AnimatePresence>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { NaviiAvatar } from "../profile/NaviiAvatar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -108,14 +109,9 @@ function CommentCard({ comment }: { comment: Comment }) {
     <div className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-4">
       <div className="flex items-start gap-3">
         {user?.avatar_url ? (
-          <img alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" src={user.avatar_url} />
+          <img alt={displayName} className="h-9 w-9 shrink-0 rounded-full object-cover" src={user.avatar_url} />
         ) : (
-          <Link
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand-dim)] text-[0.6rem] font-bold text-[var(--brand)]"
-            href={user?.id ? `/dashboard/user/${user.id}` : "#"}
-          >
-            {initials}
-          </Link>
+          <NaviiAvatar seed={user?.username ?? user?.id ?? displayName} title={displayName} size={36} className="h-9 w-9 shrink-0 rounded-full object-cover" />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5">
