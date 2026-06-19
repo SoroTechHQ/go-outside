@@ -17,6 +17,10 @@
     "import:competitor:retry7": "IMPORT_ONLY_TITLES_FILE='./docs/competitor/retry-7-events.txt' node ./apps/web/scripts/import-competitor-events.mjs",
     "import:competitor:retry7:dry": "DRY_RUN=1 IMPORT_ONLY_TITLES_FILE='./docs/competitor/retry-7-events.txt' node ./apps/web/scripts/import-competitor-events.mjs --dry-run",
     "test": "pnpm --filter @gooutside/api test",
-    "typecheck": "pnpm --filter @gooutside/api typecheck && pnpm --filter @gooutside/demo-data typecheck && pnpm --filter @gooutside/ui typecheck && pnpm --filter @gooutside/web typecheck && pnpm --filter @gooutside/admin typecheck"
+    "typecheck": "pnpm --filter @gooutside/api typecheck && pnpm --filter @gooutside/demo-data typecheck && pnpm --filter @gooutside/ui typecheck && pnpm --filter @gooutside/web typecheck && pnpm --filter @gooutside/admin typecheck",
+    "seed:ghana": "node scripts/seed-ghana-real.mjs --seed",
+    "seed:teardown": "node scripts/seed-ghana-real.mjs --teardown",
+    "seed:status": "node scripts/seed-ghana-real.mjs --status",
+    "seed:dry": "node scripts/seed-ghana-real.mjs --seed --dry-run"
   }
 }
