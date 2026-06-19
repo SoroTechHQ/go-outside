@@ -3,6 +3,7 @@ import type webpush from "web-push";
 import { getStreamServerClient } from "../../../../lib/stream";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { sendWebPush } from "../../../../lib/notifications/send-web-push";
+import { sendMessageNudge } from "../../../../lib/email";
 
 type StreamWebhookEvent = {
   type: string;
@@ -39,39 +40,6 @@ async function getRecipientIds(params: {
     .filter((id): id is string => Boolean(id) && id !== params.senderId);
 }
 
-async function triggerNovuNotification(payload: {
-  subscriberId: string;
-  senderName: string;
-  senderAvatar: string | null;
-  messagePreview: string;
-  channelId: string;
-  emailDelayMins: number;
-}) {
-  const novuApiKey = process.env.NOVU_API_KEY;
-  if (!novuApiKey) return;
-
-  await fetch("https://api.novu.co/v1/events/trigger", {
-    method: "POST",
-    headers: {
-      Authorization: `ApiKey ${novuApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: "new-direct-message",
-      to: { subscriberId: payload.subscriberId },
-      payload: {
-        sender_name:           payload.senderName,
-        sender_avatar:         payload.senderAvatar,
-        message_preview:       payload.messagePreview,
-        channel_id:            payload.channelId,
-        conversation_url:      `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club"}/dashboard/messages`,
-        email_delay_minutes:   payload.emailDelayMins,
-      },
-    }),
-  }).catch((err) => {
-    console.error("[stream-webhook] Novu trigger failed:", err);
-  });
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -118,7 +86,7 @@ export async function POST(req: NextRequest) {
   for (const clerkId of recipientIds) {
     const { data: recipient } = await supabaseAdmin
       .from("users")
-      .select("id, notification_prefs, push_subscriptions, unread_nudge_pending_at")
+      .select("id, email, notification_prefs, push_subscriptions, unread_nudge_pending_at")
       .eq("clerk_id", clerkId)
       .single();
 
@@ -154,14 +122,11 @@ export async function POST(req: NextRequest) {
     const { users } = await stream.queryUsers({ id: { $eq: clerkId } });
     if (users[0]?.online) continue;
 
-    if (messagesEmail) {
-      await triggerNovuNotification({
-        subscriberId:  clerkId,
+    if (messagesEmail && (recipient as { email?: string }).email) {
+      void sendMessageNudge({
+        to:         (recipient as { email: string }).email,
         senderName,
-        senderAvatar,
-        messagePreview,
-        channelId,
-        emailDelayMins,
+        channelUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club"}/dashboard/messages`,
       });
     }
 
