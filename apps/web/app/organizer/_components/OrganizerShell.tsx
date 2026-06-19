@@ -20,6 +20,7 @@ import {
   Star,
   SunDim,
   Ticket,
+  QrCode,
 } from "@phosphor-icons/react";
 import OrganizerBadge from "./OrganizerBadge";
 import { CreatePostModal } from "./CreatePostModal";
@@ -44,6 +45,7 @@ function buildNavGroups(openPostModal: () => void): Array<{ label: string; items
         { href: "/organizer", label: "Dashboard", icon: ChartBar },
         { href: "/organizer/calendar", label: "Content Calendar", icon: CalendarBlank },
         { href: "/organizer/events", label: "My Events", icon: Ticket },
+        { href: "/organizer/scan", label: "Scan Tickets", icon: QrCode },
         { label: "Create Post", icon: NotePencil, onClick: openPostModal },
       ],
     },
