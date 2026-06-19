@@ -4,42 +4,71 @@ import { useState, useEffect } from "react";
 import { useCart } from "../../../components/cart/CartContext";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  MapPin,
   CalendarBlank,
-  Ticket,
+  CheckCircle,
+  CreditCard,
   Lock,
+  MapPin,
+  Phone,
+  ShieldCheck,
   Tag,
+  Ticket,
   User,
   EnvelopeSimple,
   WarningCircle,
 } from "@phosphor-icons/react";
-import { Progress } from "../../../components/ui/progress";
 
 // ── Validation ────────────────────────────────────────────────────────────────
-type Errors = { name?: string; email?: string };
 
-function validate(name: string, email: string): Errors {
-  const errors: Errors = {};
+type ContactErrors = { name?: string; email?: string };
+
+function validateContact(name: string, email: string): ContactErrors {
+  const errors: ContactErrors = {};
   if (!name.trim() || name.trim().length < 2) errors.name = "Enter your full name";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter a valid email address";
   return errors;
 }
 
+type PaymentMethod = "mobile_money" | "card";
+type MomoNetwork   = "mtn" | "vodafone" | "airteltigo";
+
+const GHANA_PHONE = /^\+233[0-9]{9}$/;
+
+function nanoidShort() {
+  return Math.random().toString(36).slice(2, 10).toUpperCase();
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function CheckoutPage() {
   const { items, totalPrice, totalCount, clearCart } = useCart();
   const router = useRouter();
   const { user: clerkUser } = useUser();
 
-  const [promoCode, setPromoCode] = useState("");
-  const [promoApplied, setPromoApplied] = useState(false);
+  // Contact
   const [form, setForm] = useState({ name: "", email: "" });
-  const [errors, setErrors] = useState<Errors>({});
+  const [errors, setErrors] = useState<ContactErrors>({});
   const [touched, setTouched] = useState({ name: false, email: false });
 
-  // Pre-fill from Clerk
+  // Promo
+  const [promoCode, setPromoCode] = useState("");
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  // Payment
+  const [method, setMethod] = useState<PaymentMethod>("mobile_money");
+  const [momoNetwork, setMomoNetwork] = useState<MomoNetwork>("mtn");
+  const [momoNumber, setMomoNumber] = useState("");
+  const [momoError, setMomoError] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const discount = promoApplied ? Math.floor(totalPrice * 0.1) : 0;
+  const finalTotal = totalPrice - discount;
+
   useEffect(() => {
     if (!clerkUser) return;
     setForm({
@@ -48,50 +77,147 @@ export default function CheckoutPage() {
     });
   }, [clerkUser]);
 
-  // Pre-fill from saved checkout details if Clerk fields are empty
-  useEffect(() => {
-    if (form.name || form.email) return;
-    fetch("/api/users/me")
-      .then((r) => r.json())
-      .then((u) => {
-        if (u.checkout_name || u.checkout_email) {
-          setForm((f) => ({
-            name:  f.name  || u.checkout_name  || "",
-            email: f.email || u.checkout_email || "",
-          }));
-        }
-      })
-      .catch(() => null);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const discount   = promoApplied ? Math.floor(totalPrice * 0.1) : 0;
-  const finalTotal = totalPrice - discount;
-
-  function handleApplyPromo() {
-    if (promoCode.toLowerCase() === "gooutside10") setPromoApplied(true);
-  }
+  const isContactValid = Object.keys(validateContact(form.name, form.email)).length === 0;
 
   function handleBlur(field: "name" | "email") {
     setTouched((t) => ({ ...t, [field]: true }));
-    setErrors(validate(form.name, form.email));
+    setErrors(validateContact(form.name, form.email));
   }
 
-  async function handleProceedToPayment() {
-    setTouched({ name: true, email: true });
-    const errs = validate(form.name, form.email);
-    setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+  function validateMomo(): boolean {
+    const normalized = momoNumber.replace(/\s/g, "");
+    if (!GHANA_PHONE.test(normalized)) {
+      setMomoError("Enter a valid Ghana number: +233 XX XXX XXXX");
+      return false;
+    }
+    setMomoError(null);
+    return true;
+  }
 
-    // Persist for faster future checkout
-    fetch("/api/users/me", {
-      method:  "PATCH",
+  async function completePurchase(reference: string, selectedMethod: PaymentMethod, selectedNetwork?: MomoNetwork) {
+    const body = items.map((item) => ({
+      eventId:           item.eventId,
+      tierId:            item.tier.id,
+      quantity:          item.quantity,
+      attendeeName:      form.name.trim(),
+      attendeeEmail:     form.email.trim(),
+      paymentReference:  reference,
+      paymentMethod:     selectedMethod,
+      paymentNetwork:    selectedNetwork ?? null,
+    }));
+
+    const res = await fetch("/api/tickets/purchase", {
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ checkout_name: form.name.trim(), checkout_email: form.email.trim() }),
-    }).catch(() => null);
-
-    sessionStorage.setItem("checkout-attendee", JSON.stringify({ name: form.name.trim(), email: form.email.trim() }));
-    router.push("/dashboard/checkout/payment");
+      body:    JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null) as { error?: string } | null;
+      throw new Error(payload?.error ?? "Could not confirm tickets");
+    }
   }
+
+  function handlePay() {
+    setTouched({ name: true, email: true });
+    const contactErrs = validateContact(form.name, form.email);
+    setErrors(contactErrs);
+    if (Object.keys(contactErrs).length > 0) return;
+    if (method === "mobile_money" && !validateMomo()) return;
+
+    setLoading(true);
+    setPaymentError(null);
+    const reference = `GO-${nanoidShort()}`;
+
+    if (finalTotal === 0) {
+      completePurchase(reference, method).then(() => {
+        setLoading(false);
+        setSuccess(true);
+        clearCart();
+      }).catch((err: unknown) => {
+        setPaymentError(err instanceof Error ? err.message : "Could not confirm tickets");
+        setLoading(false);
+      });
+      return;
+    }
+
+    const launch = () => {
+      // @ts-expect-error paystack global
+      const handler = window.PaystackPop?.setup({
+        key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "",
+        email:    form.email || "customer@gooutside.club",
+        amount:   finalTotal * 100,
+        currency: "GHS",
+        reference,
+        channels: method === "mobile_money" ? ["mobile_money"] : ["card"],
+        metadata: { phone: momoNumber.replace(/\s/g, ""), network: momoNetwork },
+        callback: () => {
+          completePurchase(reference, method, momoNetwork).then(() => {
+            setLoading(false);
+            setSuccess(true);
+            clearCart();
+          }).catch((err: unknown) => {
+            setPaymentError(err instanceof Error ? err.message : "Could not confirm tickets");
+            setLoading(false);
+          });
+        },
+        onClose: () => setLoading(false),
+      });
+      handler?.openIframe();
+    };
+
+    if (document.getElementById("paystack-js")) {
+      launch();
+    } else {
+      const script = document.createElement("script");
+      script.id   = "paystack-js";
+      script.src  = "https://js.paystack.co/v1/inline.js";
+      script.onload = launch;
+      document.head.appendChild(script);
+    }
+  }
+
+  // ── Success state ─────────────────────────────────────────────────────────
+
+  if (success) {
+    return (
+      <main className="page-grid min-h-screen pb-24">
+        <div className="container-shell flex flex-col items-center justify-center gap-6 py-20 text-center px-4">
+          <motion.div
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex h-24 w-24 items-center justify-center rounded-full bg-[var(--brand-dim)]"
+            initial={{ scale: 0.5, opacity: 0 }}
+            transition={{ type: "spring", damping: 18, stiffness: 280 }}
+          >
+            <CheckCircle size={52} weight="fill" className="text-[var(--brand)]" />
+          </motion.div>
+          <div>
+            <h1 className="text-[26px] font-bold text-[var(--text-primary)]">You&apos;re going!</h1>
+            <p className="mt-2 text-[15px] text-[var(--text-tertiary)]">
+              Tickets confirmed. Check your email for the receipt.
+            </p>
+          </div>
+          <div className="flex gap-3 flex-wrap justify-center">
+            <button
+              className="rounded-2xl bg-[var(--brand)] px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-[var(--brand-hover)]"
+              onClick={() => router.push("/dashboard/wallets")}
+              type="button"
+            >
+              View My Tickets
+            </button>
+            <button
+              className="rounded-2xl border border-[var(--border-default)] px-6 py-3 text-[14px] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+              onClick={() => router.push("/home")}
+              type="button"
+            >
+              Explore Events
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ── Empty cart ─────────────────────────────────────────────────────────────
 
   if (items.length === 0) {
     return (
@@ -112,13 +238,12 @@ export default function CheckoutPage() {
     );
   }
 
-  const isValid = Object.keys(validate(form.name, form.email)).length === 0;
+  // ── Checkout form ──────────────────────────────────────────────────────────
 
   return (
     <main className="page-grid min-h-screen pb-24">
       <div className="container-shell px-4 py-6 md:py-10">
         <div className="mx-auto max-w-2xl">
-          {/* Back + Progress */}
           <button
             className="mb-6 flex items-center gap-2 text-[14px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             onClick={() => router.back()}
@@ -128,30 +253,19 @@ export default function CheckoutPage() {
             Back
           </button>
 
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-[22px] font-bold text-[var(--text-primary)]">Checkout</h1>
-              <span className="text-[13px] text-[var(--text-tertiary)]">Step 1 of 2</span>
-            </div>
-            <Progress value={50} className="h-1.5" />
-          </div>
+          <h1 className="mb-6 text-[22px] font-bold text-[var(--text-primary)]">Checkout</h1>
 
-          <div className="grid gap-6 md:grid-cols-[1fr_340px]">
-            {/* Left: contact info */}
+          <div className="grid gap-6 md:grid-cols-[1fr_320px]">
+            {/* Left column */}
             <div className="space-y-5">
+
+              {/* Contact details */}
               <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
-                <h2 className="mb-4 text-[15px] font-bold text-[var(--text-primary)]">
-                  Contact Details
-                </h2>
+                <h2 className="mb-4 text-[15px] font-bold text-[var(--text-primary)]">Contact Details</h2>
                 <div className="space-y-3">
-                  {/* Full Name */}
                   <div>
-                    <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">
-                      Full Name *
-                    </label>
-                    <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${
-                      touched.name && errors.name ? "border-red-400" : "border-[var(--border-default)]"
-                    }`}>
+                    <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">Full Name *</label>
+                    <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${touched.name && errors.name ? "border-red-400" : "border-[var(--border-default)]"}`}>
                       <User size={15} className="text-[var(--text-tertiary)] shrink-0" />
                       <input
                         className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
@@ -169,14 +283,9 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  {/* Email */}
                   <div>
-                    <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">
-                      Email Address *
-                    </label>
-                    <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${
-                      touched.email && errors.email ? "border-red-400" : "border-[var(--border-default)]"
-                    }`}>
+                    <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">Email Address *</label>
+                    <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${touched.email && errors.email ? "border-red-400" : "border-[var(--border-default)]"}`}>
                       <EnvelopeSimple size={15} className="text-[var(--text-tertiary)] shrink-0" />
                       <input
                         className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
@@ -212,44 +321,106 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <button
-                    className={`rounded-xl px-4 py-2.5 text-[13px] font-semibold transition ${
-                      promoApplied
-                        ? "bg-[var(--brand-dim)] text-[var(--brand)]"
-                        : "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"
-                    }`}
+                    className={`rounded-xl px-4 py-2.5 text-[13px] font-semibold transition ${promoApplied ? "bg-[var(--brand-dim)] text-[var(--brand)]" : "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]"}`}
                     disabled={promoApplied}
-                    onClick={handleApplyPromo}
+                    onClick={() => { if (promoCode.toLowerCase() === "gooutside10") setPromoApplied(true); }}
                     type="button"
                   >
-                    {promoApplied ? "Applied ✓" : "Apply"}
+                    {promoApplied ? "Applied" : "Apply"}
                   </button>
                 </div>
                 {promoApplied && (
-                  <p className="mt-2 text-[12px] text-[var(--brand)]">
-                    10% discount applied! You saved GHS {discount.toLocaleString()}.
-                  </p>
+                  <p className="mt-2 text-[12px] text-[var(--brand)]">10% discount applied! Saved GHS {discount.toLocaleString()}.</p>
                 )}
+              </div>
+
+              {/* Payment method */}
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <ShieldCheck size={18} weight="fill" className="text-[var(--brand)] shrink-0" />
+                  <h2 className="text-[15px] font-bold text-[var(--text-primary)]">Payment Method</h2>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {([
+                    { id: "mobile_money", label: "Mobile Money", icon: Phone },
+                    { id: "card",         label: "Card",         icon: CreditCard },
+                  ] as const).map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      className={`flex flex-col items-center gap-1.5 rounded-2xl border-2 py-3.5 px-2 transition-all text-center ${method === id ? "border-[var(--brand)] bg-[var(--brand-dim)]" : "border-[var(--border-subtle)] hover:border-[var(--border-default)]"}`}
+                      onClick={() => setMethod(id)}
+                      type="button"
+                    >
+                      <Icon size={20} weight="fill" className={method === id ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"} />
+                      <span className={`text-[11px] font-semibold ${method === id ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"}`}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {method === "mobile_money" && (
+                    <motion.div key="momo" animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} initial={{ opacity: 0, y: 8 }} className="space-y-3">
+                      <div>
+                        <label className="mb-2 block text-[12px] font-semibold text-[var(--text-secondary)]">Network</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(["mtn", "vodafone", "airteltigo"] as const).map((net) => (
+                            <button
+                              key={net}
+                              className={`rounded-xl border-2 py-2.5 text-[12px] font-semibold transition-all uppercase ${momoNetwork === net ? "border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)]" : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)]"}`}
+                              onClick={() => setMomoNetwork(net)}
+                              type="button"
+                            >
+                              {net === "airteltigo" ? "AirtelTigo" : net.charAt(0).toUpperCase() + net.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[12px] font-semibold text-[var(--text-secondary)]">Mobile Number</label>
+                        <div className={`flex items-center gap-2.5 rounded-xl border bg-[var(--bg-surface)] px-3.5 py-2.5 ${momoError ? "border-red-400" : "border-[var(--border-default)]"}`}>
+                          <Phone size={15} className="text-[var(--text-tertiary)] shrink-0" />
+                          <input
+                            className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                            onChange={(e) => { setMomoNumber(e.target.value); setMomoError(null); }}
+                            onBlur={validateMomo}
+                            placeholder="+233 24 000 0000"
+                            type="tel"
+                            value={momoNumber}
+                          />
+                        </div>
+                        {momoError ? (
+                          <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400"><WarningCircle size={11} weight="fill" /> {momoError}</p>
+                        ) : (
+                          <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">You&apos;ll receive a USSD prompt to approve the payment</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {method === "card" && (
+                    <motion.div key="card" animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} initial={{ opacity: 0, y: 8 }} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 text-center space-y-2">
+                      <CreditCard size={28} className="mx-auto text-[var(--brand)]" weight="duotone" />
+                      <p className="text-[13px] font-semibold text-[var(--text-primary)]">Paystack Secure Card Form</p>
+                      <p className="text-[12px] text-[var(--text-tertiary)]">Clicking "Pay" opens Paystack&apos;s PCI-compliant card modal. We never touch your card details.</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
-            {/* Right: order summary */}
+            {/* Right column — order summary + pay button */}
             <div className="space-y-4">
-              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 sticky top-4">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 md:sticky md:top-4">
                 <h2 className="mb-4 text-[15px] font-bold text-[var(--text-primary)]">Order Summary</h2>
 
                 <div className="space-y-3 divide-y divide-[var(--border-subtle)]">
                   {items.map((item) => (
                     <div key={`${item.eventId}-${item.tier.id}`} className="pt-3 first:pt-0">
                       {item.eventImage && (
-                        <img
-                          alt={item.eventTitle}
-                          className="mb-2.5 h-28 w-full rounded-xl object-cover"
-                          src={item.eventImage}
-                        />
+                        <img alt={item.eventTitle} className="mb-2.5 h-24 w-full rounded-xl object-cover" src={item.eventImage} />
                       )}
-                      <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">
-                        {item.eventTitle}
-                      </p>
+                      <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{item.eventTitle}</p>
                       <div className="mt-1.5 space-y-1">
                         <div className="flex items-center gap-1.5 text-[12px] text-[var(--text-tertiary)]">
                           <CalendarBlank size={11} weight="fill" />
@@ -261,13 +432,9 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-[12px] text-[var(--text-tertiary)]">
-                          {item.tier.name} × {item.quantity}
-                        </span>
+                        <span className="text-[12px] text-[var(--text-tertiary)]">{item.tier.name} × {item.quantity}</span>
                         <span className="text-[13px] font-semibold text-[var(--text-primary)]">
-                          {item.tier.priceType === "free"
-                            ? "Free"
-                            : `GHS ${(item.tier.price * item.quantity).toLocaleString()}`}
+                          {item.tier.priceType === "free" ? "Free" : `GHS ${(item.tier.price * item.quantity).toLocaleString()}`}
                         </span>
                       </div>
                     </div>
@@ -289,21 +456,36 @@ export default function CheckoutPage() {
                     <span>Processing fee</span>
                     <span>Free</span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2 text-[16px] font-bold text-[var(--text-primary)]">
+                  <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2 text-[17px] font-bold text-[var(--text-primary)]">
                     <span>Total</span>
                     <span>{finalTotal === 0 ? "Free" : `GHS ${finalTotal.toLocaleString()}`}</span>
                   </div>
                 </div>
 
                 <button
-                  className="mt-4 w-full rounded-2xl bg-[var(--brand)] py-3.5 text-[15px] font-semibold text-white transition hover:bg-[var(--brand-hover)] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
-                  disabled={!isValid}
-                  onClick={handleProceedToPayment}
+                  className="mt-4 w-full rounded-2xl bg-[var(--brand)] py-3.5 text-[15px] font-semibold text-white transition hover:bg-[var(--brand-hover)] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60"
+                  disabled={loading || !isContactValid || (method === "mobile_money" && !momoNumber)}
+                  onClick={handlePay}
                   type="button"
                 >
-                  <Lock size={15} weight="bold" />
-                  Proceed to Payment
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Processing…
+                    </span>
+                  ) : (
+                    <>
+                      <Lock size={15} weight="bold" />
+                      Pay {finalTotal === 0 ? "Free" : `GHS ${finalTotal.toLocaleString()}`}
+                    </>
+                  )}
                 </button>
+
+                {paymentError && (
+                  <p className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-[12px] font-medium text-red-500">
+                    {paymentError}
+                  </p>
+                )}
 
                 <p className="mt-3 text-center text-[11px] text-[var(--text-tertiary)]">
                   Secured by Paystack · 256-bit SSL encryption
