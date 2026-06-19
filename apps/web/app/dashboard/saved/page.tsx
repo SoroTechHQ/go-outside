@@ -3,6 +3,7 @@ import { getSavedEvents } from "../../../lib/db/saved";
 import { getCategories } from "../../../lib/db/categories";
 import { getOrganizers } from "../../../lib/db/organizers";
 import { Button, EventCard, SectionHeader, ShellCard } from "@gooutside/ui";
+import { PageEntrance } from "../../../components/layout/PageEntrance";
 import type { Category, Organizer } from "@gooutside/demo-data";
 
 export default async function SavedEventsPage() {
@@ -29,7 +30,7 @@ export default async function SavedEventsPage() {
 
   return (
     <main className="page-grid min-h-screen pb-36 md:pb-24">
-      <div className="container-shell px-4 py-8 md:py-10">
+      <PageEntrance className="container-shell px-4 py-8 md:py-10">
         <SectionHeader
           eyebrow="Activity"
           index="01"
@@ -65,7 +66,7 @@ export default async function SavedEventsPage() {
             </div>
           )}
         </div>
-      </div>
+      </PageEntrance>
     </main>
   );
 }

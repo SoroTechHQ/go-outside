@@ -5,6 +5,7 @@ import { getUserTickets } from "../../../lib/db/tickets";
 import { getEventBySlug } from "../../../lib/db/events";
 import { getUserPulsePoints, getActiveRewards } from "../../../lib/db/rewards";
 import { StackedPastTickets } from "../../../components/wallet/StackedPastTickets";
+import { PageEntrance } from "../../../components/layout/PageEntrance";
 import { stackTopMargin } from "../../../components/wallet/stackConfig";
 import { PulseRewardsMini } from "./PulseRewardsMini";
 import type { AttendeeTicket } from "@gooutside/demo-data";
@@ -60,7 +61,7 @@ export default async function WalletsPage() {
 
   return (
     <main className="min-h-screen bg-[var(--bg-base)] pb-48 text-[var(--text-primary)]">
-      <div className="mx-auto max-w-lg px-4 pt-8">
+      <PageEntrance className="mx-auto max-w-lg px-4 pt-8">
 
         {/* ── Pulse / Wallet Banner ── */}
         <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10] px-6 py-7">
@@ -178,7 +179,7 @@ export default async function WalletsPage() {
             </div>
           </section>
         )}
-      </div>
+      </PageEntrance>
     </main>
   );
 }
