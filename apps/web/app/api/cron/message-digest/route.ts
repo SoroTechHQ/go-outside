@@ -8,8 +8,8 @@ import { sendMessageNudge } from "../../../../lib/email";
 // Finds users who received a message more than `messages_email_delay_mins` minutes ago
 // and haven't had a re-engagement nudge sent yet, then fires Web Push + email.
 
-const DEFAULT_DELAY_MINS = 1;
-const MIN_DELAY_MINS = 1;
+const DEFAULT_DELAY_MINS = 60;
+const MIN_DELAY_MINS = 15;
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");

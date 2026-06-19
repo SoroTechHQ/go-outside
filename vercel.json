@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/message-digest",
-      "schedule": "* * * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }
