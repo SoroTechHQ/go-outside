@@ -16,31 +16,18 @@ import {
 import { useCart } from "../cart/CartContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useAnimationConfig } from "../../hooks/useAnimationConfig";
+import { useAppShell } from "../layout/AppShellContext";
 
 type MiniCartDrawerProps = {
   open: boolean;
   onClose: () => void;
 };
 
-const SLIDE = {
+const SPRING = {
   type: "spring" as const,
   stiffness: 420,
   damping: 40,
   mass: 0.9,
-};
-
-const SHEET = {
-  type: "spring" as const,
-  stiffness: 380,
-  damping: 38,
-  mass: 0.85,
-};
-
-const CONFIRM_SLIDE = {
-  type: "spring" as const,
-  stiffness: 500,
-  damping: 42,
-  mass: 0.7,
 };
 
 export function MiniCartDrawer({ open, onClose }: MiniCartDrawerProps) {
@@ -48,10 +35,13 @@ export function MiniCartDrawer({ open, onClose }: MiniCartDrawerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { reduceMotion } = useAnimationConfig();
+  const { peekPanelWidth } = useAppShell();
 
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
+  // When the event side pane is open on home, expand to full screen
   const isHome = pathname === "/" || pathname === "/home";
+  const isFullscreen = isHome && peekPanelWidth > 0;
 
   function handleCheckout() {
     onClose();
@@ -63,30 +53,18 @@ export function MiniCartDrawer({ open, onClose }: MiniCartDrawerProps) {
     router.push("/dashboard/checkout");
   }
 
-  function handleTrash(key: string) {
-    setConfirmDelete(key);
-  }
-
-  function handleConfirmDelete(eventId: string, tierId: string) {
-    removeItem(eventId, tierId);
-    setConfirmDelete(null);
-  }
-
-  // ── Drawer props (non-home: right side slide-in) ───────────────────────────
-  const drawerSlideProps = reduceMotion
+  const slideProps = reduceMotion
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.15 } }
-    : { initial: { x: "100%" }, animate: { x: 0 }, exit: { x: "100%" }, transition: SLIDE };
+    : { initial: { x: "100%" }, animate: { x: 0 }, exit: { x: "100%" }, transition: SPRING };
 
-  // ── Sheet props (home: bottom sheet slide-up) ──────────────────────────────
-  const sheetSlideProps = reduceMotion
-    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.15 } }
-    : { initial: { y: "100%" }, animate: { y: 0 }, exit: { y: "100%" }, transition: SHEET };
+  const drawerClass = isFullscreen
+    ? "fixed inset-0 z-[501] flex flex-col bg-[var(--bg-page)]"
+    : "fixed right-0 top-0 z-[501] flex h-full w-full max-w-[380px] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-page)] shadow-[-12px_0_56px_rgba(0,0,0,0.22)]";
 
   const cartContent = (
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop — always */}
           <motion.div
             className="fixed inset-0 z-[500] bg-black/40 backdrop-blur-[3px]"
             initial={{ opacity: 0 }}
@@ -96,118 +74,57 @@ export function MiniCartDrawer({ open, onClose }: MiniCartDrawerProps) {
             onClick={onClose}
           />
 
-          {isHome ? (
-            /* ── Home: centered fullscreen bottom sheet ── */
-            <motion.div
-              {...sheetSlideProps}
-              className="fixed inset-x-0 bottom-0 z-[501] flex max-h-[85vh] flex-col rounded-t-[28px] border-t border-[var(--border-subtle)] bg-[var(--bg-page)] shadow-[0_-20px_60px_rgba(0,0,0,0.28)]"
-            >
-              {/* Drag handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="h-1 w-10 rounded-full bg-[var(--border-default)]" />
+          <motion.div
+            {...slideProps}
+            className={drawerClass}
+          >
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3.5">
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={17} className="text-[var(--brand)]" weight="fill" />
+                <h2 className="text-[15px] font-bold text-[var(--text-primary)]">
+                  Cart
+                  {totalCount > 0 && (
+                    <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-white">
+                      {totalCount}
+                    </span>
+                  )}
+                </h2>
               </div>
-
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3.5">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart size={17} className="text-[var(--brand)]" weight="fill" />
-                  <h2 className="text-[15px] font-bold text-[var(--text-primary)]">
-                    Cart
-                    {totalCount > 0 && (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-white">
-                        {totalCount}
-                      </span>
-                    )}
-                  </h2>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    className="flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] active:scale-95"
-                    onClick={handleOpenFullPage}
-                    type="button"
-                  >
-                    <ArrowsOut size={13} />
-                    Full page
-                  </button>
-                  <button
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-tertiary)] transition hover:bg-[var(--bg-card-alt)] hover:text-[var(--text-primary)] active:scale-95"
-                    onClick={onClose}
-                    type="button"
-                    aria-label="Close cart"
-                  >
-                    <X size={13} weight="bold" />
-                  </button>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  className="flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] active:scale-95"
+                  onClick={handleOpenFullPage}
+                  type="button"
+                >
+                  <ArrowsOut size={13} />
+                  Full page
+                </button>
+                <button
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-tertiary)] transition hover:bg-[var(--bg-card-alt)] hover:text-[var(--text-primary)] active:scale-95"
+                  onClick={onClose}
+                  type="button"
+                  aria-label="Close cart"
+                >
+                  <X size={13} weight="bold" />
+                </button>
               </div>
+            </div>
 
-              <CartItemsList
-                items={items}
-                confirmDelete={confirmDelete}
-                reduceMotion={reduceMotion}
-                onTrash={handleTrash}
-                onConfirmDelete={handleConfirmDelete}
-                onCancelDelete={() => setConfirmDelete(null)}
-                onUpdateQuantity={updateQuantity}
-              />
+            <CartItemsList
+              items={items}
+              confirmDelete={confirmDelete}
+              reduceMotion={reduceMotion}
+              onTrash={(key) => setConfirmDelete(key)}
+              onConfirmDelete={(eventId, tierId) => { removeItem(eventId, tierId); setConfirmDelete(null); }}
+              onCancelDelete={() => setConfirmDelete(null)}
+              onUpdateQuantity={updateQuantity}
+            />
 
-              {items.length > 0 && (
-                <CartFooter totalPrice={totalPrice} onCheckout={handleCheckout} />
-              )}
-            </motion.div>
-          ) : (
-            /* ── Non-home: right side drawer ── */
-            <motion.div
-              {...drawerSlideProps}
-              className="fixed right-0 top-0 z-[501] flex h-full w-full max-w-[380px] flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-page)] shadow-[-12px_0_56px_rgba(0,0,0,0.22)]"
-            >
-              {/* Header */}
-              <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3.5">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart size={17} className="text-[var(--brand)]" weight="fill" />
-                  <h2 className="text-[15px] font-bold text-[var(--text-primary)]">
-                    Cart
-                    {totalCount > 0 && (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold text-white">
-                        {totalCount}
-                      </span>
-                    )}
-                  </h2>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    className="flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-muted)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] active:scale-95"
-                    onClick={handleOpenFullPage}
-                    type="button"
-                  >
-                    <ArrowsOut size={13} />
-                    Full page
-                  </button>
-                  <button
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg-muted)] text-[var(--text-tertiary)] transition hover:bg-[var(--bg-card-alt)] hover:text-[var(--text-primary)] active:scale-95"
-                    onClick={onClose}
-                    type="button"
-                    aria-label="Close cart"
-                  >
-                    <X size={13} weight="bold" />
-                  </button>
-                </div>
-              </div>
-
-              <CartItemsList
-                items={items}
-                confirmDelete={confirmDelete}
-                reduceMotion={reduceMotion}
-                onTrash={handleTrash}
-                onConfirmDelete={handleConfirmDelete}
-                onCancelDelete={() => setConfirmDelete(null)}
-                onUpdateQuantity={updateQuantity}
-              />
-
-              {items.length > 0 && (
-                <CartFooter totalPrice={totalPrice} onCheckout={handleCheckout} />
-              )}
-            </motion.div>
-          )}
+            {items.length > 0 && (
+              <CartFooter totalPrice={totalPrice} onCheckout={handleCheckout} />
+            )}
+          </motion.div>
         </>
       )}
     </AnimatePresence>
@@ -217,7 +134,7 @@ export function MiniCartDrawer({ open, onClose }: MiniCartDrawerProps) {
   return createPortal(cartContent, document.body);
 }
 
-// ── Shared sub-components ──────────────────────────────────────────────────────
+// ── Sub-components ─────────────────────────────────────────────────────────────
 
 type CartItem = ReturnType<typeof useCart>["items"][number];
 
@@ -238,12 +155,7 @@ function CartItemsList({
   onCancelDelete: () => void;
   onUpdateQuantity: (eventId: string, tierId: string, qty: number) => void;
 }) {
-  const CONFIRM_SLIDE = {
-    type: "spring" as const,
-    stiffness: 500,
-    damping: 42,
-    mass: 0.7,
-  };
+  const CONFIRM = { type: "spring" as const, stiffness: 500, damping: 42, mass: 0.7 };
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
@@ -317,14 +229,12 @@ function CartItemsList({
                       initial={reduceMotion ? { opacity: 0 } : { x: "100%" }}
                       animate={reduceMotion ? { opacity: 1 } : { x: 0 }}
                       exit={reduceMotion ? { opacity: 0 } : { x: "100%" }}
-                      transition={reduceMotion ? { duration: 0.12 } : CONFIRM_SLIDE}
+                      transition={reduceMotion ? { duration: 0.12 } : CONFIRM}
                       className="absolute inset-0 flex items-center justify-between gap-3 bg-[var(--bg-card)] px-4"
                     >
                       <div className="flex items-center gap-2">
                         <Warning size={15} weight="fill" className="shrink-0 text-red-500" />
-                        <p className="text-[12px] font-medium text-[var(--text-primary)]">
-                          Remove this ticket?
-                        </p>
+                        <p className="text-[12px] font-medium text-[var(--text-primary)]">Remove this ticket?</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
