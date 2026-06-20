@@ -10,6 +10,8 @@ import {
   CaretDown,
   SpinnerGap,
   QrCode,
+  Image as ImageIcon,
+  ArrowClockwise,
 } from "@phosphor-icons/react";
 import Image from "next/image";
 
@@ -34,6 +36,8 @@ type ScanResult =
 
 type ScanState = "idle" | "scanning" | "verifying" | ScanResult;
 
+type CameraErrorKind = "permission_denied" | "not_found" | "other";
+
 function formatReason(reason: string): string {
   const map: Record<string, string> = {
     malformed_payload: "QR code is malformed",
@@ -46,6 +50,7 @@ function formatReason(reason: string): string {
     ticket_not_found: "Ticket not found",
     cancelled: "Ticket has been cancelled",
     refunded: "Ticket has been refunded",
+    network_error: "Network error — please try again",
   };
   return map[reason] ?? `Invalid ticket (${reason})`;
 }
@@ -62,15 +67,46 @@ function Initials({ name }: { name: string }) {
   );
 }
 
+function PermissionDeniedPanel({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-4 px-6 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500/15">
+        <Camera size={28} className="text-orange-400" />
+      </div>
+      <div>
+        <p className="text-base font-semibold text-white">Camera access blocked</p>
+        <p className="mt-1 text-sm text-white/60">
+          Your browser blocked the camera. Reset it by clicking the lock/camera icon in your
+          address bar and allowing camera access, then tap Retry below.
+        </p>
+      </div>
+      <div className="w-full rounded-xl border border-white/10 bg-white/5 p-4 text-left text-xs text-white/50 space-y-1">
+        <p className="font-semibold text-white/70">How to reset:</p>
+        <p>Chrome / Edge: click the lock icon → Camera → Allow</p>
+        <p>Safari: Settings → Websites → Camera → Allow</p>
+        <p>Firefox: click the camera icon in the address bar → Remove block</p>
+      </div>
+      <button
+        onClick={onRetry}
+        className="flex items-center gap-2 rounded-xl bg-[#0e6130] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0e6130]/80"
+      >
+        <ArrowClockwise size={16} />
+        Retry camera
+      </button>
+    </div>
+  );
+}
+
 export default function ScannerClient() {
   const [events, setEvents] = useState<OrganizerEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [scanCount, setScanCount] = useState(0);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<{ kind: CameraErrorKind; message: string } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const rafRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pausedRef = useRef(false);
@@ -170,10 +206,47 @@ export default function ScannerClient() {
       setScanState("scanning");
       startScanLoop(video);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Camera unavailable";
-      setCameraError(msg);
+      const name = err instanceof Error ? err.name : "";
+      const message = err instanceof Error ? err.message : "Camera unavailable";
+      const kind: CameraErrorKind =
+        name === "NotAllowedError" || name === "PermissionDeniedError"
+          ? "permission_denied"
+          : name === "NotFoundError" || name === "DevicesNotFoundError"
+            ? "not_found"
+            : "other";
+      setCameraError({ kind, message });
     }
   }, [startScanLoop]);
+
+  const handleGalleryFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code?.data) {
+          void verify(code.data);
+        } else {
+          setScanState({ result: "invalid", reason: "malformed_payload" });
+          setTimeout(() => setScanState("idle"), 3000);
+        }
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+      // Reset so same file can be re-selected
+      e.target.value = "";
+    },
+    [verify],
+  );
 
   useEffect(() => {
     return () => stopCamera();
@@ -192,6 +265,15 @@ export default function ScannerClient() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#0a0a0a] text-white">
+      {/* Hidden gallery file input */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleGalleryFile}
+      />
+
       <div className="border-b border-white/10 px-4 py-4">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-2">
@@ -246,16 +328,24 @@ export default function ScannerClient() {
           {!isScanning && typeof scanState !== "object" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/60">
               {cameraError ? (
-                <>
-                  <Warning size={40} className="text-orange-400" />
-                  <p className="max-w-[200px] text-center text-sm text-white/70">{cameraError}</p>
-                  <button
-                    onClick={() => void startCamera()}
-                    className="rounded-xl bg-[#0e6130] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0e6130]/80"
-                  >
-                    Try Again
-                  </button>
-                </>
+                cameraError.kind === "permission_denied" ? (
+                  <PermissionDeniedPanel onRetry={() => void startCamera()} />
+                ) : (
+                  <>
+                    <Warning size={40} className="text-orange-400" />
+                    <p className="max-w-[220px] text-center text-sm text-white/70">
+                      {cameraError.kind === "not_found"
+                        ? "No camera found on this device"
+                        : cameraError.message}
+                    </p>
+                    <button
+                      onClick={() => void startCamera()}
+                      className="rounded-xl bg-[#0e6130] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0e6130]/80"
+                    >
+                      Try Again
+                    </button>
+                  </>
+                )
               ) : (
                 <>
                   <Camera size={48} weight="duotone" className="text-white/40" />
@@ -358,17 +448,43 @@ export default function ScannerClient() {
           )}
         </div>
 
-        {isScanning && (
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          {isScanning ? (
+            <button
+              onClick={() => {
+                stopCamera();
+                setScanState("idle");
+              }}
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/60 transition hover:bg-white/10"
+            >
+              Stop Camera
+            </button>
+          ) : (
+            <button
+              onClick={() => void startCamera()}
+              disabled={!selectedEventId}
+              className="flex-1 rounded-xl bg-[#0e6130] py-3 text-sm font-semibold text-white transition hover:bg-[#0e6130]/80 disabled:opacity-40"
+            >
+              Start Scanning
+            </button>
+          )}
+
+          {/* Gallery picker — always available */}
           <button
-            onClick={() => {
-              stopCamera();
-              setScanState("idle");
-            }}
-            className="w-full rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/60 transition hover:bg-white/10"
+            onClick={() => galleryInputRef.current?.click()}
+            disabled={!selectedEventId || scanState === "verifying"}
+            title="Scan QR from photo"
+            className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white/60 transition hover:bg-white/10 disabled:opacity-40"
           >
-            Stop Camera
+            <ImageIcon size={18} />
+            <span className="hidden sm:inline">From photo</span>
           </button>
-        )}
+        </div>
+
+        <p className="text-center text-[11px] text-white/30">
+          Use "From photo" to scan a QR code from your camera roll or a screenshot.
+        </p>
       </div>
     </div>
   );

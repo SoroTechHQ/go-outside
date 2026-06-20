@@ -79,6 +79,7 @@ export type OrganizerDashboardData = {
     slug: string;
     title: string;
     dateLabel: string;
+    rawDate: string | null;
     statusLabel: "Live" | "Draft" | "Sold Out" | "Past";
     statusTone: "live" | "draft" | "sold";
     category: string;
@@ -334,6 +335,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       slug: event.slug,
       title: event.title,
       dateLabel: formatDateLabel(event.start_datetime),
+      rawDate: event.start_datetime ?? null,
       statusLabel,
       statusTone: getStatusTone(statusLabel),
       category: event.categories?.name ?? "Event",

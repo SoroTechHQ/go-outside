@@ -39,7 +39,7 @@ type ShellItem = {
   onClick?: () => void;
 };
 
-function buildNavGroups(openPostModal: () => void): Array<{ label: string; items: ShellItem[] }> {
+function buildNavGroups(): Array<{ label: string; items: ShellItem[] }> {
   return [
     {
       label: "Workspace",
@@ -48,7 +48,6 @@ function buildNavGroups(openPostModal: () => void): Array<{ label: string; items
         { href: "/organizer/calendar", label: "Content Calendar",icon: CalendarBlank },
         { href: "/organizer/events",   label: "My Events",       icon: Ticket       },
         { href: "/organizer/scan",     label: "Scan Tickets",    icon: QrCode       },
-        { label: "Create Post", icon: NotePencil, onClick: openPostModal },
       ],
     },
     {
@@ -275,7 +274,7 @@ export function OrganizerShell({
   followerCount?: number;
 }) {
   const [postModalOpen, setPostModalOpen] = useState(false);
-  const NAV_GROUPS = buildNavGroups(() => setPostModalOpen(true));
+  const NAV_GROUPS = buildNavGroups();
   const { sidebarWidth, handleMouseDown } = useResizableSidebar({
     defaultWidth: 300,
     minWidth: 200,
@@ -358,9 +357,9 @@ export function OrganizerShell({
                 )}
               </div>
 
-              {/* New Event CTA — always visible */}
+              {/* Primary CTAs — New Event + Create Post */}
               {!iconOnly && (
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   <Link
                     href="/organizer/events/new"
                     className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--brand)] px-3 py-2.5 text-[13px] font-semibold text-black shadow-[0_4px_14px_rgba(47,143,69,0.28)] transition hover:opacity-90 active:scale-[0.98]"
@@ -368,10 +367,18 @@ export function OrganizerShell({
                     <Sparkle size={14} weight="fill" />
                     New Event
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPostModalOpen(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-[12px] border-2 border-[var(--brand)] bg-[var(--brand)]/10 px-3 py-2.5 text-[13px] font-bold text-[var(--brand)] shadow-[0_0_16px_rgba(47,143,69,0.22)] transition hover:bg-[var(--brand)]/18 hover:shadow-[0_0_24px_rgba(47,143,69,0.35)] active:scale-[0.98]"
+                  >
+                    <NotePencil size={14} weight="bold" />
+                    Create Post
+                  </button>
                 </div>
               )}
               {iconOnly && (
-                <div className="mt-4 flex justify-center">
+                <div className="mt-4 flex flex-col items-center gap-2">
                   <Link
                     href="/organizer/events/new"
                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand)] text-black shadow-[0_4px_14px_rgba(47,143,69,0.28)] transition hover:opacity-90"
@@ -379,6 +386,14 @@ export function OrganizerShell({
                   >
                     <Plus size={16} weight="bold" />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPostModalOpen(true)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--brand)] text-[var(--brand)] shadow-[0_0_12px_rgba(47,143,69,0.2)] transition hover:bg-[var(--brand)]/10"
+                    title="Create Post"
+                  >
+                    <NotePencil size={16} weight="bold" />
+                  </button>
                 </div>
               )}
 

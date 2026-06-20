@@ -7,13 +7,13 @@ import { QRCodeSVG } from "qrcode.react";
 
 export function TicketQrStatic({ reference }: { reference: string }) {
   return (
-    <div className="rounded-[28px] border border-[var(--border-card)] bg-white p-5 shadow-[0_14px_32px_rgba(0,0,0,0.18)] opacity-40 grayscale">
+    <div className="rounded-[20px] border border-[var(--border-card)] bg-white p-4 shadow-[0_14px_32px_rgba(0,0,0,0.18)] opacity-40 grayscale">
       <QRCodeSVG
         bgColor="#ffffff"
         fgColor="#081008"
         includeMargin
         level="M"
-        size={220}
+        size={180}
         value={`gooutside-ticket:${reference}`}
       />
     </div>
@@ -74,7 +74,7 @@ export function LiveTicketQR({ ticketId }: { ticketId: string }) {
   // ── Checked in ──
   if (state.phase === "checked_in") {
     return (
-      <div className="flex h-[230px] w-[230px] flex-col items-center justify-center gap-3 rounded-[28px] border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.06)] p-5">
+      <div className="flex h-[196px] w-[196px] flex-col items-center justify-center gap-3 rounded-[20px] border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.06)] p-4">
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
           <circle cx="22" cy="22" r="22" fill="rgba(74,222,128,0.15)" />
           <path d="M13 22.5L19.5 29L31 16" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -91,7 +91,7 @@ export function LiveTicketQR({ ticketId }: { ticketId: string }) {
   // ── Loading ──
   if (state.phase === "loading") {
     return (
-      <div className="flex h-[230px] w-[230px] items-center justify-center rounded-[28px] border border-[var(--border-card)] bg-white p-5 shadow-[0_14px_32px_rgba(0,0,0,0.18)]">
+      <div className="flex h-[196px] w-[196px] items-center justify-center rounded-[20px] border border-[var(--border-card)] bg-white p-4 shadow-[0_14px_32px_rgba(0,0,0,0.18)]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-subtle)] border-t-[var(--brand)]" />
       </div>
     );
@@ -100,7 +100,7 @@ export function LiveTicketQR({ ticketId }: { ticketId: string }) {
   // ── Error ──
   if (state.phase === "error") {
     return (
-      <div className="flex h-[230px] w-[230px] flex-col items-center justify-center gap-3 rounded-[28px] border border-[rgba(251,113,133,0.25)] bg-[rgba(251,113,133,0.06)] p-5">
+      <div className="flex h-[196px] w-[196px] flex-col items-center justify-center gap-3 rounded-[20px] border border-[rgba(251,113,133,0.25)] bg-[rgba(251,113,133,0.06)] p-4">
         <p className="text-center text-[11px] font-semibold text-[#fb7185]">
           Could not load QR
         </p>
@@ -116,18 +116,18 @@ export function LiveTicketQR({ ticketId }: { ticketId: string }) {
 
   // ── Ready ──
   return (
-    <div className="relative rounded-[28px] border border-[var(--border-card)] bg-white p-5 shadow-[0_14px_32px_rgba(0,0,0,0.18)]">
+    <div className="relative rounded-[20px] border border-[var(--border-card)] bg-white p-4 shadow-[0_14px_32px_rgba(0,0,0,0.18)]">
       <QRCodeSVG
         bgColor="#ffffff"
         fgColor="#081008"
         includeMargin
         level="H"
-        size={220}
+        size={180}
         value={state.payload}
       />
 
       {/* Sweep bar animation */}
-      <div className="pointer-events-none absolute inset-5 overflow-hidden rounded-[18px]">
+      <div className="pointer-events-none absolute inset-4 overflow-hidden rounded-[14px]">
         <div className="sweep-bar" />
       </div>
 

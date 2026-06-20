@@ -136,10 +136,11 @@ export default async function WalletTicketPage({
 
       <div className="mx-auto w-full max-w-[680px] px-0 py-8">
 
-        {/* ── Ticket card with Atropos parallax ── */}
+        {/* ── Ticket card with Atropos parallax — Apple Wallet proportions ── */}
+        <div className="mx-auto w-full max-w-[360px]">
         <AtroposTicket>
           <div
-            className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br ${s.card} p-6 shadow-[0_40px_90px_rgba(0,0,0,0.5)] ${isPast ? "opacity-90" : ""}`}
+            className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br ${s.card} p-5 shadow-[0_40px_90px_rgba(0,0,0,0.5)] ${isPast ? "opacity-90" : ""}`}
           >
             {/* Glow layer */}
             <div className={`pointer-events-none absolute inset-0 ${s.glow}`} />
@@ -254,6 +255,7 @@ export default async function WalletTicketPage({
             </div>
           </div>
         </AtroposTicket>
+        </div>
 
         {/* Reference pill */}
         <div className="mt-4 flex justify-center">

@@ -23,7 +23,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from("organizer_profiles")
-    .select("organization_name, bio, website_url, logo_url, social_links, status")
+    .select("organization_name, bio, website_url, logo_url, cover_url, social_links, location_city, status, verified_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest) {
 
   const body = (await req.json()) as Record<string, unknown>;
 
-  const allowed = ["bio", "website_url", "logo_url", "social_links"] as const;
+  const allowed = ["organization_name", "bio", "website_url", "logo_url", "cover_url", "social_links", "location_city"] as const;
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];
@@ -71,7 +71,7 @@ export async function PATCH(req: NextRequest) {
     .from("organizer_profiles")
     .update(updates)
     .eq("user_id", user.id)
-    .select("organization_name, bio, website_url, logo_url, social_links, status")
+    .select("organization_name, bio, website_url, logo_url, cover_url, social_links, location_city, status, verified_at")
     .single();
 
   if (error) {

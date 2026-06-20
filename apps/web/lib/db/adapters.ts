@@ -121,10 +121,16 @@ export type DbOrganizerRow = {
 
 export function adaptOrganizer(row: DbOrganizerRow): Organizer {
   const followers = row.follower_count ?? 0;
+  // Build a slug-style handle from the org name (not the individual's personal name)
+  const orgHandle = row.organization_name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .trim()
+    .replace(/\s+/g, ".");
   return {
     id:             row.users.id,
     name:           row.organization_name,
-    tag:            `@${row.users.first_name.toLowerCase()}${row.users.last_name.toLowerCase()}`,
+    tag:            `@${orgHandle}`,
     city:           row.users.location_city ?? "Accra",
     verified:       row.status === "approved",
     followersLabel: `${followers.toLocaleString()} follower${followers !== 1 ? "s" : ""}`,

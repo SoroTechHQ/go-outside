@@ -33,12 +33,18 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
 
   const fallbackName = `${user.first_name} ${user.last_name}`.trim() || user.first_name;
 
-  const ownEvents = (dashboard.recentEvents ?? []).map((e) => ({
-    id: e.id,
-    title: e.title,
-    date: e.dateLabel ?? null,
-    slug: e.slug,
-  }));
+  const now = new Date().toISOString();
+
+  // Only show upcoming published events in the sidebar "Next up" — sorted soonest first
+  const ownEvents = (dashboard.recentEvents ?? [])
+    .filter((e) => e.statusLabel === "Live" && e.rawDate != null && e.rawDate >= now)
+    .sort((a, b) => (a.rawDate ?? "").localeCompare(b.rawDate ?? ""))
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      date: e.dateLabel ?? null,
+      slug: e.slug,
+    }));
 
   return (
     <div className="h-screen overflow-hidden">

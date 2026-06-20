@@ -11,6 +11,7 @@ import {
   Star,
   Ticket,
   TrendUp,
+  UserCheck,
 } from "@phosphor-icons/react/dist/ssr";
 import { supabaseAdmin } from "../../../../../lib/supabase";
 import { getOrCreateSupabaseUser } from "../../../../../lib/db/users";
@@ -33,6 +34,7 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
     { data: ticketTypes },
     { data: communityPosts },
     { data: dailyEdges },
+    { data: checkedInTickets },
   ] = await Promise.all([
     supabaseAdmin
       .from("events")
@@ -65,6 +67,14 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
       .eq("to_id", eventId)
       .eq("to_type", "event")
       .gte("created_at", since30d),
+
+    // Check-in attendance
+    supabaseAdmin
+      .from("tickets")
+      .select("id, attendee_name, attendee_email, checked_in_at, ticket_types(name), users!tickets_user_id_fkey(first_name, last_name, avatar_url, username)")
+      .eq("event_id", eventId)
+      .eq("status", "used")
+      .order("checked_in_at", { ascending: false }),
   ]);
 
   if (!event || event.organizer_id !== organizerId) return null;
@@ -105,6 +115,25 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
     });
   }
 
+  type CheckInRow = {
+    id: string;
+    attendee_name: string | null;
+    attendee_email: string | null;
+    checked_in_at: string | null;
+    ticket_types: { name: string } | null;
+    users: { first_name: string | null; last_name: string | null; avatar_url: string | null; username: string | null } | null;
+  };
+
+  const attendance = (checkedInTickets as unknown as CheckInRow[] ?? []).map((t) => ({
+    id: t.id,
+    name: [t.users?.first_name, t.users?.last_name].filter(Boolean).join(" ") || t.attendee_name || "Attendee",
+    email: t.attendee_email ?? null,
+    avatarUrl: t.users?.avatar_url ?? null,
+    username: t.users?.username ?? null,
+    ticketType: t.ticket_types?.name ?? "General",
+    checkedInAt: t.checked_in_at,
+  }));
+
   return {
     event: event as typeof event & { categories: { name: string; slug: string } | null },
     metrics: {
@@ -122,6 +151,7 @@ async function getEventAnalytics(eventId: string, organizerId: string) {
     avgRating,
     totalPostLikes: (communityPosts ?? []).reduce((s, p) => s + (p.like_count ?? 0), 0),
     last14,
+    attendance,
   };
 }
 
@@ -209,7 +239,7 @@ export default async function EventAnalyticsPage({
   const data = await getEventAnalytics(id, user.id);
   if (!data) return notFound();
 
-  const { event, metrics, revenue, ticketTypes, postCount, avgRating, totalPostLikes, last14 } = data;
+  const { event, metrics, revenue, ticketTypes, postCount, avgRating, totalPostLikes, last14, attendance } = data;
 
   const topOfFunnel = Math.max(metrics.peekOpens, metrics.cardClicks, 1);
 
@@ -398,6 +428,82 @@ export default async function EventAnalyticsPage({
             <p className="mt-4 text-[13px] text-[var(--text-secondary)]">No ticket tiers configured.</p>
           )}
         </div>
+      </div>
+      {/* Attendance — checked-in list */}
+      <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--brand)]/10">
+              <UserCheck size={15} weight="fill" style={{ color: "var(--brand)" }} />
+            </span>
+            <div>
+              <p className="text-[14px] font-semibold text-[var(--text-primary)]">Attendance</p>
+              <p className="text-[12px] text-[var(--text-secondary)]">
+                {attendance.length} attendee{attendance.length !== 1 ? "s" : ""} checked in
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-3 py-1 text-[11px] font-semibold text-[var(--brand)]">
+            {pct(attendance.length, event.tickets_sold ?? attendance.length)} check-in rate
+          </span>
+        </div>
+
+        {attendance.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl bg-[var(--bg-muted)]/40 py-10 text-center">
+            <UserCheck size={32} weight="thin" className="text-[var(--text-tertiary)]" />
+            <p className="mt-3 text-[13px] text-[var(--text-secondary)]">No check-ins yet</p>
+            <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Check-ins appear here as tickets are scanned at the gate</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)]">
+            <table className="w-full text-sm">
+              <thead className="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">Attendee</th>
+                  <th className="hidden px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] sm:table-cell">Ticket</th>
+                  <th className="hidden px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] md:table-cell">Email</th>
+                  <th className="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">Checked in</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-card)]">
+                {attendance.map((a) => (
+                  <tr key={a.id} className="transition hover:bg-[var(--bg-elevated)]">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--brand)]/10">
+                          {a.avatarUrl ? (
+                            <img src={a.avatarUrl} alt={a.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-[11px] font-bold text-[var(--brand)]">
+                              {a.name.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{a.name}</p>
+                          {a.username && (
+                            <p className="truncate text-[11px] text-[var(--text-tertiary)]">@{a.username}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden px-4 py-3 text-[12px] text-[var(--text-secondary)] sm:table-cell">
+                      {a.ticketType}
+                    </td>
+                    <td className="hidden px-4 py-3 text-[12px] text-[var(--text-secondary)] md:table-cell">
+                      {a.email ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right text-[11px] tabular-nums text-[var(--text-tertiary)]">
+                      {a.checkedInAt
+                        ? new Date(a.checkedInAt).toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" })
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

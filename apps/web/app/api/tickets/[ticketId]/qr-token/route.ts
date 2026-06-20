@@ -17,7 +17,7 @@ export async function GET(
 
   const { data: ticket, error } = await supabaseAdmin
     .from('tickets')
-    .select('id, event_id, status, token_version')
+    .select('id, event_id, status')
     .eq('id', ticketId)
     .eq('user_id', user.id)
     .single();
@@ -37,7 +37,7 @@ export async function GET(
   let nonce: string | null = null;
 
   if (ticketSecret) {
-    const generated = generateTicketPayload(ticket.id, ticket.event_id, ticket.token_version ?? 1);
+    const generated = generateTicketPayload(ticket.id, ticket.event_id, 1);
     payload = generated.payload;
     nonce = generated.nonce;
   }
