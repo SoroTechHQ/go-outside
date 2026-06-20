@@ -18,6 +18,8 @@ import {
   Heart,
   Image as ImageIcon,
   MegaphoneSimple,
+  NotePencil,
+  QrCode,
   Rocket,
   SealCheck,
   Sparkle,
@@ -1016,23 +1018,40 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
             >
               <ChatsCircle size={15} /> Messages
             </Link>
-            <Link
-              href="/organizer/calendar"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-[13px] font-medium text-[var(--text-secondary)] shadow-sm transition hover:border-[var(--brand)]/30 hover:text-[var(--text-primary)]"
-            >
-              <CalendarBlank size={15} /> Calendar
-            </Link>
-            <Link
-              href="/organizer/events/new"
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-black shadow-[0_4px_14px_rgba(47,143,69,0.35)] transition hover:opacity-90 active:scale-[0.97]"
-            >
-              <Sparkle size={15} weight="fill" /> New Event
-            </Link>
           </div>
         </div>
 
+        {/* ── Quick actions strip ─────────────────────────────── */}
+        <div className="relative mt-5 flex flex-wrap gap-2">
+          <Link
+            href="/organizer/events/new"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--brand)]/25 bg-[var(--brand)]/8 px-3.5 py-2 text-[12px] font-semibold text-[var(--brand)] transition hover:bg-[var(--brand)]/14"
+          >
+            <Sparkle size={13} weight="fill" /> New Event
+          </Link>
+          <Link
+            href="/organizer/calendar"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/25 hover:text-[var(--text-primary)]"
+          >
+            <CalendarBlank size={13} /> Calendar
+          </Link>
+          <button
+            type="button"
+            onClick={() => setActiveTab("Posts & Reels")}
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/25 hover:text-[var(--text-primary)]"
+          >
+            <NotePencil size={13} /> Create Post
+          </button>
+          <Link
+            href="/organizer/scan"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/25 hover:text-[var(--text-primary)]"
+          >
+            <QrCode size={13} /> Scan Tickets
+          </Link>
+        </div>
+
         {/* ── Tab bar ────────────────────────────────────────────── */}
-        <div className="relative mt-6 flex overflow-x-auto">
+        <div className="relative mt-5 flex overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab}

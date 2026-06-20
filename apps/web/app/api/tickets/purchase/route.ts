@@ -3,7 +3,7 @@ import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { supabaseAdmin } from "../../../../lib/supabase";
 import { insertNotification } from "../../../../lib/db/insert-notification";
 import { enforceSameOrigin } from "../../../../lib/api-security";
-import { getResendClient } from "../../../../lib/email";
+import { sendTicketReceipt } from "../../../../lib/email";
 
 type PurchaseItem = {
   eventId: string;
@@ -30,8 +30,14 @@ type TicketTypeRow = {
 type EventRow = {
   id: string;
   title: string;
+  slug: string;
   status: string;
   is_age_restricted: boolean;
+  organizer_id: string | null;
+  start_datetime: string | null;
+  end_datetime: string | null;
+  custom_location: string | null;
+  venues: { name: string; city: string | null }[] | null;
 };
 
 type PaystackVerifyResponse = {
@@ -47,6 +53,20 @@ type PaystackVerifyResponse = {
 
 function jsonError(status: number, error: string) {
   return NextResponse.json({ error }, { status });
+}
+
+function formatEventDate(value: string | null): string {
+  if (!value) return "Date TBD";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date TBD";
+  return date.toLocaleDateString("en-GH", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 async function verifyPaystackPayment(reference: string, expectedAmountPesewas: number) {
@@ -117,7 +137,7 @@ export async function POST(req: NextRequest) {
       .in("id", uniqueTierIds),
     supabaseAdmin
       .from("events")
-      .select("id, title, status, is_age_restricted")
+      .select("id, title, slug, status, is_age_restricted, organizer_id, start_datetime, end_datetime, custom_location, venues (name, city)")
       .in("id", uniqueEventIds),
   ]);
 
@@ -132,6 +152,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ticketTypeMap = new Map((ticketTypes as TicketTypeRow[] | null ?? []).map((tier) => [tier.id, tier]));
+  const eventRowMap = new Map((events as EventRow[] | null ?? []).map((event) => [event.id, event]));
   let expectedTotal = 0;
   const quantityByTier = new Map<string, number>();
 
@@ -222,6 +243,15 @@ export async function POST(req: NextRequest) {
     return jsonError(500, error.message);
   }
 
+  const insertedTicketIdsByEvent = new Map<string, string[]>();
+  data?.forEach((ticket, index) => {
+    const eventId = rows[index]?.event_id;
+    if (!eventId) return;
+    const existing = insertedTicketIdsByEvent.get(eventId) ?? [];
+    existing.push(ticket.id);
+    insertedTicketIdsByEvent.set(eventId, existing);
+  });
+
   // Write graph edge for each unique event purchased — strong signal for recommendations
   const [, eventRows] = await Promise.all([
     Promise.all(
@@ -232,14 +262,10 @@ export async function POST(req: NextRequest) {
         )
       )
     ),
-    supabaseAdmin
-      .from("events")
-      .select("id, title, slug")
-      .in("id", uniqueEventIds)
-      .then((r) => r.data ?? []),
+    Promise.resolve((events as EventRow[] | null) ?? []),
   ]);
 
-  const notificationEventMap = new Map((eventRows as { id: string; title: string; slug: string }[]).map((e) => [e.id, e]));
+  const notificationEventMap = new Map((eventRows as EventRow[]).map((e) => [e.id, e]));
 
   for (const eventId of uniqueEventIds) {
     const ev = notificationEventMap.get(eventId);
@@ -255,30 +281,24 @@ export async function POST(req: NextRequest) {
 
   if (user.email) {
     const firstName = user.first_name || "there";
-    const pp = rows.reduce((sum) => sum + 1, 0) * 50;
-    const eventRows2 = eventRows as { id: string; title: string; slug: string }[];
+    const uniqueOrganizerIds = [...new Set(eventRows.map((event) => event.organizer_id).filter((id): id is string => Boolean(id)))];
+    const { data: organizerRows } = await supabaseAdmin
+      .from("organizer_profiles")
+      .select("user_id, organization_name, website_url, logo_url, social_links")
+      .in("user_id", uniqueOrganizerIds);
+    const organizerMap = new Map((organizerRows ?? []).map((row) => [
+      row.user_id,
+      {
+        name: row.organization_name,
+        websiteUrl: row.website_url,
+        logoUrl: row.logo_url,
+        socialLinks: row.social_links,
+      },
+    ]));
 
     for (const eventId of uniqueEventIds) {
-      const ev = eventRows2.find((e) => e.id === eventId);
+      const ev = eventRowMap.get(eventId);
       if (!ev) continue;
-
-      const eventDetail = await supabaseAdmin
-        .from("events")
-        .select("start_datetime, custom_location")
-        .eq("id", eventId)
-        .maybeSingle()
-        .then((r) => r.data as { start_datetime: string | null; custom_location: string | null } | null);
-
-      const eventDateStr = eventDetail?.start_datetime
-        ? new Date(eventDetail.start_datetime).toLocaleDateString("en-GH", {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "Date TBD";
 
       const eventItems = normalizedItems.filter((i) => i.eventId === eventId);
       const ticketTypeIds = [...new Set(eventItems.map((i) => i.tierId))];
@@ -287,114 +307,36 @@ export async function POST(req: NextRequest) {
         .select("id, name")
         .in("id", ticketTypeIds);
       const tierNameMap = new Map((tierRows ?? []).map((t: { id: string; name: string }) => [t.id, t.name]));
+      const venueName = ev.venues?.[0]?.name ?? ev.custom_location ?? "Venue";
+      const venueAddress = ev.custom_location ?? ev.venues?.[0]?.city ?? undefined;
+      const organizer = ev.organizer_id ? organizerMap.get(ev.organizer_id) : null;
+      const eventDateStr = formatEventDate(ev.start_datetime);
+      const eventTicketIds = insertedTicketIdsByEvent.get(eventId) ?? [];
+      const firstTicketId = eventTicketIds[0] ?? eventId;
+      const qrPayload = `gooutside-ticket:${firstTicketId}`;
 
-      const ticketLines = eventItems
-        .map((i) => {
-          const tierName = tierNameMap.get(i.tierId) ?? "General";
-          const price = Number(ticketTypeMap.get(i.tierId)?.price ?? 0);
-          const priceStr = price === 0 ? "Free" : `GHS ${price.toFixed(2)}`;
-          return `<tr>
-            <td style="padding:6px 0;color:#cccccc;font-size:14px;">${tierName} x${i.quantity}</td>
-            <td style="padding:6px 0;color:#cccccc;font-size:14px;text-align:right;">${priceStr}</td>
-          </tr>`;
-        })
-        .join("");
-
-      const total = eventItems.reduce((s, i) => s + Number(ticketTypeMap.get(i.tierId)?.price ?? 0) * i.quantity, 0);
-      const totalStr = total === 0 ? "Free" : `GHS ${total.toFixed(2)}`;
-      const attendeeName = eventItems[0]?.attendeeName ?? `${user.first_name} ${user.last_name}`.trim();
-
-      getResendClient().emails.send({
-        from: "GoOutside <noreply@mail.gooutside.club>",
+      await sendTicketReceipt({
         to: user.email,
-        subject: `Your ticket for ${ev.title} is confirmed!`,
-        html: `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#111111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#111111;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-
-        <tr>
-          <td style="background:#0e2212;border-radius:12px 12px 0 0;padding:28px 32px;">
-            <p style="margin:0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">GoOutside</p>
-            <p style="margin:8px 0 0;font-size:13px;color:#4ade80;">Your ticket is confirmed</p>
-          </td>
-        </tr>
-
-        <tr>
-          <td style="background:#1a1a1a;padding:32px;">
-            <p style="margin:0 0 24px;font-size:16px;color:#ffffff;">Hi ${firstName},</p>
-            <p style="margin:0 0 24px;font-size:15px;color:#cccccc;line-height:1.6;">
-              Your ticket for <strong style="color:#ffffff;">${ev.title}</strong> has been confirmed. We will see you there!
-            </p>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#111111;border-radius:10px;padding:20px;margin-bottom:24px;">
-              <tr>
-                <td colspan="2" style="padding-bottom:12px;border-bottom:1px solid #2a2a2a;">
-                  <p style="margin:0;font-size:16px;font-weight:700;color:#ffffff;">${ev.title}</p>
-                  <p style="margin:6px 0 0;font-size:13px;color:#888888;">${eventDateStr}</p>
-                  ${eventDetail?.custom_location ? `<p style="margin:4px 0 0;font-size:13px;color:#888888;">${eventDetail.custom_location}</p>` : ""}
-                </td>
-              </tr>
-              <tr><td colspan="2" style="height:12px;"></td></tr>
-              <tr>
-                <td style="font-size:12px;color:#666666;padding-bottom:4px;">Ticket</td>
-                <td style="font-size:12px;color:#666666;padding-bottom:4px;text-align:right;">Price</td>
-              </tr>
-              ${ticketLines}
-              <tr>
-                <td colspan="2" style="border-top:1px solid #2a2a2a;padding-top:12px;">
-                  <table width="100%"><tr>
-                    <td style="font-size:14px;font-weight:600;color:#ffffff;">Total</td>
-                    <td style="font-size:14px;font-weight:600;color:#ffffff;text-align:right;">${totalStr}</td>
-                  </tr></table>
-                </td>
-              </tr>
-              <tr>
-                <td colspan="2" style="padding-top:8px;font-size:13px;color:#888888;">Attendee: ${attendeeName}</td>
-              </tr>
-            </table>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-              <tr>
-                <td align="center">
-                  <a href="https://gooutside.club/dashboard/wallets"
-                     style="display:inline-block;background:#0e2212;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:10px;">
-                    View My Ticket
-                  </a>
-                </td>
-              </tr>
-            </table>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#0e2212;border-radius:10px;padding:16px 20px;">
-              <tr>
-                <td>
-                  <p style="margin:0;font-size:14px;font-weight:600;color:#4ade80;">+${pp} Pulse Points earned!</p>
-                  <p style="margin:4px 0 0;font-size:13px;color:#86efac;">You earned Pulse Points for this purchase. Redeem them for rewards in the app.</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <tr>
-          <td style="background:#0d0d0d;border-radius:0 0 12px 12px;padding:20px 32px;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#555555;">GoOutside &middot; Accra, Ghana</p>
-            <p style="margin:4px 0 0;font-size:12px;color:#444444;">
-              <a href="https://gooutside.club" style="color:#444444;">gooutside.club</a>
-            </p>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
-      }).catch((err: unknown) => {
-        console.error("[tickets/purchase] email send failed:", err);
+        firstName,
+        eventName: ev.title,
+        eventDate: eventDateStr,
+        ticketId: firstTicketId,
+        qrUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrPayload)}&size=320x320&color=081008&bgcolor=ffffff`,
+        venue: venueName,
+        venueAddress,
+        mapsUrl: venueAddress ? `https://maps.google.com/?q=${encodeURIComponent(venueAddress)}` : undefined,
+        eventUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club"}/dashboard/wallets/${firstTicketId}`,
+        startDatetime: ev.start_datetime,
+        endDatetime: ev.end_datetime,
+        ticketLines: eventItems.map((i) => {
+          const price = Number(ticketTypeMap.get(i.tierId)?.price ?? 0);
+          return {
+            label: tierNameMap.get(i.tierId) ?? "General",
+            quantity: i.quantity,
+            priceLabel: price === 0 ? "Free" : `GHS ${price.toFixed(2)}`,
+          };
+        }),
+        organizer: organizer ?? undefined,
       });
     }
   }

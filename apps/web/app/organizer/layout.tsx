@@ -36,7 +36,7 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
   const ownEvents = (dashboard.recentEvents ?? []).map((e) => ({
     id: e.id,
     title: e.title,
-    date: null as string | null,
+    date: e.dateLabel ?? null,
     slug: e.slug,
   }));
 
@@ -48,6 +48,7 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
         organizerName={dashboard.organizer?.name ?? fallbackName}
         ownEvents={ownEvents}
         verified={Boolean(dashboard.organizer?.verified)}
+        followerCount={dashboard.overview.followerCount}
       >
         {children}
       </OrganizerShell>

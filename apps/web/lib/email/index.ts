@@ -43,6 +43,7 @@ export const SENDERS = {
   general:  "GoOutside <hello@mail.gooutside.club>",
   tickets:  "GoOutside Tickets <tickets@mail.gooutside.club>",
   notify:   "GoOutside <noreply@mail.gooutside.club>",
+  events:   "GoOutside Events <events@mail.gooutside.club>",
   messages: "GoOutside Messages <messages@mail.gooutside.club>",
   pioneers: "Gabby from GoOutside <founders@mail.gooutside.club>",
   waitlist: "GoOutside <waitlist@mail.gooutside.club>",
@@ -76,13 +77,28 @@ export async function sendTicketReceipt(opts: {
   to: string; firstName: string; eventName: string; eventDate: string;
   ticketId: string; qrUrl: string; venue: string; venueAddress?: string;
   mapsUrl?: string; ticketType?: string;
+  ticketLines?: Array<{ label: string; quantity?: number; priceLabel?: string }>;
+  eventUrl?: string;
+  startDatetime?: string | null;
+  endDatetime?: string | null;
+  organizer?: {
+    name: string;
+    websiteUrl?: string | null;
+    logoUrl?: string | null;
+    socialLinks?: Record<string, string> | null;
+  };
 }) {
+  const calendar = buildCalendarInvite(opts);
   return getResendClient().emails.send({
     from:    SENDERS.tickets,
     to:      opts.to,
     replyTo: "hello@mail.gooutside.club",
     subject: `🎟️ Your ticket for ${opts.eventName}`,
     headers: txnHeaders(),
+    attachments: calendar ? ([{
+      filename: `${slugifyFilename(opts.eventName)}.ics`,
+      content: calendar.ics,
+    }] as any) : undefined,
     html:    buildTicketEmail(opts),
   });
 }
@@ -254,6 +270,132 @@ function btn(label: string, url: string, outline = false): string {
   return `<a href="${url}" style="display:inline-block;background-color:${BRAND};color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;padding:12px 26px;border-radius:100px;">${label}</a>`;
 }
 
+function esc(value: string | number | null | undefined): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function slugifyFilename(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64) || "gooutside-ticket";
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "Date TBD";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date TBD";
+  return date.toLocaleDateString("en-GH", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function toCalendarStamp(value: string | null | undefined): string {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return "";
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function buildCalendarInvite(opts: {
+  eventName: string;
+  startDatetime?: string | null;
+  endDatetime?: string | null;
+  venue: string;
+  venueAddress?: string;
+  mapsUrl?: string;
+  eventUrl?: string;
+  organizer?: { name: string; websiteUrl?: string | null; socialLinks?: Record<string, string> | null };
+}): { ics: string; googleUrl: string } | null {
+  if (!opts.startDatetime) return null;
+
+  const start = toCalendarStamp(opts.startDatetime);
+  if (!start) return null;
+
+  const endCandidate = opts.endDatetime
+    ? toCalendarStamp(opts.endDatetime)
+    : toCalendarStamp(new Date(new Date(opts.startDatetime).getTime() + 2 * 60 * 60 * 1000).toISOString());
+  const end = endCandidate || start;
+
+  const locationParts = [opts.venue, opts.venueAddress].filter(Boolean).join(", ");
+  const detailsParts = [
+    `Your GoOutside ticket for ${opts.eventName}.`,
+    opts.organizer?.name ? `Organizer: ${opts.organizer.name}.` : null,
+    opts.eventUrl ? `Event page: ${opts.eventUrl}` : null,
+  ].filter(Boolean);
+
+  const googleUrl = new URL("https://calendar.google.com/calendar/render");
+  googleUrl.searchParams.set("action", "TEMPLATE");
+  googleUrl.searchParams.set("text", opts.eventName);
+  googleUrl.searchParams.set("dates", `${start}/${end}`);
+  googleUrl.searchParams.set("details", detailsParts.join(" "));
+  googleUrl.searchParams.set("location", locationParts);
+  googleUrl.searchParams.set("ctz", "Africa/Accra");
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//GoOutside//Ticket Invitation//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:REQUEST",
+    "BEGIN:VEVENT",
+    `UID:${crypto.randomUUID()}@gooutside.club`,
+    `DTSTAMP:${toCalendarStamp(new Date().toISOString())}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${opts.eventName}`,
+    `DESCRIPTION:${detailsParts.join(" \\n ")}`,
+    `LOCATION:${locationParts}`,
+    `URL:${opts.eventUrl ?? BASE}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+
+  return { ics, googleUrl: googleUrl.toString() };
+}
+
+function socialBadge(label: string, href: string, tone = "light"): string {
+  const bg = tone === "brand" ? BRAND_BG : "#f8f8f8";
+  const border = tone === "brand" ? BRAND_BD : BORDER;
+  return `<a href="${esc(href)}" style="display:inline-block;margin:0 8px 8px 0;padding:8px 11px;border:1px solid ${border};border-radius:999px;background:${bg};color:${TEXT};text-decoration:none;font-size:12px;font-weight:700;line-height:1;">
+    <span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:999px;background:${BRAND};color:#fff;font-size:10px;font-weight:800;letter-spacing:0.03em;vertical-align:middle;">${esc(label.slice(0, 2).toUpperCase())}</span>
+    <span style="display:inline-block;vertical-align:middle;margin-left:8px;white-space:nowrap;">${esc(label)}</span>
+  </a>`;
+}
+
+function organizerSocialLinks(input?: Record<string, string> | null): Array<{ label: string; href: string }> {
+  if (!input) return [];
+
+  return Object.entries(input)
+    .map(([rawLabel, rawHref]) => {
+      const label = rawLabel.trim().toLowerCase();
+      let href = rawHref.trim();
+      if (!href) return null;
+      if (!/^https?:\/\//i.test(href)) {
+        if (label === "instagram") href = `https://instagram.com/${href.replace(/^@/, "")}`;
+        else if (label === "twitter" || label === "x") href = `https://x.com/${href.replace(/^@/, "")}`;
+        else if (label === "facebook") href = `https://facebook.com/${href.replace(/^@/, "")}`;
+        else if (label === "tiktok") href = `https://tiktok.com/@${href.replace(/^@/, "")}`;
+        else if (label === "linkedin") href = `https://linkedin.com/in/${href.replace(/^@/, "")}`;
+        else href = `https://${href.replace(/^\/+/, "")}`;
+      }
+      return { label: rawLabel, href };
+    })
+    .filter((item): item is { label: string; href: string } => Boolean(item))
+    .slice(0, 4);
+}
+
 // ─── 1. Message nudge ─────────────────────────────────────────────────────────
 function buildNudgeEmail(senderName: string, url: string): string {
   return shell(`
@@ -278,74 +420,189 @@ function buildTicketEmail(opts: {
   firstName: string; eventName: string; eventDate: string;
   ticketId: string; qrUrl: string; venue: string; venueAddress?: string;
   mapsUrl?: string; ticketType?: string;
+  ticketLines?: Array<{ label: string; quantity?: number; priceLabel?: string }>;
+  eventUrl?: string;
+  startDatetime?: string | null;
+  endDatetime?: string | null;
+  organizer?: {
+    name: string;
+    websiteUrl?: string | null;
+    logoUrl?: string | null;
+    socialLinks?: Record<string, string> | null;
+  };
 }): string {
-  const mapsUrl = opts.mapsUrl ?? `https://maps.google.com/?q=${encodeURIComponent(opts.venue + (opts.venueAddress ? ', ' + opts.venueAddress : ''))}`;
+  const mapsUrl = opts.mapsUrl ?? `https://maps.google.com/?q=${encodeURIComponent(opts.venue + (opts.venueAddress ? ", " + opts.venueAddress : ""))}`;
+  const calendar = buildCalendarInvite(opts);
+  const organizerLinks = organizerSocialLinks(opts.organizer?.socialLinks);
+  const eventLink = opts.eventUrl ?? `${BASE}/dashboard/wallets`;
+  const organizerName = opts.organizer?.name ?? "GoOutside";
+  const organizerWebsite = opts.organizer?.websiteUrl ?? BASE;
+  const eventDate = esc(opts.eventDate);
+  const eventName = esc(opts.eventName);
+  const firstName = esc(opts.firstName);
+  const ticketType = opts.ticketType ? esc(opts.ticketType) : "";
+  const ticketId = esc(opts.ticketId);
+  const venue = esc(opts.venue);
+  const venueAddress = opts.venueAddress ? esc(opts.venueAddress) : "";
+  const qrUrl = esc(opts.qrUrl);
+  const ticketLines = opts.ticketLines ?? [];
+  const buttonWidth = calendar ? "33.33%" : "50%";
+
+  const actionButtons = `
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        ${calendar ? `<td style="width:${buttonWidth};padding-right:8px;">${btn("Add to calendar", calendar.googleUrl, true)}</td>` : ""}
+        <td style="width:${buttonWidth};padding-right:8px;">
+          ${btn("Get directions", mapsUrl, true)}
+        </td>
+        <td style="width:${buttonWidth};">
+          ${btn("View in app", eventLink, false)}
+        </td>
+      </tr>
+    </table>`;
+
+  const organizerLogo = opts.organizer?.logoUrl
+    ? `<img src="${esc(opts.organizer.logoUrl)}" alt="${esc(organizerName)} logo" width="42" height="42" style="display:block;border-radius:12px;object-fit:cover;border:1px solid ${BORDER};background:#fff;">`
+    : `<div style="width:42px;height:42px;border-radius:12px;background:${BRAND_BG};border:1px solid ${BRAND_BD};line-height:42px;text-align:center;font-size:14px;font-weight:800;color:${BRAND};">${esc(organizerName.slice(0, 2).toUpperCase())}</div>`;
+
+  const organizerLinkRow = organizerLinks.length > 0
+    ? `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;"><tr><td style="font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};padding-bottom:8px;">Follow organizer</td></tr><tr><td>${organizerLinks.map((link) => socialBadge(link.label, link.href)).join("")}</td></tr></table>`
+    : "";
+
+  const calendarNote = calendar
+    ? `<p style="margin:12px 0 0;font-size:12px;color:${MUTED};line-height:1.7;">Google Calendar should read the invite automatically. If it does not, use the <strong>Add to calendar</strong> button above or import the attached <code style="font-family:'Courier New',monospace;">.ics</code> file.</p>`
+    : "";
 
   return shell(`
-    ${eyebrow("Your Ticket")}
-    <h1 style="margin:0 0 4px;font-size:22px;font-weight:700;color:${TEXT};letter-spacing:-0.02em;">${opts.eventName}</h1>
-    <p style="margin:0 0 20px;font-size:13px;color:${MUTED};">
-      ${ico("calendar", 13)} &nbsp;${opts.eventDate} &nbsp;&nbsp; ${ico("map-pin", 13)} &nbsp;${opts.venue}
-    </p>
-
-    ${hr()}
-
-    <!-- QR Code -->
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-      <tr><td align="center" style="padding:0 0 10px;">
-        <div style="display:inline-block;border:1px solid ${BORDER};border-radius:12px;padding:16px;background:#fff;">
-          <img src="${opts.qrUrl}" alt="Ticket QR code" width="180" height="180" style="display:block;width:180px;height:180px;">
-        </div>
-      </td></tr>
-      <tr><td align="center" style="padding:0 0 20px;">
-        <span style="font-size:10px;color:${MUTED};font-family:'Courier New',monospace;letter-spacing:0.12em;">${opts.ticketId}</span>
-      </td></tr>
-    </table>
-
-    ${hr()}
-
-    <!-- Guest info (Luma-style) -->
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+    ${eyebrow("Your ticket is confirmed")}
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;">
       <tr>
-        <td style="width:50%;vertical-align:top;padding-right:12px;">
-          <p style="margin:0 0 2px;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};">Guest</p>
-          <p style="margin:0;font-size:13px;font-weight:600;color:${TEXT};">${opts.firstName}</p>
+        <td style="vertical-align:top;">
+          <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:14px;"><tr>
+            <td style="padding:7px 10px;border-radius:999px;background:${BRAND_BG};border:1px solid ${BRAND_BD};">
+              <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+                <td style="padding-right:8px;">${ico("check-circle", 14)}</td>
+                <td style="font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${BRAND};">Admission ready</td>
+              </tr></table>
+            </td>
+          </tr></table>
+          <h1 style="margin:0;font-size:24px;font-weight:800;line-height:1.12;letter-spacing:-0.03em;color:${TEXT};">
+            ${eventName}
+          </h1>
+          <p style="margin:10px 0 0;font-size:13px;line-height:1.7;color:${BODY};">
+            You're confirmed. Keep this email handy, or open the ticket in the app when you arrive.
+          </p>
         </td>
-        <td style="width:50%;vertical-align:top;">
-          <p style="margin:0 0 2px;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};">Status</p>
-          <p style="margin:0;font-size:13px;font-weight:700;color:${BRAND};">Going ✓</p>
-        </td>
-      </tr>
-      ${opts.ticketType ? `
-      <tr><td colspan="2" style="padding-top:14px;">
-        <p style="margin:0 0 2px;font-size:9px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};">Ticket</p>
-        <p style="margin:0;font-size:13px;color:${TEXT};">1× ${opts.ticketType}</p>
-      </td></tr>` : ""}
-    </table>
-
-    ${hr()}
-
-    <!-- Actions -->
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-      <tr>
-        <td style="width:50%;padding-right:6px;">
-          <a href="${mapsUrl}" style="display:block;background-color:#f5f5f5;color:${TEXT};font-size:12px;font-weight:700;text-decoration:none;padding:11px 14px;border-radius:10px;text-align:center;border:1px solid ${BORDER};">
-            ${ico("directions", 13)} &nbsp;Get Directions
-          </a>
-        </td>
-        <td style="width:50%;padding-left:6px;">
-          <a href="${BASE}/dashboard/wallets" style="display:block;background-color:${BRAND};color:#ffffff;font-size:12px;font-weight:800;text-decoration:none;padding:11px 14px;border-radius:10px;text-align:center;">
-            ${ico("ticket", 13)} &nbsp;View in App
-          </a>
+        <td align="right" style="vertical-align:top;">
+          <div style="display:inline-block;padding:10px 12px;border-radius:16px;border:1px solid ${BORDER};background:#fafafa;text-align:center;">
+            <p style="margin:0 0 4px;font-size:10px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Ticket ID</p>
+            <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:0.12em;color:${TEXT};font-family:'Courier New',monospace;">${ticketId}</p>
+          </div>
         </td>
       </tr>
     </table>
 
-    <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">
-      Show this QR at the door. Your ticket is also saved in the app under <strong>Tickets</strong>.
-    </p>
-  `, `You received this because you purchased a ticket on GoOutside.<br>
-     Questions? <a href="mailto:hello@mail.gooutside.club" style="color:${MUTED};text-decoration:underline;">hello@mail.gooutside.club</a>`);
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;border:1px solid ${BORDER};border-radius:18px;overflow:hidden;">
+      <tr>
+        <td style="padding:18px 18px 6px;background:linear-gradient(180deg,#ffffff 0%,#fbfbfb 100%);">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+              <td style="padding-right:12px;vertical-align:top;">
+                <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">When</p>
+                <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};line-height:1.5;">${eventDate}</p>
+              </td>
+              <td style="padding-right:12px;vertical-align:top;">
+                <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Where</p>
+                <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};line-height:1.5;">${venue}${venueAddress ? `<br><span style="font-weight:500;color:${BODY};">${venueAddress}</span>` : ""}</p>
+              </td>
+              <td style="vertical-align:top;">
+                <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Guest</p>
+                <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};line-height:1.5;">${firstName}</p>
+              </td>
+            </tr>
+          </table>
+
+          ${ticketLines.length > 0 ? `
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:16px;border-collapse:separate;border-spacing:0;">
+            <tr>
+              <td style="padding:12px 14px;border-radius:14px 14px 0 0;background:${BRAND_BG};border:1px solid ${BRAND_BD};border-bottom:none;">
+                <p style="margin:0;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">Tickets</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 14px 12px;border:1px solid ${BRAND_BD};border-top:none;border-radius:0 0 14px 14px;background:#fff;">
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                  ${ticketLines.map((line) => `
+                    <tr>
+                      <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${TEXT};">${esc(line.label)}${line.quantity && line.quantity > 1 ? ` <span style="color:${MUTED};font-weight:600;">× ${line.quantity}</span>` : ""}</td>
+                      <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;font-weight:700;color:${TEXT};text-align:right;">${esc(line.priceLabel ?? "")}</td>
+                    </tr>`).join("")}
+                </table>
+              </td>
+            </tr>
+          </table>` : opts.ticketType ? `
+          <div style="margin-top:16px;padding:12px 14px;border-radius:14px;background:${BRAND_BG};border:1px solid ${BRAND_BD};">
+            <p style="margin:0 0 2px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">Ticket</p>
+            <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};">1 × ${ticketType}</p>
+          </div>` : ""}
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;">
+      <tr>
+        <td align="center" style="padding:18px;border:1px solid ${BORDER};border-radius:18px;background:#fff;">
+          <div style="display:inline-block;padding:16px;border-radius:20px;background:#ffffff;border:1px solid ${BORDER};box-shadow:0 10px 30px rgba(17,17,17,0.05);">
+            <img src="${qrUrl}" alt="Ticket QR code" width="194" height="194" style="display:block;width:194px;height:194px;">
+          </div>
+          <p style="margin:14px 0 0;font-size:11px;color:${MUTED};line-height:1.7;">
+            Present this QR at the gate. The ticket is tied to your account and is scanned once.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;">
+      <tr>
+        <td style="padding:0 4px 0 0;vertical-align:top;">${actionButtons}</td>
+      </tr>
+    </table>
+
+    ${calendarNote}
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:18px;margin-bottom:18px;border-top:1px solid ${BORDER};padding-top:18px;">
+      <tr>
+        <td style="vertical-align:top;width:52px;padding-right:12px;">${organizerLogo}</td>
+        <td style="vertical-align:top;">
+          <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Organizer</p>
+          <p style="margin:0;font-size:14px;font-weight:800;color:${TEXT};line-height:1.4;">${esc(organizerName)}</p>
+          <p style="margin:4px 0 0;font-size:12px;color:${BODY};line-height:1.6;">
+            View the organizer profile and the latest event updates on the app or on their site.
+          </p>
+          <p style="margin:10px 0 0;font-size:12px;">
+            <a href="${esc(organizerWebsite)}" style="color:${BRAND};text-decoration:none;font-weight:700;">Visit organizer site</a>
+          </p>
+          ${organizerLinkRow}
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 14px;">
+      <tr>
+        <td style="padding:14px 16px;border:1px solid ${BORDER};border-radius:16px;background:#fafafa;">
+          <p style="margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Before you go</p>
+          <p style="margin:0;font-size:12px;line-height:1.8;color:${BODY};">
+            ${ico("check-circle", 13)} &nbsp;Keep the QR visible at the gate.<br>
+            ${ico("calendar", 13)} &nbsp;If times change, the latest version is reflected in your app and calendar invite.<br>
+            ${ico("envelope", 13)} &nbsp;Replies to this email reach GoOutside support.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `, `GoOutside · Accra, Ghana<br>
+     <a href="${BASE}" style="color:${DIM};text-decoration:underline;">gooutside.club</a>
+     &nbsp;·&nbsp;
+     <a href="mailto:hello@mail.gooutside.club" style="color:${DIM};text-decoration:underline;">hello@mail.gooutside.club</a>`);
 }
 
 // ─── 3. Event reminder ────────────────────────────────────────────────────────
