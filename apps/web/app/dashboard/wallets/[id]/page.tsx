@@ -6,7 +6,7 @@ import type { AttendeeTicket } from "@gooutside/demo-data";
 import { getOrCreateSupabaseUser } from "../../../../lib/db/users";
 import { getTicketById } from "../../../../lib/db/tickets";
 import { getEventBySlug } from "../../../../lib/db/events";
-import { LiveTicketQR, TicketQrStatic } from "../../../../components/ticket-qr";
+import { LiveTicketQR, TicketQrStatic, ExpandQRButton } from "../../../../components/ticket-qr";
 import { AtroposTicket } from "../../../../components/wallet/AtroposTicket";
 import { PageEntrance } from "../../../../components/layout/PageEntrance";
 
@@ -292,6 +292,7 @@ export default async function WalletTicketPage({
               >
                 Add to calendar
               </a>
+              <ExpandQRButton ticketId={ticket.id} eventTitle={event.title} />
               <a
                 className="flex w-full items-center justify-center gap-2 rounded-full border border-[var(--border-subtle)] py-3.5 text-sm font-semibold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
                 href="#"

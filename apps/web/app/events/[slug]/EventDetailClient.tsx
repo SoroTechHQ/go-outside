@@ -354,9 +354,9 @@ export function EventDetailClient({
         className="fixed right-0 top-0 z-50 hidden md:block"
         style={{ left: sidebarWidth > 0 ? sidebarWidth : 0 }}
       >
-        <div className="px-6 py-3">
+        <div className="px-6 py-4">
           <div className="mx-auto w-full max-w-[1320px]">
-            <SearchPillExpanded compact />
+            <SearchPillExpanded />
           </div>
         </div>
 
