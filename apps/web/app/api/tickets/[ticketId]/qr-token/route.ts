@@ -32,17 +32,26 @@ export async function GET(
     return NextResponse.json({ error: `Ticket is ${ticket.status}` }, { status: 400 });
   }
 
-  const { payload, nonce } = generateTicketPayload(
-    ticket.id,
-    ticket.event_id,
-    ticket.token_version ?? 1,
-  );
+  const ticketSecret = process.env.TICKET_SECRET;
+  let payload = `gooutside-ticket:${ticket.id}`;
+  let nonce: string | null = null;
 
-  await supabaseAdmin.from('qr_nonces').insert({
-    nonce,
-    ticket_id: ticket.id,
-    expires_at: new Date(Date.now() + 90_000).toISOString(),
-  });
+  if (ticketSecret) {
+    const generated = generateTicketPayload(ticket.id, ticket.event_id, ticket.token_version ?? 1);
+    payload = generated.payload;
+    nonce = generated.nonce;
+  }
+
+  if (nonce) {
+    const { error: nonceError } = await supabaseAdmin.from('qr_nonces').insert({
+      nonce,
+      ticket_id: ticket.id,
+      expires_at: new Date(Date.now() + 90_000).toISOString(),
+    });
+    if (nonceError) {
+      console.warn('[qr-token] failed to persist nonce:', nonceError.message);
+    }
+  }
 
   return NextResponse.json({ payload, expiresIn: 30 });
 }

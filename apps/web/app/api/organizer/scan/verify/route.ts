@@ -56,6 +56,59 @@ export async function POST(req: NextRequest) {
     return jsonError(400, "payload and eventId are required");
   }
 
+  if (payload.startsWith("gooutside-ticket:")) {
+    const ticketId = payload.slice("gooutside-ticket:".length);
+    const { data: ticket, error: ticketError } = await supabaseAdmin
+      .from("tickets")
+      .select("id, status, event_id, attendee_name, attendee_email, purchase_price, currency, checked_in_at, ticket_types ( name ), users ( first_name, last_name, avatar_url )")
+      .eq("id", ticketId)
+      .maybeSingle();
+
+    if (ticketError || !ticket) {
+      return jsonResult({ result: "invalid", reason: "ticket_not_found" });
+    }
+
+    if (ticket.event_id !== eventId) {
+      return jsonResult({ result: "invalid", reason: "wrong_event" });
+    }
+
+    if (ticket.status === "used") {
+      return jsonResult({ result: "already_used", checked_in_at: ticket.checked_in_at });
+    }
+
+    if (ticket.status !== "active") {
+      return jsonResult({ result: "invalid", reason: ticket.status });
+    }
+
+    const now = new Date().toISOString();
+    await supabaseAdmin
+      .from("tickets")
+      .update({
+        status: "used",
+        checked_in_at: now,
+        checked_in_by: actor.id,
+      })
+      .eq("id", ticketId);
+
+    const row = ticket as unknown as TicketRow;
+    const u = row.users;
+    const firstName = u?.first_name ?? "";
+    const lastName = u?.last_name ?? "";
+    const fullName = `${firstName} ${lastName}`.trim() || row.attendee_name || "Attendee";
+
+    return jsonResult({
+      result: "valid",
+      attendee: {
+        name: fullName,
+        email: row.attendee_email,
+        ticketType: row.ticket_types?.name ?? "General",
+        purchasePrice: row.purchase_price ?? 0,
+        currency: row.currency ?? "GHS",
+        avatarUrl: u?.avatar_url ?? null,
+      },
+    });
+  }
+
   let decoded: string;
   try {
     decoded = Buffer.from(payload, "base64url").toString();

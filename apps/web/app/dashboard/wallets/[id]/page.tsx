@@ -8,6 +8,7 @@ import { getTicketById } from "../../../../lib/db/tickets";
 import { getEventBySlug } from "../../../../lib/db/events";
 import { LiveTicketQR, TicketQrStatic } from "../../../../components/ticket-qr";
 import { AtroposTicket } from "../../../../components/wallet/AtroposTicket";
+import { PageEntrance } from "../../../../components/layout/PageEntrance";
 
 // ─── Tier styles ──────────────────────────────────────────────────────────────
 
@@ -63,6 +64,26 @@ function getTierStyle(tier: AttendeeTicket["tier"]): TierStyle {
   };
 }
 
+function buildGoogleCalendarUrl(event: { title: string; locationLine: string; startDatetime: string | null; endDatetime: string | null }) {
+  if (!event.startDatetime) return null;
+
+  const start = new Date(event.startDatetime);
+  const end = event.endDatetime ? new Date(event.endDatetime) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: event.title,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details: `GoOutside ticket for ${event.title}`,
+    location: event.locationLine,
+    sf: "true",
+    output: "xml",
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function WalletTicketPage({
@@ -84,9 +105,16 @@ export default async function WalletTicketPage({
   const s = getTierStyle(ticket.tier);
   const isPast = ticket.status === "past";
   const year = new Date().getFullYear();
+  const calendarHref = buildGoogleCalendarUrl({
+    title: event.title,
+    locationLine: event.locationLine,
+    startDatetime: event.startDatetime,
+    endDatetime: event.endDatetime,
+  });
 
   return (
-    <main className="min-h-screen bg-[var(--bg-base)] pb-24">
+    <main className="page-grid min-h-screen bg-[var(--bg-base)] pb-24">
+      <PageEntrance className="w-full px-4 pt-8 md:ml-[calc(var(--app-shell-offset)+1rem)] md:mr-4 md:px-0">
 
       {/* Back nav */}
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-[var(--border-subtle)] bg-[color:rgba(var(--bg-card-rgb),0.88)] px-4 py-3 backdrop-blur-md">
@@ -106,7 +134,7 @@ export default async function WalletTicketPage({
         )}
       </div>
 
-      <div className="mx-auto max-w-sm px-4 py-8">
+      <div className="mx-auto w-full max-w-[680px] px-0 py-8">
 
         {/* ── Ticket card with Atropos parallax ── */}
         <AtroposTicket>
@@ -256,9 +284,11 @@ export default async function WalletTicketPage({
             <>
               <a
                 className="flex w-full items-center justify-center rounded-full bg-[var(--brand)] py-3.5 text-sm font-bold text-[var(--brand-contrast)] transition hover:opacity-90"
-                href="#"
+                href={calendarHref ?? "#"}
+                rel="noreferrer"
+                target={calendarHref ? "_blank" : undefined}
               >
-                {ticket.calendarLabel}
+                Add to calendar
               </a>
               <a
                 className="flex w-full items-center justify-center gap-2 rounded-full border border-[var(--border-subtle)] py-3.5 text-sm font-semibold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
@@ -272,6 +302,7 @@ export default async function WalletTicketPage({
         </div>
 
       </div>
+      </PageEntrance>
     </main>
   );
 }
