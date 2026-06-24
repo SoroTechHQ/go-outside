@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { cache } from "react";
 import { supabaseAdmin } from "../supabase";
 
 export type SupabaseUser = {
@@ -25,7 +26,7 @@ export type SupabaseUser = {
  * Creates the record on first call if it doesn't exist yet.
  * Returns null if the user is not signed in.
  */
-export async function getOrCreateSupabaseUser(): Promise<SupabaseUser | null> {
+export const getOrCreateSupabaseUser = cache(async function getOrCreateSupabaseUser(): Promise<SupabaseUser | null> {
   const clerkUser = await currentUser();
   if (!clerkUser) return null;
 
@@ -79,7 +80,7 @@ export async function getOrCreateSupabaseUser(): Promise<SupabaseUser | null> {
   }
 
   return created as SupabaseUser;
-}
+});
 
 // Lightweight lookup — just the ID (useful for joins without full profile)
 export async function getSupabaseUserIdByClerkId(clerkId: string): Promise<string | null> {

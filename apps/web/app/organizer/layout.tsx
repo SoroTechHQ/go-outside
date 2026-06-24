@@ -5,7 +5,6 @@ import OrganizerShell from "./_components/OrganizerShell";
 import { getOrganizerDashboardData } from "./_lib/dashboard";
 import { getOrCreateSupabaseUser } from "../../lib/db/users";
 import { STEP_ROUTES } from "../../lib/onboarding-utils";
-import { AppChrome } from "../../components/layout/AppChrome";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +34,6 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
 
   const now = new Date().toISOString();
 
-  // Only show upcoming published events in the sidebar "Next up" — sorted soonest first
   const ownEvents = (dashboard.recentEvents ?? [])
     .filter((e) => e.statusLabel === "Live" && e.rawDate != null && e.rawDate >= now)
     .sort((a, b) => (a.rawDate ?? "").localeCompare(b.rawDate ?? ""))
@@ -47,14 +45,16 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
     }));
 
   return (
+    // No AppChrome here — organizer studio is a standalone workspace
     <div className="h-screen overflow-hidden">
-      <AppChrome />
       <OrganizerShell
         organizer={dashboard.organizer ?? null}
         organizerName={dashboard.organizer?.name ?? fallbackName}
         ownEvents={ownEvents}
         verified={Boolean(dashboard.organizer?.verified)}
         followerCount={dashboard.overview.followerCount}
+        avatarUrl={clerkUser.imageUrl ?? null}
+        userName={fallbackName}
       >
         {children}
       </OrganizerShell>

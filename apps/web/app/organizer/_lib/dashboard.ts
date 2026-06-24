@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { supabaseAdmin } from "../../../lib/supabase";
 
 type OrganizerProfileRow = {
@@ -209,7 +210,9 @@ function deltaLabel(thisWeek: number, lastWeek: number, suffix = "this week"): s
   return `${sign}${pct}% vs last week`;
 }
 
-export async function getOrganizerDashboardData(userId: string): Promise<OrganizerDashboardData | null> {
+export const getOrganizerDashboardData = cache(async function getOrganizerDashboardData(
+  userId: string,
+): Promise<OrganizerDashboardData | null> {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
@@ -421,7 +424,7 @@ export async function getOrganizerDashboardData(userId: string): Promise<Organiz
       };
     }),
   };
-}
+});
 
 export function getOrganizerCalendarItems(dashboard: OrganizerDashboardData): OrganizerCalendarItem[] {
   const baseDays = [3, 7, 11, 14, 18, 22, 27];

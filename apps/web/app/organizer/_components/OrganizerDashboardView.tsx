@@ -13,6 +13,8 @@ import {
   ChartBar,
   ChatsCircle,
   Check,
+  CheckCircle,
+  Circle,
   Compass,
   Hash,
   Heart,
@@ -22,6 +24,7 @@ import {
   QrCode,
   Rocket,
   SealCheck,
+  ShareNetwork,
   Sparkle,
   Star,
   Ticket,
@@ -29,6 +32,7 @@ import {
   UsersThree,
   Waves,
   Lightning,
+  X,
 } from "@phosphor-icons/react";
 import {
   DropdownMenu,
@@ -862,8 +866,14 @@ function PostsTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
           {dashboard.posts.map((post) => (
             <Card key={post.id}>
               {post.imageUrl && (
-                <div className="mb-3 overflow-hidden rounded-[14px] bg-[var(--bg-muted)]">
-                  <img src={post.imageUrl} alt="" className="h-40 w-full object-cover" />
+                <div className="relative mb-3 h-40 overflow-hidden rounded-[14px] bg-[var(--bg-muted)]">
+                  <Image
+                    src={post.imageUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                  />
                 </div>
               )}
               {!post.imageUrl && (
@@ -950,14 +960,114 @@ export function OrganizerUpgradeGate({ firstName }: { firstName: string }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+   CHECKLIST WIDGET
+───────────────────────────────────────────────────────────────────────── */
+
+type ChecklistItem = { id: string; label: string; href: string; done: boolean };
+
+function OrganizerChecklist({ items }: { items: ChecklistItem[] }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+  const doneCount = items.filter((i) => i.done).length;
+  const allDone = doneCount === items.length;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_2px_12px_rgba(5,12,8,0.05)]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[14px] font-semibold text-[var(--text-primary)]">
+            {allDone ? "Setup complete!" : "Your setup checklist"}
+          </p>
+          <p className="mt-0.5 text-[12px] text-[var(--text-secondary)]">
+            {doneCount}/{items.length} done
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--bg-muted)]">
+            <motion.div
+              className="h-1.5 rounded-full bg-[var(--brand)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${(doneCount / items.length) * 100}%` }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
+            className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition"
+            aria-label="Dismiss checklist"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div className="mt-4 space-y-2">
+        {items.map((item, i) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.06 }}
+          >
+            <Link
+              href={item.href}
+              className={`flex items-center gap-3 rounded-[12px] px-3 py-2.5 transition ${
+                item.done
+                  ? "opacity-50 cursor-default pointer-events-none"
+                  : "hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {item.done ? (
+                <CheckCircle size={16} weight="fill" className="shrink-0 text-[var(--brand)]" />
+              ) : (
+                <Circle size={16} weight="regular" className="shrink-0 text-[var(--text-tertiary)]" />
+              )}
+              <span className={`text-[13px] font-medium ${item.done ? "line-through text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}>
+                {item.label}
+              </span>
+              {!item.done && (
+                <ArrowUpRight size={12} className="ml-auto shrink-0 text-[var(--text-tertiary)]" />
+              )}
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
    MAIN DASHBOARD VIEW
 ───────────────────────────────────────────────────────────────────────── */
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDashboardData }) {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [period,    setPeriod]    = useState<Period>("7d");
 
   const org = dashboard.organizer;
+
+  const hasLogo    = Boolean(org?.logoUrl);
+  const hasEvents  = dashboard.recentEvents.length > 0;
+  const hasBio     = Boolean(org?.bio && org.bio.length > 80);
+
+  const checklistItems: ChecklistItem[] = [
+    { id: "profile",  label: "Complete your organizer profile",  href: "/organizer/settings/profile", done: hasBio     },
+    { id: "event",    label: "Create your first event",           href: "/organizer/events/new",      done: hasEvents  },
+    { id: "logo",     label: "Upload your organizer logo",        href: "/organizer/settings/profile", done: hasLogo   },
+    { id: "tickets",  label: "Add tickets to your event",         href: "/organizer/events",          done: hasEvents && dashboard.overview.ticketSales > 0 },
+    { id: "share",    label: "Share your event link",             href: "/organizer/marketing",       done: dashboard.overview.ticketSales > 0 },
+  ];
+  const showChecklist = checklistItems.some((i) => !i.done);
 
   return (
     <div className="flex flex-col">
@@ -973,11 +1083,14 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
         <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
           style={{ backgroundImage: "radial-gradient(var(--text-primary) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
 
-        {/* Identity row */}
+        {/* Greeting + identity row */}
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
             {/* Organizer avatar */}
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+            <motion.div
+              whileHover={{ scale: 1.04 }}
+              className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
+            >
               {org?.logoUrl ? (
                 <Image src={org.logoUrl} alt={org.name} fill className="object-cover" />
               ) : (
@@ -985,10 +1098,12 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
                   {org?.initials ?? "O"}
                 </span>
               )}
-            </div>
+            </motion.div>
 
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)]">Organizer Studio</p>
+              <p className="text-[11px] font-semibold text-[var(--text-tertiary)]">
+                {getGreeting()}
+              </p>
               <h1 className="mt-0.5 text-[1.5rem] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
                 {org?.name ?? "Dashboard"}
               </h1>
@@ -1011,6 +1126,19 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Quick stats strip */}
+            <div className="hidden lg:flex items-center gap-1 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2">
+              {[
+                { icon: <Ticket size={12} weight="fill" />, label: `${dashboard.overview.ticketSales.toLocaleString()} tickets` },
+                { icon: <UsersThree size={12} weight="fill" />, label: `${dashboard.overview.followerCount.toLocaleString()} followers` },
+                { icon: <Waves size={12} weight="fill" />, label: `${dashboard.overview.eventViews.toLocaleString()} views` },
+              ].map((s, i) => (
+                <span key={i} className="flex items-center gap-1.5 px-2 text-[11px] font-medium text-[var(--text-secondary)]">
+                  <span className="text-[var(--brand)]">{s.icon}</span>
+                  {s.label}
+                </span>
+              ))}
+            </div>
             <PeriodPicker period={period} onChange={setPeriod} />
             <Link
               href="/dashboard/messages"
@@ -1042,6 +1170,12 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
           >
             <NotePencil size={13} /> Create Post
           </button>
+          <Link
+            href="/organizer/marketing"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/25 hover:text-[var(--text-primary)]"
+          >
+            <ShareNetwork size={13} /> Share Event
+          </Link>
           <Link
             href="/organizer/scan"
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/25 hover:text-[var(--text-primary)]"
@@ -1078,6 +1212,12 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
 
       {/* ── Tab content ─────────────────────────────────────────── */}
       <div className="p-5 md:p-7">
+        {/* Checklist — only in Overview tab for new organizers */}
+        {activeTab === "Overview" && showChecklist && (
+          <div className="mb-5">
+            <OrganizerChecklist items={checklistItems} />
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

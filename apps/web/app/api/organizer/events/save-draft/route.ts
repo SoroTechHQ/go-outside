@@ -81,9 +81,21 @@ export async function POST(req: NextRequest) {
   const shortDesc = (body.shortDescription as string) || "";
   const description = (body.description as string) || shortDesc || (body.title as string);
 
+  // category_id is NOT NULL in schema — fall back to first category if none provided
+  let categoryId = (body.categoryId as string) || null;
+  if (!categoryId) {
+    const { data: firstCat } = await supabaseAdmin
+      .from("categories")
+      .select("id")
+      .order("name")
+      .limit(1)
+      .maybeSingle();
+    categoryId = firstCat?.id ?? null;
+  }
+
   const payload = {
     organizer_id:      user.id,
-    category_id:       (body.categoryId as string) || null,
+    category_id:       categoryId,
     title:             body.title as string,
     description,
     short_description: shortDesc || null,

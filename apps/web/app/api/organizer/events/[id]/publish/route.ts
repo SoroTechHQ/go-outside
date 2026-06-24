@@ -38,28 +38,35 @@ export async function POST(
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return jsonError(400, "Invalid JSON"); }
 
-  const publish = Boolean(body.publish);
-  const isOnline = Boolean(body.isOnline);
-  const customLoc = !isOnline ? ((body.customLocation as string) || null) : null;
-  const resolvedCustomLoc = !isOnline && !body.venueId && !customLoc ? "Location TBD" : customLoc;
-  const onlineLink = isOnline ? ((body.onlineLink as string) || "TBD") : null;
+  // Simple publish mode: only { visibility, tags } sent from new PublishClient
+  const isSimplePublish = !body.title && ("visibility" in body || "tags" in body || Object.keys(body).length <= 2);
 
-  const rawStart = body.startDatetime as string | undefined;
-  const placeholder = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  const startDatetime = rawStart || placeholder;
+  let updatePayload: Record<string, unknown>;
 
-  let endDatetime = (body.endDatetime as string) || null;
-  if (!endDatetime) {
-    const s = new Date(startDatetime);
-    endDatetime = new Date(s.getTime() + 2 * 60 * 60 * 1000).toISOString();
-  }
-
-  const shortDesc = (body.shortDescription as string) || "";
-  const description = shortDesc || (body.title as string) || "Event";
-
-  const { error } = await supabaseAdmin
-    .from("events")
-    .update({
+  if (isSimplePublish) {
+    updatePayload = {
+      status: "published",
+      published_at: new Date().toISOString(),
+    };
+    if (Array.isArray(body.tags)) updatePayload.tags = body.tags;
+  } else {
+    // Full wizard mode
+    const publish = Boolean(body.publish);
+    const isOnline = Boolean(body.isOnline);
+    const customLoc = !isOnline ? ((body.customLocation as string) || null) : null;
+    const resolvedCustomLoc = !isOnline && !body.venueId && !customLoc ? "Location TBD" : customLoc;
+    const onlineLink = isOnline ? ((body.onlineLink as string) || "TBD") : null;
+    const rawStart = body.startDatetime as string | undefined;
+    const placeholder = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const startDatetime = rawStart || placeholder;
+    let endDatetime = (body.endDatetime as string) || null;
+    if (!endDatetime) {
+      const s = new Date(startDatetime);
+      endDatetime = new Date(s.getTime() + 2 * 60 * 60 * 1000).toISOString();
+    }
+    const shortDesc = (body.shortDescription as string) || "";
+    const description = shortDesc || (body.title as string) || "Event";
+    updatePayload = {
       category_id:       (body.categoryId as string) || null,
       title:             body.title as string,
       description,
@@ -78,7 +85,14 @@ export async function POST(
       longitude:         body.venueLng != null ? Number(body.venueLng) : null,
       status:            publish ? "published" : "draft",
       published_at:      publish ? new Date().toISOString() : null,
-    })
+    };
+  }
+
+  const publish = isSimplePublish || Boolean(body.publish);
+
+  const { error } = await supabaseAdmin
+    .from("events")
+    .update(updatePayload)
     .eq("id", id);
 
   if (error) return jsonError(500, error.message);
@@ -107,12 +121,14 @@ export async function POST(
 
   // Fan-out notifications if publishing
   if (publish) {
-    const [followerRows, organizerRow] = await Promise.all([
+    const [{ data: freshEvent }, followerRows, organizerRow] = await Promise.all([
+      supabaseAdmin.from("events").select("title").eq("id", id).maybeSingle(),
       supabaseAdmin.from("follows").select("follower_id").eq("following_id", user.id)
         .then((r) => r.data ?? []),
       supabaseAdmin.from("users").select("first_name, last_name, avatar_url")
         .eq("id", user.id).maybeSingle().then((r) => r.data),
     ]);
+    const eventTitle = (freshEvent?.title ?? body.title as string) || "New Event";
 
     if ((followerRows as { follower_id: string }[]).length > 0) {
       const organizerName = organizerRow
@@ -123,8 +139,8 @@ export async function POST(
           userId: f.follower_id,
           type: "new_event",
           title: `${organizerName} just dropped a new event`,
-          body: body.title as string,
-          data: { event_id: id, event_title: body.title, actor_name: organizerName },
+          body: eventTitle,
+          data: { event_id: id, event_title: eventTitle, actor_name: organizerName },
           actionHref: `/events/${existing.slug}`,
         });
       }

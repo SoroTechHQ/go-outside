@@ -131,6 +131,28 @@
   --ob-progress-track: rgba(0, 0, 0, 0.09);
   --ob-loading-text: #71717a;
   --ob-loading-faint: #a1a1aa;
+
+  /* ── shadcn/ui token mappings (light) ── */
+  --background: var(--bg-card);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-muted);
+  --secondary-foreground: var(--text-secondary);
+  --muted: var(--bg-muted);
+  --muted-foreground: var(--text-tertiary);
+  --accent: var(--bg-elevated);
+  --accent-foreground: var(--text-primary);
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: var(--border-subtle);
+  --input: var(--border-subtle);
+  --ring: var(--brand);
+  --radius: 0.75rem;
 }
 
 :root[data-theme="dark"] {
@@ -248,6 +270,27 @@
   --ob-progress-track: rgba(255, 255, 255, 0.10);
   --ob-loading-text: #71717a;
   --ob-loading-faint: #52525b;
+
+  /* ── shadcn/ui token mappings (dark) ── */
+  --background: var(--bg-card);
+  --foreground: var(--text-primary);
+  --card: var(--bg-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-muted);
+  --secondary-foreground: var(--text-secondary);
+  --muted: var(--bg-muted);
+  --muted-foreground: var(--text-tertiary);
+  --accent: var(--bg-elevated);
+  --accent-foreground: var(--text-primary);
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: var(--border-subtle);
+  --input: var(--border-subtle);
+  --ring: var(--brand);
 }
 
 * {
