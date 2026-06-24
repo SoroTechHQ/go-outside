@@ -108,8 +108,10 @@ export async function POST(req: NextRequest) {
     online_link:       onlineLink,
     custom_location:   resolvedCustomLoc,
     venue_id:          !isOnline ? ((body.venueId as string) || null) : null,
-    latitude:          body.venueLat != null ? Number(body.venueLat) : null,
-    longitude:         body.venueLng != null ? Number(body.venueLng) : null,
+    venue_lat:         body.venueLat != null ? Number(body.venueLat) : null,
+    venue_lng:         body.venueLng != null ? Number(body.venueLng) : null,
+    ghana_post:        (body.ghanaPost as string) || null,
+    is_private:        Boolean(body.isPrivate),
     status:            "draft" as const,
   };
 

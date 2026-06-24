@@ -413,6 +413,8 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
         onlineLink: locationType === "online" ? onlineLink || null : null,
         venueLat: venue?.lat ?? null,
         venueLng: venue?.lng ?? null,
+        ghanaPost: venue?.ghanaPost ?? null,
+        isPrivate,
         startDatetime: date ? `${date}T${String(startHour).padStart(2,"0")}:00:00` : undefined,
         endDatetime: date ? `${date}T${String(endHour).padStart(2,"0")}:00:00` : undefined,
         timezone: "Africa/Accra",
@@ -442,6 +444,16 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
             priceType: isFree ? "free" : "paid",
             quantityTotal: capacity ? Number(capacity) : null,
           }),
+        });
+      }
+
+      // Save keynote speakers
+      const validSpeakers = speakers.filter(s => s.name.trim());
+      if (validSpeakers.length > 0) {
+        await fetch(`/api/organizer/events/${data.id}/speakers`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ speakers: validSpeakers }),
         });
       }
 
