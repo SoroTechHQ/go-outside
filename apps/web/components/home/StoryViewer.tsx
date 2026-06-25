@@ -613,13 +613,16 @@ export function StoryViewer({ events, initialIndex, onClose }: StoryViewerProps)
                 animate={drawerExpanded ? { height: "78vh" } : { height: "auto" }}
                 transition={{ type: "spring", stiffness: 360, damping: 36 }}
               >
-                {/* Drag handle + logo */}
+                {/* Drag handle — centred */}
                 <div
-                  className="flex cursor-grab items-center justify-between px-5 pb-2 pt-3.5 active:cursor-grabbing"
+                  className="flex cursor-grab justify-center pb-1 pt-3 active:cursor-grabbing"
                   onPointerDown={(e) => drawerControls.start(e)}
                 >
-                  <Image src="/logo-full.png" alt="GoOutside" width={72} height={22} className="object-contain brightness-0 invert opacity-60" />
                   <div className="h-[3px] w-10 rounded-full bg-white/20" />
+                </div>
+                {/* Logo row */}
+                <div className="px-5 pb-2">
+                  <Image src="/logo-full.png" alt="GoOutside" width={72} height={22} className="object-contain brightness-0 invert opacity-60" />
                 </div>
 
                 {!drawerExpanded ? (
