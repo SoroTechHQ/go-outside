@@ -36,6 +36,7 @@ import { WeekendAssistant } from "../ai/WeekendAssistant";
 import { EventSidePane } from "./EventSidePane";
 import { FollowingFeed } from "./FollowingFeed";
 import { PlansFeed } from "./PlansFeed";
+import { StoryViewer } from "./StoryViewer";
 import { useAppShell } from "../layout/AppShellContext";
 import { PostComposer } from "../posts/PostComposer";
 import {
@@ -646,17 +647,25 @@ function getSmartDateLabel(iso: string | null): string {
   return event.toLocaleDateString("en-GB", { weekday: "short" }); // Mon, Tue…
 }
 
-function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCardClick: (e: FeedEventItem) => void }) {
+function ThisWeekendRow({
+  events,
+  onCardClick,
+  viewedIds,
+}: {
+  events: FeedEventItem[];
+  onCardClick: (e: FeedEventItem, idx: number) => void;
+  viewedIds: Set<string>;
+}) {
   if (events.length === 0) return null;
   const isWeekend = [0, 6].includes(new Date().getDay());
   const sectionLabel = isWeekend ? "Happening This Weekend" : "Happening This Week";
 
   return (
-    <section className="mt-4">
-      <div className="mb-3 flex items-center justify-between">
+    <section className="mt-3">
+      <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Lightning size={13} weight="fill" className="text-[var(--brand)]" />
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
+          <Lightning size={12} weight="fill" className="text-[var(--brand)]" />
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-[var(--text-tertiary)]">
             {sectionLabel}
           </p>
         </div>
@@ -665,25 +674,28 @@ function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCa
         </Link>
       </div>
 
-      <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2">
-        {events.map((event) => {
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
+        {events.map((event, idx) => {
           const smartDate = getSmartDateLabel(event.startDatetime);
+          const viewed = viewedIds.has(event.id);
           return (
             <button
               key={event.id}
               type="button"
-              onClick={() => onCardClick(event)}
+              onClick={() => onCardClick(event, idx)}
               className="group flex shrink-0 flex-col items-center gap-1.5 transition active:scale-[0.95]"
             >
-              {/* Gradient ring */}
+              {/* Ring — colored if unviewed, grey if viewed */}
               <div
-                className="rounded-[24px] p-[2.5px] shadow-sm transition duration-300 group-hover:shadow-md"
-                style={{ background: "linear-gradient(135deg,#bbf451 0%,#4ade80 35%,#22d3ee 65%,#818cf8 100%)" }}
+                className="rounded-[20px] p-[2.5px] shadow-sm transition duration-300 group-hover:shadow-md"
+                style={{
+                  background: viewed
+                    ? "linear-gradient(135deg,#3a3a3a 0%,#555 100%)"
+                    : "linear-gradient(135deg,#bbf451 0%,#4ade80 35%,#22d3ee 65%,#818cf8 100%)",
+                }}
               >
-                {/* Dark gap — the Instagram-style breathing room between ring and image */}
-                <div className="rounded-[22px] bg-[var(--bg-base,#080d09)] p-[3px]">
-                  {/* Square image */}
-                  <div className="relative h-[80px] w-[80px] overflow-hidden rounded-[19px] bg-[var(--bg-muted)]">
+                <div className="rounded-[18px] bg-[var(--bg-base,#080d09)] p-[3px]">
+                  <div className="relative h-[64px] w-[64px] overflow-hidden rounded-[15px] bg-[var(--bg-muted)]">
                     {event.bannerUrl ? (
                       <div
                         className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-[1.07]"
@@ -693,22 +705,17 @@ function ThisWeekendRow({ events, onCardClick }: { events: FeedEventItem[]; onCa
                       <div className={`absolute inset-0 bg-gradient-to-br ${event.bannerTone}`} />
                     )}
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(0,0,0,0.22)_100%)]" />
-                    {event._aiPicked && (
-                      <div className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand)] shadow">
-                        <Sparkle size={7} weight="fill" className="text-white" />
-                      </div>
+                    {viewed && (
+                      <div className="absolute inset-0 bg-black/30" />
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Title — single line, truncated with ellipsis so date stays aligned */}
-              <p className="w-[92px] truncate text-center text-[0.63rem] font-semibold leading-tight text-[var(--text-primary)]">
+              <p className="w-[76px] truncate text-center text-[0.6rem] font-semibold leading-tight text-[var(--text-primary)]">
                 {event.title}
               </p>
-
-              {/* Smart date — always same row, aligned across all cards */}
-              <p className="h-[14px] text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+              <p className="h-[13px] text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
                 {smartDate}
               </p>
             </button>
@@ -1001,6 +1008,26 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
   const [selectedEvent, setSelectedEvent] = useState<FeedEventItem | null>(null);
   const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
   const [feedMode, setFeedMode] = useState<"for-you" | "following" | "plans">("for-you");
+  const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
+  const [viewedStoryIds, setViewedStoryIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const stored = localStorage.getItem("go_viewed_stories");
+      return new Set(stored ? (JSON.parse(stored) as string[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  const openStory = useCallback((idx: number, eventId: string) => {
+    setStoryViewerIndex(idx);
+    setViewedStoryIds((prev) => {
+      const next = new Set(prev);
+      next.add(eventId);
+      try { localStorage.setItem("go_viewed_stories", JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  }, []);
 
   // Real categories from DB (replaces hardcoded demo-data)
   const { data: dbCategories = [] } = useCategories();
@@ -1151,23 +1178,15 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
             className={`container-shell grid gap-4 px-4 pt-0 md:px-6 xl:grid-cols-[minmax(0,1fr)] ${!isPaneOpen ? "xl:pr-[320px]" : ""}`}
           >
             <div className="min-w-0">
-              {/* Sponsored banner — skeleton while loading */}
-              <section className="mt-1">
-                {isLoading ? (
-                  <SponsoredSkeleton />
-                ) : (
-                  <SponsoredAdCard spotlight={sponsoredSpotlight} />
-                )}
-              </section>
-
-              {/* This Weekend / This Week stories row — directly below ad */}
-              {!isLoading && weekendEvents.length > 0 && (
+              {/* Stories row — first thing users see */}
+              {weekendEvents.length > 0 && (
                 <ThisWeekendRow
                   events={weekendEvents}
-                  onCardClick={(event) => {
-                    setSelectedEvent(event);
+                  onCardClick={(event, idx) => {
+                    openStory(idx, event.id);
                     fireInteraction(event.id, "peek_open");
                   }}
+                  viewedIds={viewedStoryIds}
                 />
               )}
 
@@ -1194,7 +1213,11 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
 
               {/* Following feed */}
               {feedMode === "following" && (
-                <div className="mt-2">
+                <div className="mt-2 space-y-3">
+                  {/* Compose on mobile — right rail handles it on desktop */}
+                  <div className="xl:hidden">
+                    <QuickComposer />
+                  </div>
                   <FollowingFeed />
                 </div>
               )}
@@ -1209,11 +1232,6 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
               {/* For You feed — only shown when mode is for-you */}
               {feedMode === "for-you" && (
                 <>
-              {/* Posts from people you follow */}
-              <FollowingPostsStrip />
-
-              {/* Quick post composer */}
-              <QuickComposer />
 
               {/* Category filter chips + layout toggle */}
               <section className="mt-4">
@@ -1284,6 +1302,12 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                     const section = sectionHeaders[sectionIdx];
                     return (
                       <Fragment key={`section-${sectionIdx}`}>
+                        {/* Inline sponsored ad after first section — like Instagram */}
+                        {sectionIdx === 1 && sponsoredSpotlight && (
+                          <div className="mb-2">
+                            <SponsoredAdCard spotlight={sponsoredSpotlight} />
+                          </div>
+                        )}
                         {section && (
                           <motion.div
                             className={sectionIdx === 0 ? "mb-3 mt-2" : "mb-3"}
@@ -1357,6 +1381,9 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
                   initial={{ opacity: 0, x: 24 }}
                   transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 >
+                  {/* Quick post composer — right rail on desktop */}
+                  <QuickComposer />
+
                   {/* Pulse score widget */}
                   <Link href="/dashboard/rewards" className="block">
                     <section className="rounded-[var(--radius-card-lg)] border border-[var(--pulse-gold-border)] bg-[linear-gradient(180deg,#fffdf9,#fbf6ed)] p-5 shadow-[var(--home-shadow)] transition hover:brightness-[0.97] dark:bg-[linear-gradient(180deg,#1c1506,#0f0d02)]">
@@ -1444,6 +1471,14 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
           organizer={undefined}
           onClose={() => setSelectedEvent(null)}
           onWidthChange={handlePaneWidthChange}
+        />
+      )}
+
+      {storyViewerIndex !== null && weekendEvents.length > 0 && (
+        <StoryViewer
+          events={weekendEvents}
+          initialIndex={storyViewerIndex}
+          onClose={() => setStoryViewerIndex(null)}
         />
       )}
     </>
