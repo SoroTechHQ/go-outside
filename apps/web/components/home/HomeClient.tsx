@@ -690,7 +690,7 @@ function ThisWeekendRow({
                 className="rounded-[20px] p-[2.5px] shadow-sm transition duration-300 group-hover:shadow-md"
                 style={{
                   background: viewed
-                    ? "linear-gradient(135deg,#3a3a3a 0%,#555 100%)"
+                    ? "linear-gradient(135deg,#7a7a7a 0%,#999 100%)"
                     : "linear-gradient(135deg,#bbf451 0%,#4ade80 35%,#22d3ee 65%,#818cf8 100%)",
                 }}
               >
@@ -1009,15 +1009,15 @@ export function HomeClient({ sponsoredEvent }: { sponsoredEvent: SponsoredEventR
   const [feedLayout, setFeedLayout] = useState<"single" | "grid">("single");
   const [feedMode, setFeedMode] = useState<"for-you" | "following" | "plans">("for-you");
   const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
-  const [viewedStoryIds, setViewedStoryIds] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
+  const [viewedStoryIds, setViewedStoryIds] = useState<Set<string>>(new Set());
+
+  // Hydration-safe: load viewed story IDs from localStorage after mount
+  useEffect(() => {
     try {
       const stored = localStorage.getItem("go_viewed_stories");
-      return new Set(stored ? (JSON.parse(stored) as string[]) : []);
-    } catch {
-      return new Set();
-    }
-  });
+      if (stored) setViewedStoryIds(new Set(JSON.parse(stored) as string[]));
+    } catch {}
+  }, []);
 
   const openStory = useCallback((idx: number, eventId: string) => {
     setStoryViewerIndex(idx);
