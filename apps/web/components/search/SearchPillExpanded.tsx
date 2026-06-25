@@ -308,7 +308,7 @@ export function SearchPillExpanded({
     try {
       setSurpriseDone(true);
       // Route to the AI chat page with the prompt auto-sent — not an inline panel
-      setTimeout(() => router.push(aiSearchHref("Surprise me with something perfect for my vibe and Pulse Score tonight")), 350);
+      setTimeout(() => router.push(aiSearchHref("Surprise me with something perfect for my vibe and Outside Score tonight")), 350);
     } finally {
       setSurpriseLoading(false);
     }
@@ -666,7 +666,7 @@ export function SearchPillExpanded({
                         </div>
                         <div>
                           <p className="text-[13px] font-semibold text-white">AI-Powered Pick</p>
-                          <p className="mt-0.5 text-[11px] text-white/70">Based on your Pulse Score, vibe, and what's hot in Accra right now</p>
+                          <p className="mt-0.5 text-[11px] text-white/70">Based on your Outside Score, vibe, and what's hot in Accra right now</p>
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-1.5">

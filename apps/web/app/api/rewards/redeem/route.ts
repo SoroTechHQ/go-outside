@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const msg = err instanceof Error ? err.message : "unknown_error";
 
     if (msg === "insufficient_points") {
-      return NextResponse.json({ error: "Not enough Pulse Points" }, { status: 422 });
+      return NextResponse.json({ error: "Not enough Outside Score" }, { status: 422 });
     }
     if (msg === "reward_sold_out") {
       return NextResponse.json({ error: "This reward is sold out" }, { status: 409 });

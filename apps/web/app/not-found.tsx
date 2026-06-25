@@ -270,7 +270,7 @@ function Content() {
             <Link key={href} href={href}
               className="rounded-full px-3 py-1.5 text-[12px] font-semibold transition hover:opacity-80"
               style={{ background: P.faint, color: P.green, border: `1.5px solid ${P.border}`, fontFamily: fn }}>
-              {["Browse events →", "Pulse Points →", "Organizers →"][i]}
+              {["Browse events →", "Outside Score →", "Organizers →"][i]}
             </Link>
           ))}
         </motion.div>

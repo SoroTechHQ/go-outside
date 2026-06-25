@@ -275,7 +275,7 @@ function PulseCard({ score, tier, tierColor }: { score: number; tier: string; ti
           </span>
           <div className="flex items-center gap-1 text-[10px] text-white/30">
             <Lightning size={11} />
-            Pulse Score
+            Outside Score
           </div>
         </div>
         <p className="mt-3 font-display text-[2.4rem] font-bold italic leading-none text-white">

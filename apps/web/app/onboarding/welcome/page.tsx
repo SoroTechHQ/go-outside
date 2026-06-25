@@ -22,14 +22,14 @@ const SLIDES = [
   },
   {
     headline: "Build your\nreputation.",
-    sub:      "Earn Pulse Points by attending events, discovering new scenes, and being part of the city.",
+    sub:      "Earn Outside Score by attending events, discovering new scenes, and being part of the city.",
     accent:   "#f59e0b",
     bg:       "#100c00",
     emoji:    "⚡",
   },
   {
     headline: "Unlock\nrewards.",
-    sub:      "Redeem Pulse Points for tickets, event perks, and exclusive access only members get.",
+    sub:      "Redeem Outside Score for tickets, event perks, and exclusive access only members get.",
     accent:   "#a855f7",
     bg:       "#0d0614",
     emoji:    "🎁",

@@ -4,13 +4,14 @@
  * One domain: mail.gooutside.club
  * Theme: light mode only — white bg, dark text, green brand accents.
  *        Works correctly in every email client without dark-mode inversion issues.
- * Icons: Phosphor Bold SVGs hosted at gooutside.club/email-icons/
+ * Icons: Phosphor Bold SVGs embedded as base64 data URIs — no external requests needed.
  */
 
 import { Resend } from "resend";
+import fs from "fs";
+import path from "path";
 
 const BASE   = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
-const ICONS  = `${BASE}/email-icons`;
 
 let resend: Resend | null = null;
 
@@ -127,6 +128,53 @@ export async function sendPioneerInvite(opts: { to: string; firstName: string })
   });
 }
 
+export function buildFoundingOrganizerEmailPreview(opts: {
+  firstName: string;
+  businessName: string;
+  senderName?: string;
+  token: string;
+}) {
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
+  return buildFoundingOrganizerEmail(
+    opts.firstName,
+    opts.businessName,
+    `${BASE_URL}/invite/${opts.token}`,
+    opts.senderName,
+  );
+}
+
+export async function sendFoundingOrganizerInvite(opts: {
+  to: string;
+  firstName: string;
+  businessName: string;
+  token: string;
+  senderName?: string;
+}) {
+  const inviteUrl = `${BASE}/invite/${opts.token}`;
+  return getResendClient().emails.send({
+    from:    SENDERS.pioneers,
+    to:      opts.to,
+    replyTo: "hello@mail.gooutside.club",
+    subject: `You're invited — Founding Organizer on GoOutside`,
+    headers: txnHeaders({ "X-Program": "founding-organizer" }),
+    html:    buildFoundingOrganizerEmail(opts.firstName, opts.businessName, inviteUrl, opts.senderName ?? "Gabby"),
+  });
+}
+
+export async function sendWelcomeEmail(opts: { to: string; firstName: string }) {
+  try {
+    await getResendClient().emails.send({
+      from:    SENDERS.general,
+      to:      opts.to,
+      subject: `Welcome to GoOutside`,
+      headers: txnHeaders({ "X-Category": "welcome" }),
+      html:    buildWelcomeEmail(opts.firstName),
+    });
+  } catch (err) {
+    console.error("[email] sendWelcomeEmail failed:", err);
+  }
+}
+
 export async function sendWaitlistConfirmation(opts: { to: string; firstName: string; roleLabel: string }) {
   return getResendClient().emails.send({
     from:    SENDERS.waitlist,
@@ -198,6 +246,8 @@ export async function sendPostLikeEmail(opts: {
 }
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
+const FONT = `'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
+
 function shell(content: string, footer?: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -205,20 +255,23 @@ function shell(content: string, footer?: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>GoOutside</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; padding: 0; background-color: ${BG}; }
+    body { margin: 0; padding: 0; background-color: ${BG}; font-family: ${FONT}; }
     img  { display: block; border: 0; outline: none; }
     a    { color: ${BRAND}; }
+    * { font-family: ${FONT}; }
   </style>
 </head>
-<body bgcolor="${BG}" style="margin:0;padding:0;background-color:${BG};">
+<body bgcolor="${BG}" style="margin:0;padding:0;background-color:${BG};font-family:${FONT};">
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" bgcolor="${BG}" style="background-color:${BG};padding:36px 16px;">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;width:100%;">
 
-        <!-- Wordmark -->
-        <tr><td style="padding:0 0 20px 4px;">
-          <span style="font-size:13px;font-weight:900;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">GoOutside</span>
+        <!-- Logo -->
+        <tr><td style="padding:0 0 20px 0;">
+          ${logoImg()}
         </td></tr>
 
         <!-- Card -->
@@ -258,9 +311,32 @@ function eyebrow(text: string): string {
   return `<p style="margin:0 0 8px;font-size:9px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">${text}</p>`;
 }
 
-// Phosphor icon — tinted green (brand color)
+// Phosphor icon — reads SVG from disk, bakes in brand color as data URI
+// Works in local dev, production, and email clients (no external requests)
+const _icoCache = new Map<string, string>();
 function ico(name: string, size = 16): string {
-  return `<img src="${ICONS}/${name}.svg" width="${size}" height="${size}" alt="" style="display:inline-block;vertical-align:middle;filter:invert(48%) sepia(40%) saturate(600%) hue-rotate(105deg) brightness(0.85);">`;
+  const cacheKey = `${name}:${size}`;
+  if (_icoCache.has(cacheKey)) return _icoCache.get(cacheKey)!;
+
+  try {
+    const svgPath = path.join(process.cwd(), "public", "email-icons", `${name}.svg`);
+    const raw = fs.readFileSync(svgPath, "utf-8");
+    const colored = raw.replace(/fill="currentColor"/g, `fill="${BRAND}"`);
+    const dataUri = `data:image/svg+xml;base64,${Buffer.from(colored).toString("base64")}`;
+    const tag = `<img src="${dataUri}" width="${size}" height="${size}" alt="" style="display:inline-block;vertical-align:middle;">`;
+    _icoCache.set(cacheKey, tag);
+    return tag;
+  } catch {
+    return "";
+  }
+}
+
+// Logo — uses production URL (served from public/ on deploy, ~123KB PNG must NOT be base64)
+// Falls back to text wordmark in dev if NEXT_PUBLIC_APP_URL is not set to a live host
+function logoImg(): string {
+  const logoUrl = `${BASE}/logo-full.png`;
+  // In dev BASE defaults to gooutside.club which is the correct production URL anyway
+  return `<img src="${logoUrl}" width="120" height="36" alt="GoOutside" style="display:block;width:120px;height:auto;">`;
 }
 
 function btn(label: string, url: string, outline = false): string {
@@ -661,7 +737,7 @@ function buildPioneerEmail(firstName: string): string {
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td style="width:30px;vertical-align:top;padding-top:2px;">${ico("lightning", 20)}</td>
           <td>
-            <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:${TEXT};">2× Pulse Points for 90 days</p>
+            <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:${TEXT};">2× Outside Score for 90 days</p>
             <p style="margin:0;font-size:12px;color:${MUTED};">Pulse is your scene score — how plugged into Accra you are. Yours starts higher and unlocks rewards faster than everyone else's.</p>
           </td>
         </tr></table>
@@ -706,7 +782,7 @@ function buildWaitlistEmail(firstName: string, roleLabel: string): string {
         ${ico("lightning", 11)} &nbsp;Pulse Pioneers
       </p>
       <p style="margin:0;font-size:13px;color:#2d6e45;line-height:1.7;">
-        Your <strong>Pioneer Badge</strong> lives on your profile permanently — and you earn Pulse Points at <strong>2× the rate</strong> for your first 90 days. The earlier you join, the bigger your head start.
+        Your <strong>Pioneer Badge</strong> lives on your profile permanently — and you earn Outside Score at <strong>2× the rate</strong> for your first 90 days. The earlier you join, the bigger your head start.
       </p>
     </div>
 
@@ -727,7 +803,7 @@ function buildWaitlistEmail(firstName: string, roleLabel: string): string {
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td style="width:28px;vertical-align:top;">${ico("lightning", 16)}</td>
           <td>
-            <p style="margin:0 0 1px;font-size:13px;font-weight:600;color:${TEXT};">Pulse Points</p>
+            <p style="margin:0 0 1px;font-size:13px;font-weight:600;color:${TEXT};">Outside Score</p>
             <p style="margin:0;font-size:12px;color:${MUTED};">Go out, earn points, redeem towards tickets and experiences</p>
           </td>
         </tr></table>
@@ -847,6 +923,162 @@ function buildFollowEmail(opts: {
       <a href="${BASE}/dashboard/settings" style="color:${MUTED};text-decoration:underline;">Turn off</a>
     </p>
   `);
+}
+
+// ─── 8. Founding organizer invite ────────────────────────────────────────────
+function buildFoundingOrganizerEmail(
+  firstName: string,
+  businessName: string,
+  inviteUrl: string,
+  senderName = "Gabby",
+): string {
+  const name = esc(firstName);
+  const url  = esc(inviteUrl);
+  const sender = esc(senderName);
+
+  const benefits: Array<{ icon: string; title: string; body: string }> = [
+    {
+      icon:  "crown",
+      title: "Founding Organizer badge — permanent",
+      body:  "Shown on your profile forever. Once we open publicly, no one else gets this title.",
+    },
+    {
+      icon:  "gift",
+      title: "Free access during launch",
+      body:  "No listing fees or platform cuts on your first events. You grow your audience; we handle the tech.",
+    },
+    {
+      icon:  "star",
+      title: "Priority placement in the feed",
+      body:  "Your events surface first to Accra's most engaged audience before the platform opens widely.",
+    },
+    {
+      icon:  "chart-bar",
+      title: "Early access to organizer analytics",
+      body:  "Audience demographics, attendance trends, and Pulse data — from day one.",
+    },
+    {
+      icon:  "handshake",
+      title: "Direct line to the team",
+      body:  "Reply to this email and it comes straight to us. Your input shapes what we build.",
+    },
+  ];
+
+  const benefitRows = benefits.map((b, i) => `
+    <tr><td style="padding:14px 0;${i < benefits.length - 1 ? `border-bottom:1px solid ${BORDER};` : ""}">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="width:30px;vertical-align:top;padding-top:2px;">${ico(b.icon, 20)}</td>
+        <td>
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:${TEXT};">${b.title}</p>
+          <p style="margin:0;font-size:12px;color:${MUTED};line-height:1.65;">${b.body}</p>
+        </td>
+      </tr></table>
+    </td></tr>`).join("");
+
+  return shell(`
+    <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+      <tr>
+        <td style="padding:6px 14px;border-radius:100px;background:${BRAND_BG};border:1px solid ${BRAND_BD};">
+          <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+            <td style="padding-right:6px;">${ico("sparkle", 12)}</td>
+            <td style="font-size:9px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:${BRAND};white-space:nowrap;">Founding Organizer</td>
+          </tr></table>
+        </td>
+      </tr>
+    </table>
+
+    <h1 style="margin:0 0 16px;font-size:26px;font-weight:800;line-height:1.12;letter-spacing:-0.03em;color:${TEXT};">
+      Hi ${name}, GoOutside wants you in.
+    </h1>
+
+    <p style="margin:0 0 14px;font-size:14px;line-height:1.8;color:${BODY};">
+      We're building the social events app for Accra, and before we open to the public, we're personally inviting a small group of the city's best organizers to join as <strong>Founding Organizers</strong>.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.8;color:${BODY};">
+      This is not a beta test. You'd be in the first wave — with benefits that stay on your profile permanently, even after thousands of other organizers join later.
+    </p>
+
+    <div style="background:linear-gradient(135deg,${BRAND_BG} 0%,#f8fdf9 100%);border:1px solid ${BRAND_BD};border-radius:16px;padding:18px 20px;margin-bottom:24px;">
+      <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:8px;"><tr>
+        <td style="padding-right:6px;">${ico("lightning", 12)}</td>
+        <td style="font-size:9px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:${BRAND};">What this means for you</td>
+      </tr></table>
+      <p style="margin:0;font-size:13px;color:#2d6e45;line-height:1.75;">
+        Free platform access, a permanent Founding Organizer badge, priority placement in the GoOutside feed, and a direct line to the team — in exchange for being among the first to list events and help shape the platform.
+      </p>
+    </div>
+
+    ${eyebrow("Your founding benefits")}
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      ${benefitRows}
+    </table>
+
+    ${hr()}
+
+    ${btn("Accept your invitation", url)}
+
+    <p style="margin:18px 0 0;font-size:12px;line-height:1.7;color:${MUTED};">
+      This link is personal to you. It takes a minute to get your profile live.
+    </p>
+
+    <p style="margin:32px 0 0;font-size:13px;line-height:1.8;color:${BODY};">
+      Looking forward to having you on the platform,<br>
+      <strong style="color:${TEXT};font-size:14px;">${sender}</strong><br>
+      <span style="font-size:11px;color:${MUTED};">GoOutside</span>
+    </p>
+  `, `You received this because we're personally inviting you as a Founding Organizer on GoOutside.<br>
+     Questions? Just reply — it comes straight to us. &nbsp;·&nbsp; <a href="${BASE}" style="color:${DIM};text-decoration:underline;">gooutside.club</a>`);
+}
+
+// ─── 9. Welcome (quick signup) ───────────────────────────────────────────────
+function buildWelcomeEmail(firstName: string): string {
+  const name = esc(firstName);
+
+  const features: Array<{ icon: string; title: string; body: string }> = [
+    { icon: "ticket",    title: "Your tickets, always with you",       body: "Find every ticket you've bought in your wallet. Scan the QR code at the door." },
+    { icon: "star",      title: "Discover what's on in Accra",         body: "Browse events by vibe, category, and neighbourhood — curated to match your taste." },
+    { icon: "lightning", title: "Earn your Outside Score",             body: "Every event you attend raises your score and unlocks better tiers and rewards." },
+    { icon: "gift",      title: "Redeem Outside Score for perks",       body: "Earn points on every purchase and trade them in for discounts and exclusive access." },
+  ];
+
+  const featureRows = features.map((f, i) => `
+    <tr><td style="padding:12px 0;${i < features.length - 1 ? `border-bottom:1px solid ${BORDER};` : ""}">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="width:30px;vertical-align:top;padding-top:2px;">${ico(f.icon, 18)}</td>
+        <td>
+          <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:${TEXT};">${f.title}</p>
+          <p style="margin:0;font-size:12px;color:${MUTED};line-height:1.65;">${f.body}</p>
+        </td>
+      </tr></table>
+    </td></tr>`).join("");
+
+  return shell(`
+    <h1 style="margin:0 0 6px;font-size:24px;font-weight:800;letter-spacing:-0.03em;line-height:1.15;color:${TEXT};">
+      Welcome to GoOutside, ${name}.
+    </h1>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.8;color:${BODY};">
+      Your account is ready. Here's everything you can do right now.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      ${featureRows}
+    </table>
+
+    ${hr()}
+
+    ${btn("Explore what's on", `${BASE}/home`)}
+
+    <p style="margin:18px 0 0;font-size:13px;line-height:1.8;color:${BODY};">
+      Take a minute to set up your profile and vibe preferences — it helps us show you events you'll actually want to go to.<br><br>
+      <a href="${BASE}/onboarding/profile" style="color:${BRAND};font-weight:700;text-decoration:none;">Complete your profile →</a>
+    </p>
+
+    <p style="margin:28px 0 0;font-size:13px;line-height:1.8;color:${BODY};">
+      See you out there,<br>
+      <strong style="color:${TEXT};font-size:14px;">The GoOutside team</strong>
+    </p>
+  `, `You're receiving this because you just created a GoOutside account.<br>
+     Questions? <a href="mailto:hello@mail.gooutside.club" style="color:${DIM};text-decoration:underline;">hello@mail.gooutside.club</a>`);
 }
 
 // ─── 8. Post liked ────────────────────────────────────────────────────────────

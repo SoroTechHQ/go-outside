@@ -29,7 +29,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gooutside.club";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "GoOutside", template: "%s | GoOutside" },
-  description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
+  description: "Social-first event discovery for Ghana. Find events, earn Outside Score, go out.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon-icon.png",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "GoOutside",
     title: "GoOutside — What's on in Accra?",
-    description: "Social-first event discovery for Ghana. Find events, earn Pulse Points, go out.",
+    description: "Social-first event discovery for Ghana. Find events, earn Outside Score, go out.",
     images: [{ url: `/api/og?type=default`, width: 1200, height: 630, alt: "GoOutside" }],
     type: "website",
     locale: "en_GH",

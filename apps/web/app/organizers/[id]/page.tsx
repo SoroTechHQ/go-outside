@@ -311,7 +311,7 @@ export default function OrganizerProfilePage() {
     followMutation.mutate(!isFollowing);
   }, [followMutation, isFollowing]);
 
-  const { data: organizer } = useQuery({
+  const { data: organizer, isLoading: orgLoading } = useQuery({
     queryKey: ["organizer", id],
     queryFn: async () => {
       const res = await fetch(`/api/organizers/${id}`);
@@ -332,6 +332,32 @@ export default function OrganizerProfilePage() {
     staleTime: 5 * 60_000,
     enabled: !!id,
   });
+
+  function handleShare() {
+    if (navigator.share) {
+      navigator.share({ title: organizer?.name, url: window.location.href }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href).catch(() => {});
+    }
+  }
+
+  if (orgLoading) {
+    return (
+      <main className="min-h-screen bg-[var(--bg-base)]">
+        <div className="h-[240px] w-full animate-pulse bg-[var(--bg-card)] md:h-[280px]" />
+        <div className="mx-auto max-w-5xl px-4 md:px-6 lg:px-8">
+          <div className="-mt-12 pb-3">
+            <div className="h-[84px] w-[84px] animate-pulse rounded-[20px] bg-[var(--bg-card)]" />
+          </div>
+          <div className="space-y-3 pb-6">
+            <div className="h-7 w-48 animate-pulse rounded-lg bg-[var(--bg-card)]" />
+            <div className="h-4 w-64 animate-pulse rounded-lg bg-[var(--bg-card)]" />
+            <div className="h-4 w-32 animate-pulse rounded-lg bg-[var(--bg-card)]" />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (!organizer) {
     return (
@@ -421,8 +447,16 @@ export default function OrganizerProfilePage() {
                   {organizer.name}
                 </h1>
                 {organizer.verified && <ShieldCheck size={20} weight="fill" className="text-[#4a9f63]" />}
+                {organizer.isFoundingOrganizer && (
+                  <span className="flex items-center gap-1 rounded-full border border-[#DAA520]/40 bg-[#DAA520]/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#DAA520]">
+                    <Trophy size={9} weight="fill" />
+                    Founding Organizer
+                  </span>
+                )}
               </div>
-              <p className="mt-0.5 text-[13px] text-[var(--text-secondary)]">{organizer.tag}</p>
+              {organizer.bio && (
+                <p className="mt-0.5 text-[13px] text-[var(--text-secondary)] line-clamp-2">{organizer.bio}</p>
+              )}
               <div className="mt-2.5 flex flex-wrap items-center gap-3">
                 {organizer.city && (
                   <span className="flex items-center gap-1 text-[11px] text-[var(--text-tertiary)]">
@@ -444,7 +478,7 @@ export default function OrganizerProfilePage() {
 
             {/* Action buttons */}
             <div className="mt-0.5 flex shrink-0 items-center gap-2">
-              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95">
+              <button onClick={handleShare} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-default)] bg-[var(--bg-card)] text-[var(--text-secondary)] shadow-sm transition hover:border-[#4a9f63]/40 hover:text-[#4a9f63] active:scale-95">
                 <ShareNetwork size={15} />
               </button>
               <button
@@ -704,6 +738,7 @@ export default function OrganizerProfilePage() {
                   { label: "Events hosted", value: String(meta.eventsHosted), color: "#4a9f63" },
                   { label: "Community rating", value: `★ ${meta.avgRating}`, color: "#DAA520" },
                   { label: "Verified", value: organizer.verified ? "Yes" : "No", color: organizer.verified ? "#4a9f63" : undefined },
+                  ...(organizer.isFoundingOrganizer ? [{ label: "Status", value: "Founding Organizer", color: "#DAA520" }] : []),
                 ].map(({ label, value, color }) => (
                   <div key={label} className="flex items-center justify-between">
                     <span className="text-[11px] text-[var(--text-tertiary)]">{label}</span>

@@ -140,7 +140,7 @@ export function PulseRewardsMini({ balance, rewards }: Props) {
           }}
         >
           <span>{balance.toLocaleString()}</span>
-          <span className="font-normal opacity-70">Pulse Points available</span>
+          <span className="font-normal opacity-70">Outside Score available</span>
         </div>
       </div>
 

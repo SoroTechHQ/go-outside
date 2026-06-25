@@ -132,7 +132,7 @@ const SECTIONS: Section[] = [
           <P dark={dark}>GoOutside is a social-first event discovery app built for Ghana. Think of it like a mix between Instagram, Eventbrite, and a group chat — but specifically for going out in Accra.</P>
           <P dark={dark}>Instead of just listing events, GoOutside connects them to your social circle. You see what your friends are attending, what's trending in your city, and events matched specifically to your tastes.</P>
           <H3 dark={dark}>What you can do</H3>
-          <UL dark={dark} items={["<strong>Discover events</strong> — a personalised feed built from your vibe and social graph", "<strong>Buy tickets</strong> — directly inside the app via Paystack (card, mobile money, bank transfer)", "<strong>Earn Pulse Points</strong> — a reputation score that reflects how plugged into the scene you are", "<strong>Follow people and organizers</strong> — see who's going where", "<strong>Chat</strong> — direct messages with anyone on the platform", "<strong>Organizers</strong> — create events, manage tickets, see audience analytics"]} />
+          <UL dark={dark} items={["<strong>Discover events</strong> — a personalised feed built from your vibe and social graph", "<strong>Buy tickets</strong> — directly inside the app via Paystack (card, mobile money, bank transfer)", "<strong>Earn Outside Score</strong> — a reputation score that reflects how plugged into the scene you are", "<strong>Follow people and organizers</strong> — see who's going where", "<strong>Chat</strong> — direct messages with anyone on the platform", "<strong>Organizers</strong> — create events, manage tickets, see audience analytics"]} />
           <Callout dark={dark} type="alpha">GoOutside is currently in <strong>closed alpha</strong>. You're one of the first people using it. Some features are still being built — your feedback shapes what ships next.</Callout>
         </>),
       },
@@ -141,7 +141,7 @@ const SECTIONS: Section[] = [
         body: ({ dark }) => (<>
           <P dark={dark}>Creating a GoOutside account takes under a minute.</P>
           <OL dark={dark} items={["Go to <strong>gooutside.club</strong> and tap <strong>Get Started</strong>.", "Sign up with Google, or enter your email and create a password.", "Complete the 5-step onboarding (takes ~3 minutes).", "Your personalised feed is ready immediately."]} />
-          <Callout dark={dark} type="tip">The more events you select during the History step, the higher your starting Pulse Points — and the better your first feed will be.</Callout>
+          <Callout dark={dark} type="tip">The more events you select during the History step, the higher your starting Outside Score — and the better your first feed will be.</Callout>
         </>),
       },
       {
@@ -168,7 +168,7 @@ const SECTIONS: Section[] = [
         body: ({ dark }) => (<>
           <P dark={dark}>You're one of the first people to use GoOutside before it launches publicly. Your job: use the app like a real user, notice what breaks or feels off, and tell us about it.</P>
           <P dark={dark}>This isn't a polished product yet. Bugs are expected. Finding them early is the whole point.</P>
-          <Callout dark={dark} type="alpha">As a <strong>Founding Explorer</strong>, you get a permanent badge on your profile, 2× Pulse Points for your first 90 days, and a direct line to Nana (the founder). Every piece of feedback goes straight to the team.</Callout>
+          <Callout dark={dark} type="alpha">As a <strong>Founding Explorer</strong>, you get a permanent badge on your profile, 2× Outside Score for your first 90 days, and a direct line to Nana (the founder). Every piece of feedback goes straight to the team.</Callout>
           <H3 dark={dark}>Two ways to submit feedback</H3>
           <Table dark={dark} headers={["Method", "When to use it", "How to access"]} rows={[
             ["<strong>Floating button</strong>", "Quick reactions while using the app — something just broke or felt off", "Green chat icon, bottom-right corner"],
@@ -305,7 +305,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
         id: "saving", title: "Saving events", audience: "everyone",
         body: ({ dark }) => (<>
           <P dark={dark}>Tap the bookmark icon on any event card or detail page to save it for later.</P>
-          <UL dark={dark} items={["Saved events live in <strong>Dashboard → Saved</strong>", "You earn <strong>+5 Pulse Points</strong> every time you save an event", "Saves show up as social signals — your friends may see 'Kofi saved this' in their feeds"]} />
+          <UL dark={dark} items={["Saved events live in <strong>Dashboard → Saved</strong>", "You earn <strong>+5 Outside Score</strong> every time you save an event", "Saves show up as social signals — your friends may see 'Kofi saved this' in their feeds"]} />
         </>),
       },
     ],
@@ -327,18 +327,18 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
         id: "your-tickets", title: "Managing your tickets", audience: "everyone",
         body: ({ dark }) => (<>
           <P dark={dark}>All your tickets live in <strong>Dashboard → Wallets</strong>. Tap any ticket to see the full QR code.</P>
-          <UL dark={dark} items={["The QR code is scanned at the door — no printing needed.", "Once scanned, the ticket is marked as used automatically.", "Checking in at a live event earns you <strong>+50 Pulse Points</strong>."]} />
+          <UL dark={dark} items={["The QR code is scanned at the door — no printing needed.", "Once scanned, the ticket is marked as used automatically.", "Checking in at a live event earns you <strong>+50 Outside Score</strong>."]} />
         </>),
       },
     ],
   },
   {
-    id: "pulse", title: "Pulse Points & Rewards", Icon: Lightning, color: "#8b5cf6", tagline: "Your reputation on GoOutside — earn it, spend it.",
+    id: "pulse", title: "Outside Score & Rewards", Icon: Lightning, color: "#8b5cf6", tagline: "Your reputation on GoOutside — earn it, spend it.",
     articles: [
       {
-        id: "what-is-pulse", title: "What are Pulse Points?", audience: "everyone",
+        id: "what-is-pulse", title: "What are Outside Score?", audience: "everyone",
         body: ({ dark }) => (<>
-          <P dark={dark}>Pulse Points (PP) are GoOutside's reputation system. They measure how plugged into the city's scene you are. The more you participate, the more you earn — and the more you can redeem.</P>
+          <P dark={dark}>Outside Score (PP) are GoOutside's reputation system. They measure how plugged into the city's scene you are. The more you participate, the more you earn — and the more you can redeem.</P>
           <H3 dark={dark}>How you earn PP</H3>
           <Table dark={dark} headers={["Action", "Points"]} rows={[
             ["Buy a ticket", "+25 PP"],
@@ -356,7 +356,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
       {
         id: "tiers", title: "Pulse tiers", audience: "everyone",
         body: ({ dark }) => (<>
-          <P dark={dark}>Your <em>lifetime</em> Pulse Points determine your tier. Tiers unlock different rewards in the shop. Redeeming points reduces your spendable balance but not your lifetime total — so your tier never goes down.</P>
+          <P dark={dark}>Your <em>lifetime</em> Outside Score determine your tier. Tiers unlock different rewards in the shop. Redeeming points reduces your spendable balance but not your lifetime total — so your tier never goes down.</P>
           <Table dark={dark} headers={["Tier", "Lifetime PP needed", "Colour"]} rows={[
             ["Newcomer", "0 – 499", "<span style='color:#6b7280'>●</span> Grey"],
             ["Regular", "500 – 1,499", "<span style='color:#2563eb'>●</span> Blue"],
@@ -369,7 +369,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
       {
         id: "redeeming", title: "Redeeming rewards", audience: "everyone",
         body: ({ dark }) => (<>
-          <P dark={dark}>Go to <strong>Dashboard → Rewards → Shop</strong> to spend your Pulse Points.</P>
+          <P dark={dark}>Go to <strong>Dashboard → Rewards → Shop</strong> to spend your Outside Score.</P>
           <OL dark={dark} items={["Browse available rewards — ticket discounts, free tickets, exclusive access.", "Tap <strong>Redeem</strong>. A coupon code is generated instantly (format: <code>PULSE-XXXX-YYYY</code>).", "Codes are valid for 90 days and show up in the <strong>Activity</strong> tab.", "Apply the code at checkout."]} />
           <Callout dark={dark} type="note">Your spendable balance and lifetime total are separate. Redeeming spends from your balance but doesn't affect your tier (which uses lifetime).</Callout>
         </>),
@@ -426,7 +426,7 @@ Actual:   Infinite spinner with no results and no error message`}</CodeBlock>
           {[
             { q: "Is GoOutside free?", a: "Discovery, the social feed, and most features are free. GoOutside takes a 5% fee on paid ticket purchases only." },
             { q: "Is it only for Accra?", a: "Yes, for now. Accra is the starting city. Other Ghanaian cities will come once we've proven the model in Accra." },
-            { q: "What is a Founding Member?", a: "The first 1,000 users get a permanent Founding Explorer badge on their profile and earn 2× Pulse Points for their first 90 days." },
+            { q: "What is a Founding Member?", a: "The first 1,000 users get a permanent Founding Explorer badge on their profile and earn 2× Outside Score for their first 90 days." },
             { q: "Can I use GoOutside as both an attendee and organizer?", a: "Yes. Any account can access the Organizer Dashboard. You don't need a separate account." },
             { q: "How do I delete my account?", a: "Go to Dashboard → Profile → Settings → Delete Account. Your data is removed within 30 days." },
           ].map(({ q, a }) => (
@@ -706,7 +706,7 @@ function DocsPageInner() {
                   { label: "Getting started", sid: "getting-started", aid: "what-is-gooutside" },
                   { label: "Alpha testing guide", sid: "alpha-testing", aid: "alpha-welcome" },
                   { label: "How the feed works", sid: "events", aid: "how-feed-works" },
-                  { label: "Pulse Points", sid: "pulse", aid: "what-is-pulse" },
+                  { label: "Outside Score", sid: "pulse", aid: "what-is-pulse" },
                   { label: "FAQ", sid: "faq", aid: "faq-general" },
                 ].map(({ label, sid, aid }) => (
                   <button key={label} onClick={() => openArticle(sid, aid)}

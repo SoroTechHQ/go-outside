@@ -15,7 +15,7 @@ const PERKS = [
   },
   {
     icon: Lightning,
-    title: "2× Pulse Points for 90 days",
+    title: "2× Outside Score for 90 days",
     sub:   "Every action earns double. Your reputation head-start starts now.",
   },
   {

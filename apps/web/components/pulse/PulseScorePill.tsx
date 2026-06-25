@@ -5,6 +5,8 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lightning, X } from "@phosphor-icons/react";
+import { PulseScoreExplainer } from "./PulseScoreExplainer";
+import type { PulseTier } from "../../app/dashboard/profile/types";
 import { supabaseBrowser } from "../../lib/supabase-browser";
 import { useAnimationConfig } from "../../hooks/useAnimationConfig";
 
@@ -205,8 +207,11 @@ function PulseHistorySheet({
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Pulse Score</p>
-          <p className="font-display text-[2rem] font-bold italic leading-none" style={{ color }}>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Outside Score</p>
+            <PulseScoreExplainer iconSize={12} currentTier={tier as PulseTier} />
+          </div>
+          <p className="font-display text-[2rem] font-bold italic leading-none mt-0.5" style={{ color }}>
             {score.toLocaleString()} <span className="text-[1rem] font-normal text-[var(--text-tertiary)]">pts</span>
           </p>
           <p className="mt-0.5 text-[12px] font-semibold" style={{ color }}>{tier}</p>

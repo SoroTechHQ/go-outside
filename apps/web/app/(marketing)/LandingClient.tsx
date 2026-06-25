@@ -587,7 +587,7 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
               icon: Ticket,
               step: "03",
               title: "Get there. Earn more.",
-              body:  "Buy tickets with Paystack — card, MoMo, or bank. Check in with your QR code and earn Pulse Points for every event.",
+              body:  "Buy tickets with Paystack — card, MoMo, or bank. Check in with your QR code and earn Outside Score for every event.",
             },
           ].map(({ icon: Icon, step, title, body }) => (
             <motion.div
@@ -800,13 +800,13 @@ export function LandingClient({ events, tickerItems }: LandingClientProps) {
           {/* Left: copy */}
           <div className="flex flex-col justify-center space-y-5">
             <motion.div variants={itemVariants}>
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Pulse Points</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#2f8f45]">Outside Score</p>
               <h2 className="text-[28px] font-bold text-[#0f110f] md:text-[36px]">
                 Going out earns you more.
               </h2>
             </motion.div>
             <motion.p variants={itemVariants} className="text-[16px] font-light leading-relaxed text-[#6f6f6f]">
-              Every event you attend, ticket you buy, and friend you bring earns Pulse Points.
+              Every event you attend, ticket you buy, and friend you bring earns Outside Score.
               Unlock tiers — and tiers unlock real rewards: tickets, perks, and early access.
             </motion.p>
             <motion.ul variants={itemVariants} className="space-y-3">

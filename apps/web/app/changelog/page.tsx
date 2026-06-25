@@ -316,7 +316,7 @@ const CHANGELOG: DateGroup[] = [
       {
         title: "Pulse Rewards Dashboard",
         plain:
-          "The Rewards section is now fully live. You can view your Pulse Points balance, see what rewards are available to redeem, browse your points history, and check your badges — all from one dashboard.",
+          "The Rewards section is now fully live. You can view your Outside Score balance, see what rewards are available to redeem, browse your points history, and check your badges — all from one dashboard.",
         detail:
           "Dashboard → Rewards. Points are earned automatically when you attend events, save events, or complete other actions in the app.",
         tag: "new",
@@ -325,9 +325,9 @@ const CHANGELOG: DateGroup[] = [
         screenshot: "/changelog/rewards.png",
       },
       {
-        title: "Pulse Score History",
+        title: "Outside Score History",
         plain:
-          "You can now see a full timeline of how your Pulse Score has changed over time — every event attended, post made, and connection formed that contributed to your score.",
+          "You can now see a full timeline of how your Outside Score has changed over time — every event attended, post made, and connection formed that contributed to your score.",
         tag: "new",
         icon: Trophy,
         commits: ["707b9dc"],

@@ -22,11 +22,16 @@ function useRequestState() {
   const senderAlreadySent =
     amSender && channel.state.messages.some((m) => m.user?.id === client.userID);
 
+  // If the other person has replied, the conversation is implicitly accepted —
+  // unlock the input regardless of whether the channel state flag was updated
+  const otherPersonReplied =
+    amSender && channel.state.messages.some((m) => m.user?.id && m.user.id !== client.userID);
+
   return {
-    isPending,
+    isPending: isPending && !otherPersonReplied,
     amSender,
     amRecipient,
-    isLockedAsSender: amSender && senderAlreadySent,
+    isLockedAsSender: amSender && senderAlreadySent && !otherPersonReplied,
     isLockedAsRecipient: amRecipient,
   };
 }

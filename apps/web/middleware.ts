@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 
 const isProtected = createRouteMatcher([
   "/dashboard(.*)",
-  "/organizer(.*)",
+  "/organizer",          // organizer dashboard root
+  "/organizer/(.*)",     // organizer dashboard sub-routes — does NOT match /organizers/*
   "/onboarding(.*)",
   "/home(.*)",
   "/settings",

@@ -270,7 +270,7 @@ function RewardsShopTab({
       {/* Balance + intro */}
       <div className="mb-5 flex items-start justify-between gap-3">
         <p className="text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          Redeem your Pulse Points for exclusive discounts, early access, and more.
+          Redeem your Outside Score for exclusive discounts, early access, and more.
         </p>
         <div
           className="shrink-0 rounded-full px-3 py-1 text-[11px] font-bold"
@@ -809,7 +809,7 @@ function getNextPPMilestone(lifetime: number, badges: RewardsBadge[]) {
   return null;
 }
 
-// ─── Live Pulse Score card ────────────────────────────────────────────────────
+// ─── Live Outside Score card ────────────────────────────────────────────────────
 
 type PulseData = {
   pulse_score: number;
@@ -923,26 +923,26 @@ const HOW_IT_WORKS_SECTIONS = [
   {
     Icon: Lightning,
     color: "#4a9f63",
-    title: "Pulse Score",
-    body: "Your overall engagement level on GoOutside. It grows as you attend events, earn achievements, and participate in the community. Your score determines your Tier — from Newcomer all the way to Legend.",
+    title: "Outside Score",
+    body: "The more you go out, the higher it gets. Your Outside Score grows every time you attend events, buy tickets, and explore the city. It determines your Tier — from Newcomer all the way to Legend.",
   },
   {
     Icon: ShoppingBag,
     color: "#F59E0B",
-    title: "Pulse Points",
+    title: "Outside Score",
     body: "Spendable currency you earn for every action: buying tickets (+50 pts), checking in (+50 pts), saving events (+2 pts), posting posts (+10 pts), and more. Redeem them in the shop for discounts and perks.",
   },
   {
     Icon: TrendUp,
     color: "#818CF8",
     title: "Tiers & Ranking",
-    body: "Six tiers based on your Pulse Score — Newcomer (0–99), Explorer (100–299), Regular (300–599), Scene Kid (600–999), City Native (1,000–1,999), Legend (2,000+). Higher tiers unlock better rewards and exclusive perks.",
+    body: "Six tiers based on your Outside Score — Newcomer (0–99), Explorer (100–299), Regular (300–599), Scene Kid (600–999), City Native (1,000–1,999), Legend (2,000+). Higher tiers unlock better rewards and exclusive perks.",
   },
   {
     Icon: Medal,
     color: "#FB923C",
     title: "Badges",
-    body: "One-time achievements earned by hitting milestones: attending your first event, building a streak, discovering new categories, and more. Each badge awards bonus Pulse Points when unlocked.",
+    body: "One-time achievements earned by hitting milestones: attending your first event, building a streak, discovering new categories, and more. Each badge awards bonus Outside Score when unlocked.",
   },
 ] as const;
 
@@ -1043,7 +1043,7 @@ export function RewardsClient({
   const [pp, setPP] = useState(initialPP);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
-  // Live pulse score — updates after redemptions and in real time
+  // Live outside score — updates after redemptions and in real time
   const { data: pulse } = useQuery<PulseData>({
     queryKey: ["pulse", "me"],
     queryFn: () => fetch("/api/users/me/pulse").then((r) => r.json()),
@@ -1085,7 +1085,7 @@ export function RewardsClient({
                 Pulse Rewards
               </h1>
               <p className="text-[12px] text-[var(--text-secondary)]">
-                Earn and redeem Pulse Points
+                Earn and redeem Outside Score
               </p>
             </div>
             <button
@@ -1098,7 +1098,7 @@ export function RewardsClient({
             </button>
           </div>
 
-          {/* ── Live Pulse Score card ── */}
+          {/* ── Live Outside Score card ── */}
           <PulseScoreCard pulse={pulse} />
 
           {/* ── Stats row ── */}
@@ -1106,7 +1106,7 @@ export function RewardsClient({
             <StatCard
               value={liveBalance.toLocaleString()}
               sub="Available"
-              label="Pulse Points"
+              label="Outside Score"
               highlight
             />
             <StatCard

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useEventDwell } from "../../../hooks/useEventDwell";
+import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import { CategoryIcon } from "../../../lib/category-icons";
 import { useEventSave } from "../../../hooks/useEventSave";
 import { useTracking } from "../../../components/tracking/TrackingProvider";
 import { GetTicketModal, type EventForTicket } from "../../../components/tickets/GetTicketModal";
+import { QuickSignupModal } from "../../../components/auth/QuickSignupModal";
 import { EVENT_COMMUNITY_POSTS } from "../../../lib/mock-community";
 import { SearchPillExpanded } from "../../../components/search/SearchPillExpanded";
 import { useAppShell } from "../../../components/layout/AppShellContext";
@@ -161,7 +163,7 @@ function CheckInButton({ eventSlug, startDatetime, endDatetime }: {
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span className="animate-[fadeUp_0.8s_ease-out_forwards] flex items-center gap-1 rounded-full bg-[var(--brand)] px-3 py-1 text-xs font-bold text-white shadow-lg">
             <Sparkle size={11} weight="fill" />
-            +50 Pulse Points
+            +50 Outside Score
           </span>
         </div>
       )}
@@ -256,7 +258,17 @@ export function EventDetailClient({
   const images = getEventImages(event);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const { isSaved, toggleSave } = useEventSave(event.id);
+  const { isSignedIn } = useAuth();
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [quickSignupOpen, setQuickSignupOpen] = useState(false);
+
+  function handleGetTickets() {
+    if (isSignedIn) {
+      setTicketModalOpen(true);
+    } else {
+      setQuickSignupOpen(true);
+    }
+  }
   const { sidebarWidth } = useAppShell();
   const { trackEvent } = useTracking();
   const ticketSectionRef = useRef<HTMLDivElement>(null);
@@ -721,7 +733,7 @@ export function EventDetailClient({
               <div className="space-y-3 px-6 pb-6">
                 <button
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
-                  onClick={() => setTicketModalOpen(true)}
+                  onClick={handleGetTickets}
                   type="button"
                 >
                   <Ticket size={16} weight="bold" />
@@ -808,6 +820,17 @@ export function EventDetailClient({
 
       {ticketModalOpen && (
         <GetTicketModal event={ticketEvent} onClose={() => setTicketModalOpen(false)} />
+      )}
+
+      {quickSignupOpen && (
+        <QuickSignupModal
+          eventTitle={event.title}
+          onClose={() => setQuickSignupOpen(false)}
+          onSuccess={() => {
+            setQuickSignupOpen(false);
+            setTicketModalOpen(true);
+          }}
+        />
       )}
     </>
   );

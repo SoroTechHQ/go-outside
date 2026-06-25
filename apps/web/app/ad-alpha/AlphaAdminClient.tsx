@@ -340,7 +340,7 @@ export function AlphaAdminClient({
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-black/[0.05]">
-                    {["Name", "Email", "Pulse Points", "Status"].map(h => (
+                    {["Name", "Email", "Outside Score", "Status"].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wide text-[#9ca3af]">{h}</th>
                     ))}
                   </tr>

@@ -8,7 +8,7 @@ import Link from "next/link";
 
 const PERKS = [
   { icon: Star,      label: "Founding Explorer badge", sub: "Permanent on your profile. Nobody gets this after launch." },
-  { icon: Lightning, label: "2× Pulse Points, 90 days", sub: "Your reputation head-start from day one." },
+  { icon: Lightning, label: "2× Outside Score, 90 days", sub: "Your reputation head-start from day one." },
   { icon: Ticket,    label: "Early event access",       sub: "Platform-covered ticket to a partner event." },
   { icon: Envelope,  label: "Direct line to the Creators",      sub: "Every piece of feedback goes straight to the founder." },
 ];
@@ -123,7 +123,7 @@ export default function AlphaPage() {
             className="mb-10 text-center text-[16px] leading-relaxed text-white/45"
           >
             We&apos;re hand-picking the first people to use GoOutside in Accra.
-            Get early access, a permanent Founding Explorer badge, and double Pulse Points from day one.
+            Get early access, a permanent Founding Explorer badge, and double Outside Score from day one.
           </motion.p>
 
           {/* Perks row */}

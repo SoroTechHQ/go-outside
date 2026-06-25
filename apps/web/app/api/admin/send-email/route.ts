@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
                 </tr>
                 <tr>
                   <td style="padding:10px 0;">
-                    <p style="margin:0;font-size:15px;color:#0f110f;font-weight:500;">⚡ Pulse Points</p>
+                    <p style="margin:0;font-size:15px;color:#0f110f;font-weight:500;">⚡ Outside Score</p>
                     <p style="margin:4px 0 0;font-size:13px;color:#6f6f6f;">Earn points by attending events, leaving reviews, and engaging. Unlock tiers from Newcomer to Legend — and redeem towards tickets and experiences</p>
                   </td>
                 </tr>

@@ -180,7 +180,7 @@ export default function OnboardingPulsePage() {
               className="text-[13px] font-medium uppercase tracking-[0.1em]"
               style={{ color: "var(--ob-text-muted)" }}
             >
-              Your Pulse Score
+              Your Outside Score
             </p>
 
             {/* Tier badge */}

@@ -10,6 +10,7 @@ import {
   Fire,
   Star,
 } from "@phosphor-icons/react";
+import { PulseScoreExplainer } from "../../../../components/pulse/PulseScoreExplainer";
 import { getTierInfo, getNextTier, getPulseProgress, type PulseTier } from "../types";
 
 type Props = {
@@ -48,16 +49,19 @@ export function PulseScoreBanner({
       <div className="relative">
         {/* Tier badge + hint */}
         <div className="flex items-center justify-between">
-          <span
-            className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{
-              color: tierInfo.color,
-              backgroundColor: `${tierInfo.color}18`,
-              border: `1px solid ${tierInfo.color}38`,
-            }}
-          >
-            {tier}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+              style={{
+                color: tierInfo.color,
+                backgroundColor: `${tierInfo.color}18`,
+                border: `1px solid ${tierInfo.color}38`,
+              }}
+            >
+              {tier}
+            </span>
+            <PulseScoreExplainer iconSize={13} currentTier={tier} />
+          </div>
           <span className="text-[10px] text-white/25">Tap for breakdown →</span>
         </div>
 
@@ -154,7 +158,7 @@ export function PulseBreakdown({ score }: { score: number }) {
       })}
 
       <div className="mt-2 rounded-[14px] border border-[#4a9f63]/20 bg-[#4a9f63]/10 px-4 py-4 text-center">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-white/35">Total Pulse Score</p>
+        <p className="text-[10px] uppercase tracking-[0.2em] text-white/35">Outside Score</p>
         <p className="mt-1 font-display text-2xl font-bold italic text-white">
           {score.toLocaleString()} pts
         </p>
