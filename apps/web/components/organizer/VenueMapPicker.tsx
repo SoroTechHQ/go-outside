@@ -80,7 +80,7 @@ export function VenueMapPicker({
   const serviceEl = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY ?? "";
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY ?? "";
 
   useEffect(() => {
     if (!apiKey) return;
@@ -162,7 +162,7 @@ export function VenueMapPicker({
         <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" weight="fill" />
         <input
           className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-3 pl-9 pr-10 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10 transition"
-          placeholder={!apiKey ? "Add NEXT_PUBLIC_GOOGLE_PLACES_API_KEY to enable venue search" : placeholder}
+          placeholder={!apiKey ? "Venue search unavailable — contact support" : placeholder}
           value={query}
           disabled={!apiKey}
           onChange={(e) => handleInput(e.target.value)}

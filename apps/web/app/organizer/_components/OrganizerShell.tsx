@@ -114,7 +114,10 @@ function OrgCard({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold leading-tight text-[var(--text-primary)]">{organizer.name}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="truncate text-[14px] font-bold leading-tight text-[var(--text-primary)]">{organizer.name}</p>
+            <OrganizerBadge compact />
+          </div>
           <p className="text-[11px] text-[var(--text-secondary)]">{organizer.city || "Accra, Ghana"}</p>
         </div>
         <Link
@@ -125,18 +128,15 @@ function OrgCard({
         </Link>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
-        <OrganizerBadge compact />
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-[14px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{organizer.totalEvents}</p>
-            <p className="mt-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">events</p>
-          </div>
-          <div className="h-6 w-px bg-[var(--border-subtle)]" />
-          <div className="text-right">
-            <p className="text-[14px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{followerCount ?? 0}</p>
-            <p className="mt-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">followers</p>
-          </div>
+      <div className="mt-3 flex items-center justify-center gap-6 border-t border-[var(--border-subtle)] pt-3">
+        <div className="text-center">
+          <p className="text-[14px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{organizer.totalEvents}</p>
+          <p className="mt-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">events</p>
+        </div>
+        <div className="h-6 w-px bg-[var(--border-subtle)]" />
+        <div className="text-center">
+          <p className="text-[14px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{followerCount ?? 0}</p>
+          <p className="mt-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">followers</p>
         </div>
       </div>
     </div>

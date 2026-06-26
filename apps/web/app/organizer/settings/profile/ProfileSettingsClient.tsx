@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building,
+  Camera,
   CheckCircle,
   Globe,
   InstagramLogo,
@@ -11,6 +13,7 @@ import {
   TwitterLogo,
   User,
 } from "@phosphor-icons/react";
+import { compressForUpload } from "../../../../lib/compress-image";
 
 type OrgProfile = {
   id: string;
@@ -31,20 +34,48 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
   const [city, setCity] = useState(profile?.location_city ?? "");
   const [instagram, setInstagram] = useState(profile?.social_links?.instagram ?? "");
   const [twitter, setTwitter] = useState(profile?.social_links?.twitter ?? "");
+  const [logoUrl, setLogoUrl] = useState(profile?.logo_url ?? null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    setError("");
+    try {
+      const compressed = await compressForUpload(file, "logo");
+      const fd = new FormData();
+      fd.append("file", compressed, "logo.webp");
+      const res = await fetch("/api/upload/logo", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = (await res.json()) as { url: string };
+      setLogoUrl(url);
+      await fetch("/api/organizer/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logo_url: url }),
+      });
+    } catch {
+      setError("Failed to upload logo. Try again.");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
 
   async function handleSave() {
     setIsSaving(true);
     setError("");
     try {
       const body = {
-        organizationName: name.trim() || null,
+        organization_name: name.trim() || null,
         bio: bio.trim() || null,
-        websiteUrl: website.trim() || null,
-        locationCity: city.trim() || null,
-        socialLinks: {
+        website_url: website.trim() || null,
+        location_city: city.trim() || null,
+        social_links: {
           ...(instagram && { instagram: instagram.trim().replace(/^@/, "") }),
           ...(twitter && { twitter: twitter.trim().replace(/^@/, "") }),
         },
@@ -75,6 +106,55 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
       </div>
 
       <div className="mx-auto max-w-xl space-y-5">
+        {/* Logo */}
+        <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_2px_12px_rgba(5,12,8,0.05)]">
+          <div className="flex items-center gap-2 mb-4">
+            <Camera size={15} weight="fill" className="text-[var(--brand)]" />
+            <p className="text-[14px] font-semibold text-[var(--text-primary)]">Organizer logo</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={logoUploading}
+              className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] transition hover:opacity-85 disabled:opacity-60"
+            >
+              {logoUrl ? (
+                <Image src={logoUrl} alt="Organizer logo" fill className="object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-[18px] font-black text-[var(--brand)]">
+                  {name.slice(0, 2).toUpperCase() || "ORG"}
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/30 hover:opacity-100">
+                {logoUploading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Camera size={16} className="text-white" />
+                )}
+              </div>
+            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoUploading}
+                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-2 text-[13px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-60"
+              >
+                {logoUploading ? "Uploading…" : "Upload logo"}
+              </button>
+              <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">JPG or PNG · Recommended 400×400px</p>
+            </div>
+          </div>
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoChange}
+          />
+        </div>
+
         {/* Name */}
         <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_2px_12px_rgba(5,12,8,0.05)]">
           <div className="flex items-center gap-2 mb-4">

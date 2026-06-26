@@ -82,8 +82,8 @@ export function OrganizerIdentityCardClient({ organizer }: { organizer: Organize
         </button>
       </div>
 
-      {/* Logo + badge */}
-      <div className="mt-5 flex items-center gap-3">
+      {/* Logo */}
+      <div className="mt-5">
         <button
           onClick={() => setEditOpen(true)}
           className="relative shrink-0 overflow-hidden rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] transition hover:opacity-85"
@@ -100,12 +100,15 @@ export function OrganizerIdentityCardClient({ organizer }: { organizer: Organize
             <PencilSimple size={14} className="text-white" />
           </div>
         </button>
-        <OrganizerBadge />
       </div>
 
-      <h2 className="mt-4 text-[15px] font-semibold text-[var(--text-primary)]">
-        {local.name}
-      </h2>
+      {/* Name + verified badge */}
+      <div className="mt-4 flex items-center gap-2 flex-wrap">
+        <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">
+          {local.name}
+        </h2>
+        <OrganizerBadge compact />
+      </div>
       <p className="mt-3 text-[13px] leading-6 text-[var(--text-secondary)] line-clamp-3">{local.bio}</p>
 
       <div className="mt-4 flex flex-wrap gap-2">
