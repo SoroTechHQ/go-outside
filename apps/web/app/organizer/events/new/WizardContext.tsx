@@ -5,8 +5,11 @@ import { createContext, useContext, useEffect, useReducer, type ReactNode } from
 export type TicketTypeInput = {
   id: string;
   name: string;
+  description: string;
   price: number;
   capacity: number | null;
+  minPerOrder: number | null;
+  maxPerOrder: number | null;
   saleStartsAt: string | null;
   saleEndsAt: string | null;
 };
