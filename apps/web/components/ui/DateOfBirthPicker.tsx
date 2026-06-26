@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { CaretDown } from "@phosphor-icons/react";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -12,13 +13,16 @@ function daysInMonth(month: number, year: number): number {
   return new Date(year, month, 0).getDate();
 }
 
+const wrapCls = "relative w-full";
 const selectCls = [
-  "w-full appearance-none rounded-[12px] border px-4 py-3",
+  "w-full rounded-[12px] border px-4 py-3 pr-9",
   "text-[14px] outline-none transition cursor-pointer",
   "bg-[var(--ob-input-bg)] border-[var(--ob-input-border)]",
-  "text-[var(--ob-input-text)] placeholder-[var(--ob-input-placeholder)]",
+  "text-[var(--ob-input-text)]",
   "focus:border-[var(--ob-input-focus-border)] focus:ring-1 focus:ring-[var(--ob-input-focus-ring)]",
   "disabled:opacity-50 disabled:cursor-not-allowed",
+  // suppress native appearance so we can use our own caret
+  "[appearance:none] [-webkit-appearance:none] [-moz-appearance:none]",
 ].join(" ");
 
 type Props = {
@@ -33,11 +37,24 @@ export function DateOfBirthPicker({ value, onChange, minYear, maxYear }: Props) 
   const resolvedMinYear = minYear ?? now.getFullYear() - 120;
   const resolvedMaxYear = maxYear ?? now.getFullYear() - 13;
 
-  // Parse current value
-  const [yearStr, monthStr, dayStr] = value ? value.split("-") : ["", "", ""];
-  const year  = yearStr  ? parseInt(yearStr,  10) : 0;
-  const month = monthStr ? parseInt(monthStr, 10) : 0;  // 1-based
-  const day   = dayStr   ? parseInt(dayStr,   10) : 0;
+  // Internal state — tracks partial selections independently
+  const [month, setMonth] = useState(0);  // 1-based, 0 = unset
+  const [day,   setDay]   = useState(0);
+  const [year,  setYear]  = useState(0);
+
+  // Sync inward when the parent passes a full date (e.g. draft recovery)
+  useEffect(() => {
+    if (!value) return;
+    const parts = value.split("-");
+    if (parts.length === 3) {
+      const y = parseInt(parts[0]!, 10);
+      const m = parseInt(parts[1]!, 10);
+      const d = parseInt(parts[2]!, 10);
+      if (y) setYear(y);
+      if (m) setMonth(m);
+      if (d) setDay(d);
+    }
+  }, [value]);
 
   const years = useMemo(() => {
     const arr: number[] = [];
@@ -50,25 +67,51 @@ export function DateOfBirthPicker({ value, onChange, minYear, maxYear }: Props) 
     return Array.from({ length: count }, (_, i) => i + 1);
   }, [month, year]);
 
-  function build(nextYear: number, nextMonth: number, nextDay: number) {
-    if (!nextYear || !nextMonth || !nextDay) return "";
+  function emit(nextYear: number, nextMonth: number, nextDay: number) {
+    if (!nextYear || !nextMonth || !nextDay) {
+      onChange("");
+      return;
+    }
     const maxDay = daysInMonth(nextMonth, nextYear);
     const clampedDay = Math.min(nextDay, maxDay);
-    return [
+    onChange([
       String(nextYear),
       String(nextMonth).padStart(2, "0"),
       String(clampedDay).padStart(2, "0"),
-    ].join("-");
+    ].join("-"));
+    // Keep day in sync if it was clamped
+    if (clampedDay !== nextDay) setDay(clampedDay);
   }
+
+  function handleMonth(e: React.ChangeEvent<HTMLSelectElement>) {
+    const m = Number(e.target.value);
+    setMonth(m);
+    emit(year, m, day);
+  }
+
+  function handleDay(e: React.ChangeEvent<HTMLSelectElement>) {
+    const d = Number(e.target.value);
+    setDay(d);
+    emit(year, month, d);
+  }
+
+  function handleYear(e: React.ChangeEvent<HTMLSelectElement>) {
+    const y = Number(e.target.value);
+    setYear(y);
+    emit(y, month, day);
+  }
+
+  const caretCls =
+    "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ob-text-faint)]";
 
   return (
     <div className="grid grid-cols-3 gap-2">
       {/* Month */}
-      <div className="relative">
+      <div className={wrapCls}>
         <select
           className={selectCls}
           value={month || ""}
-          onChange={(e) => onChange(build(year, Number(e.target.value), day))}
+          onChange={handleMonth}
           aria-label="Month"
         >
           <option value="" disabled>Month</option>
@@ -76,14 +119,15 @@ export function DateOfBirthPicker({ value, onChange, minYear, maxYear }: Props) 
             <option key={i + 1} value={i + 1}>{name}</option>
           ))}
         </select>
+        <CaretDown size={14} weight="bold" className={caretCls} />
       </div>
 
       {/* Day */}
-      <div className="relative">
+      <div className={wrapCls}>
         <select
           className={selectCls}
           value={day || ""}
-          onChange={(e) => onChange(build(year, month, Number(e.target.value)))}
+          onChange={handleDay}
           aria-label="Day"
         >
           <option value="" disabled>Day</option>
@@ -91,14 +135,15 @@ export function DateOfBirthPicker({ value, onChange, minYear, maxYear }: Props) 
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
+        <CaretDown size={14} weight="bold" className={caretCls} />
       </div>
 
       {/* Year */}
-      <div className="relative">
+      <div className={wrapCls}>
         <select
           className={selectCls}
           value={year || ""}
-          onChange={(e) => onChange(build(Number(e.target.value), month, day))}
+          onChange={handleYear}
           aria-label="Year"
         >
           <option value="" disabled>Year</option>
@@ -106,6 +151,7 @@ export function DateOfBirthPicker({ value, onChange, minYear, maxYear }: Props) 
             <option key={y} value={y}>{y}</option>
           ))}
         </select>
+        <CaretDown size={14} weight="bold" className={caretCls} />
       </div>
     </div>
   );

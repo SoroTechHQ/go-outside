@@ -36,7 +36,7 @@ function ensureOptions() {
   if (optionsSet) return;
   optionsSet = true;
   setOptions({
-    key:       process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY ?? "",
+    key:       process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY ?? "",
     v:         "weekly",
     libraries: ["places"],
   });
@@ -119,6 +119,58 @@ export function LocationAutocomplete({
     inputRef.current?.focus();
   }, [onChange]);
 
+  // When user types and blurs without picking from the Google dropdown,
+  // try to resolve the city so they can still proceed.
+  const handleBlur = useCallback(() => {
+    setFocused(false);
+    if (value) return;           // already resolved
+    const text = inputVal.trim();
+    if (!text) return;
+
+    // Check popular cities first (fast, no API call)
+    const match = POPULAR_CITIES.find(
+      (c) => c.name.toLowerCase() === text.toLowerCase()
+    );
+    if (match) {
+      void handleShortcut(match);
+      return;
+    }
+
+    // Fallback: text search via Google Places
+    if (!ready) return;
+    importLibrary("places")
+      .then((places) => {
+        const PlacesLib = places as unknown as GooglePlacesLib;
+        const service   = new PlacesLib.PlacesService(document.createElement("div"));
+        service.textSearch(
+          { query: `${text} Ghana`, region: "gh" },
+          (results: google.maps.places.PlaceResult[] | null, status: string) => {
+            const r = results?.[0];
+            if (status === "OK" && r?.geometry?.location) {
+              const comps = r.address_components ?? [];
+              const get   = (type: string) =>
+                comps.find((c: google.maps.GeocoderAddressComponent) =>
+                  c.types.includes(type)
+                )?.long_name ?? "";
+              const resolved: PlaceResult = {
+                place_id:          r.place_id ?? "",
+                city_name:         r.name ?? get("locality") ?? text,
+                region:            get("administrative_area_level_1"),
+                country:           get("country") || "Ghana",
+                formatted_address: r.formatted_address ?? `${text}, Ghana`,
+                lat:               r.geometry!.location!.lat(),
+                lng:               r.geometry!.location!.lng(),
+              };
+              onChange(resolved);
+              setInputVal(resolved.city_name);
+            }
+          }
+        );
+      })
+      .catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, inputVal, ready, onChange]);
+
   async function handleShortcut(city: { name: string; region: string }) {
     if (!ready) {
       onChange({
@@ -190,7 +242,7 @@ export function LocationAutocomplete({
           value={inputVal}
           onChange={(e) => setInputVal(e.target.value)}
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={handleBlur}
           placeholder={placeholder}
           autoComplete="off"
           className="w-full rounded-[12px] border px-4 py-3 pl-9 pr-8 text-[14px] outline-none transition"
