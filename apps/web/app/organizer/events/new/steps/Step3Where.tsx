@@ -110,6 +110,13 @@ export function Step3Where() {
           setField("venueLat", result.lat);
           setField("venueLng", result.lng);
           setField("venueId", null);
+          // Auto-fill the real GhanaPost digital address from coordinates
+          void fetch(`/api/ghana-post?lat=${result.lat}&lng=${result.lng}`)
+            .then((r) => r.ok ? r.json() : null)
+            .then((data: { digitalAddress?: string } | null) => {
+              if (data?.digitalAddress) setField("ghanaPostCode", data.digitalAddress);
+            })
+            .catch(() => { /* optional — silently skip */ });
         });
       })
       .catch(console.error);
@@ -200,21 +207,21 @@ export function Step3Where() {
             )}
           </div>
 
-          {/* Ghana Post Code */}
+          {/* GhanaPost GPS address */}
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-              Ghana Post Code <span className="normal-case font-normal tracking-normal text-[var(--text-tertiary)]">(optional)</span>
+              GhanaPost address <span className="normal-case font-normal tracking-normal text-[var(--text-tertiary)]">(optional — auto-filled when you pick a venue above)</span>
             </label>
             <input
               className="mt-2 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 font-mono text-[13px] tracking-wider text-[var(--text-primary)] placeholder:font-sans placeholder:tracking-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10"
-              placeholder="e.g. GA-100-2003"
+              placeholder="e.g. GA-044-5028"
               type="text"
               maxLength={12}
               value={state.ghanaPostCode ?? ""}
               onChange={(e) => setField("ghanaPostCode", e.target.value.toUpperCase() || null)}
             />
             <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">
-              Ghana Post GPS address — helps attendees find the exact location.
+              Format: XX-NNN-NNNN (e.g. GA-044-5028). Helps attendees find the exact location via GhanaPostGPS.
             </p>
           </div>
         </div>
