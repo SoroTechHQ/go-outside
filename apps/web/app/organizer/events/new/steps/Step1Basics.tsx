@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useWizard } from "../WizardContext";
+import { RichTextEditor } from "../RichTextEditor";
 import { CategoryIcon } from "../../../../../lib/category-icons";
 import { Lock } from "@phosphor-icons/react";
 
@@ -94,18 +95,34 @@ export function Step1Basics() {
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
           Short description
+          <span className="ml-1.5 normal-case font-normal tracking-normal text-[var(--text-tertiary)]">shown on event card</span>
         </label>
         <textarea
           className="mt-2 w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10"
           maxLength={200}
           placeholder="One or two sentences shown on the event card."
-          rows={3}
+          rows={2}
           value={state.shortDescription}
           onChange={(e) => setField("shortDescription", e.target.value)}
         />
         <p className="mt-1 text-right text-[11px] text-[var(--text-tertiary)]">
           {state.shortDescription.length}/200
         </p>
+      </div>
+
+      {/* Full description */}
+      <div>
+        <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+          Full description
+          <span className="ml-1.5 normal-case font-normal tracking-normal text-[var(--text-tertiary)]">shown on event page · supports bold, lists &amp; links</span>
+        </label>
+        <div className="mt-2">
+          <RichTextEditor
+            value={state.description}
+            onChange={(html) => setField("description", html)}
+            placeholder="Tell attendees everything they need to know — what to expect, what to bring, dress code, line-up, schedule…"
+          />
+        </div>
       </div>
 
       {/* Tags */}
