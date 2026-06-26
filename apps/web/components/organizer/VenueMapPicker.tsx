@@ -25,7 +25,6 @@ type GooglePlaceDetail = {
   name: string;
   formatted_address: string;
   geometry: { location: { lat: () => number; lng: () => number } };
-  plus_code?: { global_code?: string; compound_code?: string };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,7 +32,6 @@ type GoogleMapsPlaces = any;
 
 declare global {
   interface Window {
-    // Using `any` to avoid conflicts with @types/google.maps if present
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     google?: any;
     initGoogleMapsPlaces?: () => void;
@@ -76,6 +74,7 @@ export function VenueMapPicker({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [mapsReady, setMapsReady] = useState(false);
+  const [ghanaPostLoading, setGhanaPostLoading] = useState(false);
   const autocompleteRef = useRef<GoogleMapsPlaces>(null);
   const serviceEl = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,25 +122,45 @@ export function VenueMapPicker({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const svc = new (window.google as GoogleMapsPlaces).maps.places.PlacesService(serviceEl.current);
     svc.getDetails(
-      { placeId: pred.place_id, fields: ["place_id", "name", "formatted_address", "geometry", "plus_code"] },
-      (detail: GooglePlaceDetail | null, status: string) => {
+      // No longer requesting plus_code — we fetch the real GhanaPost address separately
+      { placeId: pred.place_id, fields: ["place_id", "name", "formatted_address", "geometry"] },
+      async (detail: GooglePlaceDetail | null, status: string) => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (status !== (window.google as GoogleMapsPlaces)?.maps?.places?.PlacesServiceStatus?.OK || !detail) return;
         const lat = detail.geometry.location.lat();
         const lng = detail.geometry.location.lng();
         const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${detail.place_id}&zoom=15`;
-        onChange({
+
+        const venue: VenueResult = {
           placeId: detail.place_id,
           name: detail.name,
           address: detail.formatted_address,
-          ghanaPost: detail.plus_code?.global_code ?? detail.plus_code?.compound_code,
           lat,
           lng,
           mapUrl,
-        });
+        };
+
+        // Show the venue immediately — GhanaPost address loads async
+        onChange(venue);
         setQuery(detail.name);
         setOpen(false);
         setResults([]);
+
+        // Fetch the real GhanaPostGPS digital address (GA-XXX-XXXX format)
+        try {
+          setGhanaPostLoading(true);
+          const res = await fetch(`/api/ghana-post?lat=${lat}&lng=${lng}`);
+          if (res.ok) {
+            const ghp = (await res.json()) as { digitalAddress?: string };
+            if (ghp.digitalAddress) {
+              onChange({ ...venue, ghanaPost: ghp.digitalAddress });
+            }
+          }
+        } catch {
+          // GhanaPost is optional — silently skip if unavailable
+        } finally {
+          setGhanaPostLoading(false);
+        }
       }
     );
   }
@@ -245,15 +264,21 @@ export function VenueMapPicker({
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-[var(--text-primary)]">{value.name}</p>
                   <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{value.address}</p>
-                  {value.ghanaPost && (
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <NavigationArrow size={11} className="text-[var(--brand)]" weight="fill" />
-                      <span className="font-mono text-[10px] font-semibold text-[var(--brand)]">
-                        {value.ghanaPost}
-                      </span>
-                      <span className="text-[10px] text-[var(--text-tertiary)]">Ghana Post code</span>
-                    </div>
-                  )}
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <NavigationArrow size={11} className="text-[var(--brand)]" weight="fill" />
+                    {ghanaPostLoading ? (
+                      <span className="text-[10px] text-[var(--text-tertiary)]">Looking up GhanaPost address…</span>
+                    ) : value.ghanaPost ? (
+                      <>
+                        <span className="font-mono text-[10px] font-semibold text-[var(--brand)]">
+                          {value.ghanaPost}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-tertiary)]">GhanaPost address</span>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-[var(--text-tertiary)]">GhanaPost address unavailable for this location</span>
+                    )}
+                  </div>
                 </div>
                 <a
                   href={`https://maps.google.com/?q=${value.lat},${value.lng}`}
