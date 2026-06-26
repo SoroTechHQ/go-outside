@@ -950,7 +950,7 @@ function buildFoundingOrganizerEmail(
     {
       icon:  "star",
       title: "Priority placement in the feed",
-      body:  "Your events surface first to Accra's most engaged audience before the platform opens widely.",
+      body:  "Your events receive priority placement across GoOutside feeds, putting them in front of users even outside their selected interests.",
     },
     {
       icon:  "chart-bar",
@@ -1004,7 +1004,7 @@ function buildFoundingOrganizerEmail(
         <td style="font-size:9px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:${BRAND};">What this means for you</td>
       </tr></table>
       <p style="margin:0;font-size:13px;color:#2d6e45;line-height:1.75;">
-        Free platform access, a permanent Founding Organizer badge, priority placement in the GoOutside feed, and a direct line to the team — in exchange for being among the first to list events and help shape the platform.
+        Free platform access, a permanent Founding Organizer badge, priority placement across GoOutside feeds — putting your events in front of users even outside their selected interests — and a direct line to the team.
       </p>
     </div>
 
