@@ -90,6 +90,8 @@ export type OrganizerDashboardData = {
     soldRatio: number;
     revenue: number;
     posts: number;
+    checkedIn: number;
+    checkinRate: number;
   }>;
   hashtags: string[];
   activity: Array<{
@@ -296,6 +298,11 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
 
   const organizerProfile = profile as unknown as OrganizerProfileRow;
   const organizerEvents = (events ?? []) as unknown as OrganizerEventRow[];
+
+  const eventIds = organizerEvents.map((e) => e.id);
+  const { data: checkinCounts } = eventIds.length > 0
+    ? await supabaseAdmin.from("tickets").select("event_id").eq("status", "used").in("event_id", eventIds)
+    : { data: [] as { event_id: string }[] };
   const eventCount = organizerEvents.length || organizerProfile.total_events || 0;
   const ticketSales = organizerEvents.reduce((sum, event) => sum + event.tickets_sold, 0);
   const revenue = Number(organizerProfile.total_revenue ?? 0);
@@ -328,10 +335,17 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
     hashtags.push("#accraevents", "#weekendinaccra", "#gooutside");
   }
 
+  const checkinByEvent = new Map<string, number>();
+  for (const row of (checkinCounts ?? []) as { event_id: string }[]) {
+    checkinByEvent.set(row.event_id, (checkinByEvent.get(row.event_id) ?? 0) + 1);
+  }
+
   const recentEvents = organizerEvents.slice(0, 4).map((event) => {
     const statusLabel = getEventStatus(event);
     const capacity = event.total_capacity;
     const soldRatio = capacity ? clamp(Math.round((event.tickets_sold / capacity) * 100), 0, 100) : 0;
+    const checkedIn = checkinByEvent.get(event.id) ?? 0;
+    const checkinRate = event.tickets_sold > 0 ? clamp(Math.round((checkedIn / event.tickets_sold) * 100), 0, 100) : 0;
 
     return {
       id: event.id,
@@ -348,6 +362,8 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
       soldRatio,
       revenue: Math.round((event.tickets_sold * Math.max(80, revenue / Math.max(ticketSales, 1))) / 10) * 10,
       posts: Math.max(0, Math.round(event.saves_count / 2)),
+      checkedIn,
+      checkinRate,
     };
   });
 
