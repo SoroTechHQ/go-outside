@@ -1021,6 +1021,8 @@ export default function GoProfileClient({
                 avatarUrl:         localAvatarUrl,
                 coverUrl:          coverUrl,
                 joinedAt:          joinedAt ?? "",
+                dateOfBirth:       null,
+                phone:             null,
                 pulseScore:        pulseScore,
                 pulseTier:         (pulseTier as UserProfile["pulseTier"]) ?? "Newcomer",
                 neighbourhoodRank: 0,
