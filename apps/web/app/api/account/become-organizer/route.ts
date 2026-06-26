@@ -30,6 +30,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, already: true });
   }
 
+  // If the user already has organizer role, just ensure the profile row exists
+  // (handles partial-failure recovery where users.role was set but organizer_profiles wasn't).
+  if (existing.role === "organizer") {
+    const { data: existingOrgProfile } = await supabaseAdmin
+      .from("organizer_profiles")
+      .select("user_id, organization_name")
+      .eq("user_id", (existing as { id: string }).id)
+      .maybeSingle();
+
+    if (!existingOrgProfile) {
+      // Profile row is missing — create it now using the supplied or fallback name
+      const nameToUse = orgName || "My Organisation";
+      await supabaseAdmin.from("organizer_profiles").upsert(
+        {
+          user_id: (existing as { id: string }).id,
+          organization_name: nameToUse,
+          bio: orgBio || null,
+          status: "approved",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+    }
+    return NextResponse.json({ ok: true, already: false });
+  }
+
   // Check platform config: does organizer registration require manual approval?
   const { data: config } = await supabaseAdmin
     .from("admin_config")

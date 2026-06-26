@@ -26,11 +26,9 @@ export default async function SettingsPage() {
 
   const full = fullRes.data;
 
-  const isOrganizer =
-    full?.is_verified_organizer === true ||
-    full?.account_type === "organizer" ||
-    user.role === "organizer" ||
-    user.role === "admin";
+  // Match exactly what the organizer layout checks so the UI state is consistent:
+  // only consider the user an organizer when they can actually reach the dashboard.
+  const isOrganizer = user.role === "organizer" || user.role === "admin";
 
   const orgName = opRes.data?.organization_name ?? null;
 
