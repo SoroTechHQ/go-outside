@@ -19,6 +19,7 @@ import {
   Wine,
   Plant,
   Confetti,
+  Wrench,
 } from "@phosphor-icons/react/dist/ssr";
 import type { ComponentProps, ReactNode } from "react";
 
@@ -69,6 +70,10 @@ const ICON_MAP: Record<string, (props: IconProps) => ReactNode> = {
   // Education
   education:    (p) => <Books {...p} />,
   learning:     (p) => <Books {...p} />,
+
+  // Workshop
+  workshop:     (p) => <Wrench {...p} />,
+  workshops:    (p) => <Wrench {...p} />,
 
   // Default fallback
   default:      (p) => <Star {...p} />,

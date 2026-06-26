@@ -59,26 +59,41 @@ export function Step1Basics() {
         <p className="mt-1.5 text-right text-[11px] text-[var(--text-tertiary)]">{state.title.length}/120</p>
       </div>
 
-      {/* Category */}
+      {/* Event type (multi-select, max 3) */}
       {categories.length > 0 && (
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-            Category
-          </label>
-          <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Choose one — this controls where your event appears in the app.</p>
+          <div className="flex items-baseline justify-between">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+              Event type
+            </label>
+            <span className="text-[11px] text-[var(--text-tertiary)]">
+              {state.categoryIds.length}/3 selected
+            </span>
+          </div>
+          <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Pick up to 3 — controls where your event appears.</p>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {categories.map((cat) => {
-              const isSelected = state.categoryId === cat.id;
+              const isSelected = state.categoryIds.includes(cat.id);
+              const isDisabled = !isSelected && state.categoryIds.length >= 3;
               return (
                 <button
                   key={cat.id}
+                  disabled={isDisabled}
                   className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left text-[13px] font-medium transition ${
                     isSelected
                       ? "border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]"
+                      : isDisabled
+                      ? "cursor-not-allowed border-[var(--border-subtle)] bg-[var(--bg-elevated)] opacity-40"
                       : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--brand)]/25 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
                   }`}
                   type="button"
-                  onClick={() => setField("categoryId", cat.id)}
+                  onClick={() => {
+                    if (isSelected) {
+                      setField("categoryIds", state.categoryIds.filter((id) => id !== cat.id));
+                    } else if (!isDisabled) {
+                      setField("categoryIds", [...state.categoryIds, cat.id]);
+                    }
+                  }}
                 >
                   <span className="flex h-6 w-6 items-center justify-center">
                     <CategoryIcon slug={cat.slug} size={16} weight="bold" />
@@ -87,6 +102,21 @@ export function Step1Basics() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Custom event type */}
+          <div className="mt-3">
+            <p className="mb-1.5 text-[11px] text-[var(--text-tertiary)]">
+              Don&apos;t see your type? Add a custom one:
+            </p>
+            <input
+              className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10"
+              maxLength={40}
+              placeholder="e.g. Comedy Night, Fashion Show, Marathon…"
+              type="text"
+              value={state.customEventType}
+              onChange={(e) => setField("customEventType", e.target.value)}
+            />
           </div>
         </div>
       )}

@@ -18,7 +18,8 @@ export type WizardState = {
   step: 1 | 2 | 3 | 4 | 5 | 6;
   draftId: string | null;
   title: string;
-  categoryId: string;
+  categoryIds: string[];
+  customEventType: string;
   shortDescription: string;
   description: string;
   tags: string[];
@@ -89,7 +90,8 @@ const baseInitialState: WizardState = {
   step: 1,
   draftId: null,
   title: "",
-  categoryId: "",
+  categoryIds: [],
+  customEventType: "",
   shortDescription: "",
   description: "",
   tags: [],
@@ -185,10 +187,16 @@ export function WizardProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           id: state.draftId ?? undefined,
           title: state.title,
-          categoryId: state.categoryId,
+          categoryId: state.categoryIds[0] ?? "",
           shortDescription: state.shortDescription,
           description: state.description,
-          tags: state.tags,
+          tags: [
+            ...state.tags,
+            // extra category slugs stored as tags so they're queryable
+            ...state.categoryIds.slice(1),
+            // custom event type stored as a tag
+            ...(state.customEventType.trim() ? [state.customEventType.trim().toLowerCase().replace(/\s+/g, "-")] : []),
+          ],
           startDatetime: state.startDatetime || null,
           endDatetime: state.endDatetime || null,
           timezone: state.timezone,
