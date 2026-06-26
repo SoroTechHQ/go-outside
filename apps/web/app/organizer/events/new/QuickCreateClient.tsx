@@ -7,6 +7,8 @@ import {
   ArrowRight,
   CalendarBlank,
   Camera,
+  CaretDown,
+  CaretUp,
   Check,
   CheckCircle,
   Confetti,
@@ -14,6 +16,7 @@ import {
   GlobeSimple,
   MinusCircle,
   MonitorPlay,
+  PencilSimple,
   Person,
   PlusCircle,
   Question,
@@ -21,11 +24,13 @@ import {
   Tag,
   Ticket,
   Timer,
+  Trash,
   Upload,
   Users,
   Warning,
   X,
 } from "@phosphor-icons/react";
+import { DateTimePicker } from "../../../../components/ui/DateTimePicker";
 import Link from "next/link";
 import Image from "next/image";
 import { VenueMapPicker, type VenueResult } from "../../../../components/organizer/VenueMapPicker";
@@ -330,10 +335,27 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
   const [locationType, setLocationType] = useState<"venue" | "online" | "tba">("venue");
   const [venue, setVenue] = useState<VenueResult | null>(null);
   const [onlineLink, setOnlineLink] = useState("");
-  const [isFree, setIsFree] = useState(false);
-  const [price, setPrice] = useState("");
-  const [capacity, setCapacity] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+
+  // Ticket tiers
+  type QuickTicket = {
+    id: string; name: string; price: number; isFree: boolean;
+    capacity: string; description: string; saleStartsAt: string; saleEndsAt: string;
+  };
+  const EMPTY_TICKET: Omit<QuickTicket, "id"> = {
+    name: "", price: 0, isFree: false, capacity: "", description: "", saleStartsAt: "", saleEndsAt: "",
+  };
+  const TICKET_PRESETS: Array<Pick<QuickTicket, "name" | "price" | "isFree" | "description">> = [
+    { name: "Free Entry",         price: 0,   isFree: true,  description: "" },
+    { name: "General Admission",  price: 50,  isFree: false, description: "" },
+    { name: "VIP",                price: 150, isFree: false, description: "Priority entry & exclusive access" },
+    { name: "Early Bird",         price: 30,  isFree: false, description: "Limited early bird pricing" },
+  ];
+  const [tickets, setTickets] = useState<QuickTicket[]>([]);
+  const [ticketForm, setTicketForm] = useState<Omit<QuickTicket, "id"> | null>(null);
+  const [editingTicketId, setEditingTicketId] = useState<string | null>(null);
+  const [ticketAdvanced, setTicketAdvanced] = useState(false);
+  const [aiTicketsLoading, setAiTicketsLoading] = useState(false);
 
   // Cover image
   const [coverUrl, setCoverUrl] = useState("");
@@ -406,6 +428,52 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
     finally { setSpeakerPhotoUploading(null); }
   }
 
+  function openTicketForm(preset?: typeof TICKET_PRESETS[number]) {
+    setTicketForm(preset ? { ...EMPTY_TICKET, ...preset } : { ...EMPTY_TICKET });
+    setEditingTicketId(null);
+    setTicketAdvanced(false);
+  }
+  function saveTicketForm() {
+    if (!ticketForm || !ticketForm.name.trim()) return;
+    const t = { ...ticketForm, id: editingTicketId ?? Math.random().toString(36).slice(2) };
+    setTickets(prev =>
+      editingTicketId
+        ? prev.map(x => x.id === editingTicketId ? t : x)
+        : [...prev, t]
+    );
+    setTicketForm(null);
+    setEditingTicketId(null);
+  }
+  function startEditTicket(t: QuickTicket) {
+    setTicketForm({ name: t.name, price: t.price, isFree: t.isFree, capacity: t.capacity, description: t.description, saleStartsAt: t.saleStartsAt, saleEndsAt: t.saleEndsAt });
+    setEditingTicketId(t.id);
+    setTicketAdvanced(!!(t.capacity || t.description || t.saleStartsAt || t.saleEndsAt));
+  }
+  async function handleAISuggestTickets() {
+    if (!title.trim()) return;
+    setAiTicketsLoading(true);
+    try {
+      const catName = categories.find(c => c.id === categoryId)?.name ?? "";
+      const res = await fetch("/api/ai/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), category: catName }),
+      });
+      if (!res.ok) return;
+      const { tiers } = await res.json() as { tiers: Array<{ name: string; price: number; description: string }> };
+      const newTickets = tiers.map(t => ({
+        ...EMPTY_TICKET,
+        id: Math.random().toString(36).slice(2),
+        name: t.name,
+        price: t.price,
+        isFree: t.price === 0,
+        description: t.description,
+      }));
+      setTickets(newTickets);
+    } catch { /* silently ignore */ }
+    finally { setAiTicketsLoading(false); }
+  }
+
   function formatDate(d: string) {
     if (!d) return "";
     const dt = new Date(d + "T12:00:00");
@@ -447,17 +515,20 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
       }
       const data = await res.json() as { id: string };
 
-      // Create GA ticket if price/capacity provided
-      if (price || isFree || capacity) {
+      // Create all ticket tiers
+      for (const t of tickets) {
         await fetch("/api/organizer/ticket-types", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             eventId: data.id,
-            name: "General Admission",
-            price: isFree ? 0 : Number(price) || 0,
-            priceType: isFree ? "free" : "paid",
-            quantityTotal: capacity ? Number(capacity) : null,
+            name: t.name,
+            description: t.description || undefined,
+            price: t.isFree ? 0 : t.price,
+            priceType: t.isFree ? "free" : "paid",
+            quantityTotal: t.capacity ? Number(t.capacity) : null,
+            saleStartsAt: t.saleStartsAt || null,
+            saleEndsAt: t.saleEndsAt || null,
           }),
         });
       }
@@ -710,55 +781,196 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
         </Section>
 
         {/* E — Tickets */}
-        <Section letter="E" title="Tickets & capacity">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-1.5">
-                <CurrencyDollar size={11} className="inline mr-1" weight="bold" />Ticket price
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[var(--text-tertiary)]">GHS</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  disabled={isFree}
-                  placeholder={isFree ? "Free" : "0.00"}
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-3 pl-12 pr-4 text-[13px] font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none transition disabled:opacity-50"
-                />
-              </div>
+        <Section letter="E" title="Tickets & pricing">
+          {/* Quick presets + AI row */}
+          <div className="mb-4">
+            <p className="mb-2.5 text-[11px] font-semibold text-[var(--text-secondary)]">Quick add</p>
+            <div className="flex flex-wrap gap-2">
+              {TICKET_PRESETS.map(p => (
+                <button
+                  key={p.name}
+                  type="button"
+                  onClick={() => openTicketForm(p)}
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/50 hover:text-[var(--brand)]"
+                >
+                  <Ticket size={11} />
+                  {p.name}
+                  <span className="text-[var(--text-tertiary)]">
+                    {p.isFree ? "· Free" : `· GHS ${p.price}`}
+                  </span>
+                </button>
+              ))}
               <button
                 type="button"
-                onClick={() => { setIsFree(f => !f); if (!isFree) setPrice(""); }}
-                className="mt-2.5 flex items-center gap-2 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                disabled={!title.trim() || aiTicketsLoading}
+                onClick={handleAISuggestTickets}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--brand)]/30 bg-[var(--brand)]/8 px-3 py-1.5 text-[11px] font-semibold text-[var(--brand)] transition hover:bg-[var(--brand)]/15 disabled:opacity-40"
               >
-                <div className={`relative flex h-4 w-7 items-center rounded-full transition-colors ${isFree ? "bg-[var(--brand)]" : "bg-[var(--bg-muted)]"}`}>
-                  <span className={`absolute h-3 w-3 rounded-full bg-white shadow transition-transform ${isFree ? "translate-x-3.5" : "translate-x-0.5"}`} />
-                </div>
-                Free event
+                {aiTicketsLoading
+                  ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                  : <Sparkle size={11} weight="fill" />}
+                {aiTicketsLoading ? "Thinking…" : "AI Suggest"}
               </button>
             </div>
-            <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-1.5">
-                <Users size={11} className="inline mr-1" weight="bold" />Capacity
-              </label>
-              <div className="relative">
-                <Ticket size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="Unlimited"
-                  value={capacity}
-                  onChange={e => setCapacity(e.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] py-3 pl-9 pr-4 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none transition"
-                />
-              </div>
-              <p className="mt-1.5 text-[10px] text-[var(--text-tertiary)]">Leave blank for unlimited</p>
-            </div>
+            {!title.trim() && (
+              <p className="mt-1.5 text-[10px] text-[var(--text-tertiary)]">Enter an event name above to enable AI suggestions.</p>
+            )}
           </div>
-          <p className="mt-3 text-[11px] text-[var(--text-tertiary)]">You can add multiple ticket tiers, promo codes, and refund policies in the tickets tab after creating.</p>
+
+          {/* Added ticket tiers */}
+          {tickets.length > 0 && (
+            <div className="mb-3 space-y-2">
+              {tickets.map(t => (
+                <div key={t.id} className="flex items-center gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3">
+                  <Ticket size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-[var(--text-primary)]">{t.name}</p>
+                    <p className="text-[11px] text-[var(--text-tertiary)]">
+                      {t.isFree ? "Free" : `GHS ${t.price.toLocaleString()}`}
+                      {t.capacity ? ` · ${Number(t.capacity).toLocaleString()} capacity` : ""}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => startEditTicket(t)} className="shrink-0 rounded-full p-1.5 text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
+                    <PencilSimple size={13} />
+                  </button>
+                  <button type="button" onClick={() => setTickets(prev => prev.filter(x => x.id !== t.id))} className="shrink-0 rounded-full p-1.5 text-[var(--text-tertiary)] transition hover:text-red-400">
+                    <Trash size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Ticket form */}
+          {ticketForm ? (
+            <div className="rounded-[16px] border border-[var(--brand)]/20 bg-[var(--bg-elevated)] p-4 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
+                {editingTicketId ? "Edit tier" : "New ticket tier"}
+              </p>
+
+              {/* Name */}
+              <input
+                className="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                placeholder="Tier name (e.g. VIP, General Admission)"
+                value={ticketForm.name}
+                onChange={e => setTicketForm(f => f ? { ...f, name: e.target.value } : f)}
+              />
+
+              {/* Price row */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[var(--text-tertiary)]">GHS</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    disabled={ticketForm.isFree}
+                    placeholder="0"
+                    value={ticketForm.isFree ? "" : ticketForm.price === 0 ? "" : ticketForm.price}
+                    onChange={e => setTicketForm(f => f ? { ...f, price: Number(e.target.value) || 0 } : f)}
+                    className="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] py-2.5 pl-11 pr-4 text-[13px] font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none disabled:opacity-40"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTicketForm(f => f ? { ...f, isFree: !f.isFree, price: 0 } : f)}
+                  className="flex shrink-0 items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3 py-2 text-[11px] font-semibold transition hover:border-[var(--brand)]/40"
+                >
+                  <div className={`relative flex h-3.5 w-6 items-center rounded-full transition-colors ${ticketForm.isFree ? "bg-[var(--brand)]" : "bg-[var(--bg-muted)]"}`}>
+                    <span className={`absolute h-2.5 w-2.5 rounded-full bg-white shadow transition-transform ${ticketForm.isFree ? "translate-x-3" : "translate-x-0.5"}`} />
+                  </div>
+                  Free
+                </button>
+              </div>
+
+              {/* Advanced toggle */}
+              <button
+                type="button"
+                onClick={() => setTicketAdvanced(v => !v)}
+                className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-tertiary)] transition hover:text-[var(--text-secondary)]"
+              >
+                {ticketAdvanced ? <CaretUp size={11} /> : <CaretDown size={11} />}
+                {ticketAdvanced ? "Hide" : "Show"} capacity, description &amp; sale dates
+              </button>
+
+              {ticketAdvanced && (
+                <div className="space-y-3 border-t border-[var(--border-subtle)] pt-3">
+                  {/* Capacity + Description */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Capacity</label>
+                      <input
+                        type="number" min="1" placeholder="Unlimited"
+                        value={ticketForm.capacity}
+                        onChange={e => setTicketForm(f => f ? { ...f, capacity: e.target.value } : f)}
+                        className="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Description</label>
+                      <input
+                        type="text" maxLength={80} placeholder="e.g. includes open bar"
+                        value={ticketForm.description}
+                        onChange={e => setTicketForm(f => f ? { ...f, description: e.target.value } : f)}
+                        className="w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  {/* Sale dates */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <DateTimePicker
+                      label="Sale opens"
+                      placeholder="When does sale open?"
+                      value={ticketForm.saleStartsAt}
+                      onChange={v => setTicketForm(f => f ? { ...f, saleStartsAt: v } : f)}
+                      showTime
+                    />
+                    <DateTimePicker
+                      label="Sale closes"
+                      placeholder="When does sale close?"
+                      value={ticketForm.saleEndsAt}
+                      onChange={v => setTicketForm(f => f ? { ...f, saleEndsAt: v } : f)}
+                      minDate={ticketForm.saleStartsAt || undefined}
+                      showTime
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={!ticketForm.name.trim()}
+                  onClick={saveTicketForm}
+                  className="rounded-full bg-[var(--brand)] px-4 py-2 text-[12px] font-bold text-black transition hover:bg-[#4fa824] disabled:opacity-40"
+                >
+                  {editingTicketId ? "Save changes" : "Add tier"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTicketForm(null); setEditingTicketId(null); }}
+                  className="rounded-full border border-[var(--border-subtle)] px-4 py-2 text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openTicketForm()}
+              className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[var(--border-subtle)] py-3.5 text-[12px] font-medium text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
+            >
+              <PlusCircle size={15} /> Add custom tier
+            </button>
+          )}
+
+          {tickets.length === 0 && !ticketForm && (
+            <p className="mt-2 text-center text-[11px] text-[var(--text-tertiary)]">
+              Pick a preset above or add a custom tier. You can also add more tiers after creating.
+            </p>
+          )}
         </Section>
 
         {/* F — Speakers */}
