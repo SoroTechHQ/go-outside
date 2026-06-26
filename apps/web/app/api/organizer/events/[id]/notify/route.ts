@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "../../../../../../lib/supabase";
 import { insertNotification } from "../../../../../../lib/db/insert-notification";
+import { sendEventBroadcast } from "../../../../../../lib/email";
 
 function jsonError(status: number, message: string) {
   return NextResponse.json({ error: message }, { status });
 }
+
+type OrganizerRow = {
+  organization_name: string | null;
+};
 
 export async function POST(
   req: NextRequest,
@@ -36,24 +41,53 @@ export async function POST(
   const body = await req.json() as {
     subject?: string;
     message: string;
-    channels?: string[];
+    sendEmail?: boolean;
   };
 
   if (!body.message?.trim()) return jsonError(400, "Message body is required");
 
-  // Fetch active ticket holders
+  // Fetch organizer name for email "from" context
+  let organizerName = "Your event organizer";
+  if (body.sendEmail) {
+    const { data: profile } = await supabaseAdmin
+      .from("organizer_profiles")
+      .select("organization_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    organizerName = (profile as OrganizerRow | null)?.organization_name ?? organizerName;
+  }
+
+  // Fetch active ticket holders with email + name for email sends
   const { data: tickets } = await supabaseAdmin
     .from("tickets")
-    .select("user_id")
+    .select("user_id, users ( first_name, email )")
     .eq("event_id", id)
     .in("status", ["active", "used"]);
 
-  const recipientIds = [...new Set((tickets ?? []).map((t: { user_id: string }) => t.user_id))];
+  type TicketWithUser = {
+    user_id: string;
+    users: { first_name: string | null; email: string | null } | null;
+  };
+
+  const rows = (tickets ?? []) as unknown as TicketWithUser[];
+
+  // Deduplicate by user_id
+  const seen = new Set<string>();
+  const recipients: TicketWithUser[] = [];
+  for (const row of rows) {
+    if (!seen.has(row.user_id)) {
+      seen.add(row.user_id);
+      recipients.push(row);
+    }
+  }
 
   let sent = 0;
-  for (const userId of recipientIds) {
+  let emailsSent = 0;
+
+  for (const recipient of recipients) {
+    // In-app notification (fire-and-forget)
     insertNotification({
-      userId,
+      userId: recipient.user_id,
       type: "organizer_message",
       title: body.subject?.trim() || `Update about ${event.title}`,
       body: body.message.trim(),
@@ -61,7 +95,21 @@ export async function POST(
       actionHref: `/events/${event.slug}`,
     });
     sent++;
+
+    // Email broadcast — send concurrently in the background
+    if (body.sendEmail && recipient.users?.email) {
+      void sendEventBroadcast({
+        to:           recipient.users.email,
+        firstName:    recipient.users.first_name ?? "there",
+        subject:      body.subject?.trim() || `Update about ${event.title}`,
+        message:      body.message.trim(),
+        eventName:    event.title,
+        eventSlug:    event.slug,
+        organizerName,
+      });
+      emailsSent++;
+    }
   }
 
-  return NextResponse.json({ sent, failed: 0 });
+  return NextResponse.json({ sent, emailsSent, failed: 0 });
 }

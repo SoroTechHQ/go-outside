@@ -6,6 +6,7 @@ import { AttendeesClient } from "./AttendeesClient";
 type TicketRow = {
   id: string;
   status: string;
+  user_id: string | null;
   purchase_price: number | null;
   attendee_name: string | null;
   attendee_email: string | null;
@@ -24,7 +25,7 @@ export default async function OrganizerAttendeesPage() {
     supabaseAdmin
       .from("tickets")
       .select(`
-        id, status, purchase_price, attendee_name, attendee_email, created_at, checked_in_at,
+        id, status, user_id, purchase_price, attendee_name, attendee_email, created_at, checked_in_at,
         events!inner ( id, title, slug, start_datetime, organizer_id ),
         ticket_types ( name, price ),
         users ( first_name, last_name, avatar_url, username )
@@ -50,6 +51,7 @@ export default async function OrganizerAttendeesPage() {
       : (t.attendee_name ?? "Guest");
     return {
       id:           t.id,
+      userId:       t.user_id ?? null,
       name:         name || "Guest",
       email:        t.attendee_email ?? "",
       avatarUrl:    u?.avatar_url ?? null,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, PaperPlaneTilt, Users } from "@phosphor-icons/react";
+import { X, PaperPlaneTilt, Users, EnvelopeSimple } from "@phosphor-icons/react";
 
 interface MessageAttendeesModalProps {
   isOpen: boolean;
@@ -20,8 +20,9 @@ export function MessageAttendeesModal({
 }: MessageAttendeesModalProps) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [sendEmail, setSendEmail] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [result, setResult] = useState<{ sent: number } | null>(null);
+  const [result, setResult] = useState<{ sent: number; emailsSent?: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export function MessageAttendeesModal({
       setMessage("");
       setResult(null);
       setError(null);
+      setSendEmail(false);
     }
   }, [isOpen]);
 
@@ -52,13 +54,13 @@ export function MessageAttendeesModal({
       const res = await fetch(`/api/organizer/events/${eventId}/notify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, message }),
+        body: JSON.stringify({ subject, message, sendEmail }),
       });
-      const data = await res.json() as { sent?: number; error?: string; message?: string };
+      const data = await res.json() as { sent?: number; emailsSent?: number; error?: string; message?: string };
       if (!res.ok) {
         setError(data.message ?? data.error ?? "Failed to send message.");
       } else {
-        setResult({ sent: data.sent ?? 0 });
+        setResult({ sent: data.sent ?? 0, emailsSent: data.emailsSent });
       }
     } catch {
       setError("Network error. Please try again.");
@@ -103,9 +105,30 @@ export function MessageAttendeesModal({
               Sending to{" "}
               <span className="font-semibold text-[var(--text-primary)]">
                 {attendeeCount} ticket holder{attendeeCount !== 1 ? "s" : ""}
-              </span>{" "}
-              via in-app notification
+              </span>
             </p>
+          </div>
+
+          {/* Channel toggles */}
+          <div className="flex items-center gap-3">
+            <div className="flex flex-1 items-center gap-2.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3.5 py-2.5 opacity-80">
+              <Users size={14} className="shrink-0 text-[var(--brand)]" />
+              <p className="text-[12px] text-[var(--text-secondary)]">In-app notification</p>
+              <span className="ml-auto rounded-full bg-[var(--brand)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--brand)]">Always on</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSendEmail((v) => !v)}
+              className={`flex flex-1 items-center gap-2.5 rounded-[12px] border px-3.5 py-2.5 transition ${
+                sendEmail
+                  ? "border-[var(--brand)]/40 bg-[var(--brand)]/8"
+                  : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:border-[var(--brand)]/30"
+              }`}
+            >
+              <EnvelopeSimple size={14} className={sendEmail ? "text-[var(--brand)]" : "text-[var(--text-tertiary)]"} />
+              <p className={`text-[12px] font-medium ${sendEmail ? "text-[var(--brand)]" : "text-[var(--text-secondary)]"}`}>Email</p>
+              <span className={`ml-auto h-4 w-4 rounded-full border-2 transition ${sendEmail ? "border-[var(--brand)] bg-[var(--brand)]" : "border-[var(--border-subtle)]"}`} />
+            </button>
           </div>
 
           {/* Result state */}
@@ -115,7 +138,8 @@ export function MessageAttendeesModal({
                 Message sent!
               </p>
               <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-                Notified {result.sent} attendee{result.sent !== 1 ? "s" : ""}.
+                Notified {result.sent} attendee{result.sent !== 1 ? "s" : ""} in-app
+                {result.emailsSent ? ` and sent ${result.emailsSent} email${result.emailsSent !== 1 ? "s" : ""}` : ""}.
               </p>
               <button
                 type="button"
