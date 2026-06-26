@@ -86,6 +86,7 @@ export function DateTimePicker({
           maxDate={max ?? undefined}
           popperPlacement="bottom-start"
           popperContainer={CalendarPortal}
+          popperProps={{ strategy: "fixed" }}
           className="go-datepicker__input"
           calendarClassName="go-datepicker__calendar"
           wrapperClassName="go-datepicker__wrapper"

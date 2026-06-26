@@ -186,7 +186,7 @@ function WizardContent() {
 export function WizardShell() {
   return (
     <WizardProvider>
-      <div className="flex h-full min-h-[600px] flex-col overflow-hidden rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
+      <div className="flex h-full min-h-[600px] flex-col rounded-[24px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_4px_24px_rgba(5,12,8,0.08)]">
         <WizardContent />
       </div>
     </WizardProvider>
