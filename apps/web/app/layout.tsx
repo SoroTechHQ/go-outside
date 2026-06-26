@@ -54,7 +54,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${interBody.variable} ${interDisplay.variable} font-body lab-bg relative`}>
+      <body suppressHydrationWarning className={`${interBody.variable} ${interDisplay.variable} font-body lab-bg relative`}>
         <NextTopLoader color="#2f8f45" height={3} showSpinner={false} easing="ease" speed={300} />
         <ClerkProvider>
           <Providers>
