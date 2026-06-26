@@ -37,7 +37,7 @@ export function Step6Publish() {
     setError(null);
     if (!state.title?.trim()) { setError("Event title is required."); return; }
     if (!state.startDatetime)  { setError("Start date and time are required."); return; }
-    if (!state.categoryId)     { setError("Please select an event category."); return; }
+    if (!state.categoryIds.length && !state.customEventType.trim()) { setError("Please select an event type."); return; }
 
     setSubmitting(true);
     try {
@@ -47,10 +47,14 @@ export function Step6Publish() {
 
       const payload = {
         title: state.title,
-        categoryId: state.categoryId,
+        categoryId: state.categoryIds[0] ?? "",
         shortDescription: state.shortDescription,
         description: state.description,
-        tags: state.tags,
+        tags: [
+          ...state.tags,
+          ...state.categoryIds.slice(1),
+          ...(state.customEventType.trim() ? [state.customEventType.trim().toLowerCase().replace(/\s+/g, "-")] : []),
+        ],
         startDatetime: state.startDatetime,
         endDatetime: state.endDatetime,
         timezone: state.timezone,
