@@ -151,7 +151,7 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
 
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
         {/* Cover photo */}
-        <div className="relative overflow-hidden rounded-[16px] border border-white/8">
+        <div className="relative rounded-[16px] border border-white/8 overflow-hidden">
           <input
             ref={coverInputRef}
             type="file"
@@ -171,17 +171,30 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
               </div>
             )}
           </div>
-          <button
-            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
-            type="button"
-            onClick={() => coverInputRef.current?.click()}
-            disabled={coverUploading}
-          >
-            <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-sm">
-              <Camera size={12} />
-              {coverUploading ? "Uploading…" : "Change Cover"}
-            </div>
-          </button>
+          {/* Always-visible action buttons */}
+          <div className="flex items-center gap-2 border-t border-white/8 bg-white/4 px-3 py-2">
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={coverUploading}
+              className="flex items-center gap-1 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-[11px] font-semibold text-white/70 transition hover:bg-white/15 hover:text-white disabled:opacity-40"
+            >
+              <Camera size={11} />
+              {coverUploading ? "Uploading…" : coverUrl ? "Change" : "Add cover"}
+            </button>
+            {coverUrl && !coverUploading && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setCoverUrl(null);
+                  await fetch("/api/users/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cover_url: null }) });
+                }}
+                className="flex items-center gap-1 rounded-full border border-red-500/25 bg-red-500/10 px-3 py-1.5 text-[11px] font-semibold text-red-400 transition hover:bg-red-500/20"
+              >
+                <X size={10} weight="bold" /> Remove
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Avatar */}
@@ -195,7 +208,7 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
           />
           <button
             type="button"
-            className="relative"
+            className="relative shrink-0"
             onClick={() => avatarInputRef.current?.click()}
             disabled={avatarUploading}
           >
@@ -213,11 +226,23 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
               )}
             </div>
           </button>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-[12px] font-semibold text-white/70">Profile photo</p>
             <p className="mt-0.5 text-[11px] text-white/30">
-              {avatarUploading ? "Uploading…" : "Tap to change · Compressed to WebP"}
+              {avatarUploading ? "Uploading…" : "Tap photo to change · Compressed to WebP"}
             </p>
+            {avatarUrl && !avatarUploading && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setAvatarUrl(null);
+                  await fetch("/api/users/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ avatar_url: null }) });
+                }}
+                className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-red-400 transition hover:text-red-300"
+              >
+                <X size={9} weight="bold" /> Remove photo
+              </button>
+            )}
           </div>
         </div>
 

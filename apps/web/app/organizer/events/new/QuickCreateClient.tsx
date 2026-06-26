@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   CalendarBlank,
+  Camera,
   Check,
   CheckCircle,
   Confetti,
@@ -307,7 +308,7 @@ function Section({ letter, title, children }: { letter: string; title: string; c
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="overflow-hidden rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_2px_12px_rgba(5,12,8,0.05)]"
+      className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_2px_12px_rgba(5,12,8,0.05)]"
     >
       <div className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-5 py-4">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand)]/10 text-[11px] font-bold text-[var(--brand)]">{letter}</span>
@@ -340,7 +341,8 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
   const coverRef = useRef<HTMLInputElement>(null);
 
   // Keynote speakers
-  const [speakers, setSpeakers] = useState<{ name: string; role: string }[]>([]);
+  const [speakers, setSpeakers] = useState<{ name: string; role: string; photo: string | null }[]>([]);
+  const [speakerPhotoUploading, setSpeakerPhotoUploading] = useState<number | null>(null);
 
   // Tags
   const [tags, setTags] = useState<string[]>([]);
@@ -385,10 +387,23 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
     }
   }
 
-  function addSpeaker() { setSpeakers(prev => [...prev, { name: "", role: "" }]); }
+  function addSpeaker() { setSpeakers(prev => [...prev, { name: "", role: "", photo: null }]); }
   function removeSpeaker(i: number) { setSpeakers(prev => prev.filter((_, j) => j !== i)); }
-  function updateSpeaker(i: number, field: "name" | "role", val: string) {
+  function updateSpeaker(i: number, field: "name" | "role" | "photo", val: string | null) {
     setSpeakers(prev => prev.map((s, j) => j === i ? { ...s, [field]: val } : s));
+  }
+  async function handleSpeakerPhoto(i: number, file: File) {
+    setSpeakerPhotoUploading(i);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload/cover", { method: "POST", body: fd });
+      if (res.ok) {
+        const { url } = await res.json() as { url: string };
+        updateSpeaker(i, "photo", url);
+      }
+    } catch { /* ignore */ }
+    finally { setSpeakerPhotoUploading(null); }
   }
 
   function formatDate(d: string) {
@@ -452,8 +467,11 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
       if (validSpeakers.length > 0) {
         await fetch(`/api/organizer/events/${data.id}/speakers`, {
           method: "PUT",
+
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ speakers: validSpeakers }),
+          body: JSON.stringify({
+            speakers: validSpeakers.map(s => ({ name: s.name, role: s.role, photoUrl: s.photo ?? undefined })),
+          }),
         });
       }
 
@@ -610,7 +628,7 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
 
           <AnimatePresence mode="wait">
             {locationType === "venue" && (
-              <motion.div key="venue" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <motion.div key="venue" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <VenueMapPicker
                   value={venue}
                   onChange={setVenue}
@@ -622,7 +640,7 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
               </motion.div>
             )}
             {locationType === "online" && (
-              <motion.div key="online" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <motion.div key="online" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-1.5">Meeting / stream link</label>
                 <div className="relative">
                   <GlobeSimple size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -754,11 +772,38 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="group flex gap-2"
+                  className="group flex items-center gap-2"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--brand)]/10 text-[var(--brand)]">
-                    <Person size={16} weight="fill" />
-                  </div>
+                  {/* Photo upload */}
+                  <label className="relative shrink-0 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) void handleSpeakerPhoto(i, f); }}
+                    />
+                    <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-[var(--brand)]/10 text-[var(--brand)] ring-2 ring-transparent transition hover:ring-[var(--brand)]/40">
+                      {speakerPhotoUploading === i ? (
+                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                      ) : s.photo ? (
+                        <img src={s.photo} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <Person size={16} weight="fill" />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition group-hover:opacity-100">
+                        <Camera size={11} className="text-white" />
+                      </div>
+                    </div>
+                    {s.photo && (
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); updateSpeaker(i, "photo", null); }}
+                        className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white shadow"
+                      >
+                        <X size={8} weight="bold" />
+                      </button>
+                    )}
+                  </label>
                   <input
                     className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-[12px] font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
                     placeholder="Name (e.g. Stonebwoy)"
@@ -774,7 +819,7 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
                   <button
                     type="button"
                     onClick={() => removeSpeaker(i)}
-                    className="mt-1 text-[var(--text-tertiary)] opacity-0 transition hover:text-red-500 group-hover:opacity-100"
+                    className="mt-1 shrink-0 text-[var(--text-tertiary)] opacity-0 transition hover:text-red-500 group-hover:opacity-100"
                   >
                     <MinusCircle size={16} weight="fill" />
                   </button>
