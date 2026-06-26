@@ -8,6 +8,7 @@ import {
   Camera,
   CheckCircle,
   Globe,
+  Image as PhImage,
   InstagramLogo,
   MapPin,
   TwitterLogo,
@@ -35,11 +36,14 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
   const [instagram, setInstagram] = useState(profile?.social_links?.instagram ?? "");
   const [twitter, setTwitter] = useState(profile?.social_links?.twitter ?? "");
   const [logoUrl, setLogoUrl] = useState(profile?.logo_url ?? null);
+  const [coverUrl, setCoverUrl] = useState(profile?.cover_url ?? null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -63,6 +67,31 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
       setError("Failed to upload logo. Try again.");
     } finally {
       setLogoUploading(false);
+    }
+  }
+
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverUploading(true);
+    setError("");
+    try {
+      const compressed = await compressForUpload(file, "banner");
+      const fd = new FormData();
+      fd.append("file", compressed, "cover.webp");
+      const res = await fetch("/api/upload/cover", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = (await res.json()) as { url: string };
+      setCoverUrl(url);
+      await fetch("/api/organizer/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cover_url: url }),
+      });
+    } catch {
+      setError("Failed to upload cover. Try again.");
+    } finally {
+      setCoverUploading(false);
     }
   }
 
@@ -152,6 +181,55 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
             accept="image/*"
             className="hidden"
             onChange={handleLogoChange}
+          />
+        </div>
+
+        {/* Cover image */}
+        <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_2px_12px_rgba(5,12,8,0.05)]">
+          <div className="flex items-center gap-2 mb-4">
+            <PhImage size={15} weight="fill" className="text-[var(--brand)]" />
+            <p className="text-[14px] font-semibold text-[var(--text-primary)]">Cover image</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={coverUploading}
+            className="relative w-full overflow-hidden rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] transition hover:opacity-85 disabled:opacity-60"
+            style={{ height: 140 }}
+          >
+            {coverUrl ? (
+              <Image src={coverUrl} alt="Cover" fill className="object-cover" />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--text-tertiary)]">
+                <PhImage size={28} />
+                <p className="text-[12px]">Click to upload cover image</p>
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/30 hover:opacity-100">
+              {coverUploading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <Camera size={22} className="text-white" />
+              )}
+            </div>
+          </button>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-[11px] text-[var(--text-tertiary)]">Recommended 1500×500px · JPG or PNG</p>
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={coverUploading}
+              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-60"
+            >
+              {coverUploading ? "Uploading…" : coverUrl ? "Change cover" : "Upload cover"}
+            </button>
+          </div>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleCoverChange}
           />
         </div>
 
