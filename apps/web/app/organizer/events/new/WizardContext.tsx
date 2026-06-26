@@ -5,8 +5,11 @@ import { createContext, useContext, useEffect, useReducer, type ReactNode } from
 export type TicketTypeInput = {
   id: string;
   name: string;
+  description: string;
   price: number;
   capacity: number | null;
+  minPerOrder: number | null;
+  maxPerOrder: number | null;
   saleStartsAt: string | null;
   saleEndsAt: string | null;
 };
@@ -17,6 +20,7 @@ export type WizardState = {
   title: string;
   categoryId: string;
   shortDescription: string;
+  description: string;
   tags: string[];
   startDatetime: string;
   endDatetime: string;
@@ -87,6 +91,7 @@ const baseInitialState: WizardState = {
   title: "",
   categoryId: "",
   shortDescription: "",
+  description: "",
   tags: [],
   startDatetime: "",
   endDatetime: "",
@@ -182,6 +187,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
           title: state.title,
           categoryId: state.categoryId,
           shortDescription: state.shortDescription,
+          description: state.description,
           tags: state.tags,
           startDatetime: state.startDatetime || null,
           endDatetime: state.endDatetime || null,

@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   PencilSimple,
   Eye,
   EyeSlash,
+  Export,
   PaperPlaneTilt,
   Trash,
 } from "@phosphor-icons/react";
 import { ConfirmModal } from "../../_components/ConfirmModal";
 import { MessageAttendeesModal } from "../../_components/MessageAttendeesModal";
+import { ShareEventModal } from "../../_components/ShareEventModal";
 
 interface EventDetailActionsProps {
   eventId: string;
@@ -30,11 +32,24 @@ export function EventDetailActions({
   attendeeCount,
 }: EventDetailActionsProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [justPublished, setJustPublished] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("shared") === "1") {
+      setJustPublished(true);
+      setShareOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("shared");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
 
   const isDraft = status === "draft";
   const isPublished = status === "published";
@@ -107,6 +122,15 @@ export function EventDetailActions({
 
         <button
           type="button"
+          onClick={() => { setJustPublished(false); setShareOpen(true); }}
+          className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+        >
+          <Export size={14} />
+          Share
+        </button>
+
+        <button
+          type="button"
           onClick={() => setMessageOpen(true)}
           className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
         >
@@ -168,6 +192,14 @@ export function EventDetailActions({
         eventId={eventId}
         eventName={eventName}
         attendeeCount={attendeeCount}
+      />
+
+      <ShareEventModal
+        isOpen={shareOpen}
+        onClose={() => { setShareOpen(false); setJustPublished(false); }}
+        eventTitle={eventName}
+        eventSlug={eventSlug}
+        justPublished={justPublished}
       />
     </>
   );
