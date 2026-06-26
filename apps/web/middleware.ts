@@ -10,6 +10,7 @@ const isProtected = createRouteMatcher([
   "/settings",
   "/host(.*)",
   "/ai(.*)",
+  "/events/(.*)/preview", // draft event preview — organizer-only
 ]);
 
 const isMarketingRoot = createRouteMatcher(["/"]);

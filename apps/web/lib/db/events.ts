@@ -37,13 +37,37 @@ export async function getPublishedEvents(): Promise<EventItem[]> {
   return adaptCurrentOrFutureEvents(data as unknown as DbEventRow[]);
 }
 
-// Single event by slug
+// Single event by slug (published only — public)
 export async function getEventBySlug(slug: string): Promise<EventItem | null> {
   const { data, error } = await supabaseAdmin
     .from("events")
     .select(EVENT_SELECT)
     .eq("slug", slug)
     .eq("status", "published")
+    .single();
+
+  if (error || !data) return null;
+  return adaptEvent(data as unknown as DbEventRow);
+}
+
+// Any-status event by slug — only for the organizer who owns it (preview mode)
+export async function getEventBySlugForPreview(
+  slug: string,
+  clerkId: string,
+): Promise<EventItem | null> {
+  // Resolve the internal user id first
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("id")
+    .eq("clerk_id", clerkId)
+    .maybeSingle();
+  if (!user) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from("events")
+    .select(EVENT_SELECT)
+    .eq("slug", slug)
+    .eq("organizer_id", user.id)
     .single();
 
   if (error || !data) return null;

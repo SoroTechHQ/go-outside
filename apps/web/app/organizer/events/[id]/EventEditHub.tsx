@@ -169,7 +169,7 @@ export function EventEditHub({
                   {statusLabel}
                 </span>
                 <Link
-                  href={`/events/${event.slug}`}
+                  href={`/events/${event.slug}/preview`}
                   target="_blank"
                   className="ml-auto flex items-center gap-0.5 text-[10px] text-[var(--text-tertiary)] hover:text-[var(--brand)] transition"
                 >

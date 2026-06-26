@@ -119,7 +119,7 @@ export default async function OrganizerEventDetailPage({
             </Link>
             <Link
               className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
-              href={`/events/${ev.slug}`}
+              href={ev.status === "published" ? `/events/${ev.slug}` : `/events/${ev.slug}/preview`}
               rel="noopener noreferrer"
               target="_blank"
             >
