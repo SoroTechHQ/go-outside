@@ -169,7 +169,7 @@ export function CreatePostModal({ organizerName, ownEvents, open, onClose }: Pro
       {/* Full modal */}
       {state === "open" && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-0 md:items-center md:p-4">
-          <div className="flex w-full max-h-[92dvh] flex-col overflow-hidden rounded-t-[28px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_24px_72px_rgba(5,12,8,0.25)] md:max-h-[80vh] md:max-w-[560px] md:rounded-[24px]">
+          <div className="flex w-full max-h-[92dvh] flex-col rounded-t-[28px] border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_24px_72px_rgba(5,12,8,0.25)] md:max-h-[80vh] md:max-w-[560px] md:rounded-[24px]">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
               <p className="text-[14px] font-semibold text-[var(--text-primary)]">Create Post</p>
