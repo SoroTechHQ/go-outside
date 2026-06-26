@@ -13,10 +13,13 @@ import {
   CalendarBlank,
   CheckCircle,
   Clock,
+  CopySimple,
   HeartStraight,
   Images,
+  Link as LinkIcon,
   MapPin,
   PaperPlaneTilt,
+  ShareNetwork,
   ShieldCheck,
   Star,
   Ticket,
@@ -422,12 +425,30 @@ function PaneFooter({
   onToggleSaved: () => void;
   onGetTickets: () => void;
 }) {
-  const whatsappText = encodeURIComponent(
-    `🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.club/events/${event.slug}\n\n_Let's go outside_ 🟢`
-  );
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const eventUrl = `https://gooutside.club/events/${event.slug}`;
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\n${eventUrl}\n\n_Let's go outside_ 🟢`)}`;
+
+  function copyLink() {
+    navigator.clipboard.writeText(eventUrl).catch(() => {});
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  }
+
+  async function nativeShare() {
+    if (typeof navigator?.share === "function") {
+      try {
+        await navigator.share({ title: event.title, text: `Check out ${event.title} on GoOutside`, url: eventUrl });
+      } catch {}
+    } else {
+      copyLink();
+    }
+  }
 
   return (
     <div className="shrink-0 border-t border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
+      {/* CTA + Save row */}
       <div className="flex items-center gap-2">
         <button
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98]"
@@ -441,24 +462,38 @@ function PaneFooter({
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${saved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
           onClick={onToggleSaved}
           type="button"
+          title="Save"
         >
           <HeartStraight size={17} weight={saved ? "fill" : "regular"} />
         </button>
+      </div>
+
+      {/* 3-button share row */}
+      <div className="mt-2 flex gap-2">
         <a
-          href={`https://wa.me/?text=${whatsappText}`}
+          href={waUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--home-border)] text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
         >
-          <WhatsappLogo size={17} weight="fill" />
+          <WhatsappLogo size={14} weight="fill" />
+          WhatsApp
         </a>
         <button
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${saved ? "border-[var(--brand)]/40 text-[var(--brand)]" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"}`}
-          onClick={onToggleSaved}
           type="button"
-          title="Add to wishlist"
+          onClick={copyLink}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
         >
-          <BookmarkSimple size={15} weight={saved ? "fill" : "regular"} />
+          {copiedLink ? <LinkIcon size={13} weight="bold" className="text-[var(--brand)]" /> : <CopySimple size={13} weight="bold" />}
+          {copiedLink ? "Copied!" : "Copy link"}
+        </button>
+        <button
+          type="button"
+          onClick={nativeShare}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+        >
+          <ShareNetwork size={13} weight="bold" />
+          Share
         </button>
       </div>
     </div>
