@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import OrganizerShell from "./_components/OrganizerShell";
 import { getOrganizerDashboardData } from "./_lib/dashboard";
 import { getOrCreateSupabaseUser } from "../../lib/db/users";
+import { supabaseAdmin } from "../../lib/supabase";
 import { STEP_ROUTES } from "../../lib/onboarding-utils";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,31 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
 
   if (user.role !== "organizer" && user.role !== "admin") {
     redirect("/home");
+  }
+
+  // Auto-heal: if the user has organizer role but their organizer_profiles row is
+  // missing (can happen when the become-organizer API fails mid-write), create it
+  // so they can access their dashboard without being stuck in a redirect loop.
+  const { data: existingProfile } = await supabaseAdmin
+    .from("organizer_profiles")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!existingProfile) {
+    const fallbackName =
+      `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+      user.first_name ||
+      "My Organisation";
+    await supabaseAdmin.from("organizer_profiles").upsert(
+      {
+        user_id: user.id,
+        organization_name: fallbackName,
+        status: "approved",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
   }
 
   const dashboard = await getOrganizerDashboardData(user.id);
