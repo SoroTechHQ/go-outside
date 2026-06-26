@@ -12,16 +12,22 @@ function generateId() {
 
 type TicketFormState = {
   name: string;
+  description: string;
   price: string;
   capacity: string;
+  minPerOrder: string;
+  maxPerOrder: string;
   saleStartsAt: string;
   saleEndsAt: string;
 };
 
 const emptyForm: TicketFormState = {
   name: "",
+  description: "",
   price: "0",
   capacity: "",
+  minPerOrder: "",
+  maxPerOrder: "",
   saleStartsAt: "",
   saleEndsAt: "",
 };
@@ -37,8 +43,11 @@ export function Step4Tickets() {
     const ticket: TicketTypeInput = {
       id: editingId ?? generateId(),
       name: form.name.trim(),
+      description: form.description.trim(),
       price: Number(form.price) || 0,
       capacity: form.capacity ? Number(form.capacity) : null,
+      minPerOrder: form.minPerOrder ? Number(form.minPerOrder) : null,
+      maxPerOrder: form.maxPerOrder ? Number(form.maxPerOrder) : null,
       saleStartsAt: form.saleStartsAt || null,
       saleEndsAt: form.saleEndsAt || null,
     };
@@ -56,8 +65,11 @@ export function Step4Tickets() {
     setEditingId(t.id);
     setForm({
       name: t.name,
+      description: t.description ?? "",
       price: String(t.price),
       capacity: t.capacity != null ? String(t.capacity) : "",
+      minPerOrder: t.minPerOrder != null ? String(t.minPerOrder) : "",
+      maxPerOrder: t.maxPerOrder != null ? String(t.maxPerOrder) : "",
       saleStartsAt: t.saleStartsAt ?? "",
       saleEndsAt: t.saleEndsAt ?? "",
     });
@@ -73,11 +85,15 @@ export function Step4Tickets() {
               key={t.id}
               className="flex items-center justify-between rounded-[16px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3"
             >
-              <div>
+              <div className="min-w-0">
                 <p className="text-[13px] font-semibold text-[var(--text-primary)]">{t.name}</p>
+                {t.description && (
+                  <p className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">{t.description}</p>
+                )}
                 <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
                   {t.price === 0 ? "Free" : `GHS ${t.price.toLocaleString()}`}
-                  {t.capacity ? ` · ${t.capacity} capacity` : " · Open capacity"}
+                  {t.capacity ? ` · ${t.capacity} capacity` : ""}
+                  {t.maxPerOrder ? ` · max ${t.maxPerOrder}/order` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -108,16 +124,29 @@ export function Step4Tickets() {
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
                 Tier name
               </label>
               <input
                 className="mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
-                placeholder="e.g. General, VIP, Early Bird"
+                placeholder="e.g. General Admission, VIP, Early Bird"
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                Description <span className="normal-case font-normal tracking-normal">(optional — e.g. what&apos;s included)</span>
+              </label>
+              <input
+                className="mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                placeholder="e.g. Includes open bar and backstage access"
+                type="text"
+                maxLength={120}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </div>
             <div>
@@ -144,6 +173,32 @@ export function Step4Tickets() {
                 type="number"
                 value={form.capacity}
                 onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                Min per order
+              </label>
+              <input
+                className="mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                min="1"
+                placeholder="1"
+                type="number"
+                value={form.minPerOrder}
+                onChange={(e) => setForm({ ...form, minPerOrder: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                Max per order
+              </label>
+              <input
+                className="mt-1.5 w-full rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                min="1"
+                placeholder="No limit"
+                type="number"
+                value={form.maxPerOrder}
+                onChange={(e) => setForm({ ...form, maxPerOrder: e.target.value })}
               />
             </div>
             <DateTimePicker
