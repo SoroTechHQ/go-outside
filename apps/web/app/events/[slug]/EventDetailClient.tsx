@@ -247,9 +247,11 @@ function PhotoLightbox({ images, startIdx, onClose }: { images: string[]; startI
 export function EventDetailClient({
   event,
   organizer,
+  previewMode = false,
 }: {
   event: EventItem;
   organizer: Organizer;
+  previewMode?: boolean;
 }) {
   // Resolve coordinates: use real venue coords if available, else derive from event id (demo fallback)
   const resolvedLat = event.venueLat ?? (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018);
@@ -263,6 +265,7 @@ export function EventDetailClient({
   const [quickSignupOpen, setQuickSignupOpen] = useState(false);
 
   function handleGetTickets() {
+    if (previewMode) return; // no-op in preview — ticket purchase disabled
     if (isSignedIn) {
       setTicketModalOpen(true);
     } else {
@@ -362,6 +365,23 @@ export function EventDetailClient({
 
   return (
     <>
+      {/* Preview mode banner — sticky, full-width, above everything */}
+      {previewMode && (
+        <div className="fixed inset-x-0 top-0 z-[200] flex items-center justify-between gap-3 bg-amber-500 px-4 py-2.5 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-black/20 text-[10px] font-black text-white">!</span>
+            <p className="text-[12px] font-semibold text-black">
+              Preview only — this event is not live yet. Only you can see this page.
+            </p>
+          </div>
+          <Link
+            href={`/organizer/events/${event.id}/publish`}
+            className="shrink-0 rounded-full bg-black/15 px-3 py-1 text-[11px] font-bold text-black transition hover:bg-black/25"
+          >
+            Publish event →
+          </Link>
+        </div>
+      )}
       <div
         className="fixed right-0 top-0 z-50 hidden md:block"
         style={{ left: sidebarWidth > 0 ? sidebarWidth : 0 }}
@@ -438,7 +458,7 @@ export function EventDetailClient({
 
       {/* ── Photo grid (Airbnb-style) ─────────────────────────────────────────── */}
       <div
-        className="pt-[74px] md:pt-[148px] transition-[padding] duration-300"
+        className={`${previewMode ? "pt-[112px] md:pt-[186px]" : "pt-[74px] md:pt-[148px]"} transition-[padding] duration-300`}
         style={{ paddingLeft: `max(1rem, calc(${sidebarWidth}px + 1.5rem))`, paddingRight: "1.5rem" }}
       >
       <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">

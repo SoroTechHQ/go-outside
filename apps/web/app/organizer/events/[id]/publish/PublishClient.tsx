@@ -255,7 +255,7 @@ export function PublishClient({
         <Eye size={14} className="text-[var(--text-tertiary)]" />
         <p className="text-[12px] text-[var(--text-secondary)]">Preview how your event looks before publishing</p>
         <Link
-          href={`/events/${event.slug}`}
+          href={`/events/${event.slug}/preview`}
           target="_blank"
           className="ml-auto flex items-center gap-1.5 text-[12px] font-semibold text-[var(--brand)] hover:opacity-70 transition"
         >

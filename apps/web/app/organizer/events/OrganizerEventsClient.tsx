@@ -83,9 +83,14 @@ function KebabMenu({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <a href={`/events/${event.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 cursor-pointer">
+          <a
+            href={isPublished ? `/events/${event.slug}` : `/events/${event.slug}/preview`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 cursor-pointer"
+          >
             <ArrowSquareOut size={14} />
-            Preview public page
+            {isPublished ? "View public page" : "Preview"}
           </a>
         </DropdownMenuItem>
         <DropdownMenuItem
