@@ -78,9 +78,10 @@ export function Step6Publish() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Failed to create event");
       }
-      const data = await res.json();
+      const data = await res.json() as { id: string };
       clearDraft();
-      router.push(`/organizer/events/${state.draftId ?? data.id}`);
+      const eventId = state.draftId ?? data.id;
+      router.push(`/organizer/events/${eventId}${publish ? "?shared=1" : ""}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
