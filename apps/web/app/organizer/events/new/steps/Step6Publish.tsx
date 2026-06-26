@@ -49,6 +49,7 @@ export function Step6Publish() {
         title: state.title,
         categoryId: state.categoryId,
         shortDescription: state.shortDescription,
+        description: state.description,
         tags: state.tags,
         startDatetime: state.startDatetime,
         endDatetime: state.endDatetime,
