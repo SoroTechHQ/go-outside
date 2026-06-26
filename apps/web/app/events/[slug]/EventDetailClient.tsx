@@ -12,9 +12,12 @@ import {
   CalendarBlank,
   CheckCircle,
   Clock,
+  CopySimple,
   HeartStraight,
   Images,
+  Link as LinkIcon,
   MapPin,
+  ShareNetwork,
   ShieldCheck,
   Sparkle,
   Star,
@@ -299,6 +302,11 @@ export function EventDetailClient({
     return () => observer.disconnect();
   }, [event.id]);
 
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const eventUrl = `https://gooutside.club/events/${event.slug}`;
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\n${eventUrl}\n\n_Let's go outside_ 🟢`)}`;
+
   function trackShare() {
     trackEvent({ event_type: "share_tap", target_entity_id: event.id, entity_type: "event" });
     fetch("/api/interactions", {
@@ -307,6 +315,24 @@ export function EventDetailClient({
       body: JSON.stringify({ eventId: event.id, edgeType: "share_tap" }),
       keepalive: true,
     }).catch(() => undefined);
+  }
+
+  function copyEventLink() {
+    navigator.clipboard.writeText(eventUrl).catch(() => {});
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+    trackShare();
+  }
+
+  async function nativeShare() {
+    if (typeof navigator?.share === "function") {
+      try {
+        await navigator.share({ title: event.title, text: `Check out ${event.title} on GoOutside`, url: eventUrl });
+        trackShare();
+      } catch {}
+    } else {
+      copyEventLink();
+    }
   }
 
   function trackOrganizerTap() {
@@ -407,18 +433,38 @@ export function EventDetailClient({
             </p>
 
             <div className="flex items-center gap-2">
+              {/* WhatsApp */}
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.club/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
+                href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={trackShare}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[#25D366] hover:text-[#25D366]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[#25D366] hover:text-[#25D366]"
               >
                 <WhatsappLogo size={14} weight="fill" />
-                Share
+                WhatsApp
               </a>
+              {/* Copy link */}
               <button
-                className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold transition hover:bg-[var(--bg-surface)] ${
+                type="button"
+                onClick={copyEventLink}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+              >
+                {copiedLink ? <LinkIcon size={14} weight="bold" /> : <CopySimple size={14} weight="bold" />}
+                {copiedLink ? "Copied!" : "Copy link"}
+              </button>
+              {/* Native share */}
+              <button
+                type="button"
+                onClick={nativeShare}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+              >
+                <ShareNetwork size={14} weight="bold" />
+                Share
+              </button>
+              {/* Save */}
+              <button
+                className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold transition hover:bg-[var(--bg-surface)] ${
                   isSaved ? "text-rose-500" : "text-[var(--text-primary)]"
                 }`}
                 onClick={toggleSave}
@@ -432,27 +478,57 @@ export function EventDetailClient({
         </div>
       </div>
 
-      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-4 py-3 shadow-[var(--card-shadow)] backdrop-blur-xl md:hidden">
-        <div className="flex items-center justify-between gap-3">
+      <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-3 py-3 shadow-[var(--card-shadow)] backdrop-blur-xl md:hidden">
+        <div className="flex items-center justify-between gap-2">
+          {/* Back — icon only on mobile to save space */}
           <Link
             href="/home"
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-primary)]"
           >
-            <ArrowLeft size={14} weight="bold" />
-            Back
+            <ArrowLeft size={15} weight="bold" />
           </Link>
-          <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-[var(--text-primary)]">
+          <p className="min-w-0 flex-1 truncate text-center text-[13px] font-semibold text-[var(--text-primary)]">
             {event.title}
           </p>
-          <button
-            className={`flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] ${
-              isSaved ? "text-rose-500" : "text-[var(--text-primary)]"
-            }`}
-            onClick={toggleSave}
-            type="button"
-          >
-            <HeartStraight size={16} weight={isSaved ? "fill" : "regular"} />
-          </button>
+          {/* Share buttons — icon only */}
+          <div className="flex shrink-0 items-center gap-1.5">
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={trackShare}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
+              title="Share on WhatsApp"
+            >
+              <WhatsappLogo size={15} weight="fill" />
+            </a>
+            <button
+              type="button"
+              onClick={copyEventLink}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+              title="Copy link"
+            >
+              {copiedLink ? <LinkIcon size={14} weight="bold" className="text-[var(--brand)]" /> : <CopySimple size={14} weight="bold" />}
+            </button>
+            <button
+              type="button"
+              onClick={nativeShare}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+              title="Share"
+            >
+              <ShareNetwork size={15} weight="bold" />
+            </button>
+            <button
+              className={`flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] transition ${
+                isSaved ? "text-rose-500" : "text-[var(--text-secondary)]"
+              }`}
+              onClick={toggleSave}
+              type="button"
+              title="Save"
+            >
+              <HeartStraight size={15} weight={isSaved ? "fill" : "regular"} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -767,24 +843,43 @@ export function EventDetailClient({
                   endDatetime={event.endDatetime ?? null}
                 />
 
+                {/* Save */}
+                <button
+                  className={`flex w-full items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition ${isSaved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
+                  onClick={toggleSave}
+                  type="button"
+                >
+                  <HeartStraight size={15} weight={isSaved ? "fill" : "regular"} />
+                  {isSaved ? "Saved" : "Save"}
+                </button>
+                {/* Share row — 3 equal buttons */}
                 <div className="flex gap-2">
-                  <button
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-3 text-sm font-semibold transition ${isSaved ? "border-rose-400/50 bg-rose-50/10 text-rose-400" : "border-[var(--home-border)] text-[var(--text-secondary)] hover:border-rose-400/50 hover:text-rose-400"}`}
-                    onClick={toggleSave}
-                    type="button"
-                  >
-                    <HeartStraight size={15} weight={isSaved ? "fill" : "regular"} />
-                    {isSaved ? "Saved" : "Save"}
-                  </button>
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`🎉 *${event.title}*\n📅 ${event.dateLabel} · ${event.timeLabel}\n📍 ${event.venue}, ${event.city}\n\nCheck it out on GoOutside 👇\nhttps://gooutside.club/events/${event.slug}\n\n_Let's go outside_ 🟢`)}`}
+                    href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
+                    onClick={trackShare}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
                   >
-                    <WhatsappLogo size={15} weight="fill" />
-                    Share
+                    <WhatsappLogo size={14} weight="fill" />
+                    WhatsApp
                   </a>
+                  <button
+                    type="button"
+                    onClick={copyEventLink}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+                  >
+                    {copiedLink ? <LinkIcon size={13} weight="bold" className="text-[var(--brand)]" /> : <CopySimple size={13} weight="bold" />}
+                    {copiedLink ? "Copied!" : "Copy"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nativeShare}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+                  >
+                    <ShareNetwork size={13} weight="bold" />
+                    Share
+                  </button>
                 </div>
                 <p className="text-center text-xs text-[var(--text-tertiary)]">You won't be charged yet</p>
               </div>
