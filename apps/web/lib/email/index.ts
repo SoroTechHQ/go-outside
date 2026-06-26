@@ -245,6 +245,28 @@ export async function sendPostLikeEmail(opts: {
   }
 }
 
+export async function sendEventBroadcast(opts: {
+  to: string;
+  firstName: string;
+  subject: string;
+  message: string;
+  eventName: string;
+  eventSlug: string;
+  organizerName: string;
+}): Promise<void> {
+  try {
+    await getResendClient().emails.send({
+      from:    SENDERS.events,
+      to:      opts.to,
+      subject: opts.subject || `Update about ${opts.eventName}`,
+      headers: notifHeaders(),
+      html:    buildEventBroadcastEmail(opts),
+    });
+  } catch (err) {
+    console.error("[email] sendEventBroadcast failed:", err);
+  }
+}
+
 // ─── Shell ────────────────────────────────────────────────────────────────────
 const FONT = `'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
 
@@ -1106,6 +1128,41 @@ function buildPostLikeEmail(opts: {
     <p style="margin:0;font-size:11px;color:${MUTED};">
       You're getting this because post activity notifications are on.
       <a href="${BASE}/dashboard/settings" style="color:${MUTED};text-decoration:underline;">Turn off</a>
+    </p>
+  `);
+}
+
+// ─── 10. Event broadcast (organizer → attendees) ──────────────────────────────
+function buildEventBroadcastEmail(opts: {
+  firstName: string;
+  message: string;
+  eventName: string;
+  eventSlug: string;
+  organizerName: string;
+}): string {
+  const firstName = esc(opts.firstName);
+  const message   = esc(opts.message).replace(/\n/g, "<br>");
+  const eventName = esc(opts.eventName);
+  const orgName   = esc(opts.organizerName);
+  const eventUrl  = `${BASE}/events/${encodeURIComponent(opts.eventSlug)}`;
+
+  return shell(`
+    ${eyebrow("Event update")}
+    <h1 style="margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-0.03em;line-height:1.2;color:${TEXT};">
+      ${eventName}
+    </h1>
+    <p style="margin:0 0 20px;font-size:12px;color:${MUTED};">From ${orgName}</p>
+
+    <div style="background-color:${BRAND_BG};border:1px solid ${BRAND_BD};border-radius:14px;padding:18px 20px;margin-bottom:24px;">
+      <p style="margin:0;font-size:14px;line-height:1.8;color:#1a3d26;">${message}</p>
+    </div>
+
+    ${btn("View event", eventUrl)}
+
+    ${hr()}
+    <p style="margin:0;font-size:11px;color:${MUTED};line-height:1.7;">
+      Hey ${firstName} — you received this because you have a ticket for ${eventName}.<br>
+      <a href="${BASE}/dashboard/settings" style="color:${MUTED};text-decoration:underline;">Manage notification preferences</a>
     </p>
   `);
 }
