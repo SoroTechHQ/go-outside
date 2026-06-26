@@ -17,6 +17,8 @@ export type UserProfile = {
   avatarUrl: string | null;
   coverUrl: string | null;
   joinedAt: string;
+  dateOfBirth: string | null;
+  phone: string | null;
   pulseScore: number;
   pulseTier: PulseTier;
   neighbourhoodRank: number;

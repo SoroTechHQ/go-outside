@@ -74,18 +74,22 @@ export default async function ProfilePage() {
     year:  "numeric",
   });
 
+  const rawUser = user as unknown as Record<string, unknown>;
+
   const profile: UserProfile = {
     id:               user.id,
     clerkId:          user.clerk_id,
     role:             user.role,
     name:             `${user.first_name} ${user.last_name}`.trim(),
-    handle:           (user as unknown as { username?: string }).username
+    handle:           (rawUser.username as string | null | undefined)
                         ?? user.first_name.toLowerCase().replace(/\s/g, "."),
-    bio:              (user as unknown as { bio?: string }).bio ?? "",
+    bio:              (rawUser.bio as string | null | undefined) ?? "",
     location:         user.location_city ?? "Accra",
     avatarUrl:        user.avatar_url,
-    coverUrl:         null,
+    coverUrl:         (rawUser.cover_url as string | null | undefined) ?? null,
     joinedAt,
+    dateOfBirth:      (rawUser.date_of_birth as string | null | undefined) ?? null,
+    phone:            (rawUser.phone as string | null | undefined) ?? null,
     pulseScore:       user.pulse_score ?? 0,
     pulseTier:        resolvePulseTier(user.pulse_tier ?? "newcomer"),
     neighbourhoodRank: 0,

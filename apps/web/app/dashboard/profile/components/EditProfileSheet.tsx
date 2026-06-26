@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, Check, Camera } from "@phosphor-icons/react";
+import { X, Check, Camera, Phone, Cake } from "@phosphor-icons/react";
 import type { UserProfile } from "../types";
 import { UserAvatar } from "./UserAvatar";
 import { getTierInfo } from "../types";
@@ -15,10 +15,12 @@ type Props = {
 };
 
 export function EditProfileSheet({ profile, onClose, onSave }: Props) {
-  const [firstName, setFirstName] = useState(profile.name.split(" ")[0] ?? "");
-  const [lastName,  setLastName]  = useState(profile.name.split(" ").slice(1).join(" ") ?? "");
-  const [handle,    setHandle]    = useState(profile.handle);
-  const [bio,       setBio]       = useState(profile.bio ?? "");
+  const [firstName,    setFirstName]    = useState(profile.name.split(" ")[0] ?? "");
+  const [lastName,     setLastName]     = useState(profile.name.split(" ").slice(1).join(" ") ?? "");
+  const [handle,       setHandle]       = useState(profile.handle);
+  const [bio,          setBio]          = useState(profile.bio ?? "");
+  const [phone,        setPhone]        = useState(profile.phone ?? "");
+  const [dateOfBirth,  setDateOfBirth]  = useState(profile.dateOfBirth ?? "");
   const [locationPlace, setLocationPlace] = useState<PlaceResult | null>(
     profile.location
       ? { place_id: "", city_name: profile.location, region: "", country: "Ghana", formatted_address: profile.location, lat: 0, lng: 0 }
@@ -98,6 +100,8 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
           last_name:          lastName.trim(),
           username:           handle.replace(/^@/, ""),
           bio:                bio.trim(),
+          phone:              phone.trim() || null,
+          date_of_birth:      dateOfBirth || null,
           location_city:      locationPlace?.city_name ?? "",
           location_city_name: locationPlace?.city_name ?? "",
           location_region:    locationPlace?.region ?? "",
@@ -243,10 +247,26 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
           </div>
         </div>
 
+        {/* Date of birth */}
+        <div>
+          <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
+            <Cake size={12} />
+            Date of birth
+          </label>
+          <input
+            type="date"
+            value={dateOfBirth}
+            onChange={(e) => setDateOfBirth(e.target.value)}
+            max={new Date(Date.now() - 13 * 365.25 * 24 * 3600 * 1000).toISOString().split("T")[0]}
+            className={`${inputCls} [color-scheme:dark]`}
+          />
+          <p className="mt-1 text-[10px] text-white/20">Used to personalise your experience. Never shown publicly.</p>
+        </div>
+
         {/* Handle */}
         <div>
           <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
-            Handle
+            Username
           </label>
           <div className="relative">
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[13px] text-white/30">@</span>
@@ -257,6 +277,22 @@ export function EditProfileSheet({ profile, onClose, onSave }: Props) {
               placeholder="your.handle"
             />
           </div>
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
+            <Phone size={12} />
+            Phone number
+          </label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className={inputCls}
+            placeholder="0244 123 456"
+          />
+          <p className="mt-1 text-[10px] text-white/20">Used for ticket receipts only. Never shown publicly.</p>
         </div>
 
         {/* Bio */}
