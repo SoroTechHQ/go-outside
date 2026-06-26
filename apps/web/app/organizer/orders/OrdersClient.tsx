@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
+  DownloadSimple,
   FunnelSimple,
   MagnifyingGlass,
   Ticket,
@@ -63,6 +64,29 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
 
   const STATUS_OPTIONS = ["all", "confirmed", "pending", "cancelled", "refunded"];
 
+  const exportCsv = useCallback(() => {
+    const rows = filtered.map((o) => ({
+      "Order ID": o.id,
+      "Event": o.events?.title ?? "",
+      "Attendee Name": o.attendee_name ?? "",
+      "Attendee Email": o.attendee_email ?? "",
+      "Ticket Type": o.ticket_types?.name ?? "General",
+      "Price (GHS)": o.purchase_price ?? 0,
+      "Status": o.status,
+      "Date": new Date(o.created_at).toLocaleDateString("en-GH"),
+    }));
+    const header = Object.keys(rows[0] ?? {}).join(",");
+    const body = rows.map((r) => Object.values(r).map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = `${header}\n${body}`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gooutside-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [filtered]);
+
   return (
     <div className="p-5 md:p-7 space-y-6">
       {/* Header */}
@@ -87,7 +111,7 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Filters + export */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
           <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -115,6 +139,15 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={exportCsv}
+          disabled={filtered.length === 0}
+          className="ml-auto flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
+        >
+          <DownloadSimple size={14} />
+          Export CSV
+        </button>
       </div>
 
       {/* Table */}

@@ -12,8 +12,110 @@ import {
   QrCode,
   Image as ImageIcon,
   ArrowClockwise,
+  MagnifyingGlass,
+  UserCheck,
 } from "@phosphor-icons/react";
 import Image from "next/image";
+
+type ManualTicket = {
+  id: string;
+  name: string;
+  email: string | null;
+  ticketType: string;
+  status: string;
+  checkedInAt: string | null;
+};
+
+function ManualLookupPanel({ eventId, onCheckedIn }: { eventId: string; onCheckedIn: () => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ManualTicket[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
+  const [checkedIn, setCheckedIn] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function search(q: string) {
+    if (q.length < 2) { setResults([]); return; }
+    setLoading(true);
+    fetch(`/api/organizer/scan/search?q=${encodeURIComponent(q)}&eventId=${eventId}`)
+      .then((r) => r.json())
+      .then((d: { tickets?: ManualTicket[] }) => { setResults(d.tickets ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }
+
+  function handleInput(v: string) {
+    setQuery(v);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(v), 300);
+  }
+
+  async function handleCheckIn(ticketId: string) {
+    setCheckingIn(ticketId);
+    const res = await fetch("/api/organizer/scan/checkin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticketId }),
+    });
+    const data = (await res.json()) as { result: string };
+    setCheckingIn(null);
+    if (data.result === "valid") {
+      setCheckedIn(ticketId);
+      setResults((prev) => prev.map((t) => t.id === ticketId ? { ...t, status: "used", checkedInAt: new Date().toISOString() } : t));
+      onCheckedIn();
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <MagnifyingGlass size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+        <input
+          className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-[#0e6130]/60 focus:outline-none focus:ring-1 focus:ring-[#0e6130]/40"
+          placeholder="Search by name or email…"
+          value={query}
+          onChange={(e) => handleInput(e.target.value)}
+        />
+        {loading && <SpinnerGap size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-white/40" />}
+      </div>
+
+      {results.length > 0 && (
+        <div className="space-y-2">
+          {results.map((t) => (
+            <div key={t.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-bold text-white">
+                {t.name.slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-white">{t.name}</p>
+                <p className="truncate text-xs text-white/50">{t.email ?? ""} · {t.ticketType}</p>
+              </div>
+              {t.status === "used" || checkedIn === t.id ? (
+                <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-400">
+                  <Check size={12} weight="bold" />
+                  In
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleCheckIn(t.id)}
+                  disabled={checkingIn === t.id}
+                  className="flex items-center gap-1.5 rounded-full bg-[#0e6130] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#0e6130]/80 disabled:opacity-50"
+                >
+                  {checkingIn === t.id ? <SpinnerGap size={12} className="animate-spin" /> : <UserCheck size={12} />}
+                  Check in
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {query.length >= 2 && results.length === 0 && !loading && (
+        <p className="text-center text-sm text-white/40">No attendees found for "{query}"</p>
+      )}
+    </div>
+  );
+}
 
 type OrganizerEvent = {
   id: string;
@@ -252,6 +354,7 @@ export default function ScannerClient() {
     return () => stopCamera();
   }, [stopCamera]);
 
+  const [activeTab, setActiveTab] = useState<"scan" | "lookup">("scan");
   const isScanning = scanState === "scanning" || scanState === "verifying";
 
   const overlayColor =
@@ -315,6 +418,28 @@ export default function ScannerClient() {
           </div>
         </div>
 
+        {/* Tab switcher */}
+        <div className="flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+          {(["scan", "lookup"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => { setActiveTab(tab); if (tab === "scan" && !isScanning) stopCamera(); }}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition ${
+                activeTab === tab ? "bg-[#0e6130] text-white" : "text-white/50 hover:text-white/80"
+              }`}
+            >
+              {tab === "scan" ? <QrCode size={15} /> : <MagnifyingGlass size={15} />}
+              {tab === "scan" ? "Scan QR" : "Manual lookup"}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "lookup" && selectedEventId && (
+          <ManualLookupPanel eventId={selectedEventId} onCheckedIn={() => setScanCount((c) => c + 1)} />
+        )}
+
+        <div className={activeTab === "lookup" ? "hidden" : ""}>
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black" style={{ height: "60vh" }}>
           <video
             ref={videoRef}
@@ -485,6 +610,7 @@ export default function ScannerClient() {
         <p className="text-center text-[11px] text-white/30">
           Use "From photo" to scan a QR code from your camera roll or a screenshot.
         </p>
+        </div>{/* end scan tab wrapper */}
       </div>
     </div>
   );
