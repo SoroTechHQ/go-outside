@@ -36,7 +36,7 @@ function ensureOptions() {
   if (optionsSet) return;
   optionsSet = true;
   setOptions({
-    key:       process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY ?? "",
+    key:       process.env.NEXT_PUBLIC_GOOGLE_PLACES_KEY ?? "",
     v:         "weekly",
     libraries: ["places"],
   });
