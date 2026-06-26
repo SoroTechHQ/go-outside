@@ -10,6 +10,8 @@ type EventCardMiniProps = {
   soldRatio: number;
   revenue: number;
   posts: number;
+  checkedIn?: number;
+  checkinRate?: number;
 };
 
 const STATUS_CFG: Record<
@@ -41,6 +43,8 @@ export function EventCardMini({
   soldRatio,
   revenue,
   posts,
+  checkedIn = 0,
+  checkinRate = 0,
 }: EventCardMiniProps) {
   const cfg = STATUS_CFG[statusTone];
 
@@ -78,22 +82,31 @@ export function EventCardMini({
       </div>
 
       {/* Stats row */}
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-4 gap-2">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Sold</p>
-          <p className="mt-1 text-[14px] font-bold tabular-nums text-[var(--text-primary)]">
+          <p className="mt-1 text-[13px] font-bold tabular-nums text-[var(--text-primary)]">
             {capacity ? `${sold}/${capacity}` : sold.toLocaleString()}
           </p>
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Revenue</p>
-          <p className="mt-1 text-[14px] font-bold tabular-nums text-[var(--text-primary)]">
+          <p className="mt-1 text-[13px] font-bold tabular-nums text-[var(--text-primary)]">
             {revenue > 0 ? formatMoney(revenue) : "—"}
           </p>
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Posts</p>
-          <p className="mt-1 text-[14px] font-bold tabular-nums text-[var(--text-primary)]">{posts}</p>
+          <p className="mt-1 text-[13px] font-bold tabular-nums text-[var(--text-primary)]">{posts}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-tertiary)]">Checked in</p>
+          <p className={`mt-1 text-[13px] font-bold tabular-nums ${checkedIn > 0 ? "text-[var(--brand)]" : "text-[var(--text-primary)]"}`}>
+            {checkedIn > 0 ? `${checkinRate}%` : "—"}
+          </p>
+          {checkedIn > 0 && (
+            <p className="text-[10px] text-[var(--text-tertiary)]">{checkedIn} of {sold}</p>
+          )}
         </div>
       </div>
 
