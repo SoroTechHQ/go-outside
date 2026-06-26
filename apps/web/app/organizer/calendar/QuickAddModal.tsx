@@ -50,7 +50,7 @@ export function QuickAddModal({ date, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div
         ref={dialogRef}
-        className="w-full max-w-sm overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_24px_64px_rgba(5,12,8,0.2)]"
+        className="w-full max-w-sm rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] shadow-[0_24px_64px_rgba(5,12,8,0.2)]"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">

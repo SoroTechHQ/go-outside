@@ -72,7 +72,7 @@ export default async function OrganizerLayout({ children }: { children: ReactNod
 
   return (
     // No AppChrome here — organizer studio is a standalone workspace
-    <div className="h-screen overflow-hidden">
+    <div className="h-screen">
       <OrganizerShell
         organizer={dashboard.organizer ?? null}
         organizerName={dashboard.organizer?.name ?? fallbackName}
