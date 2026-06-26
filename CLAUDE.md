@@ -261,7 +261,8 @@ STREAM_API_SECRET=
 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
 GROQ_API_KEY=                # for /api/ai/* routes (llama-3.1-8b-instant via Groq)
 GROQ_API_KEY_PROD_1=         # production Groq key (takes precedence over GROQ_API_KEY)
-NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=  # for LocationAutocomplete in onboarding
+NEXT_PUBLIC_GOOGLE_PLACES_KEY=      # for LocationAutocomplete in onboarding (client-side)
+GOOGLE_PLACES_SERVER_KEY=           # server-side Places API key
 ```
 
 ## UI Component Locations
@@ -283,7 +284,7 @@ NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=  # for LocationAutocomplete in onboarding
 - `apps/web/hooks/useInfiniteFeed.ts` — feed pagination hook
 
 ## What's Built (Real Data, Fully Wired)
-- Full auth (Clerk sign-in/up/out), onboarding (5 steps), middleware protection
+- Full auth (Clerk sign-in/up/out), onboarding (5 steps with cross-browser DOB picker + city autocomplete fallback), middleware protection
 - Home feed with AI-personalized sections, category rail, hero carousel
 - Event detail pages with ticket purchase flow (up to Paystack UI)
 - Search: full-text across events/users/snippets + AI chat panel
