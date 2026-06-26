@@ -10,6 +10,7 @@ import {
   Globe,
   Image as PhImage,
   InstagramLogo,
+  Link,
   MapPin,
   TwitterLogo,
   User,
@@ -35,6 +36,8 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
   const [city, setCity] = useState(profile?.location_city ?? "");
   const [instagram, setInstagram] = useState(profile?.social_links?.instagram ?? "");
   const [twitter, setTwitter] = useState(profile?.social_links?.twitter ?? "");
+  const [slug, setSlug] = useState(profile?.slug ?? "");
+  const [slugError, setSlugError] = useState("");
   const [logoUrl, setLogoUrl] = useState(profile?.logo_url ?? null);
   const [coverUrl, setCoverUrl] = useState(profile?.cover_url ?? null);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -98,12 +101,20 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
   async function handleSave() {
     setIsSaving(true);
     setError("");
+    setSlugError("");
+    const cleanSlug = slug.trim().toLowerCase();
+    if (cleanSlug && !/^[a-z0-9-]{3,30}$/.test(cleanSlug)) {
+      setSlugError("Use 3–30 lowercase letters, numbers, or hyphens only");
+      setIsSaving(false);
+      return;
+    }
     try {
       const body = {
         organization_name: name.trim() || null,
         bio: bio.trim() || null,
         website_url: website.trim() || null,
         location_city: city.trim() || null,
+        slug: cleanSlug || null,
         social_links: {
           ...(instagram && { instagram: instagram.trim().replace(/^@/, "") }),
           ...(twitter && { twitter: twitter.trim().replace(/^@/, "") }),
@@ -114,7 +125,11 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const { error: apiErr } = await res.json().catch(() => ({ error: "" })) as { error?: string };
+        if (res.status === 409) { setSlugError(apiErr ?? "This URL is already taken"); return; }
+        throw new Error("Save failed");
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -264,6 +279,31 @@ export function ProfileSettingsClient({ profile, userId }: { profile: OrgProfile
           <div className="mt-1 flex justify-end">
             <span className="text-[10px] text-[var(--text-tertiary)]">{bio.length}/500</span>
           </div>
+        </div>
+
+        {/* Vanity URL */}
+        <div className="rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] p-5 shadow-[0_2px_12px_rgba(5,12,8,0.05)]">
+          <div className="flex items-center gap-2 mb-1">
+            <Link size={15} weight="fill" className="text-[var(--brand)]" />
+            <p className="text-[14px] font-semibold text-[var(--text-primary)]">Vanity URL</p>
+          </div>
+          <p className="mb-3 text-[12px] text-[var(--text-tertiary)]">
+            Choose a custom URL for your public organizer page.
+          </p>
+          <div className="flex items-center overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] focus-within:border-[var(--brand)]/50 focus-within:ring-2 focus-within:ring-[var(--brand)]/10 transition">
+            <span className="shrink-0 select-none border-r border-[var(--border-subtle)] bg-[var(--bg-muted)] px-3 py-3 text-[12px] text-[var(--text-tertiary)]">
+              gooutside.club/organizers/
+            </span>
+            <input
+              className="flex-1 bg-transparent px-3 py-3 text-[13px] font-semibold text-[var(--text-primary)] placeholder:font-normal placeholder:text-[var(--text-tertiary)] focus:outline-none"
+              placeholder="your-brand"
+              maxLength={30}
+              value={slug}
+              onChange={(e) => { setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); setSlugError(""); }}
+            />
+          </div>
+          {slugError && <p className="mt-1.5 text-[12px] text-red-500">{slugError}</p>}
+          <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">3–30 characters · letters, numbers, hyphens only</p>
         </div>
 
         {/* Location + Website */}

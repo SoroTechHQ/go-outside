@@ -23,7 +23,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from("organizer_profiles")
-    .select("organization_name, bio, website_url, logo_url, cover_url, social_links, location_city, status, verified_at")
+    .select("organization_name, bio, website_url, logo_url, cover_url, social_links, location_city, slug, status, verified_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest) {
 
   const body = (await req.json()) as Record<string, unknown>;
 
-  const allowed = ["organization_name", "bio", "website_url", "logo_url", "cover_url", "social_links", "location_city"] as const;
+  const allowed = ["organization_name", "bio", "website_url", "logo_url", "cover_url", "social_links", "location_city", "slug"] as const;
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];
@@ -67,11 +67,26 @@ export async function PATCH(req: NextRequest) {
     return jsonError(400, "No valid fields to update");
   }
 
+  if (updates.slug !== undefined) {
+    const slug = updates.slug as string | null;
+    if (slug) {
+      if (!/^[a-z0-9-]{3,30}$/.test(slug)) {
+        return jsonError(400, "Slug must be 3–30 lowercase letters, numbers, or hyphens");
+      }
+      const { count } = await supabaseAdmin
+        .from("organizer_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("slug", slug)
+        .neq("user_id", user.id);
+      if (count && count > 0) return jsonError(409, "This URL is already taken");
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from("organizer_profiles")
     .update(updates)
     .eq("user_id", user.id)
-    .select("organization_name, bio, website_url, logo_url, cover_url, social_links, location_city, status, verified_at")
+    .select("organization_name, bio, website_url, logo_url, cover_url, social_links, location_city, slug, status, verified_at")
     .single();
 
   if (error) {
