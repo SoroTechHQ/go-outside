@@ -69,9 +69,13 @@ const REEL_THUMBNAILS = [
   "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&w=360&h=480&fit=crop",
 ];
 
-function getEventImages(event: EventItem): string[] {
-  // Use the real banner + gallery first; fall back to category placeholders
+// Height of the preview-mode banner — keep in sync with the rendered div's minHeight
+const PREVIEW_BANNER_H = 60;
+
+function getEventImages(event: EventItem, previewMode = false): string[] {
   const real = [event.bannerUrl, ...(event.gallery ?? [])].filter(Boolean) as string[];
+  // In preview only show images the organizer actually uploaded — no stock placeholders
+  if (previewMode) return real;
   const base = Math.max(0, ALL_SLUGS.indexOf(event.categorySlug));
   while (real.length < 9) {
     real.push(getEventImage(undefined, ALL_SLUGS[(base + real.length) % ALL_SLUGS.length]));
@@ -260,7 +264,8 @@ export function EventDetailClient({
   const resolvedLat = event.venueLat ?? (5.6037 + (((event.id?.charCodeAt(0) ?? 65) % 10) - 5) * 0.018);
   const resolvedLng = event.venueLng ?? (-0.187  + (((event.id?.charCodeAt(1) ?? 66) % 10) - 5) * 0.018);
   useEventDwell(event.id);
-  const images = getEventImages(event);
+  const images = getEventImages(event, previewMode);
+  const hasRealLocation = event.venueLat !== null && event.venueLng !== null;
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const { isSaved, toggleSave } = useEventSave(event.id);
   const { isSignedIn } = useAuth();
@@ -391,18 +396,26 @@ export function EventDetailClient({
 
   return (
     <>
-      {/* Preview mode banner — sticky, full-width, above everything */}
+      {/* Preview mode banner — tall, prominent, pushes everything down */}
       {previewMode && (
-        <div className="fixed inset-x-0 top-0 z-[200] flex items-center justify-between gap-3 bg-amber-500 px-4 py-2.5 shadow-lg">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-black/20 text-[10px] font-black text-white">!</span>
-            <p className="text-[12px] font-semibold text-black">
-              Preview only — this event is not live yet. Only you can see this page.
-            </p>
+        <div
+          className="fixed inset-x-0 top-0 z-[200] flex items-center justify-between gap-4 bg-amber-400 px-6 shadow-xl"
+          style={{ minHeight: `${PREVIEW_BANNER_H}px` }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/15 text-sm font-black text-black">!</span>
+            <div>
+              <p className="text-[13px] font-bold text-black leading-tight">
+                Preview only — this event is not live yet.
+              </p>
+              <p className="text-[11px] font-medium text-black/70 leading-tight">
+                Only you can see this page. Publish when you're ready.
+              </p>
+            </div>
           </div>
           <Link
             href={`/organizer/events/${event.id}/publish`}
-            className="shrink-0 rounded-full bg-black/15 px-3 py-1 text-[11px] font-bold text-black transition hover:bg-black/25"
+            className="shrink-0 rounded-full bg-black/15 px-4 py-1.5 text-[12px] font-bold text-black transition hover:bg-black/25"
           >
             Publish event →
           </Link>
@@ -413,7 +426,7 @@ export function EventDetailClient({
         className="fixed right-0 top-0 z-50 hidden md:block"
         style={{ left: "var(--app-shell-offset, 0px)", transition: "left 0.3s ease" }}
       >
-        {previewMode && <div className="h-[42px]" />}
+        {previewMode && <div style={{ height: `${PREVIEW_BANNER_H}px` }} />}
         <div className="px-6 py-3">
           <div className="mx-auto w-full max-w-[1320px]">
             <SearchPillExpanded compact={true} />
@@ -425,7 +438,7 @@ export function EventDetailClient({
       <div
         className="fixed z-[45] hidden md:block"
         style={{
-          top: previewMode ? "122px" : "80px",
+          top: previewMode ? "138px" : "80px",
           left: "calc(var(--app-shell-offset, 72px) + 1.5rem)",
           transition: "left 0.3s ease",
         }}
@@ -495,52 +508,73 @@ export function EventDetailClient({
 
       {/* ── Photo grid (Airbnb-style) ─────────────────────────────────────────── */}
       <div
-        className={`${previewMode ? "pt-[112px] md:pt-[118px]" : "pt-[74px] md:pt-[76px]"} transition-[padding] duration-300`}
+        className={`${previewMode ? "pt-[136px] md:pt-[138px]" : "pt-[74px] md:pt-[76px]"} transition-[padding] duration-300`}
         style={{ paddingLeft: "max(1rem, calc(var(--app-shell-offset, 72px) + 1.5rem))", paddingRight: "1.5rem", transition: "padding-left 0.3s ease" }}
       >
-      <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">
-        {/* Main hero — spans 2 cols × 2 rows */}
-        <button
-          className="relative col-span-2 row-span-2 overflow-hidden rounded-tl-[28px] rounded-bl-[28px]"
-          onClick={() => { setLightboxIdx(0); trackGalleryScroll(); }}
-          type="button"
-        >
-          <img src={images[0]} alt={event.title} className="h-full w-full object-cover transition duration-500 hover:scale-[1.02]" />
-        </button>
-        {/* 4 smaller photos */}
-        {[1, 2, 3, 4].map((i, pos) => (
+      {/* In preview with no uploaded images: show placeholder instead of stock photos */}
+      {previewMode && images.length === 0 ? (
+        <div className="flex h-[300px] items-center justify-center rounded-[28px] border-2 border-dashed border-[var(--home-border)] bg-[var(--bg-surface)] md:h-[56vh] md:min-h-[340px] md:max-h-[560px]">
+          <div className="text-center">
+            <Images size={36} className="mx-auto text-[var(--text-tertiary)]" weight="regular" />
+            <p className="mt-3 text-sm font-semibold text-[var(--text-tertiary)]">Add a cover photo</p>
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]/70">It will appear here once uploaded</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">
+            {/* Main hero — spans 2 cols × 2 rows */}
+            <button
+              className="relative col-span-2 row-span-2 overflow-hidden rounded-tl-[28px] rounded-bl-[28px]"
+              onClick={() => { setLightboxIdx(0); trackGalleryScroll(); }}
+              type="button"
+            >
+              <img src={images[0]} alt={event.title} className="h-full w-full object-cover transition duration-500 hover:scale-[1.02]" />
+            </button>
+            {/* 4 smaller photos — show placeholders if organizer hasn't uploaded enough */}
+            {[1, 2, 3, 4].map((i, pos) => {
+              const src = images[i];
+              return (
+                <button
+                  key={i}
+                  className={`relative overflow-hidden ${pos === 1 ? "rounded-tr-[28px]" : ""} ${pos === 3 ? "rounded-br-[28px]" : ""} ${!src ? "cursor-default" : ""}`}
+                  onClick={() => src && setLightboxIdx(i)}
+                  type="button"
+                >
+                  {src ? (
+                    <img src={src} alt="" className="h-full w-full object-cover transition duration-500 hover:scale-[1.02]" />
+                  ) : (
+                    <div className="h-full w-full bg-[var(--bg-surface)] flex items-center justify-center border border-dashed border-[var(--home-border)]">
+                      <Images size={20} className="text-[var(--text-tertiary)]/40" weight="regular" />
+                    </div>
+                  )}
+                  {pos === 3 && src && (
+                    <div className="absolute inset-0 flex items-end justify-end bg-black/20 p-3">
+                      <span className="flex items-center gap-1.5 rounded-lg border border-[var(--home-border-strong)] bg-[var(--bg-glass)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-[var(--card-shadow)] backdrop-blur-md">
+                        <Images size={13} />
+                        Show all photos
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
           <button
-            key={i}
-            className={`relative overflow-hidden ${pos === 1 ? "rounded-tr-[28px]" : ""} ${pos === 3 ? "rounded-br-[28px]" : ""}`}
-            onClick={() => setLightboxIdx(i)}
+            className="relative block h-[54vw] min-h-[240px] max-h-[360px] w-full overflow-hidden rounded-[24px] md:hidden"
+            onClick={() => setLightboxIdx(0)}
             type="button"
           >
-            <img src={images[i]} alt="" className="h-full w-full object-cover transition duration-500 hover:scale-[1.02]" />
-            {/* "Show all photos" on last cell */}
-            {pos === 3 && (
-              <div className="absolute inset-0 flex items-end justify-end bg-black/20 p-3">
-                <span className="flex items-center gap-1.5 rounded-lg border border-[var(--home-border-strong)] bg-[var(--bg-glass)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-[var(--card-shadow)] backdrop-blur-md">
-                  <Images size={13} />
-                  Show all photos
-                </span>
-              </div>
-            )}
+            <img src={images[0]} alt={event.title} className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/8 to-transparent" />
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-[var(--home-border-strong)] bg-[var(--bg-glass)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-[var(--card-shadow)] backdrop-blur-md">
+              <Images size={12} />
+              Show all photos
+            </div>
           </button>
-        ))}
-      </div>
-
-      <button
-        className="relative block h-[54vw] min-h-[240px] max-h-[360px] w-full overflow-hidden rounded-[24px] md:hidden"
-        onClick={() => setLightboxIdx(0)}
-        type="button"
-      >
-        <img src={images[0]} alt={event.title} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/8 to-transparent" />
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-[var(--home-border-strong)] bg-[var(--bg-glass)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] shadow-[var(--card-shadow)] backdrop-blur-md">
-          <Images size={12} />
-          Show all photos
-        </div>
-      </button>
+        </>
+      )}
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
@@ -687,21 +721,23 @@ export function EventDetailClient({
               </div>
             )}
 
-            {/* Map */}
-            <div className="border-b border-[var(--home-border)] py-8">
-              <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Location</h2>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">{event.venue}, {event.locationLine}</p>
-              <div className="mt-5">
-                <EventMap
-                  lat={resolvedLat}
-                  lng={resolvedLng}
-                  venueName={event.venue}
-                  locationLine={event.locationLine}
-                  eventTitle={event.title}
-                  eventSlug={event.slug}
-                />
+            {/* Map — hidden in preview when organizer hasn't set real coordinates yet */}
+            {(!previewMode || hasRealLocation) && (
+              <div className="border-b border-[var(--home-border)] py-8">
+                <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Location</h2>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">{event.venue}, {event.locationLine}</p>
+                <div className="mt-5">
+                  <EventMap
+                    lat={resolvedLat}
+                    lng={resolvedLng}
+                    venueName={event.venue}
+                    locationLine={event.locationLine}
+                    eventTitle={event.title}
+                    eventSlug={event.slug}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Social buzz — only shown when organizer has added links */}
             {(event as any).socialLinks?.length > 0 && (
@@ -738,11 +774,13 @@ export function EventDetailClient({
               </div>
             )}
 
-            {/* Comments */}
-            <div className="border-b border-[var(--home-border)] py-8">
-              <h2 className="mb-5 text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Comments</h2>
-              <EventComments eventSlug={event.slug} eventId={event.id} />
-            </div>
+            {/* Comments — not shown in preview, only live events get public discussion */}
+            {!previewMode && (
+              <div className="border-b border-[var(--home-border)] py-8">
+                <h2 className="mb-5 text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Comments</h2>
+                <EventComments eventSlug={event.slug} eventId={event.id} />
+              </div>
+            )}
 
             {/* Policies — only render when the organizer has actually set them */}
             {((event as any).policies?.standard?.length > 0 || (event as any).policies?.custom?.length > 0) && (
@@ -754,7 +792,8 @@ export function EventDetailClient({
           </div>
 
           {/* ── Right column — sticky ticket card ──────────────────────────── */}
-          <aside className="lg:sticky lg:top-[88px] lg:self-start">
+          {/* In preview: grayed out + non-interactive — ticket purchase isn't available yet */}
+          <aside className={`lg:sticky lg:self-start ${previewMode ? "lg:top-[148px] pointer-events-none opacity-50 grayscale" : "lg:top-[88px]"}`}>
             <div className="overflow-hidden rounded-3xl border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
               {/* Price header */}
               <div className="border-b border-[var(--home-border)] px-6 pt-6 pb-5">
@@ -786,20 +825,36 @@ export function EventDetailClient({
                 </div>
               </div>
 
-              {/* Ticket tiers */}
+              {/* Ticket tiers — preview shows only what organizer entered; no fallback fakes */}
               <div ref={ticketSectionRef} className="space-y-2 px-6 py-4">
-                {(event.ticketTypes?.length > 0 ? event.ticketTypes : [
-                  { name: "General Admission", priceLabel: event.priceLabel, remainingLabel: "Tickets available" },
-                  { name: "VIP", priceLabel: event.priceValue === 0 ? "Free" : `GHS ${(event.priceValue * 2.5).toFixed(0)}`, remainingLabel: "Limited seats" },
-                ]).map((tt) => (
-                  <div key={tt.name} className="flex items-center justify-between rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{tt.name}</p>
-                      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{tt.remainingLabel}</p>
+                {event.ticketTypes?.length > 0 ? (
+                  event.ticketTypes.map((tt) => (
+                    <div key={tt.name} className="flex items-center justify-between rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{tt.name}</p>
+                        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{tt.remainingLabel}</p>
+                      </div>
+                      <span className="rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">{tt.priceLabel}</span>
                     </div>
-                    <span className="rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">{tt.priceLabel}</span>
+                  ))
+                ) : previewMode ? (
+                  <div className="rounded-xl border border-dashed border-[var(--home-border)] px-4 py-4 text-center">
+                    <p className="text-xs text-[var(--text-tertiary)]">No ticket types added yet</p>
                   </div>
-                ))}
+                ) : (
+                  [
+                    { name: "General Admission", priceLabel: event.priceLabel, remainingLabel: "Tickets available" },
+                    { name: "VIP", priceLabel: event.priceValue === 0 ? "Free" : `GHS ${(event.priceValue * 2.5).toFixed(0)}`, remainingLabel: "Limited seats" },
+                  ].map((tt) => (
+                    <div key={tt.name} className="flex items-center justify-between rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{tt.name}</p>
+                        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{tt.remainingLabel}</p>
+                      </div>
+                      <span className="rounded-full bg-[var(--brand-dim)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">{tt.priceLabel}</span>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* CTAs */}
