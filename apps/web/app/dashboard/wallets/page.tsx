@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, BookmarkSimple } from "@phosphor-icons/react/dist/ssr";
 import { getOrCreateSupabaseUser } from "../../../lib/db/users";
 import { getUserTickets } from "../../../lib/db/tickets";
 import { getEventBySlug } from "../../../lib/db/events";
@@ -174,6 +174,36 @@ export default async function WalletsPage() {
             balance={pulsePoints.balance}
             rewards={rewards}
           />
+        </section>
+
+        {/* ── Saved Events / Wishlist ── */}
+        <section className="mt-9">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
+              Saved Events
+            </h2>
+            <Link
+              href="/dashboard/saved"
+              className="text-[11px] font-semibold text-[var(--brand)] transition hover:opacity-80"
+            >
+              View all →
+            </Link>
+          </div>
+          <Link
+            href="/dashboard/saved"
+            className="flex items-center justify-between rounded-[20px] border border-[var(--border-subtle)] bg-[var(--bg-card)] px-5 py-4 transition hover:border-[var(--brand)]/40 hover:bg-[var(--bg-surface)]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand-dim)] text-[var(--brand)]">
+                <BookmarkSimple size={18} weight="fill" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Your Wishlist</p>
+                <p className="text-[11px] text-[var(--text-tertiary)]">Events you're tracking</p>
+              </div>
+            </div>
+            <ArrowRight size={16} className="text-[var(--text-tertiary)]" />
+          </Link>
         </section>
 
         {/* ── Past Tickets ── */}

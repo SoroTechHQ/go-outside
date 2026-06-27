@@ -408,74 +408,35 @@ export function EventDetailClient({
           </Link>
         </div>
       )}
+      {/* Desktop: compact mini search pill — no title bar, expands in place on click */}
       <div
         className="fixed right-0 top-0 z-50 hidden md:block"
         style={{ left: "var(--app-shell-offset, 0px)", transition: "left 0.3s ease" }}
       >
-        <div className="px-6 py-4">
+        {previewMode && <div className="h-[42px]" />}
+        <div className="px-6 py-3">
           <div className="mx-auto w-full max-w-[1320px]">
-            <SearchPillExpanded />
+            <SearchPillExpanded compact={true} />
           </div>
         </div>
+      </div>
 
-        <div className="border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-6 py-3 backdrop-blur-xl">
-          <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-4">
-            <Link
-              href="/home"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
-            >
-              <ArrowLeft size={16} weight="bold" />
-              Back
-            </Link>
-
-            <p className="min-w-0 flex-1 truncate text-center text-[1rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-              {event.title}
-            </p>
-
-            <div className="flex items-center gap-2">
-              {/* WhatsApp */}
-              <a
-                href={waUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={trackShare}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[#25D366] hover:text-[#25D366]"
-              >
-                <WhatsappLogo size={14} weight="fill" />
-                WhatsApp
-              </a>
-              {/* Copy link */}
-              <button
-                type="button"
-                onClick={copyEventLink}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
-              >
-                {copiedLink ? <LinkIcon size={14} weight="bold" /> : <CopySimple size={14} weight="bold" />}
-                {copiedLink ? "Copied!" : "Copy link"}
-              </button>
-              {/* Native share */}
-              <button
-                type="button"
-                onClick={nativeShare}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
-              >
-                <ShareNetwork size={14} weight="bold" />
-                Share
-              </button>
-              {/* Save */}
-              <button
-                className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-semibold transition hover:bg-[var(--bg-surface)] ${
-                  isSaved ? "text-rose-500" : "text-[var(--text-primary)]"
-                }`}
-                onClick={toggleSave}
-                type="button"
-              >
-                <HeartStraight size={14} weight={isSaved ? "fill" : "bold"} />
-                {isSaved ? "Saved" : "Save"}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Floating back button — desktop only, overlays the photo */}
+      <div
+        className="fixed z-[45] hidden md:block"
+        style={{
+          top: previewMode ? "122px" : "80px",
+          left: "calc(var(--app-shell-offset, 72px) + 1.5rem)",
+          transition: "left 0.3s ease",
+        }}
+      >
+        <Link
+          href="/home"
+          className="inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)]/90 px-4 py-2 text-sm font-semibold text-[var(--text-primary)] shadow-lg backdrop-blur-md transition hover:bg-[var(--bg-surface)]"
+        >
+          <ArrowLeft size={16} weight="bold" />
+          Back
+        </Link>
       </div>
 
       <div className="fixed inset-x-0 top-0 z-50 border-b border-[var(--home-border)] bg-[var(--bg-glass)] px-3 py-3 shadow-[var(--card-shadow)] backdrop-blur-xl md:hidden">
@@ -534,7 +495,7 @@ export function EventDetailClient({
 
       {/* ── Photo grid (Airbnb-style) ─────────────────────────────────────────── */}
       <div
-        className={`${previewMode ? "pt-[112px] md:pt-[186px]" : "pt-[74px] md:pt-[148px]"} transition-[padding] duration-300`}
+        className={`${previewMode ? "pt-[112px] md:pt-[118px]" : "pt-[74px] md:pt-[76px]"} transition-[padding] duration-300`}
         style={{ paddingLeft: "max(1rem, calc(var(--app-shell-offset, 72px) + 1.5rem))", paddingRight: "1.5rem", transition: "padding-left 0.3s ease" }}
       >
       <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">
@@ -583,7 +544,15 @@ export function EventDetailClient({
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-10">
+      <div
+        className="py-8 lg:py-10"
+        style={{
+          paddingLeft: "max(1.5rem, calc(var(--app-shell-offset, 72px) + 1.5rem))",
+          paddingRight: "1.5rem",
+          transition: "padding-left 0.3s ease",
+        }}
+      >
+      <div className="mx-auto max-w-[1200px]">
         <div className="grid gap-16 lg:grid-cols-[1fr_380px]">
 
           {/* ── Left column ─────────────────────────────────────────────────── */}
@@ -775,15 +744,17 @@ export function EventDetailClient({
               <EventComments eventSlug={event.slug} eventId={event.id} />
             </div>
 
-            {/* Policies */}
-            <div className="py-8">
-              <h2 className="mb-5 text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Policies</h2>
-              <EventPoliciesGrid policies={(event as any).policies} />
-            </div>
+            {/* Policies — only render when the organizer has actually set them */}
+            {((event as any).policies?.standard?.length > 0 || (event as any).policies?.custom?.length > 0) && (
+              <div className="py-8">
+                <h2 className="mb-5 text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Policies</h2>
+                <EventPoliciesGrid policies={(event as any).policies} />
+              </div>
+            )}
           </div>
 
           {/* ── Right column — sticky ticket card ──────────────────────────── */}
-          <aside className="lg:sticky lg:top-[168px] lg:self-start">
+          <aside className="lg:sticky lg:top-[88px] lg:self-start">
             <div className="overflow-hidden rounded-3xl border border-[var(--home-border)] bg-[var(--bg-card)] shadow-[0_8px_40px_rgba(0,0,0,0.12)]">
               {/* Price header */}
               <div className="border-b border-[var(--home-border)] px-6 pt-6 pb-5">
@@ -865,7 +836,7 @@ export function EventDetailClient({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={trackShare}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:border-[#25D366] hover:text-[#25D366]"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] py-2.5 text-[12px] font-semibold text-[var(--text-primary)] transition hover:border-[#25D366] hover:bg-[#25D366]/10 hover:text-[#25D366]"
                   >
                     <WhatsappLogo size={14} weight="fill" />
                     WhatsApp
@@ -873,15 +844,15 @@ export function EventDetailClient({
                   <button
                     type="button"
                     onClick={copyEventLink}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] py-2.5 text-[12px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-dim)] hover:text-[var(--brand)]"
                   >
                     {copiedLink ? <LinkIcon size={13} weight="bold" className="text-[var(--brand)]" /> : <CopySimple size={13} weight="bold" />}
-                    {copiedLink ? "Copied!" : "Copy"}
+                    {copiedLink ? "Copied!" : "Copy Link"}
                   </button>
                   <button
                     type="button"
                     onClick={nativeShare}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] py-2.5 text-[12px] font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface)]"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] py-2.5 text-[12px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-dim)] hover:text-[var(--brand)]"
                   >
                     <ShareNetwork size={13} weight="bold" />
                     Share
@@ -932,6 +903,7 @@ export function EventDetailClient({
             </div>
           </aside>
         </div>
+      </div>
       </div>
 
       {/* Lightbox */}

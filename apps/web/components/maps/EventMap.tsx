@@ -12,6 +12,7 @@ import {
   WhatsappLogo,
 } from "@phosphor-icons/react";
 
+
 type GhanaPostAddress = {
   digitalAddress: string;
   street:         string | null;
@@ -130,16 +131,6 @@ export function EventMap({ lat, lng, venueName, locationLine, eventTitle }: Prop
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <CopyButton text={ghanaPost.digitalAddress} />
-                {/* Open in GhanaPostGPS map */}
-                <a
-                  href={`https://www.ghanapostgps.com/map/?q=${ghanaPost.digitalAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand-dim)] text-[var(--brand)] transition hover:bg-[var(--brand)] hover:text-white"
-                  title="Open in GhanaPostGPS"
-                >
-                  <ArrowSquareOut size={13} weight="bold" />
-                </a>
               </div>
             </div>
 
