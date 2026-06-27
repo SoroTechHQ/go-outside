@@ -5,6 +5,7 @@ import { AdminTableControls } from "../AdminTableControls";
 import { AdminPagination } from "../AdminPagination";
 import { EventsDataTable, type EventRow } from "../events/EventsDataTable";
 import { EventActionsRow } from "../EventActionsRow";
+import { PurgeSeedButton } from "../events/PurgeSeedButton";
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -115,6 +116,17 @@ export async function PlatformEventsPage({ searchParams }: Props) {
   return (
     <DashboardShell mode="admin" subtitle="Review, approve and feature events." title="Events">
       <div className="space-y-6">
+        {/* Danger zone — seed data cleanup */}
+        <div className="flex items-center justify-between rounded-xl border border-rose-500/20 bg-rose-500/5 px-5 py-3.5">
+          <div>
+            <p className="text-sm font-semibold text-rose-400">Seed data</p>
+            <p className="text-[11px] text-[var(--text-tertiary)]">
+              Remove all 120 demo users + 30 demo events. Real organizer events are not affected.
+            </p>
+          </div>
+          <PurgeSeedButton />
+        </div>
+
         {/* KPI tiles */}
         <div className="grid gap-5 sm:grid-cols-3">
           <MetricTile accent="brand" label="Live events" meta="Currently published and discoverable" trend="Published" value={String(live ?? 0)} />
