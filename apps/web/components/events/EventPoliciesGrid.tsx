@@ -1,18 +1,15 @@
 import { POLICY_MAP, type EventPolicies } from "../../lib/event-policies";
 import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 
-// Default fallback policies shown when no organizer-set policies exist
-const DEFAULT_POLICIES: EventPolicies = {
-  standard: ["cancellation_full", "age_18", "photo_allowed", "id_required"],
-  custom: [],
-};
-
 export function EventPoliciesGrid({
   policies,
 }: {
   policies?: EventPolicies | null;
 }) {
-  const { standard, custom } = policies ?? DEFAULT_POLICIES;
+  const standard = policies?.standard ?? [];
+  const custom = policies?.custom ?? [];
+
+  if (standard.length === 0 && custom.length === 0) return null;
 
   return (
     <div className="space-y-3">

@@ -381,7 +381,8 @@ export function HomeSearchHero({
     setWhen(searchParams.get("when") ?? "");
   }, [searchParams]);
 
-  const [pendingSegment, setPendingSegment] = useState<ActiveSegment>(null);
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
+  const [overlaySegment, setOverlaySegment] = useState<ActiveSegment>(null);
 
   const isExpanded = mode === "expanded";
   const isMini = mode === "mini";
@@ -395,20 +396,19 @@ export function HomeSearchHero({
     if (seg === "lucky") {
       handleSurpriseMe();
     } else {
-      // Store the desired panel, scroll back to top so the expanded bar appears,
-      // then the expanded bar picks up pendingSegment via initialActive.
-      setPendingSegment(seg);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Expand in-place — no scroll to top
+      setOverlaySegment(seg);
+      setSearchOverlayOpen(true);
     }
   }, [handleSurpriseMe]);
 
-  // Once we're no longer in mini mode the expanded bar has consumed the segment — clear it.
+  // Close overlay on Escape
   useEffect(() => {
-    if (!isMini && pendingSegment) {
-      const t = setTimeout(() => setPendingSegment(null), 600);
-      return () => clearTimeout(t);
-    }
-  }, [isMini, pendingSegment]);
+    if (!searchOverlayOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setSearchOverlayOpen(false); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [searchOverlayOpen]);
 
   // ── Mobile: render compact pill + overlay ──
   if (isMobile) {
@@ -439,6 +439,37 @@ export function HomeSearchHero({
         <AnimatePresence mode="wait">
           <MiniSearchPill key="mini-pill" onSegmentClick={handleMiniSegmentClick} />
         </AnimatePresence>
+
+        {/* In-place search overlay — expands without scrolling to top */}
+        <AnimatePresence>
+          {searchOverlayOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm"
+                onClick={() => setSearchOverlayOpen(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: -12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.8 }}
+                className="fixed right-0 top-0 z-[56] px-6 py-4"
+                style={{ left: "var(--app-shell-offset, 0px)" }}
+              >
+                <div className="mx-auto w-full max-w-[1020px]">
+                  <SearchPillExpanded
+                    compact={false}
+                    initialActive={overlaySegment}
+                  />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -447,7 +478,7 @@ export function HomeSearchHero({
   return (
     <div className={`w-full ${className}`.trim()}>
       <div className="mx-auto w-full" style={{ maxWidth: 1020 }}>
-        <SearchPillExpanded compact={false} initialActive={pendingSegment} />
+        <SearchPillExpanded compact={false} initialActive={null} />
       </div>
     </div>
   );
