@@ -108,6 +108,8 @@ export default function CheckoutPage() {
       name:  current.name || clerkUser.fullName || `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim(),
       email: current.email || clerkUser.primaryEmailAddress?.emailAddress || "",
     }));
+    const clerkPhone = clerkUser.phoneNumbers?.[0]?.phoneNumber;
+    if (clerkPhone) setMomoNumber((current) => current || clerkPhone);
   }, [clerkUser]);
 
   useEffect(() => {
@@ -195,6 +197,7 @@ export default function CheckoutPage() {
     const reference = `GO-${nanoidShort()}`;
 
     const launch = () => {
+      const normalizedPhone = method === "mobile_money" ? normalizeGhanaPhone(momoNumber) ?? momoNumber.replace(/\s/g, "") : null;
       // @ts-expect-error paystack global
       const handler = window.PaystackPop?.setup({
         key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "",
@@ -203,9 +206,10 @@ export default function CheckoutPage() {
         currency: "GHS",
         reference,
         channels: method === "mobile_money" ? ["mobile_money"] : ["card"],
+        ...(normalizedPhone ? { phone: normalizedPhone } : {}),
         metadata: {
           localReference: reference,
-          phone: method === "mobile_money" ? normalizeGhanaPhone(momoNumber) ?? momoNumber.replace(/\s/g, "") : null,
+          phone: normalizedPhone,
           network: method === "mobile_money" ? momoNetwork : null,
         },
         callback: (transaction: PaystackTransaction) => {

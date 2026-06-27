@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { getOrCreateSupabaseUser } from "../../../lib/db/users";
 import { getUserTickets } from "../../../lib/db/tickets";
@@ -111,18 +112,30 @@ export default async function WalletsPage() {
                     href={`/wallets/${ticket.id}`}
                     className="group flex min-w-[160px] flex-col overflow-hidden rounded-[20px] border border-white/5 shadow-md transition hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                   >
-                    <div className={`bg-gradient-to-br ${grad} flex h-[112px] flex-col justify-between p-4`}>
+                    <div className="relative flex h-[112px] flex-col justify-between overflow-hidden p-4">
+                      {event.bannerUrl ? (
+                        <Image
+                          src={event.bannerUrl}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                          sizes="200px"
+                        />
+                      ) : (
+                        <div className={`absolute inset-0 bg-gradient-to-br ${grad}`} />
+                      )}
+                      <div className="absolute inset-0 bg-black/40" />
                       <span
-                        className="text-[9px] font-bold uppercase tracking-[0.2em]"
+                        className="relative text-[9px] font-bold uppercase tracking-[0.2em]"
                         style={{ color: accent }}
                       >
                         {ticket.typeLabel}
                       </span>
-                      <div>
+                      <div className="relative">
                         <p className="line-clamp-1 text-[15px] font-bold leading-tight text-white">
                           {event.title}
                         </p>
-                        <p className="mt-0.5 text-[10px]" style={{ color: accent }}>
+                        <p className="mt-0.5 text-[10px] text-white/70">
                           {event.dateLabel.replace(/^[^,]+,\s*/, "")}
                         </p>
                       </div>

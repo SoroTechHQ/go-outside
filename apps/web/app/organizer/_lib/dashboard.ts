@@ -306,18 +306,7 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
   const eventCount = organizerEvents.length || organizerProfile.total_events || 0;
   const ticketSales = organizerEvents.reduce((sum, event) => sum + event.tickets_sold, 0);
   const revenue = Number(organizerProfile.total_revenue ?? 0);
-  const eventViews = organizerEvents.reduce(
-    (sum, event) => sum + event.tickets_sold * 11 + event.saves_count * 17,
-    0,
-  );
   const realFollowerCount = followerCount ?? 0;
-  const boostedReach = clamp(Math.round(eventViews * 0.35), 120, Math.max(120, eventViews));
-  const organicReach = Math.max(240, eventViews - boostedReach);
-  const conversionRate = clamp(
-    eventViews > 0 ? Number(((ticketSales / eventViews) * 100).toFixed(1)) : 6.4,
-    2.4,
-    38.9,
-  );
 
   const tagCounts = new Map<string, number>();
   for (const event of organizerEvents) {
@@ -331,9 +320,7 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
     .map(([tag]) => `#${tag.replace(/^#/, "")}`)
     .slice(0, 8);
 
-  if (hashtags.length < 5) {
-    hashtags.push("#accraevents", "#weekendinaccra", "#gooutside");
-  }
+  // no fake hashtag padding — show only what's actually on events
 
   const checkinByEvent = new Map<string, number>();
   for (const row of (checkinCounts ?? []) as { event_id: string }[]) {
@@ -360,8 +347,8 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
       sold: event.tickets_sold,
       capacity,
       soldRatio,
-      revenue: Math.round((event.tickets_sold * Math.max(80, revenue / Math.max(ticketSales, 1))) / 10) * 10,
-      posts: Math.max(0, Math.round(event.saves_count / 2)),
+      revenue: ticketSales > 0 ? Math.round((event.tickets_sold / ticketSales) * revenue) : 0,
+      posts: 0,
       checkedIn,
       checkinRate,
     };
@@ -398,13 +385,13 @@ export const getOrganizerDashboardData = cache(async function getOrganizerDashbo
       ticketSalesDelta: ticketSales === 0 ? "No ticket sales yet" : `${ticketSales} total sold`,
       followerCount: realFollowerCount,
       followerDelta: deltaLabel(followersThisWeek ?? 0, followersLastWeek ?? 0),
-      eventViews,
-      eventViewsDelta: eventViews === 0 ? "No views yet" : `${eventViews.toLocaleString()} total views`,
+      eventViews: 0,
+      eventViewsDelta: "Views tracking coming soon",
       revenue,
       revenueDelta: revenue === 0 ? "No revenue yet" : `GH₵${revenue.toLocaleString()} total`,
-      conversionRate,
-      organicReach,
-      boostedReach,
+      conversionRate: 0,
+      organicReach: 0,
+      boostedReach: 0,
     },
     posts,
     salesSeries: buildSalesSeries(ticketSales),
@@ -453,27 +440,7 @@ export function getOrganizerCalendarItems(dashboard: OrganizerDashboardData): Or
     status: event.statusLabel,
   }));
 
-  const postItems = dashboard.hashtags.slice(0, 2).map((tag, index) => ({
-    id: `post-${tag}`,
-    day: [5, 16][index] ?? 5,
-    kind: "post" as const,
-    title: `Scheduled post ${tag}`,
-    timeLabel: "11:30 AM",
-    status: "Scheduled",
-  }));
-
-  const campaignItems = [
-    {
-      id: "campaign-boost",
-      day: 20,
-      kind: "campaign" as const,
-      title: "Boost weekend push",
-      timeLabel: "9:00 AM",
-      status: "Active",
-    },
-  ];
-
-  return [...eventItems, ...postItems, ...campaignItems].sort((a, b) => a.day - b.day);
+  return eventItems.sort((a, b) => a.day - b.day);
 }
 
 export function getOrganizerAudienceData(dashboard: OrganizerDashboardData): OrganizerAudienceData {
@@ -570,8 +537,8 @@ export async function getOrganizerAllEvents(userId: string, revenue: number, tot
       sold: ev.tickets_sold,
       capacity,
       soldRatio,
-      revenue: Math.round((ev.tickets_sold * Math.max(80, revenue / Math.max(totalSold, 1))) / 10) * 10,
-      posts: Math.max(0, Math.round(ev.saves_count / 2)),
+      revenue: totalSold > 0 ? Math.round((ev.tickets_sold / totalSold) * revenue) : 0,
+      posts: 0,
     };
   });
 }

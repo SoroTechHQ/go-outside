@@ -388,39 +388,22 @@ function OverviewTab({ dashboard }: { dashboard: OrganizerDashboardData }) {
     <div className="space-y-5">
 
       {/* ── KPI Cards ──────────────────────────────────────── */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-3">
         <MetricCard accent="#2f8f45"  label="Ticket Sales"  value={fmt(overview.ticketSales)}   delta={overview.ticketSalesDelta}  icon={<Ticket     size={19} weight="fill" />} />
         <MetricCard accent="#3b82f6"  label="Followers"     value={fmt(overview.followerCount)} delta={overview.followerDelta}     icon={<UsersThree size={19} weight="fill" />} />
-        <MetricCard accent="#8b5cf6"  label="Event Views"   value={fmt(overview.eventViews)}    delta={overview.eventViewsDelta}   icon={<Waves      size={19} weight="fill" />} />
         <MetricCard accent="#f59e0b"  label="Revenue"       value={money(overview.revenue)}     delta={overview.revenueDelta}      icon={<TrendUp    size={19} weight="fill" />} />
       </section>
 
       {/* ── Charts row ─────────────────────────────────────── */}
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(260px,1fr)]">
+      <section>
         <Card>
           <CardHeader
             title="Ticket sales"
-            sub={`${overview.ticketSales.toLocaleString()} total · ${overview.conversionRate}% conversion`}
+            sub={`${overview.ticketSales.toLocaleString()} tickets sold total`}
             icon={<Ticket size={15} weight="fill" />}
-            action={
-              <span className="rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--brand)]">
-                Last 7 days
-              </span>
-            }
           />
           <div className="mt-6">
             <BarChart series={salesSeries} />
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader
-            title="Audience reach"
-            sub="Organic vs. boosted"
-            icon={<ChartBar size={15} weight="fill" />}
-          />
-          <div className="mt-6">
-            <Donut boosted={overview.boostedReach} organic={overview.organicReach} />
           </div>
         </Card>
       </section>
@@ -1131,7 +1114,7 @@ export function OrganizerDashboardView({ dashboard }: { dashboard: OrganizerDash
               {[
                 { icon: <Ticket size={12} weight="fill" />, label: `${dashboard.overview.ticketSales.toLocaleString()} tickets` },
                 { icon: <UsersThree size={12} weight="fill" />, label: `${dashboard.overview.followerCount.toLocaleString()} followers` },
-                { icon: <Waves size={12} weight="fill" />, label: `${dashboard.overview.eventViews.toLocaleString()} views` },
+                { icon: <TrendUp size={12} weight="fill" />, label: dashboard.overview.revenue > 0 ? `GH₵${dashboard.overview.revenue.toLocaleString()}` : "No revenue yet" },
               ].map((s, i) => (
                 <span key={i} className="flex items-center gap-1.5 px-2 text-[11px] font-medium text-[var(--text-secondary)]">
                   <span className="text-[var(--brand)]">{s.icon}</span>
