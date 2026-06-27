@@ -74,7 +74,6 @@ export function VenueMapPicker({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [mapsReady, setMapsReady] = useState(false);
-  const [ghanaPostLoading, setGhanaPostLoading] = useState(false);
   const autocompleteRef = useRef<GoogleMapsPlaces>(null);
   const serviceEl = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,27 +139,10 @@ export function VenueMapPicker({
           mapUrl,
         };
 
-        // Show the venue immediately — GhanaPost address loads async
         onChange(venue);
         setQuery(detail.name);
         setOpen(false);
         setResults([]);
-
-        // Fetch the real GhanaPostGPS digital address (GA-XXX-XXXX format)
-        try {
-          setGhanaPostLoading(true);
-          const res = await fetch(`/api/ghana-post?lat=${lat}&lng=${lng}`);
-          if (res.ok) {
-            const ghp = (await res.json()) as { digitalAddress?: string };
-            if (ghp.digitalAddress) {
-              onChange({ ...venue, ghanaPost: ghp.digitalAddress });
-            }
-          }
-        } catch {
-          // GhanaPost is optional — silently skip if unavailable
-        } finally {
-          setGhanaPostLoading(false);
-        }
       }
     );
   }
@@ -264,21 +246,13 @@ export function VenueMapPicker({
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-[var(--text-primary)]">{value.name}</p>
                   <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{value.address}</p>
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <NavigationArrow size={11} className="text-[var(--brand)]" weight="fill" />
-                    {ghanaPostLoading ? (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">Looking up GhanaPost address…</span>
-                    ) : value.ghanaPost ? (
-                      <>
-                        <span className="font-mono text-[10px] font-semibold text-[var(--brand)]">
-                          {value.ghanaPost}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-tertiary)]">GhanaPost address</span>
-                      </>
-                    ) : (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">GhanaPost address unavailable for this location</span>
-                    )}
-                  </div>
+                  {value.ghanaPost && (
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <NavigationArrow size={11} className="text-[var(--brand)]" weight="fill" />
+                      <span className="font-mono text-[10px] font-semibold text-[var(--brand)]">{value.ghanaPost}</span>
+                      <span className="text-[10px] text-[var(--text-tertiary)]">GhanaPost address</span>
+                    </div>
+                  )}
                 </div>
                 <a
                   href={`https://maps.google.com/?q=${value.lat},${value.lng}`}
