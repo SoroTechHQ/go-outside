@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import {
   ArrowSquareOut,
   Car,
+  CaretDown,
   Copy,
   Check,
   MapPin,
+  NavigationArrow,
   WhatsappLogo,
 } from "@phosphor-icons/react";
 
@@ -54,6 +56,7 @@ function CopyButton({ text }: { text: string }) {
 export function EventMap({ lat, lng, venueName, locationLine, eventTitle }: Props) {
   const [ghanaPost, setGhanaPost] = useState<GhanaPostAddress | null>(null);
   const [gpLoading, setGpLoading] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     setGpLoading(true);
@@ -102,27 +105,74 @@ export function EventMap({ lat, lng, venueName, locationLine, eventTitle }: Prop
           </div>
         </div>
 
-        {/* Ghana Post digital address */}
+        {/* GhanaPost GPS digital address
+            If GPGPS_MIJO_TOKEN expires, this section simply won't render (ghanaPost stays null).
+            To refresh the token: curl -s https://www.ghanapostgps.com/map/assets/index-*.js | grep -o 'u2="[^"]*"'
+            Then update GPGPS_MIJO_TOKEN in .env.local and Vercel environment variables. */}
         {gpLoading ? (
           <div className="flex items-center gap-2 rounded-xl border border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
-            <span className="text-sm text-[var(--text-tertiary)]">Loading Ghana Post address…</span>
+            <span className="text-sm text-[var(--text-tertiary)]">Loading GhanaPost address…</span>
           </div>
         ) : ghanaPost ? (
-          <div className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">Ghana Post Digital Address</p>
-                <p className="mt-0.5 text-[1.4rem] font-bold tracking-wide text-[var(--brand)]">{ghanaPost.digitalAddress}</p>
+          <div className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-card)] overflow-hidden">
+            {/* Address row — always visible */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <NavigationArrow size={15} weight="fill" className="shrink-0 text-[var(--brand)]" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">GhanaPost Digital Address</p>
+                <p className="font-mono text-[1.1rem] font-bold tracking-widest text-[var(--brand)]">
+                  {ghanaPost.digitalAddress}
+                </p>
+                {ghanaPost.street && (
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{ghanaPost.street}</p>
+                )}
               </div>
-              <CopyButton text={ghanaPost.digitalAddress} />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <CopyButton text={ghanaPost.digitalAddress} />
+                {/* Open in GhanaPostGPS map */}
+                <a
+                  href={`https://www.ghanapostgps.com/map/?q=${ghanaPost.digitalAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand-dim)] text-[var(--brand)] transition hover:bg-[var(--brand)] hover:text-white"
+                  title="Open in GhanaPostGPS"
+                >
+                  <ArrowSquareOut size={13} weight="bold" />
+                </a>
+              </div>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
-              {ghanaPost.street   && <span><span className="font-medium text-[var(--text-primary)]">Street: </span>{ghanaPost.street}</span>}
-              {ghanaPost.district && <span><span className="font-medium text-[var(--text-primary)]">District: </span>{ghanaPost.district}</span>}
-              {ghanaPost.region   && <span><span className="font-medium text-[var(--text-primary)]">Region: </span>{ghanaPost.region}</span>}
-              {ghanaPost.community && <span><span className="font-medium text-[var(--text-primary)]">Community: </span>{ghanaPost.community}</span>}
-            </div>
+
+            {/* Expandable metadata */}
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((o) => !o)}
+              className="flex w-full items-center gap-2 border-t border-[var(--home-border)] px-4 py-2 text-left text-[11px] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition"
+            >
+              <CaretDown
+                size={11}
+                weight="bold"
+                className={`transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`}
+              />
+              {detailsOpen ? "Hide" : "Show"} address details
+            </button>
+
+            {detailsOpen && (
+              <div className="grid grid-cols-2 gap-px border-t border-[var(--home-border)] bg-[var(--home-border)]">
+                {[
+                  ["Community",   ghanaPost.community],
+                  ["District",    ghanaPost.district],
+                  ["Region",      ghanaPost.region],
+                  ["Postal Area", ghanaPost.postalArea],
+                  ["Post Code",   ghanaPost.postCode],
+                ].filter(([, v]) => v).map(([label, value]) => (
+                  <div key={label} className="bg-[var(--bg-card)] px-3 py-2.5">
+                    <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">{label}</p>
+                    <p className="text-xs font-medium text-[var(--text-primary)]">{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : null}
       </div>
