@@ -58,7 +58,7 @@ function WizardProgress() {
 }
 
 function WizardContent() {
-  const { state, next, back, clearDraft, saveDraft } = useWizard();
+  const { state, next, back, clearDraft, saveDraft, stepError, setStepError, categoryErrorRef } = useWizard();
   const [saving, setSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
   const StepComponent = STEP_COMPONENTS[state.step - 1];
@@ -74,6 +74,33 @@ function WizardContent() {
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2500);
     }
+  }
+
+  function validateStep(): string | null {
+    if (state.step === 1) {
+      if (!state.title.trim()) return "Give your event a title.";
+      if (state.categoryIds.length === 0 && !state.customEventType.trim()) {
+        return "Pick at least one event type so attendees can find your event.";
+      }
+    }
+    if (state.step === 2) {
+      if (!state.startDatetime) return "Set a start date and time.";
+    }
+    return null;
+  }
+
+  function handleContinue() {
+    const err = validateStep();
+    if (err) {
+      setStepError(err);
+      // Scroll to the category picker if that's the problem
+      if (state.step === 1 && state.categoryIds.length === 0 && state.title.trim()) {
+        categoryErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+    setStepError(null);
+    next();
   }
 
   return (
@@ -121,62 +148,70 @@ function WizardContent() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-[var(--border-subtle)] px-6 py-4 md:px-8">
-        <div className="flex items-center gap-3">
-          {!isFirst && (
-            <button
-              className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
-              type="button"
-              onClick={back}
-            >
-              Back
-            </button>
-          )}
-          {isFirst && (
-            <Link
-              className="text-[13px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-              href="/organizer/events"
-            >
-              Cancel
-            </Link>
-          )}
-        </div>
+      <div className="border-t border-[var(--border-subtle)]">
+        {stepError && (
+          <div className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/8 px-6 py-2.5">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+            <p className="text-[12px] font-medium text-red-400">{stepError}</p>
+          </div>
+        )}
+        <div className="flex items-center justify-between px-6 py-4 md:px-8">
+          <div className="flex items-center gap-3">
+            {!isFirst && (
+              <button
+                className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2 text-[13px] font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+                type="button"
+                onClick={back}
+              >
+                Back
+              </button>
+            )}
+            {isFirst && (
+              <Link
+                className="text-[13px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                href="/organizer/events"
+              >
+                Cancel
+              </Link>
+            )}
+          </div>
 
-        <div className="flex items-center gap-3">
-          {state.title && !isLast && (
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleSaveDraft}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
-            >
-              {savedOk ? (
-                <>
-                  <Check size={12} weight="bold" className="text-[var(--brand)]" />
-                  <span className="text-[var(--brand)]">Saved</span>
-                </>
-              ) : saving ? (
-                <>
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <FloppyDisk size={13} />
-                  Save draft
-                </>
-              )}
-            </button>
-          )}
-          {!isLast && (
-            <button
-              className="rounded-full bg-[var(--brand)] px-5 py-2 text-[13px] font-semibold text-black transition hover:bg-[#4fa824] active:scale-[0.97]"
-              type="button"
-              onClick={next}
-            >
-              Continue
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {state.title && !isLast && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleSaveDraft}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-3.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
+              >
+                {savedOk ? (
+                  <>
+                    <Check size={12} weight="bold" className="text-[var(--brand)]" />
+                    <span className="text-[var(--brand)]">Saved</span>
+                  </>
+                ) : saving ? (
+                  <>
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <FloppyDisk size={13} />
+                    Save draft
+                  </>
+                )}
+              </button>
+            )}
+            {!isLast && (
+              <button
+                className="rounded-full bg-[var(--brand)] px-5 py-2 text-[13px] font-semibold text-black transition hover:bg-[#4fa824] active:scale-[0.97]"
+                type="button"
+                onClick={handleContinue}
+              >
+                Continue
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
