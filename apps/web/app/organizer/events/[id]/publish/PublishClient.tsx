@@ -34,11 +34,11 @@ type EventSummary = {
 };
 
 const CHECKS = [
-  { key: "hasTitle" as keyof ReadinessChecks, label: "Event title", critical: true },
-  { key: "hasDate" as keyof ReadinessChecks, label: "Date and time", critical: true },
-  { key: "hasTickets" as keyof ReadinessChecks, label: "At least one active ticket type", critical: true },
-  { key: "hasDescription" as keyof ReadinessChecks, label: "Event description", critical: false },
-  { key: "hasBanner" as keyof ReadinessChecks, label: "Cover image", critical: false },
+  { key: "hasTitle" as keyof ReadinessChecks, label: "Event title", critical: true, fixPath: "/details" },
+  { key: "hasDate" as keyof ReadinessChecks, label: "Date and time", critical: true, fixPath: "/details" },
+  { key: "hasTickets" as keyof ReadinessChecks, label: "At least one active ticket type", critical: true, fixPath: "/tickets" },
+  { key: "hasDescription" as keyof ReadinessChecks, label: "Event description", critical: false, fixPath: "/details" },
+  { key: "hasBanner" as keyof ReadinessChecks, label: "Cover image", critical: false, fixPath: "/details" },
 ];
 
 export function PublishClient({
@@ -174,9 +174,12 @@ export function PublishClient({
                   {!ok && c.critical && <span className="ml-1 font-semibold">(required)</span>}
                 </span>
                 {!ok && (
-                  <span className="ml-auto text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--brand)] cursor-pointer transition">
+                  <Link
+                    href={`/organizer/events/${event.id}${c.fixPath}`}
+                    className="ml-auto text-[11px] font-medium text-[var(--brand)] hover:underline transition"
+                  >
                     Fix →
-                  </span>
+                  </Link>
                 )}
               </div>
             );

@@ -39,15 +39,33 @@ export async function getPublishedEvents(): Promise<EventItem[]> {
 
 // Single event by slug (published only — public)
 export async function getEventBySlug(slug: string): Promise<EventItem | null> {
-  const { data, error } = await supabaseAdmin
+  // Try primary slug column first
+  let { data, error } = await supabaseAdmin
     .from("events")
     .select(EVENT_SELECT)
     .eq("slug", slug)
     .eq("status", "published")
-    .single();
+    .maybeSingle();
+
+  // Fall back to slug_v2 in case the URL uses the alternate slug
+  if ((error || !data) && !error) {
+    const fallback = await supabaseAdmin
+      .from("events")
+      .select(EVENT_SELECT)
+      .eq("slug_v2", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !data) return null;
-  return adaptEvent(data as unknown as DbEventRow);
+  try {
+    return adaptEvent(data as unknown as DbEventRow);
+  } catch (e) {
+    console.error("[getEventBySlug] adaptEvent failed for slug", slug, e);
+    return null;
+  }
 }
 
 // Any-status event by slug — only for the organizer who owns it (preview mode)
@@ -63,15 +81,31 @@ export async function getEventBySlugForPreview(
     .maybeSingle();
   if (!user) return null;
 
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from("events")
     .select(EVENT_SELECT)
     .eq("slug", slug)
     .eq("organizer_id", user.id)
-    .single();
+    .maybeSingle();
+
+  if ((error || !data) && !error) {
+    const fallback = await supabaseAdmin
+      .from("events")
+      .select(EVENT_SELECT)
+      .eq("slug_v2", slug)
+      .eq("organizer_id", user.id)
+      .maybeSingle();
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !data) return null;
-  return adaptEvent(data as unknown as DbEventRow);
+  try {
+    return adaptEvent(data as unknown as DbEventRow);
+  } catch (e) {
+    console.error("[getEventBySlugForPreview] adaptEvent failed for slug", slug, e);
+    return null;
+  }
 }
 
 // Events in a given category
