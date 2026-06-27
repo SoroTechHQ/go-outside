@@ -8,16 +8,24 @@ export type GhanaPostAddress = {
   postCode:       string | null;
 };
 
+export type GhanaPostLocation = {
+  lat:     number;
+  lng:     number;
+  address: GhanaPostAddress;
+};
+
 type MijoResult = {
-  GPSName:     string;
-  OldAddress:  string;
-  Region:      string;
-  District:    string;
-  PostCode:    string;
-  PostalArea:  string;
-  Community:   string;
-  Street:      string;
-  Area:        string;
+  GPSName:          string;
+  OldAddress:       string;
+  Region:           string;
+  District:         string;
+  PostCode:         string;
+  PostalArea:       string;
+  Community:        string;
+  Street:           string;
+  Area:             string;
+  CenterLatitude?:  number;
+  CenterLongitude?: number;
 };
 
 type MijoResponse = {
@@ -87,6 +95,39 @@ export async function lookupGhanaPostAddress(
 ): Promise<GhanaPostAddress | null> {
   try {
     return await lookupViaMijo(lat, lng);
+  } catch {
+    return null;
+  }
+}
+
+// Forward lookup: GhanaPost code → lat/lng + address metadata
+export async function resolveGhanaPostCode(code: string): Promise<GhanaPostLocation | null> {
+  const mijoUrl = process.env.GPGPS_MIJO_URL;
+  const token   = process.env.GPGPS_MIJO_TOKEN;
+  if (!mijoUrl || !token) return null;
+
+  const url = new URL(mijoUrl);
+  url.searchParams.set("address", code.toUpperCase().replace(/\s/g, ""));
+
+  try {
+    const res = await fetch(url.toString(), {
+      method:  "GET",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+
+    const json = (await res.json()) as MijoResponse;
+    if (json.Code !== 1 || json.Message !== "Success") return null;
+
+    const result = Array.isArray(json.Result) ? json.Result[0] : json.Result;
+    if (!result?.CenterLatitude || !result?.CenterLongitude) return null;
+
+    return {
+      lat:     result.CenterLatitude,
+      lng:     result.CenterLongitude,
+      address: adaptMijoResult(result),
+    };
   } catch {
     return null;
   }

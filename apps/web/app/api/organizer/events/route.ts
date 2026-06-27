@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
       venue_id:          venueId,
       latitude:          body.venueLat != null ? Number(body.venueLat) : null,
       longitude:         body.venueLng != null ? Number(body.venueLng) : null,
+      schedule_type:     (body.scheduleType as string) || "single",
+      event_days:        body.eventDays ?? null,
       is_age_restricted: Boolean(body.isAgeRestricted),
       status:            body.publish ? "published" : "draft",
       published_at:      body.publish ? new Date().toISOString() : null,
