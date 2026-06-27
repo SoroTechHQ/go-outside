@@ -1292,31 +1292,41 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
         )}
 
         {/* Submit */}
-        <div className="flex items-center justify-between gap-4 pt-2 pb-8">
-          <Link href="/organizer/events" className="text-[13px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition">
-            Cancel
-          </Link>
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              disabled={isSubmitting || !title.trim()}
-              onClick={handleSaveDraft}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-4 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
-            >
-              <FloppyDisk size={14} />
-              Save draft
-            </button>
-            <motion.button
-              type="submit"
-              disabled={isSubmitting}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgba(47,143,69,0.28)] transition hover:opacity-90 disabled:opacity-60"
-            >
-              {isSubmitting
-                ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                : <Sparkle size={16} weight="fill" />}
-              {isSubmitting ? "Creating…" : "Create Event"}
-            </motion.button>
+        <div className="pt-2 pb-8 space-y-3">
+          {/* Draft notice */}
+          <div className="flex items-center gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3">
+            <FloppyDisk size={15} className="shrink-0 text-[var(--text-tertiary)]" />
+            <p className="text-[12px] text-[var(--text-secondary)] leading-snug">
+              <span className="font-semibold text-[var(--text-primary)]">Saves as a draft</span> — not visible to anyone until you review and publish.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/organizer/events" className="text-[13px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition">
+              Cancel
+            </Link>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                disabled={isSubmitting || !title.trim()}
+                onClick={handleSaveDraft}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-4 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
+              >
+                <FloppyDisk size={14} />
+                Save &amp; exit
+              </button>
+              <motion.button
+                type="submit"
+                disabled={isSubmitting}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgba(47,143,69,0.28)] transition hover:opacity-90 disabled:opacity-60"
+              >
+                {isSubmitting
+                  ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  : <Sparkle size={16} weight="fill" />}
+                {isSubmitting ? "Saving…" : "Create draft"}
+              </motion.button>
+            </div>
           </div>
         </div>
       </form>
