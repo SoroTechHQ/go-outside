@@ -36,13 +36,17 @@ export async function POST(req: NextRequest) {
 
   const { data: event } = await supabaseAdmin
     .from("events")
-    .select("id, organizer_id")
+    .select("id, organizer_id, start_datetime")
     .eq("id", eventId)
     .maybeSingle();
 
   if (!event || event.organizer_id !== user.id) return jsonError(404, "Event not found");
 
   if (!body.name || typeof body.name !== "string") return jsonError(400, "name is required");
+
+  // Smart defaults: sale starts now, ends when the event starts
+  const saleStartsAt = (body.saleStartsAt as string) || new Date().toISOString();
+  const saleEndsAt   = (body.saleEndsAt as string) || (event as { start_datetime: string }).start_datetime;
 
   const { count: existingCount } = await supabaseAdmin
     .from("ticket_types")
@@ -61,8 +65,8 @@ export async function POST(req: NextRequest) {
       quantity_total: body.quantityTotal != null ? Number(body.quantityTotal) : null,
       quantity_sold:  0,
       max_per_user:   body.maxPerUser != null ? Number(body.maxPerUser) : null,
-      sale_starts_at: (body.saleStartsAt as string) || null,
-      sale_ends_at:   (body.saleEndsAt as string) || null,
+      sale_starts_at: saleStartsAt,
+      sale_ends_at:   saleEndsAt,
       is_active:      true,
       sort_order:     (existingCount ?? 0),
     })

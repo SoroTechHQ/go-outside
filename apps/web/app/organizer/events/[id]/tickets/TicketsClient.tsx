@@ -62,18 +62,37 @@ function formatMoney(n: number) {
   return new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 0 }).format(n);
 }
 
+function toDatetimeLocal(iso: string): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch { return ""; }
+}
+
 function TicketForm({
   eventId,
+  eventStartAt,
   initial,
   onSave,
   onCancel,
 }: {
   eventId: string;
+  eventStartAt: string;
   initial?: Partial<NewTicketForm>;
   onSave: (t: TicketType) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState<NewTicketForm>({ ...EMPTY_FORM, ...initial });
+  const smartStart = toDatetimeLocal(new Date().toISOString());
+  const smartEnd   = toDatetimeLocal(eventStartAt);
+  const [form, setForm] = useState<NewTicketForm>({
+    ...EMPTY_FORM,
+    saleStartsAt: smartStart,
+    saleEndsAt:   smartEnd,
+    ...initial,
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -189,38 +208,60 @@ function TicketForm({
           </div>
         </div>
 
-        {/* Max per user + sale dates */}
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Max per person</label>
-            <input
-              type="number"
-              min="1"
-              className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
-              placeholder="—"
-              value={form.maxPerUser}
-              onChange={(e) => set("maxPerUser", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Sale starts</label>
-            <input
-              type="datetime-local"
-              className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
-              value={form.saleStartsAt}
-              onChange={(e) => set("saleStartsAt", e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Sale ends</label>
-            <input
-              type="datetime-local"
-              className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
-              value={form.saleEndsAt}
-              onChange={(e) => set("saleEndsAt", e.target.value)}
-            />
-          </div>
-        </div>
+        {/* Advanced settings toggle */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--brand)] transition"
+        >
+          <DotsThree size={14} weight="bold" />
+          {showAdvanced ? "Hide advanced settings" : "Advanced settings"}
+        </button>
+
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="grid gap-3 sm:grid-cols-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Max per person</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3.5 py-2.5 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                    placeholder="Unlimited"
+                    value={form.maxPerUser}
+                    onChange={(e) => set("maxPerUser", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Sale starts</label>
+                  <input
+                    type="datetime-local"
+                    className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                    value={form.saleStartsAt}
+                    onChange={(e) => set("saleStartsAt", e.target.value)}
+                  />
+                  <p className="mt-1 text-[10px] text-[var(--text-tertiary)]">Defaults to now</p>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Sale ends</label>
+                  <input
+                    type="datetime-local"
+                    className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2.5 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                    value={form.saleEndsAt}
+                    onChange={(e) => set("saleEndsAt", e.target.value)}
+                  />
+                  <p className="mt-1 text-[10px] text-[var(--text-tertiary)]">Defaults to event start</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {error && <p className="mt-3 text-[12px] text-red-500">{error}</p>}
@@ -355,13 +396,16 @@ function TicketCard({ ticket, onToggle, onDelete }: { ticket: TicketType; onTogg
 
 export function TicketsClient({
   eventId,
+  eventStartAt,
   initialTicketTypes,
 }: {
   eventId: string;
+  eventStartAt: string;
   initialTicketTypes: TicketType[];
 }) {
   const [tickets, setTickets] = useState<TicketType[]>(initialTicketTypes);
-  const [showForm, setShowForm] = useState(tickets.length === 0);
+  const hasExisting = initialTicketTypes.length > 0;
+  const [showForm, setShowForm] = useState(!hasExisting);
 
   async function toggleActive(id: string) {
     const t = tickets.find((x) => x.id === id);
@@ -384,9 +428,13 @@ export function TicketsClient({
       {/* Header */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--brand)]">Step 2</p>
-        <h2 className="mt-0.5 text-[1.5rem] font-bold tracking-tight text-[var(--text-primary)]">Add tickets</h2>
+        <h2 className="mt-0.5 text-[1.5rem] font-bold tracking-tight text-[var(--text-primary)]">
+          {hasExisting ? "Your tickets" : "Add tickets"}
+        </h2>
         <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-          Create ticket tiers. You can add multiple types — General Admission, VIP, Early Bird, and more.
+          {hasExisting
+            ? "These ticket tiers were set up when you created the event. Edit, deactivate, or add more below."
+            : "Create ticket tiers. You can add multiple types — General Admission, VIP, Early Bird, and more."}
         </p>
       </div>
 
@@ -412,6 +460,7 @@ export function TicketsClient({
           <TicketForm
             key="form"
             eventId={eventId}
+            eventStartAt={eventStartAt}
             onSave={(t) => { setTickets((ts) => [...ts, t]); setShowForm(false); }}
             onCancel={() => setShowForm(false)}
           />

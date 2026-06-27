@@ -39,7 +39,11 @@ export default async function EventTicketsPage({
 
   return (
     <EventEditHub event={hubEvent}>
-      <TicketsClient eventId={event.id} initialTicketTypes={(ticketTypes ?? []) as Parameters<typeof TicketsClient>[0]["initialTicketTypes"]} />
+      <TicketsClient
+        eventId={event.id}
+        eventStartAt={event.start_datetime ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}
+        initialTicketTypes={(ticketTypes ?? []) as Parameters<typeof TicketsClient>[0]["initialTicketTypes"]}
+      />
     </EventEditHub>
   );
 }
