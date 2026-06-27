@@ -79,6 +79,9 @@ export async function sendTicketReceipt(opts: {
   ticketId: string; qrUrl: string; venue: string; venueAddress?: string;
   mapsUrl?: string; ticketType?: string;
   ticketLines?: Array<{ label: string; quantity?: number; priceLabel?: string }>;
+  totalLabel?: string;
+  paymentMethod?: string | null;
+  coverUrl?: string | null;
   eventUrl?: string;
   startDatetime?: string | null;
   endDatetime?: string | null;
@@ -87,6 +90,7 @@ export async function sendTicketReceipt(opts: {
     websiteUrl?: string | null;
     logoUrl?: string | null;
     socialLinks?: Record<string, string> | null;
+    customMessage?: string | null;
   };
 }) {
   const calendar = buildCalendarInvite(opts);
@@ -94,7 +98,7 @@ export async function sendTicketReceipt(opts: {
     from:    SENDERS.tickets,
     to:      opts.to,
     replyTo: "hello@mail.gooutside.club",
-    subject: `🎟️ Your ticket for ${opts.eventName}`,
+    subject: `Your ticket for ${opts.eventName} | GoOutside`,
     headers: txnHeaders(),
     attachments: calendar ? ([{
       filename: `${slugifyFilename(opts.eventName)}.ics`,
@@ -126,6 +130,10 @@ export async function sendPioneerInvite(opts: { to: string; firstName: string })
     headers: txnHeaders({ "X-Program": "pulse-pioneers" }),
     html:    buildPioneerEmail(opts.firstName),
   });
+}
+
+export function buildTicketEmailPreview(opts: Omit<Parameters<typeof sendTicketReceipt>[0], "to">): string {
+  return buildTicketEmail(opts);
 }
 
 export function buildFoundingOrganizerEmailPreview(opts: {
@@ -463,16 +471,59 @@ function buildCalendarInvite(opts: {
   return { ics, googleUrl: googleUrl.toString() };
 }
 
-function socialBadge(label: string, href: string, tone = "light"): string {
-  const bg = tone === "brand" ? BRAND_BG : "#f8f8f8";
-  const border = tone === "brand" ? BRAND_BD : BORDER;
-  return `<a href="${esc(href)}" style="display:inline-block;margin:0 8px 8px 0;padding:8px 11px;border:1px solid ${border};border-radius:999px;background:${bg};color:${TEXT};text-decoration:none;font-size:12px;font-weight:700;line-height:1;">
-    <span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:999px;background:${BRAND};color:#fff;font-size:10px;font-weight:800;letter-spacing:0.03em;vertical-align:middle;">${esc(label.slice(0, 2).toUpperCase())}</span>
-    <span style="display:inline-block;vertical-align:middle;margin-left:8px;white-space:nowrap;">${esc(label)}</span>
+// Brand SVG paths for social platforms — rendered as base64 img tags safe for email clients
+const _SOCIAL_ICON: Record<string, { bg: string; svgBody: string }> = {
+  instagram: {
+    bg: "#E1306C",
+    svgBody: `<rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="white" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3.5" stroke="white" stroke-width="2" fill="none"/><circle cx="18.5" cy="5.5" r="1.5" fill="white"/>`,
+  },
+  twitter: {
+    bg: "#000000",
+    svgBody: `<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.734-8.845L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="white"/>`,
+  },
+  x: {
+    bg: "#000000",
+    svgBody: `<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.734-8.845L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="white"/>`,
+  },
+  facebook: {
+    bg: "#1877F2",
+    svgBody: `<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" fill="white"/>`,
+  },
+  tiktok: {
+    bg: "#010101",
+    svgBody: `<path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.74a8.17 8.17 0 0 0 4.77 1.52V6.79a4.85 4.85 0 0 1-1-.1z" fill="white"/>`,
+  },
+  linkedin: {
+    bg: "#0A66C2",
+    svgBody: `<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" fill="white"/>`,
+  },
+  youtube: {
+    bg: "#FF0000",
+    svgBody: `<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="white"/>`,
+  },
+  website: {
+    bg: "#4a9f63",
+    svgBody: `<circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="white" stroke-width="2" fill="none"/>`,
+  },
+};
+
+function socialIconImg(rawLabel: string, size = 18): string {
+  const key = rawLabel.trim().toLowerCase().replace(/\s+/g, "");
+  const meta = _SOCIAL_ICON[key] ?? _SOCIAL_ICON["website"]!;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}">${meta.svgBody}</svg>`;
+  const dataUri = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  return `<span style="display:inline-block;width:${size + 4}px;height:${size + 4}px;border-radius:6px;background:${meta.bg};text-align:center;line-height:${size + 4}px;vertical-align:middle;"><img src="${dataUri}" width="${size}" height="${size}" alt="${esc(rawLabel)}" style="display:inline-block;vertical-align:middle;margin-top:${Math.floor((size + 4 - size) / 2)}px;"></span>`;
+}
+
+function socialBadge(label: string, href: string, handle?: string): string {
+  const displayText = handle ?? label;
+  return `<a href="${esc(href)}" style="display:inline-block;margin:0 8px 8px 0;padding:7px 13px 7px 8px;border:1px solid ${BORDER};border-radius:999px;background:#f8f8f8;color:${TEXT};text-decoration:none;font-size:12px;font-weight:600;line-height:1;vertical-align:middle;">
+    ${socialIconImg(label, 16)}
+    <span style="display:inline-block;vertical-align:middle;margin-left:7px;white-space:nowrap;color:${TEXT};">${esc(displayText)}</span>
   </a>`;
 }
 
-function organizerSocialLinks(input?: Record<string, string> | null): Array<{ label: string; href: string }> {
+function organizerSocialLinks(input?: Record<string, string> | null): Array<{ label: string; href: string; handle: string }> {
   if (!input) return [];
 
   return Object.entries(input)
@@ -480,18 +531,26 @@ function organizerSocialLinks(input?: Record<string, string> | null): Array<{ la
       const label = rawLabel.trim().toLowerCase();
       let href = rawHref.trim();
       if (!href) return null;
+      // Normalise bare handles / slugs into full URLs
       if (!/^https?:\/\//i.test(href)) {
-        if (label === "instagram") href = `https://instagram.com/${href.replace(/^@/, "")}`;
+        if (label === "instagram")       href = `https://instagram.com/${href.replace(/^@/, "")}`;
         else if (label === "twitter" || label === "x") href = `https://x.com/${href.replace(/^@/, "")}`;
-        else if (label === "facebook") href = `https://facebook.com/${href.replace(/^@/, "")}`;
-        else if (label === "tiktok") href = `https://tiktok.com/@${href.replace(/^@/, "")}`;
-        else if (label === "linkedin") href = `https://linkedin.com/in/${href.replace(/^@/, "")}`;
-        else href = `https://${href.replace(/^\/+/, "")}`;
+        else if (label === "facebook")   href = `https://facebook.com/${href.replace(/^@/, "")}`;
+        else if (label === "tiktok")     href = `https://tiktok.com/@${href.replace(/^@/, "")}`;
+        else if (label === "linkedin")   href = `https://linkedin.com/in/${href.replace(/^@/, "")}`;
+        else if (label === "youtube")    href = `https://youtube.com/@${href.replace(/^@/, "")}`;
+        else                             href = `https://${href.replace(/^\/+/, "")}`;
       }
-      return { label: rawLabel, href };
+      // Derive a short display handle
+      let handle = rawHref.trim();
+      if (!handle.startsWith("@") && !/^https?:\/\//i.test(handle)) handle = `@${handle}`;
+      if (/^https?:\/\//i.test(handle)) {
+        try { handle = new URL(handle).hostname.replace(/^www\./, ""); } catch { /* keep as-is */ }
+      }
+      return { label: rawLabel, href, handle };
     })
-    .filter((item): item is { label: string; href: string } => Boolean(item))
-    .slice(0, 4);
+    .filter((item): item is { label: string; href: string; handle: string } => Boolean(item))
+    .slice(0, 5);
 }
 
 // ─── 1. Message nudge ─────────────────────────────────────────────────────────
@@ -519,6 +578,9 @@ function buildTicketEmail(opts: {
   ticketId: string; qrUrl: string; venue: string; venueAddress?: string;
   mapsUrl?: string; ticketType?: string;
   ticketLines?: Array<{ label: string; quantity?: number; priceLabel?: string }>;
+  totalLabel?: string;
+  paymentMethod?: string | null;
+  coverUrl?: string | null;
   eventUrl?: string;
   startDatetime?: string | null;
   endDatetime?: string | null;
@@ -527,6 +589,7 @@ function buildTicketEmail(opts: {
     websiteUrl?: string | null;
     logoUrl?: string | null;
     socialLinks?: Record<string, string> | null;
+    customMessage?: string | null;
   };
 }): string {
   const mapsUrl = opts.mapsUrl ?? `https://maps.google.com/?q=${encodeURIComponent(opts.venue + (opts.venueAddress ? ", " + opts.venueAddress : ""))}`;
@@ -544,155 +607,222 @@ function buildTicketEmail(opts: {
   const venueAddress = opts.venueAddress ? esc(opts.venueAddress) : "";
   const qrUrl = esc(opts.qrUrl);
   const ticketLines = opts.ticketLines ?? [];
-  const buttonWidth = calendar ? "33.33%" : "50%";
+  const customMessage = opts.organizer?.customMessage ? esc(opts.organizer.customMessage) : "";
 
-  const actionButtons = `
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+  // Format time separately if startDatetime is provided
+  let timeLabel = "";
+  if (opts.startDatetime) {
+    const d = new Date(opts.startDatetime);
+    if (!Number.isNaN(d.getTime())) {
+      timeLabel = d.toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Accra" });
+      if (opts.endDatetime) {
+        const e2 = new Date(opts.endDatetime);
+        if (!Number.isNaN(e2.getTime())) {
+          timeLabel += ` – ${e2.toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Accra" })}`;
+        }
+      }
+    }
+  }
+
+  // Organizer logo/avatar block (small, 36px, for the top row)
+  const organizerAvatarSmall = opts.organizer?.logoUrl
+    ? `<img src="${esc(opts.organizer.logoUrl)}" alt="${esc(organizerName)}" width="28" height="28" style="display:block;width:28px;height:28px;border-radius:8px;object-fit:cover;border:1px solid ${BORDER};">`
+    : `<div style="width:28px;height:28px;border-radius:8px;background:${BRAND_BG};border:1px solid ${BRAND_BD};line-height:28px;text-align:center;font-size:11px;font-weight:800;color:${BRAND};">${esc(organizerName.slice(0, 2).toUpperCase())}</div>`;
+
+  // Organizer logo (large, for the organizer section)
+  const organizerLogoLarge = opts.organizer?.logoUrl
+    ? `<img src="${esc(opts.organizer.logoUrl)}" alt="${esc(organizerName)} logo" width="44" height="44" style="display:block;width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid ${BORDER};background:#fff;">`
+    : `<div style="width:44px;height:44px;border-radius:12px;background:${BRAND_BG};border:1px solid ${BRAND_BD};line-height:44px;text-align:center;font-size:14px;font-weight:800;color:${BRAND};">${esc(organizerName.slice(0, 2).toUpperCase())}</div>`;
+
+  const organizerLinkRow = organizerLinks.length > 0
+    ? `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:10px;"><tr><td>${organizerLinks.map((link) => socialBadge(link.label, link.href, link.handle)).join("")}</td></tr></table>`
+    : "";
+
+  // Cover image — bleeds to card edges using negative margins
+  const coverBlock = opts.coverUrl
+    ? `<table width="632" cellpadding="0" cellspacing="0" role="presentation" style="margin:-36px -36px 28px -36px;width:calc(100% + 72px);">
+        <tr><td style="border-radius:16px 16px 0 0;overflow:hidden;line-height:0;">
+          <img src="${esc(opts.coverUrl)}" width="632" alt="${eventName}" style="display:block;width:100%;height:220px;object-fit:cover;border-radius:16px 16px 0 0;">
+        </td></tr>
+      </table>`
+    : "";
+
+  // Detail row: icon + label
+  function detailRow(iconName: string, label: string, value: string): string {
+    return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:10px;">
       <tr>
-        ${calendar ? `<td style="width:${buttonWidth};padding-right:8px;">${btn("Add to calendar", calendar.googleUrl, true)}</td>` : ""}
-        <td style="width:${buttonWidth};padding-right:8px;">
-          ${btn("Get directions", mapsUrl, true)}
-        </td>
-        <td style="width:${buttonWidth};">
-          ${btn("View in app", eventLink, false)}
+        <td style="width:28px;vertical-align:top;padding-top:1px;">${ico(iconName, 15)}</td>
+        <td style="vertical-align:top;">
+          <span style="font-size:9px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};display:block;margin-bottom:2px;">${label}</span>
+          <span style="font-size:13px;font-weight:700;color:${TEXT};line-height:1.45;">${value}</span>
         </td>
       </tr>
     </table>`;
+  }
 
-  const organizerLogo = opts.organizer?.logoUrl
-    ? `<img src="${esc(opts.organizer.logoUrl)}" alt="${esc(organizerName)} logo" width="42" height="42" style="display:block;border-radius:12px;object-fit:cover;border:1px solid ${BORDER};background:#fff;">`
-    : `<div style="width:42px;height:42px;border-radius:12px;background:${BRAND_BG};border:1px solid ${BRAND_BD};line-height:42px;text-align:center;font-size:14px;font-weight:800;color:${BRAND};">${esc(organizerName.slice(0, 2).toUpperCase())}</div>`;
+  // Order summary
+  const orderSummaryRows = ticketLines.length > 0
+    ? ticketLines.map((line) => `
+        <tr>
+          <td style="padding:9px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BODY};">
+            ${esc(line.label)}${line.quantity && line.quantity > 1 ? ` <span style="color:${MUTED};">× ${line.quantity}</span>` : ""}
+          </td>
+          <td style="padding:9px 0;border-bottom:1px solid ${BORDER};font-size:13px;font-weight:700;color:${TEXT};text-align:right;">${esc(line.priceLabel ?? "")}</td>
+        </tr>`).join("")
+    : opts.ticketType ? `<tr>
+        <td style="padding:9px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BODY};">1 × ${ticketType}</td>
+        <td style="padding:9px 0;border-bottom:1px solid ${BORDER};font-size:13px;font-weight:700;color:${TEXT};text-align:right;"></td>
+      </tr>` : "";
 
-  const organizerLinkRow = organizerLinks.length > 0
-    ? `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;"><tr><td style="font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};padding-bottom:8px;">Follow organizer</td></tr><tr><td>${organizerLinks.map((link) => socialBadge(link.label, link.href)).join("")}</td></tr></table>`
-    : "";
+  const totalRow = opts.totalLabel ? `
+    <tr>
+      <td style="padding:10px 0 0;font-size:13px;font-weight:800;color:${TEXT};">Total</td>
+      <td style="padding:10px 0 0;font-size:14px;font-weight:800;color:${TEXT};text-align:right;">${esc(opts.totalLabel)}</td>
+    </tr>` : "";
 
-  const calendarNote = calendar
-    ? `<p style="margin:12px 0 0;font-size:12px;color:${MUTED};line-height:1.7;">Google Calendar should read the invite automatically. If it does not, use the <strong>Add to calendar</strong> button above or import the attached <code style="font-family:'Courier New',monospace;">.ics</code> file.</p>`
-    : "";
+  const paymentRow = opts.paymentMethod ? `
+    <tr>
+      <td colspan="2" style="padding:6px 0 0;font-size:11px;color:${MUTED};">
+        ${ico("check-circle", 11)} &nbsp;Paid via ${esc(opts.paymentMethod)}
+      </td>
+    </tr>` : "";
+
+  const orderSummary = (orderSummaryRows || totalRow) ? `
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;border:1px solid ${BORDER};border-radius:14px;overflow:hidden;">
+      <tr>
+        <td style="padding:12px 16px;background:${BRAND_BG};border-bottom:1px solid ${BRAND_BD};">
+          <p style="margin:0;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">Order Summary</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 16px 14px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            ${orderSummaryRows}
+            ${totalRow}
+            ${paymentRow}
+          </table>
+        </td>
+      </tr>
+    </table>` : "";
+
+  // Action buttons
+  const calendarBtn = calendar ? `<td style="padding-right:8px;padding-bottom:8px;">${btn("Add to calendar", calendar.googleUrl, true)}</td>` : "";
+  const eventPageBtn = `<td style="padding-right:8px;padding-bottom:8px;">${btn("View event", eventLink, true)}</td>`;
+  const directionsBtn = `<td style="padding-right:8px;padding-bottom:8px;">${btn("Get directions", mapsUrl, true)}</td>`;
+  const appBtn = `<td style="padding-bottom:8px;">${btn("Open in app", `${BASE}/dashboard/wallets`, false)}</td>`;
 
   return shell(`
-    ${eyebrow("Your ticket is confirmed")}
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;">
+    ${coverBlock}
+
+    <!-- Organizer byline -->
+    <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
       <tr>
-        <td style="vertical-align:top;">
-          <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:14px;"><tr>
-            <td style="padding:7px 10px;border-radius:999px;background:${BRAND_BG};border:1px solid ${BRAND_BD};">
-              <table cellpadding="0" cellspacing="0" role="presentation"><tr>
-                <td style="padding-right:8px;">${ico("check-circle", 14)}</td>
-                <td style="font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${BRAND};">Admission ready</td>
-              </tr></table>
-            </td>
+        <td style="vertical-align:middle;padding-right:8px;">${organizerAvatarSmall}</td>
+        <td style="vertical-align:middle;">
+          <span style="font-size:12px;font-weight:700;color:${MUTED};">${esc(organizerName)}</span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Confirmed badge -->
+    <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:14px;">
+      <tr>
+        <td style="padding:7px 14px;border-radius:999px;background:${BRAND_BG};border:1px solid ${BRAND_BD};">
+          <table cellpadding="0" cellspacing="0" role="presentation"><tr>
+            <td style="padding-right:7px;">${ico("check-circle", 14)}</td>
+            <td style="font-size:10px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};white-space:nowrap;">Ticket Confirmed &nbsp;·&nbsp; Admission Ready</td>
           </tr></table>
-          <h1 style="margin:0;font-size:24px;font-weight:800;line-height:1.12;letter-spacing:-0.03em;color:${TEXT};">
-            ${eventName}
-          </h1>
-          <p style="margin:10px 0 0;font-size:13px;line-height:1.7;color:${BODY};">
-            You're confirmed. Keep this email handy, or open the ticket in the app when you arrive.
-          </p>
-        </td>
-        <td align="right" style="vertical-align:top;">
-          <div style="display:inline-block;padding:10px 12px;border-radius:16px;border:1px solid ${BORDER};background:#fafafa;text-align:center;">
-            <p style="margin:0 0 4px;font-size:10px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Ticket ID</p>
-            <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:0.12em;color:${TEXT};font-family:'Courier New',monospace;">${ticketId}</p>
-          </div>
         </td>
       </tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;border:1px solid ${BORDER};border-radius:18px;overflow:hidden;">
-      <tr>
-        <td style="padding:18px 18px 6px;background:linear-gradient(180deg,#ffffff 0%,#fbfbfb 100%);">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-            <tr>
-              <td style="padding-right:12px;vertical-align:top;">
-                <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">When</p>
-                <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};line-height:1.5;">${eventDate}</p>
-              </td>
-              <td style="padding-right:12px;vertical-align:top;">
-                <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Where</p>
-                <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};line-height:1.5;">${venue}${venueAddress ? `<br><span style="font-weight:500;color:${BODY};">${venueAddress}</span>` : ""}</p>
-              </td>
-              <td style="vertical-align:top;">
-                <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Guest</p>
-                <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};line-height:1.5;">${firstName}</p>
-              </td>
-            </tr>
-          </table>
+    <!-- Event name -->
+    <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;line-height:1.1;letter-spacing:-0.03em;color:${TEXT};">
+      Your ticket for ${eventName}
+    </h1>
+    <p style="margin:0 0 24px;font-size:13px;line-height:1.7;color:${BODY};">
+      Hi ${firstName}, you're all set. Show this email or scan your QR code at the gate.
+    </p>
 
-          ${ticketLines.length > 0 ? `
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:16px;border-collapse:separate;border-spacing:0;">
-            <tr>
-              <td style="padding:12px 14px;border-radius:14px 14px 0 0;background:${BRAND_BG};border:1px solid ${BRAND_BD};border-bottom:none;">
-                <p style="margin:0;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">Tickets</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 14px 12px;border:1px solid ${BRAND_BD};border-top:none;border-radius:0 0 14px 14px;background:#fff;">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                  ${ticketLines.map((line) => `
-                    <tr>
-                      <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${TEXT};">${esc(line.label)}${line.quantity && line.quantity > 1 ? ` <span style="color:${MUTED};font-weight:600;">× ${line.quantity}</span>` : ""}</td>
-                      <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;font-weight:700;color:${TEXT};text-align:right;">${esc(line.priceLabel ?? "")}</td>
-                    </tr>`).join("")}
-                </table>
-              </td>
-            </tr>
-          </table>` : opts.ticketType ? `
-          <div style="margin-top:16px;padding:12px 14px;border-radius:14px;background:${BRAND_BG};border:1px solid ${BRAND_BD};">
-            <p style="margin:0 0 2px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">Ticket</p>
-            <p style="margin:0;font-size:13px;font-weight:700;color:${TEXT};">1 × ${ticketType}</p>
-          </div>` : ""}
-        </td>
-      </tr>
-    </table>
+    <!-- Event details -->
+    <div style="border:1px solid ${BORDER};border-radius:16px;padding:18px 18px 8px;margin-bottom:20px;background:#fafafa;">
+      ${detailRow("calendar", "Date", eventDate)}
+      ${timeLabel ? detailRow("clock", "Time", timeLabel) : ""}
+      ${detailRow("map-pin", "Venue", venue + (venueAddress ? `<br><span style="font-weight:500;color:${BODY};">${venueAddress}</span>` : ""))}
+      ${(ticketType || (ticketLines.length > 0 && ticketLines[0]?.label)) ? detailRow("ticket", "Ticket", ticketType || (ticketLines[0]?.label ?? "")) : ""}
+      <p style="margin:6px 0 10px;font-size:11px;color:${MUTED};">
+        Guest: <strong style="color:${TEXT};">${firstName}</strong>
+      </p>
+    </div>
 
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;">
+    <!-- QR code -->
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
       <tr>
-        <td align="center" style="padding:18px;border:1px solid ${BORDER};border-radius:18px;background:#fff;">
-          <div style="display:inline-block;padding:16px;border-radius:20px;background:#ffffff;border:1px solid ${BORDER};box-shadow:0 10px 30px rgba(17,17,17,0.05);">
-            <img src="${qrUrl}" alt="Ticket QR code" width="194" height="194" style="display:block;width:194px;height:194px;">
+        <td align="center" style="padding:24px 18px;border:1px solid ${BORDER};border-radius:16px;background:#fff;">
+          <div style="display:inline-block;padding:14px;border-radius:16px;background:#fff;border:1px solid ${BORDER};box-shadow:0 8px 24px rgba(17,17,17,0.06);">
+            <img src="${qrUrl}" alt="Ticket QR code" width="200" height="200" style="display:block;width:200px;height:200px;">
           </div>
-          <p style="margin:14px 0 0;font-size:11px;color:${MUTED};line-height:1.7;">
-            Present this QR at the gate. The ticket is tied to your account and is scanned once.
+          <p style="margin:14px 0 0;font-size:12px;color:${MUTED};line-height:1.7;">
+            Present this QR code at the gate.<br>It is single-use and tied to your account.
           </p>
         </td>
       </tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:18px;">
+    <!-- Order summary -->
+    ${orderSummary}
+
+    <!-- Action buttons -->
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
       <tr>
-        <td style="padding:0 4px 0 0;vertical-align:top;">${actionButtons}</td>
+        ${calendarBtn}
+        ${eventPageBtn}
+        ${directionsBtn}
+        ${appBtn}
       </tr>
     </table>
 
-    ${calendarNote}
+    ${hr()}
 
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:18px;margin-bottom:18px;border-top:1px solid ${BORDER};padding-top:18px;">
+    <!-- Organizer section -->
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
       <tr>
-        <td style="vertical-align:top;width:52px;padding-right:12px;">${organizerLogo}</td>
+        <td style="vertical-align:top;padding-right:14px;width:56px;">${organizerLogoLarge}</td>
         <td style="vertical-align:top;">
-          <p style="margin:0 0 4px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Organizer</p>
-          <p style="margin:0;font-size:14px;font-weight:800;color:${TEXT};line-height:1.4;">${esc(organizerName)}</p>
-          <p style="margin:4px 0 0;font-size:12px;color:${BODY};line-height:1.6;">
-            View the organizer profile and the latest event updates on the app or on their site.
-          </p>
-          <p style="margin:10px 0 0;font-size:12px;">
-            <a href="${esc(organizerWebsite)}" style="color:${BRAND};text-decoration:none;font-weight:700;">Visit organizer site</a>
+          <p style="margin:0 0 2px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Organizer</p>
+          <p style="margin:0 0 6px;font-size:15px;font-weight:800;color:${TEXT};line-height:1.3;">${esc(organizerName)}</p>
+          ${customMessage
+            ? `<p style="margin:0 0 8px;font-size:13px;color:${BODY};line-height:1.7;">${customMessage}</p>`
+            : `<p style="margin:0 0 8px;font-size:12px;color:${MUTED};line-height:1.6;">For any questions about this event, reach out to the organizer directly.</p>`}
+          <p style="margin:0;font-size:12px;">
+            <a href="${esc(organizerWebsite)}" style="color:${BRAND};text-decoration:none;font-weight:700;">Visit organizer →</a>
           </p>
           ${organizerLinkRow}
         </td>
       </tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 14px;">
+    <!-- Before you go -->
+    <div style="background:${BRAND_BG};border:1px solid ${BRAND_BD};border-radius:14px;padding:16px 18px;margin-bottom:20px;">
+      <p style="margin:0 0 10px;font-size:9px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${BRAND};">Before you go</p>
+      <p style="margin:0 0 7px;font-size:12px;line-height:1.75;color:#1a3d26;">
+        ${ico("check-circle", 12)} &nbsp;Keep the QR code visible at the gate — save this email or screenshot it.
+      </p>
+      <p style="margin:0 0 7px;font-size:12px;line-height:1.75;color:#1a3d26;">
+        ${ico("calendar", 12)} &nbsp;Check the event page for the latest updates before you head out.
+      </p>
+      <p style="margin:0;font-size:12px;line-height:1.75;color:#1a3d26;">
+        ${ico("envelope", 12)} &nbsp;Issues with your ticket? Reply to this email and we'll help.
+      </p>
+    </div>
+
+    <!-- Ticket ID at bottom -->
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
       <tr>
-        <td style="padding:14px 16px;border:1px solid ${BORDER};border-radius:16px;background:#fafafa;">
-          <p style="margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Before you go</p>
-          <p style="margin:0;font-size:12px;line-height:1.8;color:${BODY};">
-            ${ico("check-circle", 13)} &nbsp;Keep the QR visible at the gate.<br>
-            ${ico("calendar", 13)} &nbsp;If times change, the latest version is reflected in your app and calendar invite.<br>
-            ${ico("envelope", 13)} &nbsp;Replies to this email reach GoOutside support.
+        <td style="padding:12px 0;border-top:1px solid ${BORDER};">
+          <p style="margin:0;font-size:10px;color:${DIM};line-height:1.6;">
+            Ticket ID &nbsp;<code style="font-family:'Courier New',monospace;font-size:10px;color:${MUTED};letter-spacing:0.08em;">${ticketId}</code>
+            &nbsp;·&nbsp; GoOutside is a ticketing platform — contact the organizer for event-specific support.
           </p>
         </td>
       </tr>
