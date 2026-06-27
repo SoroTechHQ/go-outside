@@ -11,7 +11,7 @@ const EVENT_SELECT = `
   policies, activities, social_links,
   categories (id, name, slug, icon_key, color, is_active, sort_order),
   venues (id, name, city, address, latitude, longitude),
-  ticket_types (id, name, price, price_type, quantity_total, quantity_sold, is_active, max_per_order)
+  ticket_types (id, name, price, price_type, quantity_total, quantity_sold, is_active, max_per_user)
 `;
 
 function isCurrentOrFutureEvent(row: DbEventRow) {
@@ -22,7 +22,15 @@ function isCurrentOrFutureEvent(row: DbEventRow) {
 }
 
 function adaptCurrentOrFutureEvents(data: DbEventRow[] | null) {
-  return (data ?? []).filter(isCurrentOrFutureEvent).map(adaptEvent);
+  const results: EventItem[] = [];
+  for (const row of (data ?? []).filter(isCurrentOrFutureEvent)) {
+    try {
+      results.push(adaptEvent(row));
+    } catch (e) {
+      console.error("[adaptCurrentOrFutureEvents] skipping event", row.id, e);
+    }
+  }
+  return results;
 }
 
 // All published events

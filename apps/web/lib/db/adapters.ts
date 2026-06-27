@@ -148,7 +148,7 @@ export type DbTicketTypeRow = {
   quantity_total: number | null;
   quantity_sold:  number;
   is_active:      boolean;
-  max_per_order:  number | null;
+  max_per_user:   number | null;
 };
 
 export type DbVenueRow = {
@@ -251,7 +251,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
       remainingLabel: t.quantity_total != null
         ? `${(t.quantity_total - t.quantity_sold).toLocaleString()} remaining`
         : "Available",
-      maxPerOrder:    t.max_per_order ?? null,
+      maxPerOrder:    t.max_per_user ?? null,
     })),
     gallery: (row.gallery_urls ?? []).map((url) => withThumbnailTransform(url) ?? url),
     tags:    row.tags ?? [],
