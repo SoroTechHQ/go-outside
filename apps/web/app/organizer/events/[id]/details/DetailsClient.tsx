@@ -10,6 +10,7 @@ import {
   MinusCircle,
   PlusCircle,
   Sparkle,
+  Star,
   Tag,
   TextAa,
   Ticket,
@@ -18,7 +19,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Highlight = { title: string; description: string };
 type FAQ = { question: string; answer: string };
@@ -38,8 +39,11 @@ type EventData = {
 };
 
 export function DetailsClient({ event }: { event: EventData }) {
+  const router = useRouter();
   const [description, setDescription] = useState(event.description ?? "");
   const [shortDesc, setShortDesc] = useState(event.short_description ?? "");
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [tags, setTags] = useState<string[]>(event.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [highlights, setHighlights] = useState<Highlight[]>(() => {
@@ -52,6 +56,7 @@ export function DetailsClient({ event }: { event: EventData }) {
   });
   const [bannerUrl, setBannerUrl] = useState(event.banner_url ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -97,29 +102,66 @@ export function DetailsClient({ event }: { event: EventData }) {
     setFaqs(faqs.map((f, j) => (j === i ? { ...f, [field]: val } : f)));
   }
 
+  async function handleGenerateSummary() {
+    if (!description.trim()) return;
+    setIsGenerating(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/organizer/events/${event.id}/ai-summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: description.trim() }),
+      });
+      if (!res.ok) throw new Error("Generation failed");
+      const { summary } = await res.json() as { summary: string };
+      setShortDesc(summary);
+      setAiGenerated(true);
+    } catch {
+      setError("Could not generate summary. Write one manually or try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function persist() {
+    const body = {
+      description: description.trim() || null,
+      shortDescription: shortDesc.trim() || null,
+      bannerUrl: bannerUrl || null,
+      tags: tags.length ? tags : null,
+      activities: { highlights: highlights.filter((h) => h.title), faqs: faqs.filter((f) => f.question) },
+    };
+    const res = await fetch(`/api/organizer/events/${event.id}/details`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error("Save failed");
+  }
+
   async function handleSave() {
     setIsSaving(true);
     setError("");
     try {
-      const body = {
-        description: description.trim() || null,
-        shortDescription: shortDesc.trim() || null,
-        bannerUrl: bannerUrl || null,
-        tags: tags.length ? tags : null,
-        activities: { highlights: highlights.filter((h) => h.title), faqs: faqs.filter((f) => f.question) },
-      };
-      const res = await fetch(`/api/organizer/events/${event.id}/details`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Save failed");
+      await persist();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
       setError("Failed to save. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleSaveAndContinue() {
+    setIsContinuing(true);
+    setError("");
+    try {
+      await persist();
+      router.push(`/organizer/events/${event.id}/tickets`);
+    } catch {
+      setError("Failed to save. Please try again.");
+      setIsContinuing(false);
     }
   }
 
@@ -200,22 +242,7 @@ export function DetailsClient({ event }: { event: EventData }) {
           <p className="text-[14px] font-semibold text-[var(--text-primary)]">Description</p>
         </div>
         <div className="space-y-4 p-5">
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-              Short summary <span className="ml-1 font-normal text-[var(--text-tertiary)]">(shown on event cards)</span>
-            </label>
-            <textarea
-              className="mt-2 w-full resize-none rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10 transition"
-              maxLength={200}
-              placeholder="One sentence that captures the essence of your event…"
-              rows={2}
-              value={shortDesc}
-              onChange={(e) => setShortDesc(e.target.value)}
-            />
-            <div className="mt-1 flex justify-end">
-              <span className="text-[10px] text-[var(--text-tertiary)]">{shortDesc.length}/200</span>
-            </div>
-          </div>
+          {/* Full description — comes first */}
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
               Full description
@@ -225,10 +252,58 @@ export function DetailsClient({ event }: { event: EventData }) {
               placeholder="Tell people why they should come. Include the lineup, what to expect, who this is for…"
               rows={8}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { setDescription(e.target.value); setAiGenerated(false); }}
+            />
+            <div className="mt-1.5 flex items-center justify-between">
+              <span className="text-[10px] text-[var(--text-tertiary)]">{description.length} chars</span>
+              {description.trim().length > 30 && (
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={handleGenerateSummary}
+                  className="flex items-center gap-1.5 rounded-full bg-[var(--brand)]/10 px-3 py-1 text-[11px] font-semibold text-[var(--brand)] transition hover:bg-[var(--brand)]/20 disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+                  ) : (
+                    <Star size={11} weight="fill" />
+                  )}
+                  {isGenerating ? "Generating…" : "Generate short summary with AI"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Short summary — AI can fill this */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                Short summary <span className="ml-1 font-normal text-[var(--text-tertiary)]">(shown on event cards)</span>
+              </label>
+              {aiGenerated && (
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500">
+                  <Star size={9} weight="fill" /> AI generated
+                </span>
+              )}
+            </div>
+            <motion.textarea
+              animate={aiGenerated ? {
+                boxShadow: ["0 0 0px rgba(16,185,129,0)", "0 0 18px rgba(16,185,129,0.4)", "0 0 8px rgba(16,185,129,0.15)"],
+              } : {}}
+              transition={{ duration: 1.2 }}
+              className={`mt-2 w-full resize-none rounded-2xl border px-4 py-3 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 transition ${
+                aiGenerated
+                  ? "border-emerald-400/60 bg-emerald-500/5 focus:border-emerald-400/80 focus:ring-emerald-400/10"
+                  : "border-[var(--border-subtle)] bg-[var(--bg-elevated)] focus:border-[var(--brand)]/50 focus:ring-[var(--brand)]/10"
+              }`}
+              maxLength={200}
+              placeholder="One sentence that captures the essence of your event…"
+              rows={2}
+              value={shortDesc}
+              onChange={(e) => { setShortDesc(e.target.value); setAiGenerated(false); }}
             />
             <div className="mt-1 flex justify-end">
-              <span className="text-[10px] text-[var(--text-tertiary)]">{description.length} chars</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">{shortDesc.length}/200</span>
             </div>
           </div>
         </div>
@@ -413,7 +488,7 @@ export function DetailsClient({ event }: { event: EventData }) {
         <div className="ml-auto flex items-center gap-3">
           <motion.button
             type="button"
-            disabled={isSaving}
+            disabled={isSaving || isContinuing}
             whileTap={{ scale: 0.97 }}
             onClick={handleSave}
             className="flex items-center gap-2 rounded-full border border-[var(--border-subtle)] px-5 py-2.5 text-[13px] font-semibold text-[var(--text-primary)] transition hover:border-[var(--brand)]/30 disabled:opacity-50"
@@ -423,12 +498,18 @@ export function DetailsClient({ event }: { event: EventData }) {
             ) : <Ticket size={14} />}
             Save
           </motion.button>
-          <Link
-            href={`/organizer/events/${event.id}/tickets`}
-            className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_14px_rgba(47,143,69,0.2)] transition hover:opacity-90"
+          <motion.button
+            type="button"
+            disabled={isContinuing || isSaving}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSaveAndContinue}
+            className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_14px_rgba(47,143,69,0.2)] transition hover:opacity-90 disabled:opacity-50"
           >
-            Next: Tickets <ArrowRight size={14} weight="bold" />
-          </Link>
+            {isContinuing ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : <ArrowRight size={14} weight="bold" />}
+            {isContinuing ? "Saving…" : "Save & continue"}
+          </motion.button>
         </div>
       </div>
     </div>

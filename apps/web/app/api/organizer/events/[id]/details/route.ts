@@ -44,7 +44,7 @@ export async function PATCH(
   }
 
   const update: Record<string, unknown> = {};
-  if ("description" in body) update.description = body.description ?? null;
+  if ("description" in body) update.description = (body.description as string | null) || null;
   if ("shortDescription" in body) update.short_description = body.shortDescription ?? null;
   if ("bannerUrl" in body) update.banner_url = body.bannerUrl ?? null;
   if ("tags" in body) update.tags = Array.isArray(body.tags) ? body.tags : [];
