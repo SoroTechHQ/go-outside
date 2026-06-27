@@ -604,9 +604,12 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
       }
       const data = await res.json() as { id: string };
 
-      // Create all ticket tiers
+      // Create all ticket tiers — pass smart sale date defaults so NOT NULL DB constraint is never hit
+      const eventStartIso = body.startDatetime as string || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const saleNow = new Date().toISOString();
+      const ticketErrors: string[] = [];
       for (const t of tickets) {
-        await fetch("/api/organizer/ticket-types", {
+        const tr = await fetch("/api/organizer/ticket-types", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -616,10 +619,17 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
             price: t.isFree ? 0 : t.price,
             priceType: t.isFree ? "free" : "paid",
             quantityTotal: t.capacity ? Number(t.capacity) : null,
-            saleStartsAt: t.saleStartsAt || null,
-            saleEndsAt: t.saleEndsAt || null,
+            saleStartsAt: t.saleStartsAt || saleNow,
+            saleEndsAt: t.saleEndsAt || eventStartIso,
           }),
         });
+        if (!tr.ok) {
+          const e = await tr.json().catch(() => ({})) as { error?: string };
+          ticketErrors.push(e.error ?? `Failed to save ticket "${t.name}"`);
+        }
+      }
+      if (ticketErrors.length > 0) {
+        console.warn("[QuickCreate] ticket errors:", ticketErrors);
       }
 
       // Save keynote speakers
