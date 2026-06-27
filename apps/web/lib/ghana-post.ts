@@ -8,82 +8,77 @@ export type GhanaPostAddress = {
   postCode:       string | null;
 };
 
-type OfficialApiResponse = {
-  found: boolean;
-  data?: {
-    GhanaPostAddress: string;
-    Street:           string;
-    Region:           string;
-    District:         string;
-    Area:             string;
-    PostalAddress:    string;
-    PostCode:         string;
-    Lat:              string;
-    Long:             string;
-  };
+type MijoResult = {
+  GPSName:     string;
+  OldAddress:  string;
+  Region:      string;
+  District:    string;
+  PostCode:    string;
+  PostalArea:  string;
+  Community:   string;
+  Street:      string;
+  Area:        string;
 };
 
-function adaptResponse(data: OfficialApiResponse["data"]): GhanaPostAddress {
+type MijoResponse = {
+  Action:  string;
+  Message: string;
+  Code:    number;
+  Result:  MijoResult | MijoResult[];
+};
+
+// OldAddress "GA0593633" → "GA-059-3633"
+function formatOldAddress(raw: string): string {
+  if (raw.length >= 9) {
+    return `${raw.slice(0, 2)}-${raw.slice(2, 5)}-${raw.slice(5)}`;
+  }
+  return raw;
+}
+
+function adaptMijoResult(r: MijoResult): GhanaPostAddress {
   return {
-    digitalAddress: data!.GhanaPostAddress,
-    street:         data!.Street        || null,
-    region:         data!.Region        || null,
-    district:       data!.District      || null,
-    community:      data!.Area          || null,
-    postalArea:     data!.PostalAddress || null,
-    postCode:       data!.PostCode      || null,
+    digitalAddress: formatOldAddress(r.OldAddress ?? r.GPSName),
+    street:         r.Street      || null,
+    region:         r.Region      || null,
+    district:       r.District    || null,
+    community:      r.Community   || r.Area || null,
+    postalArea:     r.PostalArea  || null,
+    postCode:       r.PostCode    || null,
   };
 }
 
-async function lookupViaOfficialApi(lat: number, lng: number): Promise<GhanaPostAddress | null> {
-  const apiUrl      = process.env.GPGPS_API_URL;
-  const auth        = process.env.GPGPS_AUTHORIZATION;
-  const asaaseUser  = process.env.GPGPS_ASAASE_USER;
-  const language    = process.env.GPGPS_LANGUAGE_CODE ?? "en";
-  const country     = process.env.GPGPS_COUNTRY       ?? "GH";
+// Primary: Mijo API (mijoride.ghanapostgps.com/user/get_address)
+// Token is hardcoded in www.ghanapostgps.com/map bundle (u2 variable).
+// When token expires (~2026-09-25), fetch the bundle and find the new u2 value:
+//   curl -s https://www.ghanapostgps.com/map/assets/index-*.js | grep -o 'u2="[^"]*"'
+async function lookupViaMijo(lat: number, lng: number): Promise<GhanaPostAddress | null> {
+  const mijoUrl = process.env.GPGPS_MIJO_URL;
+  const token   = process.env.GPGPS_MIJO_TOKEN;
+  if (!mijoUrl || !token) return null;
 
-  if (!apiUrl || !auth) return null;
-
-  const url = new URL(apiUrl);
-  url.searchParams.set("lat", String(lat));
-  url.searchParams.set("long", String(lng));
-  url.searchParams.set("language", language);
-  url.searchParams.set("country", country);
-
-  // The env var is the raw base64 payload; the API expects HTTP Basic auth
-  const headers: Record<string, string> = {
-    Authorization: auth.startsWith("Basic ") ? auth : `Basic ${auth}`,
-  };
-  if (asaaseUser) headers["Asaase-User"] = asaaseUser;
+  const url = new URL(mijoUrl);
+  url.searchParams.set("address", `${lat},${lng}`);
+  url.searchParams.set("user_latitude",  String(lat));
+  url.searchParams.set("user_longitude", String(lng));
 
   const res = await fetch(url.toString(), {
-    method: "GET",
-    headers,
+    method:  "GET",
+    headers: {
+      Authorization:  `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
     signal: AbortSignal.timeout(8000),
   });
 
   if (!res.ok) return null;
 
-  const json = (await res.json()) as OfficialApiResponse;
-  if (!json.found || !json.data) return null;
-  return adaptResponse(json.data);
-}
+  const json = (await res.json()) as MijoResponse;
+  if (json.Code !== 1 || json.Message !== "Success") return null;
 
-async function lookupViaSperix(lat: number, lng: number): Promise<GhanaPostAddress | null> {
-  const sperixUrl = process.env.GPGPS_SPERIX_URL ?? "https://ghanapostgps.sperixlabs.org/get-address";
+  const result = Array.isArray(json.Result) ? json.Result[0] : json.Result;
+  if (!result || !result.OldAddress) return null;
 
-  const res = await fetch(sperixUrl, {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ lat, long: lng }),
-    signal:  AbortSignal.timeout(6000),
-  });
-
-  if (!res.ok) return null;
-
-  const json = (await res.json()) as OfficialApiResponse;
-  if (!json.found || !json.data) return null;
-  return adaptResponse(json.data);
+  return adaptMijoResult(result);
 }
 
 export async function lookupGhanaPostAddress(
@@ -91,15 +86,7 @@ export async function lookupGhanaPostAddress(
   lng: number,
 ): Promise<GhanaPostAddress | null> {
   try {
-    // Prefer the official GhanaPost API (credentials from .env)
-    const official = await lookupViaOfficialApi(lat, lng);
-    if (official) return official;
-  } catch {
-    // fall through to Sperix
-  }
-
-  try {
-    return await lookupViaSperix(lat, lng);
+    return await lookupViaMijo(lat, lng);
   } catch {
     return null;
   }

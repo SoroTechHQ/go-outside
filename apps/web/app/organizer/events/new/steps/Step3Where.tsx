@@ -110,6 +110,14 @@ export function Step3Where() {
           setField("venueLat", result.lat);
           setField("venueLng", result.lng);
           setField("venueId", null);
+
+          // Auto-fetch GhanaPost address
+          fetch(`/api/ghana-post?lat=${result.lat}&lng=${result.lng}`)
+            .then((r) => r.ok ? r.json() : null)
+            .then((data: { digitalAddress?: string } | null) => {
+              if (data?.digitalAddress) setField("ghanaPostCode", data.digitalAddress);
+            })
+            .catch(() => { /* silently ignore */ });
         });
       })
       .catch(console.error);
@@ -203,7 +211,10 @@ export function Step3Where() {
           {/* GhanaPost GPS address */}
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
-              GhanaPost address <span className="normal-case font-normal tracking-normal text-[var(--text-tertiary)]">(optional)</span>
+              GhanaPost address{" "}
+              <span className="normal-case font-normal tracking-normal text-[var(--text-tertiary)]">
+                (auto-filled when you pick a venue)
+              </span>
             </label>
             <input
               className="mt-2 w-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-3 font-mono text-[13px] tracking-wider text-[var(--text-primary)] placeholder:font-sans placeholder:tracking-normal placeholder:text-[var(--text-tertiary)] focus:border-[var(--brand)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/10"
@@ -214,14 +225,14 @@ export function Step3Where() {
               onChange={(e) => setField("ghanaPostCode", e.target.value.toUpperCase() || null)}
             />
             <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">
-              Format: XX-NNN-NNNN.{" "}
+              Format: XX-NNN-NNNN. Can&apos;t find it?{" "}
               <a
                 href="https://www.ghanapostgps.com/map/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--brand)] hover:underline"
               >
-                Find yours on GhanaPostGPS.com →
+                Look up on GhanaPostGPS.com →
               </a>
             </p>
           </div>

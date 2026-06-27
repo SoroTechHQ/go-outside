@@ -121,7 +121,6 @@ export function VenueMapPicker({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const svc = new (window.google as GoogleMapsPlaces).maps.places.PlacesService(serviceEl.current);
     svc.getDetails(
-      // No longer requesting plus_code — we fetch the real GhanaPost address separately
       { placeId: pred.place_id, fields: ["place_id", "name", "formatted_address", "geometry"] },
       async (detail: GooglePlaceDetail | null, status: string) => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -143,6 +142,19 @@ export function VenueMapPicker({
         setQuery(detail.name);
         setOpen(false);
         setResults([]);
+
+        // Auto-fetch GhanaPost address in background
+        try {
+          const res = await fetch(`/api/ghana-post?lat=${lat}&lng=${lng}`);
+          if (res.ok) {
+            const data = (await res.json()) as { digitalAddress?: string };
+            if (data.digitalAddress) {
+              onChange({ ...venue, ghanaPost: data.digitalAddress });
+            }
+          }
+        } catch {
+          // silently ignore — field stays empty, user can fill manually
+        }
       }
     );
   }
