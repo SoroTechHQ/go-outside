@@ -93,6 +93,9 @@ export async function POST(req: NextRequest) {
     categoryId = firstCat?.id ?? null;
   }
 
+  const scheduleType = (body.scheduleType as string) || "single";
+  const eventDays = body.eventDays ?? null;
+
   const payload = {
     organizer_id:      user.id,
     category_id:       categoryId,
@@ -104,6 +107,8 @@ export async function POST(req: NextRequest) {
     start_datetime:    startDatetime,
     end_datetime:      endDatetime,
     timezone:          (body.timezone as string) || "Africa/Accra",
+    schedule_type:     scheduleType,
+    event_days:        eventDays,
     is_online:         isOnline,
     online_link:       onlineLink,
     custom_location:   resolvedCustomLoc,

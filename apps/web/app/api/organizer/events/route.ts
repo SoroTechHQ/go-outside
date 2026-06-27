@@ -63,6 +63,18 @@ export async function POST(req: NextRequest) {
   const shortDesc = (body.shortDescription as string) || "";
   const description = (body.description as string) || shortDesc || (body.title as string);
 
+  // category_id — fall back to first category alphabetically if organizer left it blank
+  let categoryId = (body.categoryId as string) || null;
+  if (!categoryId) {
+    const { data: fallbackCat } = await supabaseAdmin
+      .from("categories")
+      .select("id")
+      .order("name")
+      .limit(1)
+      .maybeSingle();
+    categoryId = fallbackCat?.id ?? null;
+  }
+
   // Resolve location fields to satisfy CHECK constraint events_location_mode:
   //   online=true  → online_link IS NOT NULL, venue_id IS NULL
   //   online=false → online_link IS NULL, (venue_id OR custom_location) IS NOT NULL
@@ -81,7 +93,7 @@ export async function POST(req: NextRequest) {
     .from("events")
     .insert({
       organizer_id:      user.id,
-      category_id:       (body.categoryId as string) || null,
+      category_id:       categoryId,
       title:             body.title as string,
       slug,
       slug_v2:           slug,
@@ -99,6 +111,8 @@ export async function POST(req: NextRequest) {
       venue_id:          venueId,
       latitude:          body.venueLat != null ? Number(body.venueLat) : null,
       longitude:         body.venueLng != null ? Number(body.venueLng) : null,
+      schedule_type:     (body.scheduleType as string) || "single",
+      event_days:        body.eventDays ?? null,
       is_age_restricted: Boolean(body.isAgeRestricted),
       status:            body.publish ? "published" : "draft",
       published_at:      body.publish ? new Date().toISOString() : null,

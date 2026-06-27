@@ -620,34 +620,36 @@ export default function UserProfilePage() {
   return (
     <main className="min-h-screen bg-[var(--bg-base)] pb-32 text-[var(--text-primary)]">
 
+      {/* ── Floating back button — fixed above sticky header (z-40) ─────── */}
+      <button
+        onClick={() => router.back()}
+        className="fixed left-4 top-4 z-[60] flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow-lg backdrop-blur-md transition hover:bg-black/70 active:scale-95 md:left-[84px] md:top-5"
+        aria-label="Go back"
+      >
+        <ArrowLeft size={17} weight="bold" />
+      </button>
+
       {/* ── Cover header ────────────────────────────────────────────────── */}
-      <div className="relative h-[130px] w-full overflow-hidden md:h-[240px]">
+      <div className="relative h-[160px] w-full md:h-[260px]">
         {coverUrl ? (
           <Image src={coverUrl} alt="Cover" fill className="object-cover object-center" priority />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-[#0e2212] via-[#152a1a] to-[#0b1a10]" />
         )}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.08)_40%,rgba(0,0,0,0.55)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.08)_40%,rgba(0,0,0,0.6)_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(74,159,99,0.18),transparent_50%)]" />
 
-        <div className="absolute left-4 right-4 top-4 flex items-center justify-between md:left-6 md:right-6">
-          <button
-            onClick={() => router.back()}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 active:scale-95"
+        {/* Tier badge + options — top right of cover */}
+        <div className="absolute right-4 top-4 flex items-center gap-2 md:right-6">
+          <span
+            className="rounded-full border border-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm"
+            style={{ backgroundColor: `${tierColor}22`, borderColor: `${tierColor}40` }}
           >
-            <ArrowLeft size={17} weight="bold" />
+            {displayTier}
+          </span>
+          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 active:scale-95">
+            <DotsThreeVertical size={17} weight="bold" />
           </button>
-          <div className="flex items-center gap-2">
-            <span
-              className="rounded-full border border-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm"
-              style={{ backgroundColor: `${tierColor}22`, borderColor: `${tierColor}40` }}
-            >
-              {displayTier}
-            </span>
-            <button className="flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition hover:bg-black/55 active:scale-95">
-              <DotsThreeVertical size={17} weight="bold" />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -655,20 +657,20 @@ export default function UserProfilePage() {
       <div className="mx-auto max-w-5xl px-4 md:grid md:grid-cols-[1fr_272px] md:gap-6 md:px-6 lg:grid-cols-[1fr_288px] lg:gap-8 lg:px-8">
         <div className="min-w-0">
 
-          {/* Avatar — overlaps cover only */}
-          <div className="-mt-11 pb-3 md:-mt-12">
+          {/* Avatar — spans cover/content boundary */}
+          <div className="-mt-14 pb-3 md:-mt-16">
             <div className="relative shrink-0 inline-block">
               <div
                 className="overflow-hidden rounded-full"
                 style={{
-                  width: 84, height: 84,
-                  boxShadow: `0 0 0 3px var(--bg-base), 0 0 0 5px ${tierColor}55`,
+                  width: 96, height: 96,
+                  boxShadow: `0 0 0 4px var(--bg-base), 0 0 0 6px ${tierColor}55`,
                 }}
               >
                 {displayAvatar ? (
-                  <Image src={withAvatarTransform(displayAvatar) ?? displayAvatar} alt={displayName} width={84} height={84} className="h-full w-full object-cover" />
+                  <Image src={withAvatarTransform(displayAvatar) ?? displayAvatar} alt={displayName} width={96} height={96} className="h-full w-full object-cover" />
                 ) : (
-                  <NaviiAvatar seed={realProfile?.clerkId ?? mockProfile?.id ?? displayName} title={displayName} size={84} className="h-full w-full object-cover" />
+                  <NaviiAvatar seed={realProfile?.clerkId ?? mockProfile?.id ?? displayName} title={displayName} size={96} className="h-full w-full object-cover" />
                 )}
               </div>
               <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-[var(--bg-base)] bg-[#555]" />
@@ -750,6 +752,17 @@ export default function UserProfilePage() {
           {/* Pulse card */}
           <div className="py-4">
             <PulseCard score={displayPulse} tier={displayTier} tierColor={tierColor} />
+          </div>
+
+          {/* ── Search bar ─────────────────────────────────────────────── */}
+          <div className="mb-3">
+            <a
+              href="/search"
+              className="flex items-center gap-2.5 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-4 py-2.5 text-[13px] text-[var(--text-tertiary)] transition hover:border-[#4a9f63]/40 hover:text-[var(--text-secondary)]"
+            >
+              <MagnifyingGlass size={15} weight="bold" />
+              Search events, people, vibes…
+            </a>
           </div>
 
           {/* ── Tab bar ────────────────────────────────────────────────── */}

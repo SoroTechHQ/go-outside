@@ -60,6 +60,10 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
   });
 }
 
+const GHANA_POST_RE = /^[A-Za-z]{2,3}-\d{3,4}-\d{4}$/;
+
+type GhanaPostApiResult = { lat: number; lng: number; address: { digitalAddress: string; street?: string | null; community?: string | null } };
+
 export function VenueMapPicker({
   value,
   onChange,
@@ -109,11 +113,44 @@ export function VenueMapPicker({
     );
   }, [mapsReady]);
 
+  async function resolveFromGhanaPost(code: string) {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/ghana-post?code=${encodeURIComponent(code.toUpperCase())}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as GhanaPostApiResult;
+      const { lat, lng } = data;
+      const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${lat},${lng}&zoom=16`;
+      const displayName = data.address.community ?? code.toUpperCase();
+      const displayAddr = data.address.street ?? code.toUpperCase();
+      const venue: VenueResult = {
+        placeId: `ghanapost:${code.toUpperCase()}`,
+        name: displayName,
+        address: displayAddr,
+        ghanaPost: code.toUpperCase(),
+        lat,
+        lng,
+        mapUrl,
+      };
+      onChange(venue);
+      setOpen(false);
+      setResults([]);
+    } catch {
+      // silently ignore — user can fall back to place search
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleInput(v: string) {
     setQuery(v);
     setOpen(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(v), 280);
+    if (GHANA_POST_RE.test(v.trim())) {
+      debounceRef.current = setTimeout(() => void resolveFromGhanaPost(v.trim()), 400);
+    } else {
+      debounceRef.current = setTimeout(() => search(v), 280);
+    }
   }
 
   function selectPlace(pred: GoogleAutocompleteResult) {
@@ -121,7 +158,6 @@ export function VenueMapPicker({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const svc = new (window.google as GoogleMapsPlaces).maps.places.PlacesService(serviceEl.current);
     svc.getDetails(
-      // No longer requesting plus_code — we fetch the real GhanaPost address separately
       { placeId: pred.place_id, fields: ["place_id", "name", "formatted_address", "geometry"] },
       async (detail: GooglePlaceDetail | null, status: string) => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -143,6 +179,19 @@ export function VenueMapPicker({
         setQuery(detail.name);
         setOpen(false);
         setResults([]);
+
+        // Auto-fetch GhanaPost address in background
+        try {
+          const res = await fetch(`/api/ghana-post?lat=${lat}&lng=${lng}`);
+          if (res.ok) {
+            const data = (await res.json()) as { digitalAddress?: string };
+            if (data.digitalAddress) {
+              onChange({ ...venue, ghanaPost: data.digitalAddress });
+            }
+          }
+        } catch {
+          // silently ignore — field stays empty, user can fill manually
+        }
       }
     );
   }

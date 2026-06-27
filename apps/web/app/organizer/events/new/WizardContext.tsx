@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useReducer, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode } from "react";
 
 export type TicketTypeInput = {
   id: string;
@@ -140,12 +140,17 @@ type WizardContextValue = {
   clearDraft: () => void;
   saveDraft: () => Promise<{ id: string } | null>;
   hasDraft: boolean;
+  stepError: string | null;
+  setStepError: (err: string | null) => void;
+  categoryErrorRef: React.RefObject<HTMLDivElement | null>;
 };
 
 const WizardContext = createContext<WizardContextValue | null>(null);
 
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
+  const [stepError, setStepError] = useReducer((_: string | null, next: string | null) => next, null);
+  const categoryErrorRef = useRef<HTMLDivElement | null>(null);
 
   const hasDraft = Boolean(
     typeof window !== "undefined" && (() => {
@@ -222,7 +227,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <WizardContext.Provider value={{ state, dispatch, next, back, setField, clearDraft, saveDraft, hasDraft }}>
+    <WizardContext.Provider value={{ state, dispatch, next, back, setField, clearDraft, saveDraft, hasDraft, stepError, setStepError, categoryErrorRef }}>
       {children}
     </WizardContext.Provider>
   );

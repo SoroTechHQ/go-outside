@@ -4,14 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { useWizard } from "../WizardContext";
 import { RichTextEditor } from "../RichTextEditor";
 import { CategoryIcon } from "../../../../../lib/category-icons";
-import { Lock } from "@phosphor-icons/react";
+import { Lock, Warning } from "@phosphor-icons/react";
 
 type Category = { id: string; name: string; slug: string };
 
 export function Step1Basics() {
-  const { state, setField, dispatch } = useWizard();
+  const { state, setField, dispatch, stepError, setStepError, categoryErrorRef } = useWizard();
   const [categories, setCategories] = useState<Category[]>([]);
   const [tagInput, setTagInput] = useState("");
+
+  const categoryMissing = Boolean(
+    stepError && state.categoryIds.length === 0 && !state.customEventType.trim()
+  );
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,17 +65,26 @@ export function Step1Basics() {
 
       {/* Event type (multi-select, max 3) */}
       {categories.length > 0 && (
-        <div>
+        <div ref={categoryErrorRef}>
           <div className="flex items-baseline justify-between">
-            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+            <label className={`block text-[11px] font-semibold uppercase tracking-[0.18em] ${categoryMissing ? "text-red-400" : "text-[var(--brand)]"}`}>
               Event type
+              <span className="ml-1 text-red-400">*</span>
             </label>
             <span className="text-[11px] text-[var(--text-tertiary)]">
               {state.categoryIds.length}/3 selected
             </span>
           </div>
           <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Pick up to 3 — controls where your event appears.</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+
+          {categoryMissing && (
+            <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-red-500/25 bg-red-500/8 px-3 py-2">
+              <Warning size={13} weight="fill" className="shrink-0 text-red-400" />
+              <p className="text-[12px] text-red-400">Choose at least one type so attendees can find your event.</p>
+            </div>
+          )}
+
+          <div className={`mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 ${categoryMissing ? "ring-1 ring-red-500/20 rounded-2xl p-2" : ""}`}>
             {categories.map((cat) => {
               const isSelected = state.categoryIds.includes(cat.id);
               const isDisabled = !isSelected && state.categoryIds.length >= 3;
@@ -92,6 +105,7 @@ export function Step1Basics() {
                       setField("categoryIds", state.categoryIds.filter((id) => id !== cat.id));
                     } else if (!isDisabled) {
                       setField("categoryIds", [...state.categoryIds, cat.id]);
+                      setStepError(null);
                     }
                   }}
                 >
@@ -115,7 +129,10 @@ export function Step1Basics() {
               placeholder="e.g. Comedy Night, Fashion Show, Marathon…"
               type="text"
               value={state.customEventType}
-              onChange={(e) => setField("customEventType", e.target.value)}
+              onChange={(e) => {
+                setField("customEventType", e.target.value);
+                if (e.target.value.trim()) setStepError(null);
+              }}
             />
           </div>
         </div>

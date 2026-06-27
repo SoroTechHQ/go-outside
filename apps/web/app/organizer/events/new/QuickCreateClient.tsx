@@ -12,7 +12,7 @@ import {
   Check,
   CheckCircle,
   Confetti,
-  CurrencyDollar,
+  FloppyDisk,
   GlobeSimple,
   MinusCircle,
   MonitorPlay,
@@ -26,7 +26,6 @@ import {
   Timer,
   Trash,
   Upload,
-  Users,
   Warning,
   X,
 } from "@phosphor-icons/react";
@@ -324,14 +323,22 @@ function Section({ letter, title, children }: { letter: string; title: string; c
   );
 }
 
+type ScheduleType = "single" | "continuous" | "multi_day";
+type EventDay = { date: string; startHour: number; endHour: number; label: string };
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function QuickCreateClient({ categories }: { categories: Category[] }) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
+  const [scheduleType, setScheduleType] = useState<ScheduleType>("single");
   const [date, setDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [startHour, setStartHour] = useState(19);
   const [endHour, setEndHour] = useState(22);
+  const [eventDays, setEventDays] = useState<EventDay[]>([]);
   const [showCal, setShowCal] = useState(false);
+  const [showEndCal, setShowEndCal] = useState(false);
   const [locationType, setLocationType] = useState<"venue" | "online" | "tba">("venue");
   const [venue, setVenue] = useState<VenueResult | null>(null);
   const [onlineLink, setOnlineLink] = useState("");
@@ -376,14 +383,34 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
   const [createdEvent, setCreatedEvent] = useState<{ id: string; title: string } | null>(null);
 
   const calRef = useRef<HTMLDivElement>(null);
+  const endCalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (calRef.current && !calRef.current.contains(e.target as Node)) setShowCal(false);
+      if (endCalRef.current && !endCalRef.current.contains(e.target as Node)) setShowEndCal(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  function addEventDay() {
+    setEventDays(prev => {
+      const lastDay = prev[prev.length - 1];
+      const nextDate = lastDay?.date
+        ? (() => {
+            const d = new Date(lastDay.date + "T12:00:00");
+            d.setDate(d.getDate() + 1);
+            return d.toISOString().slice(0, 10);
+          })()
+        : date || "";
+      return [...prev, { date: nextDate, startHour: 12, endHour: 22, label: `Day ${prev.length + 1}` }];
+    });
+  }
+  function removeEventDay(i: number) { setEventDays(prev => prev.filter((_, j) => j !== i)); }
+  function updateEventDay(i: number, patch: Partial<EventDay>) {
+    setEventDays(prev => prev.map((d, j) => j === i ? { ...d, ...patch } : d));
+  }
 
   const selectedCategory = categories.find(c => c.id === categoryId);
 
@@ -480,12 +507,74 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
     return dt.toLocaleDateString("en-GH", { weekday: "short", month: "long", day: "numeric", year: "numeric" });
   }
 
+  function buildSchedulePayload() {
+    if (scheduleType === "single") {
+      return {
+        startDatetime: date ? `${date}T${String(startHour).padStart(2, "0")}:00:00` : undefined,
+        endDatetime: date ? `${date}T${String(endHour).padStart(2, "0")}:00:00` : undefined,
+      };
+    }
+    if (scheduleType === "continuous") {
+      return {
+        startDatetime: date ? `${date}T${String(startHour).padStart(2, "0")}:00:00` : undefined,
+        endDatetime: endDate ? `${endDate}T${String(endHour).padStart(2, "0")}:00:00` : undefined,
+      };
+    }
+    // multi_day
+    const sorted = [...eventDays].sort((a, b) => a.date.localeCompare(b.date));
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    return {
+      startDatetime: first?.date ? `${first.date}T${String(first.startHour).padStart(2, "0")}:00:00` : undefined,
+      endDatetime: last?.date ? `${last.date}T${String(last.endHour).padStart(2, "0")}:00:00` : undefined,
+      eventDays: sorted,
+    };
+  }
+
+  async function handleSaveDraft() {
+    if (!title.trim()) { setError("Add an event name to save a draft"); return; }
+    setIsSubmitting(true);
+    setError("");
+    try {
+      const schedule = buildSchedulePayload();
+      const body: Record<string, unknown> = {
+        title: title.trim(),
+        categoryId: categoryId || undefined,
+        isOnline: locationType === "online",
+        customLocation: locationType === "venue" ? (venue?.address ?? null) : locationType === "tba" ? "To be announced" : null,
+        onlineLink: locationType === "online" ? onlineLink || null : null,
+        venueLat: venue?.lat ?? null,
+        venueLng: venue?.lng ?? null,
+        ghanaPost: venue?.ghanaPost ?? null,
+        isPrivate,
+        scheduleType,
+        ...schedule,
+        timezone: "Africa/Accra",
+        bannerUrl: coverUrl || null,
+        tags: tags.length ? tags : undefined,
+      };
+      const res = await fetch("/api/organizer/events/save-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Failed to save draft");
+      const data = await res.json() as { id: string };
+      router.push(`/organizer/events/${data.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError("Event name is required"); return; }
     setIsSubmitting(true);
     setError("");
     try {
+      const schedule = buildSchedulePayload();
       const body: Record<string, unknown> = {
         title: title.trim(),
         categoryId: categoryId || undefined,
@@ -498,8 +587,8 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
         venueLng: venue?.lng ?? null,
         ghanaPost: venue?.ghanaPost ?? null,
         isPrivate,
-        startDatetime: date ? `${date}T${String(startHour).padStart(2,"0")}:00:00` : undefined,
-        endDatetime: date ? `${date}T${String(endHour).padStart(2,"0")}:00:00` : undefined,
+        scheduleType,
+        ...schedule,
         timezone: "Africa/Accra",
         bannerUrl: coverUrl || null,
         tags: tags.length ? tags : undefined,
@@ -641,37 +730,152 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
 
         {/* B — When */}
         <Section letter="B" title="When does it happen?">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {/* Date with custom calendar */}
-            <div ref={calRef} className="relative sm:col-span-1">
-              <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-1.5">
-                Date <span className="text-red-500">*</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowCal(o => !o)}
-                className={`flex w-full items-center gap-2 rounded-2xl border bg-[var(--bg-elevated)] px-3.5 py-3 text-left text-[13px] font-medium transition ${showCal ? "border-[var(--brand)]/50 ring-2 ring-[var(--brand)]/10" : "border-[var(--border-subtle)] hover:border-[var(--brand)]/30"} ${date ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
-              >
-                <CalendarBlank size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
-                <span className="truncate text-[12px]">{date ? formatDate(date) : "Pick a date"}</span>
-              </button>
-              <AnimatePresence>
-                {showCal && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    className="absolute left-0 top-full z-50 mt-1.5 w-64"
-                  >
-                    <MiniCalendar value={date} onChange={d => { setDate(d); setShowCal(false); }} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          {/* Schedule type selector */}
+          <div className="mb-4">
+            <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-2">Event format</label>
+            <div className="flex gap-2 flex-wrap">
+              {([
+                { key: "single",     label: "Single day" },
+                { key: "continuous", label: "Multi-day (non-stop)" },
+                { key: "multi_day",  label: "Multi-day (schedule)" },
+              ] as const).map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setScheduleType(opt.key)}
+                  className={`rounded-full border px-3.5 py-2 text-[11px] font-semibold transition ${
+                    scheduleType === opt.key
+                      ? "border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]"
+                      : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand)]/25"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-
-            <TimePicker value={startHour} onChange={setStartHour} label="Start time" />
-            <TimePicker value={endHour} onChange={setEndHour} label="End time" />
+            {scheduleType === "continuous" && (
+              <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">Non-stop event — pick a start date + end date (e.g. a prayer night, festival run).</p>
+            )}
+            {scheduleType === "multi_day" && (
+              <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">Like Coachella — add each day with its own schedule.</p>
+            )}
           </div>
+
+          <AnimatePresence mode="wait">
+            {(scheduleType === "single" || scheduleType === "continuous") && (
+              <motion.div key="single-cont" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className={`grid gap-4 ${scheduleType === "continuous" ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
+                  {/* Start date */}
+                  <div ref={calRef} className="relative">
+                    <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-1.5">
+                      {scheduleType === "continuous" ? "Start date" : "Date"} <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowCal(o => !o)}
+                      className={`flex w-full items-center gap-2 rounded-2xl border bg-[var(--bg-elevated)] px-3.5 py-3 text-left text-[13px] font-medium transition ${showCal ? "border-[var(--brand)]/50 ring-2 ring-[var(--brand)]/10" : "border-[var(--border-subtle)] hover:border-[var(--brand)]/30"} ${date ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                    >
+                      <CalendarBlank size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
+                      <span className="truncate text-[12px]">{date ? formatDate(date) : "Pick a date"}</span>
+                    </button>
+                    <AnimatePresence>
+                      {showCal && (
+                        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="absolute left-0 top-full z-50 mt-1.5 w-64">
+                          <MiniCalendar value={date} onChange={d => { setDate(d); setShowCal(false); }} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* End date (continuous only) */}
+                  {scheduleType === "continuous" && (
+                    <div ref={endCalRef} className="relative">
+                      <label className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)] mb-1.5">
+                        End date <span className="text-red-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowEndCal(o => !o)}
+                        className={`flex w-full items-center gap-2 rounded-2xl border bg-[var(--bg-elevated)] px-3.5 py-3 text-left text-[13px] font-medium transition ${showEndCal ? "border-[var(--brand)]/50 ring-2 ring-[var(--brand)]/10" : "border-[var(--border-subtle)] hover:border-[var(--brand)]/30"} ${endDate ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
+                      >
+                        <CalendarBlank size={14} className="shrink-0 text-[var(--brand)]" weight="fill" />
+                        <span className="truncate text-[12px]">{endDate ? formatDate(endDate) : "Pick an end date"}</span>
+                      </button>
+                      <AnimatePresence>
+                        {showEndCal && (
+                          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="absolute left-0 top-full z-50 mt-1.5 w-64">
+                            <MiniCalendar value={endDate} onChange={d => { setEndDate(d); setShowEndCal(false); }} />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  <TimePicker value={startHour} onChange={setStartHour} label="Start time" />
+                  {scheduleType === "single" && <TimePicker value={endHour} onChange={setEndHour} label="End time" />}
+                  {scheduleType === "continuous" && <TimePicker value={endHour} onChange={setEndHour} label="End time" />}
+                </div>
+              </motion.div>
+            )}
+
+            {scheduleType === "multi_day" && (
+              <motion.div key="multi" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2.5">
+                {eventDays.map((day, i) => (
+                  <div key={i} className="rounded-[14px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3.5">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <input
+                        className="w-28 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-card)] px-2.5 py-1.5 text-[12px] font-semibold text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                        placeholder={`Day ${i + 1}`}
+                        value={day.label}
+                        onChange={e => updateEventDay(i, { label: e.target.value })}
+                      />
+                      <button type="button" onClick={() => removeEventDay(i)} className="text-[var(--text-tertiary)] hover:text-red-400 transition">
+                        <X size={14} weight="bold" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="relative col-span-1">
+                        <label className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)] mb-1">Date</label>
+                        <input
+                          type="date"
+                          value={day.date}
+                          onChange={e => updateEventDay(i, { date: e.target.value })}
+                          className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-2.5 py-2 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)] mb-1">Start</label>
+                        <select
+                          value={day.startHour}
+                          onChange={e => updateEventDay(i, { startHour: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-2 py-2 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                        >
+                          {HOUR_SLOTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)] mb-1">End</label>
+                        <select
+                          value={day.endHour}
+                          onChange={e => updateEventDay(i, { endHour: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-2 py-2 text-[11px] text-[var(--text-primary)] focus:border-[var(--brand)]/50 focus:outline-none"
+                        >
+                          {HOUR_SLOTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addEventDay}
+                  className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[var(--border-subtle)] py-3 text-[12px] font-medium text-[var(--text-tertiary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)]"
+                >
+                  <PlusCircle size={14} /> Add day
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Section>
 
         {/* C — Where */}
@@ -1092,17 +1296,28 @@ export function QuickCreateClient({ categories }: { categories: Category[] }) {
           <Link href="/organizer/events" className="text-[13px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition">
             Cancel
           </Link>
-          <motion.button
-            type="submit"
-            disabled={isSubmitting}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgba(47,143,69,0.28)] transition hover:opacity-90 disabled:opacity-60"
-          >
-            {isSubmitting
-              ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              : <Sparkle size={16} weight="fill" />}
-            {isSubmitting ? "Creating…" : "Create Event"}
-          </motion.button>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              disabled={isSubmitting || !title.trim()}
+              onClick={handleSaveDraft}
+              className="flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] px-4 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] transition hover:border-[var(--brand)]/40 hover:text-[var(--brand)] disabled:opacity-40"
+            >
+              <FloppyDisk size={14} />
+              Save draft
+            </button>
+            <motion.button
+              type="submit"
+              disabled={isSubmitting}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center gap-2 rounded-full bg-[var(--brand)] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgba(47,143,69,0.28)] transition hover:opacity-90 disabled:opacity-60"
+            >
+              {isSubmitting
+                ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                : <Sparkle size={16} weight="fill" />}
+              {isSubmitting ? "Creating…" : "Create Event"}
+            </motion.button>
+          </div>
         </div>
       </form>
     </div>
