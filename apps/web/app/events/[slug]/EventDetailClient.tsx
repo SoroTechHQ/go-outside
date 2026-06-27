@@ -354,8 +354,8 @@ export function EventDetailClient({
     }).catch(() => undefined);
   }
 
-  const rating = (3.8 + ((event.id?.charCodeAt(0) ?? 65) % 12) / 10).toFixed(1);
-  const reviewCount = 48 + ((event.id?.charCodeAt(1) ?? 66) % 80);
+  const rating = event.rating !== "—" ? event.rating : null;
+  const reviewCount = (event as { reviewsCount?: number }).reviewsCount ?? 0;
   const lineup = LINEUPS[event.categorySlug] ?? LINEUPS.music ?? [];
   const ticketEvent: EventForTicket = {
     id: event.id,
@@ -374,7 +374,7 @@ export function EventDetailClient({
             price: ticketType.price,
             priceType: ticketType.priceType,
             description: ticketType.remainingLabel,
-            maxPerUser: 4,
+            maxPerUser: (ticketType as { maxPerOrder?: number | null }).maxPerOrder ?? 10,
           }))
         : [
             {
@@ -383,7 +383,7 @@ export function EventDetailClient({
               price: event.priceValue,
               priceType: event.priceValue === 0 ? "free" : "paid",
               description: "Tickets available",
-              maxPerUser: 4,
+              maxPerUser: 10,
             },
           ],
   };
@@ -410,7 +410,7 @@ export function EventDetailClient({
       )}
       <div
         className="fixed right-0 top-0 z-50 hidden md:block"
-        style={{ left: sidebarWidth > 0 ? sidebarWidth : 0 }}
+        style={{ left: "var(--app-shell-offset, 0px)", transition: "left 0.3s ease" }}
       >
         <div className="px-6 py-4">
           <div className="mx-auto w-full max-w-[1320px]">
@@ -535,7 +535,7 @@ export function EventDetailClient({
       {/* ── Photo grid (Airbnb-style) ─────────────────────────────────────────── */}
       <div
         className={`${previewMode ? "pt-[112px] md:pt-[186px]" : "pt-[74px] md:pt-[148px]"} transition-[padding] duration-300`}
-        style={{ paddingLeft: `max(1rem, calc(${sidebarWidth}px + 1.5rem))`, paddingRight: "1.5rem" }}
+        style={{ paddingLeft: "max(1rem, calc(var(--app-shell-offset, 72px) + 1.5rem))", paddingRight: "1.5rem", transition: "padding-left 0.3s ease" }}
       >
       <div className="relative hidden md:grid md:h-[56vh] md:min-h-[340px] md:max-h-[560px] md:grid-cols-4 md:grid-rows-2 md:gap-2 md:overflow-hidden md:rounded-[28px]">
         {/* Main hero — spans 2 cols × 2 rows */}
@@ -605,12 +605,16 @@ export function EventDetailClient({
                 {event.title}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <Star size={14} weight="fill" className="text-amber-400" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">{rating}</span>
-                  <span className="text-sm text-[var(--text-secondary)]">· {reviewCount} reviews</span>
-                </div>
-                <span className="text-[var(--text-tertiary)]">·</span>
+                {rating && reviewCount > 0 && (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Star size={14} weight="fill" className="text-amber-400" />
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">{rating}</span>
+                      <span className="text-sm text-[var(--text-secondary)]">· {reviewCount} {reviewCount === 1 ? "review" : "reviews"}</span>
+                    </div>
+                    <span className="text-[var(--text-tertiary)]">·</span>
+                  </>
+                )}
                 <span className="text-sm text-[var(--text-secondary)]">{event.locationLine}</span>
               </div>
             </div>
@@ -790,10 +794,12 @@ export function EventDetailClient({
                     </span>
                     {event.priceValue > 0 && <span className="ml-1.5 text-sm text-[var(--text-secondary)]">per person</span>}
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-[var(--text-secondary)]">
-                    <Star size={12} weight="fill" className="text-amber-400" />
-                    {rating} ({reviewCount})
-                  </div>
+                  {rating && reviewCount > 0 && (
+                    <div className="flex items-center gap-1 text-sm text-[var(--text-secondary)]">
+                      <Star size={12} weight="fill" className="text-amber-400" />
+                      {rating} ({reviewCount})
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -148,6 +148,7 @@ export type DbTicketTypeRow = {
   quantity_total: number | null;
   quantity_sold:  number;
   is_active:      boolean;
+  max_per_order:  number | null;
 };
 
 export type DbVenueRow = {
@@ -237,6 +238,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
     trending:         row.saves_count > 10,
     saved:            false, // overridden per-user in authenticated contexts
     rating:           row.avg_rating != null ? row.avg_rating.toFixed(1) : "—",
+    reviewsCount:     row.reviews_count,
     bannerTone:       CATEGORY_BANNER_TONES[cat.slug] ?? "from-[#0e2212] via-[#152a1a] to-[#0b1a10]",
     bannerUrl:        withBannerTransform(row.banner_url) ?? row.banner_url,
     ticketTypes: tts.map((t) => ({
@@ -248,6 +250,7 @@ export function adaptEvent(row: DbEventRow): EventItem {
       remainingLabel: t.quantity_total != null
         ? `${(t.quantity_total - t.quantity_sold).toLocaleString()} remaining`
         : "Available",
+      maxPerOrder:    t.max_per_order ?? null,
     })),
     gallery: (row.gallery_urls ?? []).map((url) => withThumbnailTransform(url) ?? url),
     tags:    row.tags ?? [],

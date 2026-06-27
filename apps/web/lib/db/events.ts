@@ -11,7 +11,7 @@ const EVENT_SELECT = `
   policies, activities, social_links,
   categories (id, name, slug, icon_key, color, is_active, sort_order),
   venues (id, name, city, address, latitude, longitude),
-  ticket_types (id, name, price, price_type, quantity_total, quantity_sold, is_active)
+  ticket_types (id, name, price, price_type, quantity_total, quantity_sold, is_active, max_per_order)
 `;
 
 function isCurrentOrFutureEvent(row: DbEventRow) {

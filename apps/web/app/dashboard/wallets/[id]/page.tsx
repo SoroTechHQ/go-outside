@@ -142,6 +142,16 @@ export default async function WalletTicketPage({
           <div
             className={`relative overflow-hidden rounded-[28px] bg-gradient-to-br ${s.card} p-5 shadow-[0_40px_90px_rgba(0,0,0,0.5)] ${isPast ? "opacity-90" : ""}`}
           >
+            {/* Event cover image as background */}
+            {event.bannerUrl && (
+              <Image
+                src={event.bannerUrl}
+                alt=""
+                fill
+                className="pointer-events-none object-cover opacity-30"
+                sizes="360px"
+              />
+            )}
             {/* Glow layer */}
             <div className={`pointer-events-none absolute inset-0 ${s.glow}`} />
 

@@ -54,6 +54,7 @@ export type EventItem = {
   trending: boolean;
   saved: boolean;
   rating: string;
+  reviewsCount?: number;
   bannerTone: string;
   bannerUrl: string | null;
   ticketTypes: TicketType[];
