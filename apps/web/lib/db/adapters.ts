@@ -191,7 +191,8 @@ export type DbEventRow = {
 };
 
 export function adaptEvent(row: DbEventRow): EventItem {
-  const cat    = row.categories;
+  // categories join returns null when category_id is NULL (organizer left it blank)
+  const cat = row.categories ?? { id: "", name: "Event", slug: "community", icon_key: "calendar", color: null, is_active: true, sort_order: 0 };
   const venue  = row.venues;
   const tts    = (row.ticket_types ?? []).filter((t) => t.is_active);
 
