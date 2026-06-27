@@ -27,6 +27,7 @@ feature/xyz  →  dev  →  preview (staging)  →  main (production)
 - Always start new work by pulling latest `dev`: `git pull origin dev`
 - Feature branch names: `feature/`, `fix/`, `chore/` prefixes
 - `main` is **detached from day-to-day work** — only touched for production releases
+- **NEVER add `Co-Authored-By`, Claude, Anthropic, or any AI attribution to commit messages.** Commits belong to the developer. No trailers, no mentions, nothing.
 
 ## Project Overview
 GoOutside is a social event discovery app for Ghana. Users discover/attend events, follow organizers, earn pulse scores, chat, and redeem loyalty rewards. Built as a pnpm monorepo.
