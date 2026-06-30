@@ -172,6 +172,7 @@ export function SearchPillExpanded({
   className = "",
   compact = false,
   onQueryChange,
+  onClose,
 }: {
   initialQuery?: string;
   initialCategories?: string[];
@@ -180,6 +181,7 @@ export function SearchPillExpanded({
   className?: string;
   compact?: boolean;
   onQueryChange?: (q: string) => void;
+  onClose?: () => void;
 }) {
   const router = useRouter();
   const pillRef = useRef<HTMLDivElement>(null);
@@ -218,18 +220,21 @@ export function SearchPillExpanded({
     const handler = (e: MouseEvent) => {
       if (pillRef.current && !pillRef.current.contains(e.target as Node)) {
         setActive(null);
+        onClose?.();
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [onClose]);
 
   // Escape key
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setActive(null); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setActive(null); onClose?.(); }
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, []);
+  }, [onClose]);
 
   const toggleCat = useCallback((slug: string) => {
     setSelectedCats((prev) => prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]);
@@ -470,7 +475,7 @@ export function SearchPillExpanded({
             {/* Invisible click-capture layer — no visual effect */}
             <div
               className="fixed inset-0 z-40"
-              onClick={() => { setActive(null); setSuggestions([]); }}
+              onClick={() => { setActive(null); setSuggestions([]); onClose?.(); }}
             />
 
             <motion.div

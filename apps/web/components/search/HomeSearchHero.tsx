@@ -402,12 +402,16 @@ export function HomeSearchHero({
     }
   }, [handleSurpriseMe]);
 
-  // Close overlay on Escape
+  // Close overlay when mode leaves mini, or when user scrolls
+  useEffect(() => {
+    if (mode !== "mini") setSearchOverlayOpen(false);
+  }, [mode]);
+
   useEffect(() => {
     if (!searchOverlayOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setSearchOverlayOpen(false); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    const onScroll = () => setSearchOverlayOpen(false);
+    window.addEventListener("scroll", onScroll, { passive: true, once: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [searchOverlayOpen]);
 
   // ── Mobile: render compact pill + overlay ──
@@ -440,34 +444,25 @@ export function HomeSearchHero({
           <MiniSearchPill key="mini-pill" onSegmentClick={handleMiniSegmentClick} />
         </AnimatePresence>
 
-        {/* In-place search overlay — expands without scrolling to top */}
+        {/* In-place search overlay — floats with no backdrop */}
         <AnimatePresence>
           {searchOverlayOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm"
-                onClick={() => setSearchOverlayOpen(false)}
-              />
-              <motion.div
-                initial={{ opacity: 0, y: -12, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.8 }}
-                className="fixed right-0 top-0 z-[56] px-6 py-4"
-                style={{ left: "var(--app-shell-offset, 0px)" }}
-              >
-                <div className="mx-auto w-full max-w-[1020px]">
-                  <SearchPillExpanded
-                    compact={false}
-                    initialActive={overlaySegment}
-                  />
-                </div>
-              </motion.div>
-            </>
+            <motion.div
+              initial={{ opacity: 0, y: -12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.8 }}
+              className="fixed right-0 top-0 z-[56] px-6 py-4"
+              style={{ left: "var(--app-shell-offset, 0px)" }}
+            >
+              <div className="mx-auto w-full max-w-[1020px]">
+                <SearchPillExpanded
+                  compact={false}
+                  initialActive={overlaySegment}
+                  onClose={() => setSearchOverlayOpen(false)}
+                />
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
