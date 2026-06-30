@@ -11,9 +11,7 @@ import {
   Star,
   Heart,
   Confetti,
-  GifIcon,
   PaperPlaneTilt,
-  X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -41,63 +39,6 @@ const VIBE_TAGS = [
   { key: "fire",       label: "Fire",        icon: <Heart size={11} weight="fill" /> },
 ];
 
-const TENOR_API_KEY = "AIzaSyAyimkuYQYF_FXVALexPmozFpjJoefkxqw"; // public demo key
-
-function GifPicker({ onSelect }: { onSelect: (url: string) => void }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<{ url: string; preview: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  async function search(q: string) {
-    if (!q.trim()) { setResults([]); return; }
-    setLoading(true);
-    try {
-      const r = await fetch(
-        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(q)}&key=${TENOR_API_KEY}&limit=12&media_filter=gif`
-      );
-      const d = await r.json() as { results: { media_formats: { gif: { url: string }; tinygif: { url: string } } }[] };
-      setResults(
-        d.results.map((item) => ({
-          url: item.media_formats.gif.url,
-          preview: item.media_formats.tinygif.url,
-        }))
-      );
-    } catch { setResults([]); }
-    finally { setLoading(false); }
-  }
-
-  return (
-    <div className="mt-2 overflow-hidden rounded-xl border border-[var(--home-border)] bg-[var(--bg-card)] shadow-lg">
-      <div className="flex items-center gap-2 border-b border-[var(--home-border)] px-3 py-2">
-        <input
-          autoFocus
-          className="flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
-          onChange={(e) => { setQuery(e.target.value); search(e.target.value); }}
-          placeholder="Search GIFs…"
-          value={query}
-        />
-        {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />}
-      </div>
-      {results.length > 0 && (
-        <div className="grid grid-cols-3 gap-1 p-2 max-h-[200px] overflow-y-auto">
-          {results.map((gif) => (
-            <button
-              key={gif.url}
-              className="overflow-hidden rounded-lg transition hover:opacity-80 active:scale-95"
-              onClick={() => onSelect(gif.url)}
-              type="button"
-            >
-              <img alt="" className="h-16 w-full object-cover" src={gif.preview} />
-            </button>
-          ))}
-        </div>
-      )}
-      {results.length === 0 && query && !loading && (
-        <p className="px-3 py-4 text-center text-xs text-[var(--text-tertiary)]">No GIFs found</p>
-      )}
-    </div>
-  );
-}
 
 function CommentCard({ comment }: { comment: Comment }) {
   const user = comment.users;
@@ -162,27 +103,18 @@ function CommentComposer({ eventSlug, eventId, onPosted }: { eventSlug: string; 
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [gifUrl, setGifUrl] = useState<string | null>(null);
-  const [showGifPicker, setShowGifPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
-      fetch("/api/posts", {
+      fetch(`/api/events/${eventSlug}/comments`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          body,
-          vibe_tags: selectedTags,
-          event_id: eventId,
-          ...(gifUrl ? { gif_url: gifUrl } : {}),
-        }),
+        body: JSON.stringify({ body, vibe_tags: selectedTags, event_id: eventId }),
       }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
     onSuccess: () => {
       setBody("");
       setSelectedTags([]);
-      setGifUrl(null);
-      setShowGifPicker(false);
       queryClient.invalidateQueries({ queryKey: ["event-comments", eventSlug] });
       onPosted?.();
     },
@@ -200,6 +132,18 @@ function CommentComposer({ eventSlug, eventId, onPosted }: { eventSlug: string; 
   }
 
   const initials = ((user.firstName ?? "") + (user.lastName ?? "")).slice(0, 2).toUpperCase() || "ME";
+
+  function handleVibeTag(vibe: typeof VIBE_TAGS[number]) {
+    const active = selectedTags.includes(vibe.key);
+    if (active) {
+      setSelectedTags((prev) => prev.filter((t) => t !== vibe.key));
+    } else {
+      // Push the label text into the textarea
+      setBody((prev) => prev ? `${prev} ${vibe.label}` : vibe.label);
+      setSelectedTags((prev) => [...prev, vibe.key]);
+      textareaRef.current?.focus();
+    }
+  }
 
   return (
     <div className="rounded-xl border border-[var(--home-border)] bg-[var(--bg-surface)] p-4">
@@ -222,7 +166,7 @@ function CommentComposer({ eventSlug, eventId, onPosted }: { eventSlug: string; 
             value={body}
           />
 
-          {/* Vibe tags */}
+          {/* Vibe suggestion chips — clicking pushes text into the textarea */}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {VIBE_TAGS.map((vibe) => {
               const active = selectedTags.includes(vibe.key);
@@ -234,11 +178,7 @@ function CommentComposer({ eventSlug, eventId, onPosted }: { eventSlug: string; 
                       ? "border-[var(--brand)] bg-[var(--brand-dim)] text-[var(--brand)]"
                       : "border-[var(--home-border)] text-[var(--text-tertiary)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
                   }`}
-                  onClick={() =>
-                    setSelectedTags((prev) =>
-                      active ? prev.filter((t) => t !== vibe.key) : [...prev, vibe.key]
-                    )
-                  }
+                  onClick={() => handleVibeTag(vibe)}
                   type="button"
                 >
                   {vibe.icon}
@@ -248,36 +188,8 @@ function CommentComposer({ eventSlug, eventId, onPosted }: { eventSlug: string; 
             })}
           </div>
 
-          {/* GIF preview */}
-          {gifUrl && (
-            <div className="relative mt-2 inline-block">
-              <img alt="GIF" className="h-20 rounded-lg object-cover" src={gifUrl} />
-              <button
-                className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--bg-card)] border border-[var(--home-border)] text-[var(--text-secondary)] shadow"
-                onClick={() => setGifUrl(null)}
-                type="button"
-              >
-                <X size={10} weight="bold" />
-              </button>
-            </div>
-          )}
-
-          {showGifPicker && !gifUrl && (
-            <GifPicker onSelect={(url) => { setGifUrl(url); setShowGifPicker(false); }} />
-          )}
-
           <div className="mt-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${showGifPicker ? "bg-[var(--brand-dim)] text-[var(--brand)]" : "text-[var(--text-tertiary)] hover:text-[var(--brand)]"}`}
-                onClick={() => setShowGifPicker((v) => !v)}
-                type="button"
-              >
-                <GifIcon size={14} weight="bold" />
-                GIF
-              </button>
-              <span className="text-xs text-[var(--text-tertiary)]">{body.length}/300</span>
-            </div>
+            <span className="text-xs text-[var(--text-tertiary)]">{body.length}/300</span>
             <button
               className="flex items-center gap-1.5 rounded-lg bg-[var(--brand)] px-4 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
               disabled={!body.trim() || isPending}

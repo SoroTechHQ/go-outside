@@ -12,6 +12,7 @@ import {
   WhatsappLogo,
 } from "@phosphor-icons/react";
 
+
 type GhanaPostAddress = {
   digitalAddress: string;
   street:         string | null;
@@ -105,10 +106,7 @@ export function EventMap({ lat, lng, venueName, locationLine, eventTitle }: Prop
           </div>
         </div>
 
-        {/* GhanaPost GPS digital address
-            If GPGPS_MIJO_TOKEN expires, this section simply won't render (ghanaPost stays null).
-            To refresh the token: curl -s https://www.ghanapostgps.com/map/assets/index-*.js | grep -o 'u2="[^"]*"'
-            Then update GPGPS_MIJO_TOKEN in .env.local and Vercel environment variables. */}
+        {/* GhanaPost digital address via FindMe API (findme.soro.tech) */}
         {gpLoading ? (
           <div className="flex items-center gap-2 rounded-xl border border-[var(--home-border)] bg-[var(--bg-card)] px-4 py-3">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
@@ -130,16 +128,6 @@ export function EventMap({ lat, lng, venueName, locationLine, eventTitle }: Prop
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <CopyButton text={ghanaPost.digitalAddress} />
-                {/* Open in GhanaPostGPS map */}
-                <a
-                  href={`https://www.ghanapostgps.com/map/?q=${ghanaPost.digitalAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand-dim)] text-[var(--brand)] transition hover:bg-[var(--brand)] hover:text-white"
-                  title="Open in GhanaPostGPS"
-                >
-                  <ArrowSquareOut size={13} weight="bold" />
-                </a>
               </div>
             </div>
 
